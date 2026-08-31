@@ -1,98 +1,103 @@
 [
-{
+  {
     "model": "organizaciones.tipoentidad",
     "pk": 1,
-    "fields": {
-        "nombre": "Personería jurídica",
-        "descripcion": null
-    }
-},
-{
+    "fields": {"nombre": "Personería Jurídica", "descripcion": null}
+  },
+  {
     "model": "organizaciones.tipoentidad",
     "pk": 2,
-    "fields": {
-        "nombre": "Personería jurídica eclesiástica",
-        "descripcion": null
-    }
-},
-{
+    "fields": {"nombre": "Personería Jurídica Eclesiástica", "descripcion": null}
+  },
+  {
     "model": "organizaciones.tipoentidad",
     "pk": 3,
-    "fields": {
-        "nombre": "Asociación de hecho",
-        "descripcion": null
-    }
-},
-{
+    "fields": {"nombre": "Asociación de Hecho", "descripcion": null}
+  },
+  {
     "model": "organizaciones.subtipoentidad",
     "pk": 1,
-    "fields": {
-        "nombre": "Asociación civil",
-        "tipo_entidad": 1
-    }
-},
-{
+    "fields": {"nombre": "Asociación Civil", "activo": true, "tipo_entidad": 1}
+  },
+  {
     "model": "organizaciones.subtipoentidad",
     "pk": 2,
-    "fields": {
-        "nombre": "Cooperativa",
-        "tipo_entidad": 1
-    }
-},
-{
+    "fields": {"nombre": "Cooperativa", "activo": true, "tipo_entidad": 1}
+  },
+  {
     "model": "organizaciones.subtipoentidad",
     "pk": 3,
-    "fields": {
-        "nombre": "Entidad",
-        "tipo_entidad": 1
-    }
-},
-{
+    "fields": {"nombre": "Entidad", "activo": false, "tipo_entidad": 1}
+  },
+  {
     "model": "organizaciones.subtipoentidad",
     "pk": 4,
-    "fields": {
-        "nombre": "Fundación",
-        "tipo_entidad": 1
-    }
-},
-{
+    "fields": {"nombre": "Fundación", "activo": true, "tipo_entidad": 1}
+  },
+  {
     "model": "organizaciones.subtipoentidad",
     "pk": 5,
-    "fields": {
-        "nombre": "Arquidiócesis",
-        "tipo_entidad": 2
-    }
-},
-{
+    "fields": {"nombre": "Arquidiócesis", "activo": true, "tipo_entidad": 2}
+  },
+  {
     "model": "organizaciones.subtipoentidad",
     "pk": 6,
     "fields": {
-        "nombre": "Diócesis",
-        "tipo_entidad": 2
+      "nombre": "Diócesis – Obispado",
+      "activo": true,
+      "tipo_entidad": 2
     }
-},
-{
+  },
+  {
     "model": "organizaciones.subtipoentidad",
     "pk": 7,
-    "fields": {
-        "nombre": "Parroquias",
-        "tipo_entidad": 2
-    }
-},
-{
+    "fields": {"nombre": "Parroquia", "activo": true, "tipo_entidad": 2}
+  },
+  {
     "model": "organizaciones.subtipoentidad",
     "pk": 8,
     "fields": {
-        "nombre": "Asociación de hecho",
-        "tipo_entidad": 3
+      "nombre": "Asociación de Hecho",
+      "activo": true,
+      "tipo_entidad": 3
     }
-},
-{
+  },
+  {
     "model": "organizaciones.subtipoentidad",
     "pk": 9,
+    "fields": {"nombre": "Obispado", "activo": false, "tipo_entidad": 2}
+  },
+  {
+    "model": "organizaciones.subtipoentidad",
+    "pk": 10,
     "fields": {
-        "nombre": "Obispado",
-        "tipo_entidad": 2
+      "nombre": "Caritas - Asociación Civil",
+      "activo": true,
+      "tipo_entidad": 1
     }
-}
+  },
+  {
+    "model": "organizaciones.subtipoentidad",
+    "pk": 11,
+    "fields": {"nombre": "Prelatura", "activo": true, "tipo_entidad": 2}
+  },
+  {
+    "model": "organizaciones.subtipoentidad",
+    "pk": 12,
+    "fields": {"nombre": "Vicaría", "activo": true, "tipo_entidad": 2}
+  },
+  {
+    "model": "organizaciones.subtipoentidad",
+    "pk": 13,
+    "fields": {"nombre": "Cuasiparroquia", "activo": true, "tipo_entidad": 2}
+  },
+  {
+    "model": "organizaciones.subtipoentidad",
+    "pk": 14,
+    "fields": {
+      "nombre": "Simple Asociación (art. 187 CCCN)",
+      "activo": true,
+      "tipo_entidad": 1
+    }
+  }
 ]

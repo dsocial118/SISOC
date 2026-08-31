@@ -1,10 +1,13 @@
 # pylint: disable=too-many-lines
 
 import calendar
+import logging
+import subprocess
 from datetime import date, time
 
 from django.conf import settings
 from django.core.exceptions import PermissionDenied, ValidationError
+from django.core.files.base import ContentFile
 from django.core.paginator import Paginator
 from django.db.models import Prefetch, Q
 from django.db.models.fields.files import FieldFile
@@ -48,6 +51,10 @@ from comedores.models import (
     PrestacionAlimentariaConformidad,
 )
 from comedores.services.comedor_service import ComedorService
+from comedores.services.certificacion_prestaciones_service import (
+    FUENTE_PRESTACIONES_SIN_DATOS,
+    generar_certificacion_prestaciones_pdf,
+)
 from comedores.services.capacitaciones_certificados_service import (
     FORMANDO_CAPITAL_HUMANO_URL,
     delete_certificate,
@@ -56,12 +63,15 @@ from comedores.services.capacitaciones_certificados_service import (
     serialize_certificate,
     submit_certificate,
 )
+from comedores.utils import get_prestacion_conformidad_pending_period
 from comedores.utils import usa_datos_convenio_pnud
+from comedores.utils import is_abordaje_comunitario_linea_tradicional_program
 from intervenciones.models.intervenciones import Intervencion
 from relevamientos.models import ClasificacionComedor, Relevamiento
 from rendicioncuentasfinal.models import DocumentoRendicionFinal
 from rendicioncuentasmensual.models import DocumentacionAdjunta, RendicionCuentaMensual
 from rendicioncuentasmensual.services import RendicionCuentaMensualService
+from organizaciones.models import ProyectoOrganizacion
 from pwa.models import NominaDestinatariosDocumentoPWA
 from users.api_permissions import (
     HasMobileRendicionPermission,
@@ -76,6 +86,7 @@ from users.api_serializers import (
     OperadorListSerializer,
     OperadorPermissionsUpdateSerializer,
 )
+
 from users.models import AccesoComedorPWA
 from users.services_pwa import (
     create_operador_for_comedor,
@@ -83,22 +94,27 @@ from users.services_pwa import (
     get_assignable_pwa_permission_codes,
     get_accessible_comedor_ids,
     get_access_rows,
+    get_visible_access_rows,
+    filter_pwa_visible_spaces,
     is_pwa_user,
     list_operadores_for_comedor,
     update_operador_permissions,
 )
 
-MAX_COMPROBANTE_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
+logger = logging.getLogger("django")
+
+MAX_COMPROBANTE_FILE_SIZE = 20 * 1024 * 1024  # 20 MB
 ALLOWED_COMPROBANTE_CONTENT_TYPES = {
     "application/pdf",
     "application/msword",
     "application/vnd.ms-excel",
-    "application/vnd.ms-powerpoint",
-    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "image/bmp",
+    "image/gif",
     "image/jpeg",
     "image/png",
+    "image/webp",
 }
 
 
@@ -111,12 +127,35 @@ class ComedorDetailViewSet(
     permission_classes = [IsAuthenticated]
     http_method_names = ["get", "post", "patch", "head", "options"]
 
+    @staticmethod
+    def _filter_pwa_visible_spaces(queryset):
+        return filter_pwa_visible_spaces(queryset)
+
     def _get_scoped_comedor_ids(self):
         user = self.request.user
         if is_pwa_user(user):
             return get_accessible_comedor_ids(user)
         filtered_rows = ComedorService.get_filtered_comedores(self.request, user=user)
         return [row["id"] for row in filtered_rows]
+
+    @staticmethod
+    def _get_active_projects_by_organization(queryset):
+        organization_ids = {
+            comedor.organizacion_id for comedor in queryset if comedor.organizacion_id
+        }
+        projects_by_organization = {}
+        for proyecto in ProyectoOrganizacion.objects.filter(
+            organizacion_id__in=organization_ids,
+            activo=True,
+        ).order_by("codigo"):
+            projects_by_organization.setdefault(proyecto.organizacion_id, []).append(
+                {
+                    "id": proyecto.id,
+                    "codigo": proyecto.codigo,
+                    "nombre": proyecto.nombre,
+                }
+            )
+        return projects_by_organization
 
     def _get_pwa_spaces_selector_rows(self, user):
         access_rows = list(
@@ -144,6 +183,8 @@ class ComedorDetailViewSet(
             )
             .order_by("nombre", "id")
         )
+        queryset = self._filter_pwa_visible_spaces(queryset)
+        proyectos_por_organizacion = self._get_active_projects_by_organization(queryset)
 
         rows = []
         for comedor in queryset:
@@ -169,6 +210,10 @@ class ComedorDetailViewSet(
                         comedor.programa.nombre if comedor.programa_id else None
                     ),
                     "codigo_de_proyecto": comedor.codigo_de_proyecto,
+                    "proyecto_id": comedor.proyecto_id,
+                    "organizacion_proyectos": proyectos_por_organizacion.get(
+                        comedor.organizacion_id, []
+                    ),
                     "provincia__nombre": (
                         comedor.provincia.nombre if comedor.provincia_id else None
                     ),
@@ -194,7 +239,7 @@ class ComedorDetailViewSet(
                 "id": row.comedor_id,
                 "nombre": row.comedor.nombre if row.comedor_id else "",
             }
-            for row in get_access_rows(user)
+            for row in get_visible_access_rows(user)
             .filter(rol=AccesoComedorPWA.ROL_REPRESENTANTE)
             .select_related("comedor")
             .order_by("comedor__nombre", "comedor_id")
@@ -219,7 +264,7 @@ class ComedorDetailViewSet(
 
     def get_queryset(self):
         scoped_ids = self._get_scoped_comedor_ids()
-        return (
+        queryset = (
             Comedor.objects.select_related(
                 "provincia",
                 "municipio",
@@ -341,6 +386,9 @@ class ComedorDetailViewSet(
             .filter(id__in=scoped_ids)
             .order_by("-id")
         )
+        if is_pwa_user(self.request.user):
+            queryset = self._filter_pwa_visible_spaces(queryset)
+        return queryset
 
     def _coerce_datetime(self, value):
         if not value:
@@ -429,6 +477,22 @@ class ComedorDetailViewSet(
                     for field in APROBADAS_FIELDS
                 }
             )
+            incluye_merienda_reforzada = (
+                is_abordaje_comunitario_linea_tradicional_program(comedor)
+            )
+            payload["incluye_merienda_reforzada"] = incluye_merienda_reforzada
+            if incluye_merienda_reforzada:
+                for dia in (
+                    "lunes",
+                    "martes",
+                    "miercoles",
+                    "jueves",
+                    "viernes",
+                    "sabado",
+                    "domingo",
+                ):
+                    field = f"aprobadas_merienda_reforzada_{dia}"
+                    payload[field] = getattr(datos_convenio_pnud, field, 0)
         elif informe:
             fechas = InformeTecnicoPrestacionSerializer.fechas_finalizacion_para(
                 [informe.admision_id]
@@ -455,8 +519,8 @@ class ComedorDetailViewSet(
         )
         conformidades_list = list(conformidades)
         previous_period = self._previous_month_period()
-        pending_period = previous_period
-        selected_period = pending_period or previous_period
+        pending_period = get_prestacion_conformidad_pending_period(comedor)
+        selected_period = previous_period
         conformidad_actual = next(
             (item for item in conformidades_list if item.periodo == selected_period),
             None,
@@ -899,26 +963,19 @@ class ComedorDetailViewSet(
         if not archivo:
             return "Debe adjuntar un archivo."
         if archivo.content_type not in ALLOWED_COMPROBANTE_CONTENT_TYPES:
-            return "Tipo de archivo no permitido. Formatos válidos: PDF, JPG, PNG."
+            return "Tipo de archivo no permitido. Formatos válidos: PDF, Excel, Word o imagen."
         if archivo.size > MAX_COMPROBANTE_FILE_SIZE:
-            return "El archivo excede el tamaño máximo permitido de 10 MB."
+            return "El archivo excede el tamaño máximo permitido de 20 MB."
         return None
 
     @action(
         detail=True,
         methods=["get"],
         url_path="capacitaciones",
-        permission_classes=[IsPWARepresentativeForComedor],
+        permission_classes=[IsPWAUserForComedor],
     )
     def capacitaciones(self, request, pk=None):
         comedor = self.get_object()
-        if not is_alimentar_comunidad_program(comedor):
-            return Response(
-                {
-                    "detail": "Capacitaciones disponibles solo para programa Alimentar Comunidad."
-                },
-                status=status.HTTP_404_NOT_FOUND,
-            )
         records = list_capacitaciones_certificados(comedor)
         return Response(
             {
@@ -938,17 +995,10 @@ class ComedorDetailViewSet(
         methods=["post"],
         url_path="capacitaciones/subir",
         parser_classes=[MultiPartParser, FormParser],
-        permission_classes=[IsPWARepresentativeForComedor],
+        permission_classes=[IsPWAUserForComedor],
     )
     def subir_capacitacion(self, request, pk=None):
         comedor = self.get_object()
-        if not is_alimentar_comunidad_program(comedor):
-            return Response(
-                {
-                    "detail": "Capacitaciones disponibles solo para programa Alimentar Comunidad."
-                },
-                status=status.HTTP_404_NOT_FOUND,
-            )
         capacitacion = (request.data.get("capacitacion") or "").strip()
         archivo = request.FILES.get("archivo")
 
@@ -989,13 +1039,6 @@ class ComedorDetailViewSet(
     )
     def eliminar_capacitacion(self, request, pk=None):
         comedor = self.get_object()
-        if not is_alimentar_comunidad_program(comedor):
-            return Response(
-                {
-                    "detail": "La sección de capacitaciones aplica solo a Alimentar Comunidad."
-                },
-                status=status.HTTP_400_BAD_REQUEST,
-            )
 
         capacitacion = (request.data.get("capacitacion") or "").strip()
         if capacitacion not in dict(
@@ -1178,8 +1221,11 @@ class ComedorDetailViewSet(
     def _get_rendiciones_queryset(self, comedor):
         return (
             RendicionCuentaMensualService.obtener_rendiciones_cuentas_mensuales(comedor)
+            .select_related("proyecto")
             .only(
                 "id",
+                "proyecto_id",
+                "proyecto__codigo",
                 "convenio",
                 "numero_rendicion",
                 "mes",
@@ -1729,11 +1775,19 @@ class ComedorDetailViewSet(
                 {"detail": "El periodo debe ser un mes calendario en formato YYYY-MM."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+        usa_convenio_pnud = usa_datos_convenio_pnud(comedor)
         informe = (
             None
-            if usa_datos_convenio_pnud(comedor)
+            if usa_convenio_pnud
             else self._get_latest_prestacion_alimentaria_informe(comedor)
         )
+        source = (
+            ComedorDatosConvenioPnud.objects.filter(comedor=comedor).first()
+            if usa_convenio_pnud
+            else informe
+        )
+        if source is None:
+            source = FUENTE_PRESTACIONES_SIN_DATOS
         conformidad = PrestacionAlimentariaConformidad.objects.create(
             comedor=comedor,
             informe_tecnico=informe,
@@ -1742,9 +1796,85 @@ class ComedorDetailViewSet(
             observaciones=observaciones,
             usuario=request.user,
         )
+        if source is not None:
+            try:
+                acceso = (
+                    AccesoComedorPWA.objects.filter(
+                        user=request.user,
+                        comedor=comedor,
+                        activo=True,
+                        rol=AccesoComedorPWA.ROL_OPERADOR,
+                    )
+                    .select_related("creado_por")
+                    .first()
+                )
+                usuario_principal = None
+                if acceso and acceso.creado_por_id:
+                    es_representante = AccesoComedorPWA.objects.filter(
+                        user_id=acceso.creado_por_id,
+                        comedor=comedor,
+                        activo=True,
+                        rol=AccesoComedorPWA.ROL_REPRESENTANTE,
+                    ).exists()
+                    if es_representante:
+                        usuario_principal = acceso.creado_por
+                pdf_bytes = generar_certificacion_prestaciones_pdf(
+                    comedor=comedor,
+                    periodo=periodo,
+                    usuario=request.user,
+                    source=source,
+                    conforme=conforme,
+                    observaciones=observaciones,
+                    usuario_principal=usuario_principal,
+                )
+                conformidad.certificacion_pdf.save(
+                    f"certificacion-prestaciones-{comedor.id}-{periodo:%Y-%m}-{conformidad.id}.pdf",
+                    ContentFile(pdf_bytes),
+                    save=True,
+                )
+            except (OSError, RuntimeError, subprocess.SubprocessError):
+                logger.exception(
+                    "No se pudo generar la certificación PDF del comedor %s para %s",
+                    comedor.id,
+                    periodo,
+                )
+                conformidad.delete()
+                return Response(
+                    {
+                        "detail": "No se pudo generar la certificación PDF. Intente nuevamente."
+                    },
+                    status=status.HTTP_503_SERVICE_UNAVAILABLE,
+                )
         return Response(
             PrestacionAlimentariaConformidadSerializer(conformidad).data,
             status=status.HTTP_201_CREATED,
+        )
+
+    @action(
+        detail=True,
+        methods=["get"],
+        url_path=r"prestacion-alimentaria/conformidades/(?P<conformidad_id>[^/.]+)/certificacion",
+        permission_classes=[IsPWAUserForComedor],
+    )
+    def descargar_certificacion_prestaciones(
+        self, request, pk=None, conformidad_id=None
+    ):
+        comedor = self.get_object()
+        certificacion = get_object_or_404(
+            PrestacionAlimentariaConformidad,
+            id=conformidad_id,
+            comedor=comedor,
+        )
+        if not certificacion.certificacion_pdf:
+            raise Http404("Certificación no encontrada.")
+        return FileResponse(
+            certificacion.certificacion_pdf.open("rb"),
+            as_attachment=True,
+            filename=(
+                f"certificacion-prestaciones-{comedor.id}-"
+                f"{certificacion.periodo:%Y-%m}.pdf"
+            ),
+            content_type="application/pdf",
         )
 
     @extend_schema(

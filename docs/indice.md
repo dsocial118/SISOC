@@ -16,6 +16,7 @@
 - `docs/operacion/integraciones.md`: conexiones con servicios externos, caches y manejo de estáticos/media.
 - `docs/operacion/operaciones.md`: tareas recurrentes, cron jobs y endpoints de health de producción.
 - `docs/operacion/infraestructura.md`: inventario de infraestructura operativo (entornos, arquitectura, networking, deploy, observabilidad, seguridad y roadmap infra).
+- `docs/operacion/deploy_automatizado.md`: runbook de deploy por GitHub Actions, runners self-hosted, promoción y rollback por tag estable.
 - `docs/operacion/deploy_entornos_docker_nginx_mysql.md`: runbook generico parametrizado para replicar entornos SISOC con Docker Compose, MySQL dedicado y NGINX.
 - `docs/operacion/qa_trixie_deploy.md`: runbook para desplegar QA en Debian 13 con SITE-QA, DB-QA, Docker Compose, MySQL 8.0 y NGINX.
 - `docs/infra/`: inventario, riesgos, operaciones, deploy, rollback y migracion
@@ -27,6 +28,7 @@
 - `docs/infra/PROD_*`: inventario, riesgos, checklist de migracion y propuestas
   no ejecutadas para el productivo canonico `prd-old`.
 - `docs/operacion/comandos_administracion.md`: utilidades de management (`manage.py`) disponibles para el equipo.
+- `docs/operacion/correccion_expedientes_issue_2272.md`: runbook de preflight, aplicación, verificación y recuperación de la corrección controlada de expedientes.
 - `docs/operacion/pwa_web_push_deploy.md`: checklist de despliegue y validacion de web push para la PWA.
 
 ### 3. Seguridad
@@ -43,7 +45,14 @@
 - `docs/implementaciones/filtros_avanzados.md`: comportamiento y consideraciones de filtros avanzados.
 - `docs/implementaciones/preferencias_columnas.md`: preferencias de columnas en listados.
 - `docs/implementaciones/pwa_backend.md`: implementación backend de funcionalidades PWA.
+- `docs/implementaciones/admisiones_informes_tecnicos.md`: contrato de campos, templates dinámicos y publicación de Informes Técnicos.
+- `docs/implementaciones/comedores_certificaciones_prestaciones.md`: generación, fallback y descarga de certificaciones de prestaciones.
 - `docs/implementaciones/usuarios_perfil_iam.md`: implementación de Usuarios/Perfil + IAM por permisos Django y guía para extender nuevas features.
+- `docs/implementaciones/centrodeinfancia_nomina_renaper.md`: contrato de asistencia de nómina CDI, alcance y precarga RENAPER de trabajadores.
+- `docs/implementaciones/centrodeinfancia_nomina_ninos_simepi.md`: autorización, alcance provincial, privacidad y contrato del PDF de nómina infantil SIMEPI.
+- `docs/implementaciones/comedores_nomina_ciudadanos.md`: alta de ciudadanos con DNI/Sin DNI desde nómina y transacción de datos sociales.
+- `docs/implementaciones/centrodefamilia_preinscriptos.md`: contrato del listado y exportación CSV de preinscriptos CDF, incluyendo columnas, ordenamiento y permisos.
+- `docs/vat/`: guías funcionales, API, operación de vouchers y desarrollo del módulo VAT.
 
 ### 5. Flujos y sincronizaciones
 - `docs/flujos/comedor_sync.md`: cómo funciona la sincronización de comedores con servicios externos.
@@ -51,11 +60,13 @@
 - `docs/flujos/consulta_renaper.md`: integración con RENAPER para la consulta de datos ciudadanos.
 - `docs/flujos/cambio_programa_comedor.md`: procedimiento para cambiar programas asignados a comedores.
 - `docs/flujos/derivar_nomina_centros.md`: flujo y reglas para derivar beneficiarios entre centros (comedores y CDI).
+- `docs/flujos/rendiciones_mensuales_proyectos.md`: estados de revisión, subsanaciones y asociación de rendiciones a proyectos.
 - `docs/integraciones/ticketera_api.md`: contrato server-to-server de la API Ticketera (5 endpoints, dirigido al desarrollador de la Ticketera).
 
 ### 6. IA, planes y registro spec-as-source
 - `docs/agentes/guia.md`: guía rápida para asistentes automáticos y flujo de documentación.
 - `docs/ia/`: guías especializadas para asistentes (arquitectura, testing, seguridad, etc.).
+- `docs/ia/MODULAR_BOUNDARIES.md`: regla para que módulos nuevos queden extraíbles sin crear todavía repositorios, deployables ni bases separadas.
 - `docs/plans/`: diseños y planes previos de trabajo.
 - `docs/registro/README.md`: reglas para registrar cambios y decisiones importantes en `docs/`.
 - `docs/registro/cambios/`: historial de cambios importantes.
@@ -69,4 +80,4 @@
 ## Contexto mínimo
 - Stack: Django + MySQL con despliegue vía Docker Compose. Evidencia: README.md:1-4 y docker-compose.yml:1-34.
 - Variables de entorno documentadas en `.env.example` (incluye DB, GESTIONAR, RENAPER, puertos y dominio). Evidencia: .env.example:1-51.
-- Servicios externos activos: GESTIONAR (sincronización de comedores/relevamientos) y RENAPER (consulta de ciudadanos). Evidencia: comedores/tasks.py:11-125, relevamientos/tasks.py:13-85, centrodefamilia/services/consulta_renaper.py:13-170.
+- Servicios externos activos: GESTIONAR (sincronización de comedores/relevamientos) y RENAPER (consulta de ciudadanos). Evidencia: comedores/tasks.py, relevamientos/tasks.py, core/integrations/renaper.py, core/services/renaper.py.

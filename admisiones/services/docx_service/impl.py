@@ -184,7 +184,11 @@ class AdmisionesContextService:
     @staticmethod
     def preparar_contexto_informe_tecnico(informe):
         from ...utils import generar_texto_comidas
+        from ...services.informe_tecnico_variables_service import (
+            InformeTecnicoVariablesDocumentalesService,
+        )
 
+        InformeTecnicoVariablesDocumentalesService.enriquecer_informe(informe)
         prestaciones = AdmisionesContextService._generar_prestaciones_semanales(informe)
         texto_comidas_raw = generar_texto_comidas(informe)
         texto_comidas_clean = {}
@@ -221,6 +225,34 @@ class AdmisionesContextService:
             "total_meriendas": sum(p["merienda"] for p in prestaciones),
             "total_cenas": sum(p["cena"] for p in prestaciones),
             "conclusiones": getattr(informe, "conclusiones", ""),
+            "criterio_seleccionado": getattr(
+                informe,
+                "get_criterio_seleccionado_display",
+                lambda: getattr(informe, "criterio_seleccionado", ""),
+            )(),
+            "antecedentes_renovaciones": getattr(
+                informe, "antecedentes_renovaciones", ""
+            ),
+            "finalizacion_convenio_pnud_vigente": getattr(
+                informe, "finalizacion_convenio_pnud_vigente", None
+            ),
+            "acreditaciones_ultimo_convenio": getattr(
+                informe, "acreditaciones_ultimo_convenio", None
+            ),
+            "monto_total_conveniado_informe": getattr(
+                informe, "monto_total_conveniado_informe", None
+            ),
+            "monto_total_conveniado": getattr(informe, "monto_total_conveniado", None),
+            "expediente_incorporacion": getattr(
+                informe, "expediente_incorporacion", ""
+            ),
+            "convenio_incorporacion": getattr(informe, "convenio_incorporacion", ""),
+            "presentacion_avales": getattr(informe, "presentacion_avales", None),
+            "informe_tecnico_complementario_modificacion_prestaciones": getattr(
+                informe,
+                "informe_tecnico_complementario_modificacion_prestaciones",
+                None,
+            ),
         }
 
     @staticmethod

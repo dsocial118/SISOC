@@ -1,6 +1,7 @@
 # QA - Notas iniciales de migracion
 
-Estado: actualizado con inventario operativo, corte 2026-07-13.
+Estado: actualizado con inventario operativo y retiro Stage 2 del MySQL local,
+corte 2026-07-21.
 
 Estas notas no autorizan una migracion. La fuente canonica confirmada es
 `qa-old`; AWS queda como referencia de destino futuro y fuera de alcance actual.
@@ -11,8 +12,8 @@ Estas notas no autorizan una migracion. La fuente canonica confirmada es
    migracion.
 2. Inventariar la DB autoritativa actual en `10.80.9.18` sin mostrar credenciales.
 3. Confirmar backup actual, retencion y restore probado.
-4. Obtener firewall/ACL efectivos y decidir la conservacion del MySQL local ya
-   inventariado antes de Stage 2.
+4. Obtener firewall/ACL efectivos. El MySQL local heredado fue retirado en
+   Stage 2; no incluirlo como fuente de datos ni como activo a migrar.
 5. Acordar si el destino mantiene SITE/DB separados.
 6. Congelar una ventana de cambios y un commit fuente.
 
@@ -211,10 +212,9 @@ destino, devolver trafico al QA viejo y preservar logs/evidencia para diagnostic
 
 1. Inventario del destino cuando se active la migracion AWS u otra.
 2. Tamanio, consistencia y backup de la DB `10.80.9.18`.
-3. Decision de conservacion o borrado del MySQL local despues del 2026-07-20.
-4. Backup vigente y restore probado.
-5. Crontab de root.
-6. Firewall/ACL efectivos.
-7. Owner de puertos 10000/10050.
-8. Politica de DNS/TLS para QA.
-9. Ventana y responsable de aprobar los side effects automaticos del entrypoint.
+3. Backup vigente y restore probado.
+4. Crontab de root.
+5. Firewall/ACL efectivos.
+6. Owner de puertos 10000/10050.
+7. Politica de DNS/TLS para QA.
+8. Ventana y responsable de aprobar los side effects automaticos del entrypoint.

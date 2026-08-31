@@ -226,10 +226,28 @@
                         <div class="form-group row">
                             <div class="col-md-6">
                                 {{ form.fecha_vencimiento|as_crispy_field }}
+                                {{ form.sin_vencimiento|as_crispy_field }}
                                 <span class="field-tooltip">
                                     <i class="fas fa-info-circle"></i>
                                     <span class="tooltip-text">Fecha de vencimiento del convenio o acuerdo</span>
                                 </span>
+                            </div>
+                            <div class="col-md-6 d-flex">
+                                {{ form.codigos_proyecto }}
+                                <div class="border rounded p-3 w-100">
+                                    <div class="d-flex align-items-center justify-content-between gap-2 mb-3">
+                                        <label class="form-label fw-bold mb-0">Códigos de Proyecto</label>
+                                        <button type="button"
+                                                class="btn btn-primary btn-sm"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#modalAgregarProyecto">
+                                            <i class="fas fa-plus me-1"></i> Agregar proyecto
+                                        </button>
+                                    </div>
+                                    <div id="proyectos-listado" class="list-group"></div>
+                                    <p id="proyectos-vacio" class="text-muted mb-0 py-2">No hay proyectos agregados.</p>
+                                    {% for error in form.codigos_proyecto.errors %}<div class="text-danger small mt-2">{{ error }}</div>{% endfor %}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -259,6 +277,38 @@
                     </div>
                 </div>
             </form>
+
+            <div class="modal fade"
+                 id="modalAgregarProyecto"
+                 tabindex="-1"
+                 aria-labelledby="modalAgregarProyectoLabel"
+                 aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="modalAgregarProyectoLabel">Agregar proyecto</h5>
+                            <button type="button"
+                                    class="btn-close"
+                                    data-bs-dismiss="modal"
+                                    aria-label="Cerrar"></button>
+                        </div>
+                        <div class="modal-body">
+                            <label for="nuevo-codigo-proyecto" class="form-label">Código del proyecto</label>
+                            <input type="text"
+                                   id="nuevo-codigo-proyecto"
+                                   class="form-control"
+                                   maxlength="255"
+                                   autocomplete="off" />
+                            <div id="nuevo-codigo-proyecto-error"
+                                 class="text-danger small mt-2 d-none"></div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="button" class="btn btn-primary" id="agregarProyectoBtn">Agregar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             <!-- Modal: confirmacion de cambio de Tipo de Entidad -->
             <div class="modal fade"
@@ -329,8 +379,81 @@
         var hiddenConfirmado = document.getElementById("id_cuil_duplicado_confirmado");
         var hiddenConfirmadoValor = document.getElementById("id_cuil_duplicado_confirmado_valor");
         var submitBtn = document.querySelector('#organizacionForm button[type="submit"]');
+        var proyectosInput = document.getElementById("id_codigos_proyecto");
+        var proyectosListado = document.getElementById("proyectos-listado");
+        var proyectosVacio = document.getElementById("proyectos-vacio");
+        var proyectoNuevoInput = document.getElementById("nuevo-codigo-proyecto");
+        var proyectoNuevoError = document.getElementById("nuevo-codigo-proyecto-error");
+        var agregarProyectoBtn = document.getElementById("agregarProyectoBtn");
+        var modalAgregarProyectoEl = document.getElementById("modalAgregarProyecto");
         var debounceTimer = null;
         var requestSeq = 0;
+
+        function proyectosActuales() {
+            return (proyectosInput.value || "").split(",").map(function (codigo) {
+                return codigo.trim();
+            }).filter(Boolean);
+        }
+
+        function renderProyectos(codigos) {
+            proyectosInput.value = codigos.join(", ");
+            proyectosListado.innerHTML = "";
+            proyectosVacio.classList.toggle("d-none", codigos.length > 0);
+            codigos.forEach(function (codigo, index) {
+                var item = document.createElement("span");
+                item.className = "list-group-item d-flex align-items-center justify-content-between gap-3";
+                var texto = document.createElement("span");
+                texto.className = "text-break fw-semibold";
+                texto.appendChild(document.createTextNode(codigo));
+                item.appendChild(texto);
+                var eliminar = document.createElement("button");
+                eliminar.type = "button";
+                eliminar.className = "btn btn-outline-danger btn-sm flex-shrink-0";
+                eliminar.setAttribute("aria-label", "Eliminar proyecto " + codigo);
+                eliminar.innerHTML = '<i class="fas fa-times"></i>';
+                eliminar.addEventListener("click", function () {
+                    var actualizados = proyectosActuales();
+                    actualizados.splice(index, 1);
+                    renderProyectos(actualizados);
+                });
+                item.appendChild(eliminar);
+                proyectosListado.appendChild(item);
+            });
+        }
+
+        if (proyectosInput && agregarProyectoBtn && modalAgregarProyectoEl) {
+            renderProyectos(proyectosActuales());
+            var modalAgregarProyecto = bootstrap.Modal.getOrCreateInstance(modalAgregarProyectoEl);
+            agregarProyectoBtn.addEventListener("click", function () {
+                var codigo = proyectoNuevoInput.value.trim();
+                var codigos = proyectosActuales();
+                proyectoNuevoError.classList.add("d-none");
+                if (!codigo) {
+                    proyectoNuevoError.textContent = "Ingresá un código de proyecto.";
+                    proyectoNuevoError.classList.remove("d-none");
+                    return;
+                }
+                if (codigos.some(function (actual) { return actual.toLowerCase() === codigo.toLowerCase(); })) {
+                    proyectoNuevoError.textContent = "El proyecto ya fue agregado.";
+                    proyectoNuevoError.classList.remove("d-none");
+                    return;
+                }
+                codigos.push(codigo);
+                renderProyectos(codigos);
+                proyectoNuevoInput.value = "";
+                modalAgregarProyecto.hide();
+            });
+            modalAgregarProyectoEl.addEventListener("shown.bs.modal", function () {
+                proyectoNuevoError.classList.add("d-none");
+                proyectoNuevoInput.focus();
+            });
+            proyectoNuevoInput.addEventListener("keydown", function (event) {
+                if (event.key === "Enter") {
+                    event.preventDefault();
+                    agregarProyectoBtn.click();
+                }
+            });
+        }
 
         if (tipoEntidadInput && tipoEntidadWarning) {
             tipoEntidadInput.addEventListener("change", function () {

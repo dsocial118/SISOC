@@ -1,6 +1,8 @@
 from django.contrib.auth.decorators import login_required
 from django.urls import path
 
+from core.decorators import permissions_any_required
+
 from ciudadanos.views import (
     CiudadanosCreateView,
     CiudadanosDeleteView,
@@ -93,7 +95,9 @@ urlpatterns = [
     path(
         # TODO: Migrar a router DRF (estilo centrodefamilia).
         "api/ciudadanos/buscar/",
-        login_required(buscar_ciudadanos),
+        login_required(
+            permissions_any_required(["ciudadanos.view_ciudadano"])(buscar_ciudadanos)
+        ),
         name="api_buscar_ciudadanos",
     ),
     path(

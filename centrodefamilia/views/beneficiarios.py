@@ -7,6 +7,7 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 
 from centrodefamilia.forms import BeneficiarioForm, ResponsableForm
 from centrodefamilia.models import Beneficiario, Responsable
+from centrodefamilia.views.beneficiarios_export import BeneficiariosExportView
 
 from centrodefamilia.services.beneficiarios_service import (
     manejar_request_beneficiarios,
@@ -72,6 +73,11 @@ class BeneficiariosListView(LoginRequiredMixin, ListView):
                 "filters_config": get_beneficiarios_filters_ui_config(),
                 "seccion_filtros_favoritos": SeccionesFiltrosFavoritos.CDF_BENEFICIARIOS,
                 "add_text": "Crear un nuevo Preinscripto",
+                # `firstof` en search_bar.html renderiza el valor como texto:
+                # se pasa la lista de permisos separada por comas.
+                "export_permissions": ",".join(
+                    BeneficiariosExportView.export_permission_codes
+                ),
             }
         )
         return context

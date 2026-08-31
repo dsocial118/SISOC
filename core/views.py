@@ -45,7 +45,6 @@ from core.services.favorite_filters import (
     obtener_configuracion_seccion,
     obtener_items_obsoletos,
 )
-from organizaciones.models import Organizacion
 from historial.services.historial_service import HistorialService
 from users.territorial_scope import get_geography_scope_map
 
@@ -94,30 +93,6 @@ def load_localidad(request):
         localidades = Localidad.objects.none()
 
     return JsonResponse(list(localidades.values("id", "nombre")), safe=False)
-
-
-@login_required
-@require_GET
-def load_organizaciones(request):
-    """Carga organizaciones con búsqueda para Select2."""
-    busqueda = request.GET.get("q", "").strip()
-    pagina = int(request.GET.get("page", 1))
-    tamano_pagina = 30
-
-    organizaciones = Organizacion.objects.all().order_by("nombre")
-
-    if busqueda:
-        organizaciones = organizaciones.filter(nombre__icontains=busqueda)
-
-    # Paginación
-    inicio = (pagina - 1) * tamano_pagina
-    fin = inicio + tamano_pagina
-    total = organizaciones.count()
-    organizaciones_pagina = organizaciones[inicio:fin]
-
-    resultados = [{"id": org.id, "text": org.nombre} for org in organizaciones_pagina]
-
-    return JsonResponse({"results": resultados, "pagination": {"more": fin < total}})
 
 
 def _parsear_datos_request(request):

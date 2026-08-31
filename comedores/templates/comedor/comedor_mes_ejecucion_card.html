@@ -25,7 +25,7 @@
                     A&ntilde;o: <strong>{{ expediente.ano|default:"Sin informaci&oacute;n" }}</strong>
                 </p>
                 <p class="mb-0 fs-7">
-                    Mes de ejecuci&oacute;n: <strong>{{ expediente.mes_convenio|default:"Sin informaci&oacute;n" }}</strong>
+                    Mes de ejecuci&oacute;n: <strong>{{ mes_ejecucion_resumen.mes_ejecucion|default_if_none:"Sin informaci&oacute;n" }}</strong>
                 </p>
             {% endwith %}
         {% else %}

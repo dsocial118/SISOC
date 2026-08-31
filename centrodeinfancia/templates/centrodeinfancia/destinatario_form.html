@@ -389,6 +389,10 @@
                         </div>
                         <div class="form-group row">
                             <div class="col-md-3">{{ form.provincia_domicilio|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.departamento|as_crispy_field }}</div>
+                            <div class="col-md-2">{{ form.decil_ipi|as_crispy_field }}</div>
+                        </div>
+                        <div class="form-group row">
                             <div class="col-md-3">{{ form.municipio_domicilio|as_crispy_field }}</div>
                             <div class="col-md-3">{{ form.localidad_domicilio|as_crispy_field }}</div>
                             <div class="col-md-3">{{ form.convivientes|as_crispy_field }}</div>
@@ -457,12 +461,14 @@
                         <div id="bloque-discapacidad">
                             <div class="form-group row">
                                 <div class="col-md-6">{{ form.tipo_discapacidad|as_crispy_field }}</div>
-                                <div class="col-md-4">{{ form.recibe_apoyo_discapacidad|as_crispy_field }}</div>
                             </div>
                             <div class="form-group row">
                                 <div class="col-md-3">{{ form.posee_cud|as_crispy_field }}</div>
                                 <div class="col-md-3" id="row-numero-cud">{{ form.numero_cud|as_crispy_field }}</div>
                             </div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-4">{{ form.recibe_apoyo_desarrollo|as_crispy_field }}</div>
                         </div>
                     </div>
                 </div>
@@ -493,7 +499,6 @@
                             <div class="col-md-3">{{ form.cobertura_salud|as_crispy_field }}</div>
                             <div class="col-md-3">{{ form.controles_sanitarios_ultimo_anio|as_crispy_field }}</div>
                             <div class="col-md-3">{{ form.calendario_vacunacion_al_dia|as_crispy_field }}</div>
-                            <div class="col-md-3">{{ form.posee_obra_social|as_crispy_field }}</div>
                         </div>
                         <div class="form-group row">
                             <div class="col-md-3">{{ form.talla|as_crispy_field }}</div>
@@ -528,9 +533,6 @@
                     <div class="section-body collapse show" id="section-nutricion">
                         <div class="form-group row">
                             <div class="col-md-3">{{ form.lactancia|as_crispy_field }}</div>
-                            <div class="col-md-3">{{ form.diagnostico_peso|as_crispy_field }}</div>
-                            <div class="col-md-3">{{ form.diagnostico_talla|as_crispy_field }}</div>
-                            <div class="col-md-3">{{ form.orientacion_msal|as_crispy_field }}</div>
                         </div>
                         <div class="form-group row">
                             <div class="col-md-6">{{ form.alergias_alimentarias|as_crispy_field }}</div>
@@ -546,7 +548,7 @@
                     </div>
                 </div>
 
-                {# ── 10. Vacunación NOMIVAC + Desarrollo Infantil ──────── #}
+                {# ── 10. Vacunación NOMIVAC ────────────────────────────── #}
                 <div class="section-card" data-section="vacunacion">
                     <div class="section-header" data-toggle-section="vacunacion">
                         <div class="section-header-left">
@@ -554,8 +556,8 @@
                                 <i class="fas fa-syringe"></i>
                             </div>
                             <div class="section-title-group">
-                                <h3 class="section-title">Vacunación NOMIVAC y Desarrollo Infantil</h3>
-                                <p class="section-subtitle">Plan de vacunación obligatorio y apoyo al desarrollo</p>
+                                <h3 class="section-title">Vacunación NOMIVAC</h3>
+                                <p class="section-subtitle">Plan de vacunación obligatorio</p>
                             </div>
                         </div>
                         <div class="section-status">
@@ -651,10 +653,6 @@
                                 </tbody>
                             </table>
                         </div>
-                        <hr style="border-color:#374151" />
-                        <div class="form-group row">
-                            <div class="col-md-4">{{ form.recibe_apoyo_desarrollo|as_crispy_field }}</div>
-                        </div>
                     </div>
                 </div>
 
@@ -710,6 +708,7 @@
     <script nonce="{{ request.csp_nonce }}">
         window.ajaxLoadMunicipiosUrl  = "{% url 'ajax_load_municipios' %}";
         window.ajaxLoadLocalidadesUrl = "{% url 'ajax_load_localidades' %}";
+        window.ajaxLoadDepartamentosIpiUrl = "{% url 'centrodeinfancia_ajax_load_departamentos_ipi' %}";
     </script>
     <script src="{% static 'custom/js/destinatarioForm.js' %}"
             nonce="{{ request.csp_nonce }}"></script>

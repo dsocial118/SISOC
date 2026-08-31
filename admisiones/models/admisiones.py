@@ -34,6 +34,22 @@ class TipoConvenio(models.Model):
 
 
 class Admision(models.Model):
+    RESPUESTA_SI_NO = [
+        ("si", "Sí"),
+        ("no", "No"),
+    ]
+    ESTADO_CONVENIO_PNUD = [
+        ("vigente", "Vigente"),
+        ("finalizado", "Finalizado"),
+    ]
+    TIPO_RENOVACION = [
+        ("primera", "Primera renovación"),
+        ("segunda_o_posterior", "Segunda renovación o posterior"),
+    ]
+    ESTADO_FINANCIAMIENTO = [
+        ("vigente", "Financiamiento vigente"),
+        ("finalizado", "Financiamiento finalizado"),
+    ]
     ESTADOS_LEGALES = [
         ("Enviado a Legales", "Enviado a Legales"),
         ("A Rectificar", "A Rectificar"),
@@ -132,9 +148,44 @@ class Admision(models.Model):
             " aceptacion de divergencia)."
         ),
     )
+    es_ex_pnud = models.CharField(
+        max_length=2,
+        choices=RESPUESTA_SI_NO,
+        null=True,
+        blank=True,
+        verbose_name="¿Es Ex PNUD?",
+    )
+    estado_convenio_pnud = models.CharField(
+        max_length=12,
+        choices=ESTADO_CONVENIO_PNUD,
+        null=True,
+        blank=True,
+        verbose_name="Estado del convenio PNUD",
+    )
+    tipo_renovacion = models.CharField(
+        max_length=22,
+        choices=TIPO_RENOVACION,
+        null=True,
+        blank=True,
+        verbose_name="Renovación que tramita",
+    )
+    estado_financiamiento = models.CharField(
+        max_length=12,
+        choices=ESTADO_FINANCIAMIENTO,
+        null=True,
+        blank=True,
+        verbose_name="Estado del financiamiento",
+    )
+    informe_complementario_modifica_prestaciones = models.CharField(
+        max_length=2,
+        choices=RESPUESTA_SI_NO,
+        null=True,
+        blank=True,
+        verbose_name="¿Se realizó Informe Complementario para modificar prestaciones?",
+    )
     num_expediente = models.CharField(max_length=255, blank=True, null=True)
     num_if = models.CharField(max_length=100, blank=True, null=True)
-    legales_num_if = models.CharField(max_length=100, blank=True, null=True)
+    legales_num_if = models.CharField(max_length=255, blank=True, null=True)
     creado = models.DateField(auto_now_add=True, null=True, blank=True)
     modificado = models.DateField(auto_now=True, null=True, blank=True)
     enviado_legales = models.BooleanField(
@@ -398,6 +449,11 @@ class ArchivoAdmision(SoftDeleteModelMixin, models.Model):
 
 
 class InformeTecnico(models.Model):
+    CRITERIOS = [
+        ("A", "A - Coincidencia"),
+        ("B", "B - Solicitud Menor"),
+        ("C", "C - Solicitud Mayor"),
+    ]
     ESTADOS = [
         ("Iniciado", "Iniciado"),
         ("Para revision", "Para revisión"),
@@ -552,6 +608,57 @@ class InformeTecnico(models.Model):
         "IF de relevamiento territorial", max_length=255
     )
     conclusiones = models.TextField("Aplicación de Criterios", null=True, blank=True)
+    criterio_seleccionado = models.CharField(
+        "Criterio seleccionado",
+        max_length=1,
+        choices=CRITERIOS,
+        null=True,
+        blank=True,
+    )
+    antecedentes_renovaciones = models.JSONField(default=list, blank=True)
+    finalizacion_convenio_pnud_vigente = models.DateField(
+        "Finalización de Convenio PNUD Vigente", null=True, blank=True
+    )
+    acreditaciones_ultimo_convenio = models.PositiveIntegerField(
+        "Acreditaciones realizadas último convenio", null=True, blank=True
+    )
+    monto_total_conveniado_informe = models.DecimalField(
+        "Monto total conveniado al momento del informe",
+        max_digits=15,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(0)],
+    )
+    monto_total_conveniado = models.DecimalField(
+        "Monto total conveniado",
+        max_digits=15,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(0)],
+    )
+    expediente_incorporacion = models.CharField(
+        "Expediente de Incorporación", max_length=255, null=True, blank=True
+    )
+    convenio_incorporacion = models.CharField(
+        "Convenio de Incorporación", max_length=255, null=True, blank=True
+    )
+    presentacion_avales = models.CharField(
+        "Presentación de Avales", max_length=255, null=True, blank=True
+    )
+    informe_tecnico_complementario_modificacion_prestaciones = models.CharField(
+        "Informe Técnico Complementario - Modificación de Prestaciones",
+        max_length=255,
+        null=True,
+        blank=True,
+    )
+    if_it_complementario = models.CharField(
+        "IF IT Complementario",
+        max_length=255,
+        null=True,
+        blank=True,
+    )
     observaciones_subsanacion = models.TextField(
         "Observaciones de Subsanación",
         null=True,
@@ -1050,6 +1157,20 @@ class InformeTecnicoPDF(models.Model):
         blank=True,
         help_text="DOCX editado por el técnico",
     )
+    plantilla_informe_tecnico = models.ForeignKey(
+        "PlantillaInformeTecnico",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="documentos_generados",
+    )
+    version_plantilla_informe_tecnico = models.ForeignKey(
+        "PlantillaInformeTecnicoVersion",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="documentos_generados",
+    )
     creado = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -1307,3 +1428,420 @@ class AdmisionDocOrgSnapshot(models.Model):
 
     def __str__(self):
         return f"Admision #{self.admision_id} - {self.etiqueta or self.slot_key}"
+
+
+class PlantillaInformeTecnico(models.Model):
+    """Identidad funcional de una combinación de condiciones de admisión.
+
+    Las condiciones pertenecen a la plantilla lógica y no a sus versiones: si
+    cambian, se debe crear otra plantilla. El contenido se versiona en
+    ``PlantillaInformeTecnicoVersion``.
+    """
+
+    ESTADOS = [
+        ("activa", "Activa"),
+        ("inactiva", "Inactiva"),
+        ("eliminada", "Eliminada lógicamente"),
+    ]
+
+    codigo = models.CharField(max_length=20, unique=True, null=True, blank=True)
+    nombre = models.CharField(max_length=255)
+    descripcion = models.TextField(blank=True)
+    tipo_admision = models.CharField(max_length=20, choices=Admision.TIPO_ADMISION)
+    tipo_convenio = models.ForeignKey(TipoConvenio, on_delete=models.PROTECT)
+    es_ex_pnud = models.CharField(
+        max_length=2,
+        choices=Admision.RESPUESTA_SI_NO,
+        null=True,
+        blank=True,
+    )
+    estado_convenio_pnud = models.CharField(
+        max_length=12,
+        choices=Admision.ESTADO_CONVENIO_PNUD,
+        null=True,
+        blank=True,
+    )
+    tipo_renovacion = models.CharField(
+        max_length=22,
+        choices=Admision.TIPO_RENOVACION,
+        null=True,
+        blank=True,
+    )
+    estado_financiamiento = models.CharField(
+        max_length=12,
+        choices=Admision.ESTADO_FINANCIAMIENTO,
+        null=True,
+        blank=True,
+    )
+    informe_complementario_modifica_prestaciones = models.CharField(
+        max_length=2,
+        choices=Admision.RESPUESTA_SI_NO,
+        null=True,
+        blank=True,
+    )
+    estado = models.CharField(max_length=12, choices=ESTADOS, default="activa")
+    creado = models.DateTimeField(auto_now_add=True)
+    modificado = models.DateTimeField(auto_now=True)
+    creado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="plantillas_informe_tecnico_creadas",
+    )
+    modificado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="plantillas_informe_tecnico_modificadas",
+    )
+
+    class Meta:
+        permissions = [
+            (
+                "gestionar_templates_informe_tecnico",
+                "Puede gestionar templates de Informes Técnicos",
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["tipo_admision", "tipo_convenio", "estado"]),
+        ]
+        verbose_name = "plantilla de Informe Técnico"
+        verbose_name_plural = "plantillas de Informes Técnicos"
+
+    def __str__(self):
+        return f"{self.codigo or 'Sin código'} - {self.nombre}"
+
+    def clean(self):
+        errores = {}
+        if self.tipo_admision == "incorporacion":
+            if not self.es_ex_pnud:
+                errores["es_ex_pnud"] = "Debe indicar si la admisión es Ex PNUD."
+            if self.es_ex_pnud == "si" and not self.estado_convenio_pnud:
+                errores["estado_convenio_pnud"] = (
+                    "Debe indicar el estado del convenio PNUD."
+                )
+            if self.es_ex_pnud == "no" and self.estado_convenio_pnud:
+                errores["estado_convenio_pnud"] = (
+                    "No corresponde informar un convenio PNUD cuando no es Ex PNUD."
+                )
+            if (
+                self.tipo_renovacion
+                or self.estado_financiamiento
+                or self.informe_complementario_modifica_prestaciones
+            ):
+                errores["tipo_renovacion"] = (
+                    "Las condiciones de renovación no aplican a una incorporación."
+                )
+        elif self.tipo_admision == "renovacion":
+            if not self.tipo_renovacion:
+                errores["tipo_renovacion"] = "Debe indicar la renovación que tramita."
+            if not self.estado_financiamiento:
+                errores["estado_financiamiento"] = (
+                    "Debe indicar el estado del financiamiento."
+                )
+            if not self.informe_complementario_modifica_prestaciones:
+                errores["informe_complementario_modifica_prestaciones"] = (
+                    "Debe indicar si se realizó un Informe Complementario para modificar prestaciones."
+                )
+            if self.es_ex_pnud or self.estado_convenio_pnud:
+                errores["es_ex_pnud"] = (
+                    "Las condiciones PNUD no aplican a una renovación."
+                )
+        if errores:
+            raise ValidationError(errores)
+
+    @property
+    def clave_condiciones(self):
+        """Clave estable para la selección y la unicidad de publicación."""
+
+        return self.construir_clave_condiciones(
+            tipo_admision=self.tipo_admision,
+            tipo_convenio_id=self.tipo_convenio_id,
+            es_ex_pnud=self.es_ex_pnud,
+            estado_convenio_pnud=self.estado_convenio_pnud,
+            tipo_renovacion=self.tipo_renovacion,
+            estado_financiamiento=self.estado_financiamiento,
+            informe_complementario_modifica_prestaciones=self.informe_complementario_modifica_prestaciones,
+        )
+
+    @staticmethod
+    def construir_clave_condiciones(
+        *,
+        tipo_admision,
+        tipo_convenio_id,
+        es_ex_pnud=None,
+        estado_convenio_pnud=None,
+        tipo_renovacion=None,
+        estado_financiamiento=None,
+        informe_complementario_modifica_prestaciones=None,
+    ):
+        if tipo_admision == "incorporacion":
+            return "|".join(
+                (
+                    "incorporacion",
+                    f"convenio:{tipo_convenio_id}",
+                    f"ex_pnud:{es_ex_pnud}",
+                    f"estado_pnud:{estado_convenio_pnud or '-'}",
+                )
+            )
+        return "|".join(
+            (
+                "renovacion",
+                f"convenio:{tipo_convenio_id}",
+                f"renovacion:{tipo_renovacion}",
+                f"financiamiento:{estado_financiamiento}",
+                f"informe_complementario:{informe_complementario_modifica_prestaciones}",
+            )
+        )
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        if not self.codigo:
+            self.codigo = f"IT-{self.pk:06d}"
+            super().save(update_fields=["codigo"])
+
+
+class PlantillaInformeTecnicoVersion(models.Model):
+    ESTADOS = [
+        ("borrador", "Borrador"),
+        ("publicada", "Publicada"),
+        ("inactiva", "Inactiva"),
+        ("eliminada", "Eliminada lógicamente"),
+    ]
+
+    plantilla = models.ForeignKey(
+        PlantillaInformeTecnico,
+        on_delete=models.CASCADE,
+        related_name="versiones",
+    )
+    numero = models.PositiveIntegerField()
+    contenido_html = models.TextField(blank=True)
+    observaciones = models.TextField(blank=True)
+    estado = models.CharField(max_length=12, choices=ESTADOS, default="borrador")
+    creado = models.DateTimeField(auto_now_add=True)
+    modificado = models.DateTimeField(auto_now=True)
+    creado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="versiones_plantilla_informe_tecnico_creadas",
+    )
+    publicado = models.DateTimeField(null=True, blank=True)
+    publicado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="versiones_plantilla_informe_tecnico_publicadas",
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["plantilla", "numero"],
+                name="unq_plantilla_informe_tecnico_version",
+            )
+        ]
+        indexes = [models.Index(fields=["plantilla", "estado"])]
+        ordering = ["-numero"]
+        verbose_name = "versión de plantilla de Informe Técnico"
+        verbose_name_plural = "versiones de plantillas de Informes Técnicos"
+
+    def __str__(self):
+        return f"{self.plantilla.codigo} - v{self.numero}"
+
+
+class VariableTemplateInformeTecnico(models.Model):
+    """Variable disponible para construir el contenido de un template.
+
+    ``codigo`` guarda la expresión sin delimitadores de Django, por ejemplo
+    ``informe.nombre_organizacion``. El catálogo no inventa datos: sólo expone
+    valores que el contexto de generación del Informe Técnico ya resuelve.
+    """
+
+    codigo = models.CharField(max_length=255, unique=True)
+    nombre = models.CharField(max_length=255)
+    categoria = models.CharField(max_length=100)
+    descripcion = models.TextField(blank=True)
+    orden = models.PositiveIntegerField(default=0)
+    activo = models.BooleanField(default=True)
+    creado = models.DateTimeField(auto_now_add=True)
+    modificado = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["categoria", "orden", "nombre", "codigo"]
+        indexes = [
+            models.Index(fields=["activo", "categoria"]),
+        ]
+        verbose_name = "variable de template de Informe Técnico"
+        verbose_name_plural = "variables de templates de Informes Técnicos"
+
+    def __str__(self):
+        return f"{self.nombre} ({self.codigo})"
+
+    @property
+    def token(self):
+        return "{{ " + self.codigo + " }}"
+
+
+class PlantillaInformeTecnicoPublicacion(models.Model):
+    """Índice transaccional de la versión vigente por combinación.
+
+    MySQL no aplica restricciones únicas condicionales. Esta tabla conserva una
+    fila por combinación publicada y su clave única evita carreras entre dos
+    publicaciones simultáneas.
+    """
+
+    clave_condiciones = models.CharField(max_length=255, unique=True)
+    plantilla = models.OneToOneField(
+        PlantillaInformeTecnico,
+        on_delete=models.CASCADE,
+        related_name="publicacion_vigente",
+    )
+    version = models.OneToOneField(
+        PlantillaInformeTecnicoVersion,
+        on_delete=models.PROTECT,
+        related_name="publicacion",
+    )
+    publicada = models.DateTimeField(auto_now_add=True)
+    publicada_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="publicaciones_plantilla_informe_tecnico",
+    )
+
+    class Meta:
+        verbose_name = "publicación de plantilla de Informe Técnico"
+        verbose_name_plural = "publicaciones de plantillas de Informes Técnicos"
+
+    def __str__(self):
+        return f"{self.plantilla.codigo} - v{self.version.numero}"
+
+
+class IncidenciaTemplateInformeTecnico(models.Model):
+    """Agrupa los reportes de una combinación sin template publicado."""
+
+    ESTADOS = [
+        ("pendiente", "Pendiente"),
+        ("en_analisis", "En análisis"),
+        ("resuelta", "Resuelta"),
+        ("descartada", "Descartada"),
+    ]
+    ESTADOS_ABIERTOS = {"pendiente", "en_analisis"}
+
+    codigo = models.CharField(max_length=24, unique=True, null=True, blank=True)
+    clave_condiciones = models.CharField(max_length=255, db_index=True)
+    clave_abierta = models.CharField(max_length=255, unique=True, null=True, blank=True)
+    condiciones = models.JSONField(default=dict)
+    estado = models.CharField(max_length=14, choices=ESTADOS, default="pendiente")
+    cantidad_casos = models.PositiveIntegerField(default=0)
+    primera_fecha = models.DateTimeField(auto_now_add=True)
+    ultima_fecha = models.DateTimeField(auto_now=True)
+    observaciones = models.TextField(blank=True)
+    plantilla = models.ForeignKey(
+        PlantillaInformeTecnico,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="incidencias_vinculadas",
+    )
+    incidencia_anterior = models.ForeignKey(
+        "self",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="reincidencias",
+    )
+    creado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="incidencias_templates_informe_tecnico_creadas",
+    )
+    modificado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="incidencias_templates_informe_tecnico_modificadas",
+    )
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["estado", "ultima_fecha"]),
+            models.Index(fields=["clave_condiciones", "ultima_fecha"]),
+        ]
+        ordering = ["-ultima_fecha", "-id"]
+        verbose_name = "incidencia de template de Informe Técnico"
+        verbose_name_plural = "incidencias de templates de Informes Técnicos"
+
+    def __str__(self):
+        return f"{self.codigo or 'Sin código'} - {self.get_estado_display()}"
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        if not self.codigo:
+            self.codigo = f"INC-IT-{self.pk:06d}"
+            super().save(update_fields=["codigo"])
+
+
+class IncidenciaTemplateInformeTecnicoCaso(models.Model):
+    """Caso individual reportado dentro de una incidencia agrupada."""
+
+    incidencia = models.ForeignKey(
+        IncidenciaTemplateInformeTecnico,
+        on_delete=models.CASCADE,
+        related_name="casos",
+    )
+    referencia_caso = models.CharField(max_length=80)
+    admision = models.ForeignKey(
+        Admision,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="incidencias_templates_informe_tecnico",
+    )
+    admision_id_reportada = models.PositiveIntegerField()
+    informe = models.ForeignKey(
+        InformeTecnico,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="incidencias_templates",
+    )
+    informe_id_reportado = models.PositiveIntegerField(null=True, blank=True)
+    comedor_nombre = models.CharField(max_length=255, blank=True)
+    organizacion_nombre = models.CharField(max_length=255, blank=True)
+    programa_nombre = models.CharField(max_length=255, blank=True)
+    estado_admision = models.CharField(max_length=64, blank=True)
+    detalle = models.JSONField(default=dict)
+    reportado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="reportes_incidencias_templates_informe_tecnico",
+    )
+    creado = models.DateTimeField(auto_now_add=True)
+    modificado = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["incidencia", "referencia_caso"],
+                name="unq_incidencia_template_caso_referencia",
+            )
+        ]
+        indexes = [models.Index(fields=["admision_id_reportada"])]
+        ordering = ["-creado", "-id"]
+        verbose_name = "caso de incidencia de template de Informe Técnico"
+        verbose_name_plural = "casos de incidencias de templates de Informes Técnicos"
+
+    def __str__(self):
+        return f"{self.incidencia.codigo} - admisión {self.admision_id_reportada}"

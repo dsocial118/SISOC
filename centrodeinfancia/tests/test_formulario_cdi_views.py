@@ -3,7 +3,7 @@ from datetime import date, timedelta
 import pytest
 from django.contrib.auth.models import Permission, User
 from django.http import Http404
-from django.test import RequestFactory
+from django.test import RequestFactory, override_settings
 from django.urls import reverse
 
 from centrodeinfancia.models import (
@@ -48,6 +48,7 @@ def _construir_payload_creacion_formulario(centro, **overrides):
         "nombre_completo_respondente": "Ana Perez",
         "nombre_cdi": centro.nombre,
         "codigo_cdi": centro.codigo_cdi,
+        "dias_funcionamiento": ["lunes"],
         "distribucion_salas-TOTAL_FORMS": "6",
         "distribucion_salas-INITIAL_FORMS": "0",
         "distribucion_salas-MIN_NUM_FORMS": "0",
@@ -116,6 +117,7 @@ def _construir_payload_edicion_formulario(formulario, **overrides):
         "email_respondente": formulario.email_respondente or "",
         "nombre_cdi": formulario.nombre_cdi or "",
         "codigo_cdi": formulario.codigo_cdi or "",
+        "dias_funcionamiento": formulario.dias_funcionamiento or [],
         "distribucion_salas-TOTAL_FORMS": "6",
         "distribucion_salas-INITIAL_FORMS": "6",
         "distribucion_salas-MIN_NUM_FORMS": "0",
@@ -205,6 +207,7 @@ def test_formulario_cdi_detalle_respeta_scope_por_provincia():
 
 
 @pytest.mark.django_db
+@override_settings(CDI_FORMULARIOS_VISIBLE=True)
 def test_detalle_cdi_muestra_solo_ultimos_tres_formularios(client):
     user = _crear_usuario("super-form-card", superuser=True)
     client.force_login(user)

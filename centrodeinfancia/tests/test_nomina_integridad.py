@@ -3,6 +3,8 @@ from importlib import import_module
 from pathlib import Path
 
 import pytest
+
+from centrodeinfancia.tests.test_destinatario_form import datos_validos
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
@@ -13,6 +15,7 @@ from django.urls import reverse
 from ciudadanos.models import Ciudadano
 from centrodeinfancia.forms import NominaCentroInfanciaCreateForm
 from centrodeinfancia.models import CentroDeInfancia, NominaCentroInfancia
+from centrodeinfancia.services import MOTIVO_NOMINA_DUPLICADA_MISMO_CENTRO
 from centrodeinfancia.views import NominaCentroInfanciaCreateView
 from core.models import Localidad, Municipio, Provincia, Sexo
 
@@ -43,7 +46,7 @@ def test_crear_nomina_con_bloqueo_evitar_duplicados():
             return NominaCentroInfancia(**self._attrs)
 
     with transaction.atomic():
-        creado_1 = NominaCentroInfanciaCreateView._crear_nomina_con_bloqueo(
+        creado_1, motivo_1 = NominaCentroInfanciaCreateView._crear_nomina_con_bloqueo(
             centro=centro,
             ciudadano=ciudadano,
             form=_FormStub(
@@ -55,7 +58,7 @@ def test_crear_nomina_con_bloqueo_evitar_duplicados():
         )
 
     with transaction.atomic():
-        creado_2 = NominaCentroInfanciaCreateView._crear_nomina_con_bloqueo(
+        creado_2, motivo_2 = NominaCentroInfanciaCreateView._crear_nomina_con_bloqueo(
             centro=centro,
             ciudadano=ciudadano,
             form=_FormStub(
@@ -67,7 +70,9 @@ def test_crear_nomina_con_bloqueo_evitar_duplicados():
         )
 
     assert creado_1 is True
+    assert motivo_1 is None
     assert creado_2 is False
+    assert motivo_2 == MOTIVO_NOMINA_DUPLICADA_MISMO_CENTRO
     assert (
         NominaCentroInfancia.objects.filter(
             centro=centro,
@@ -219,7 +224,7 @@ def test_create_view_precarga_fecha_renaper_desde_contrato_servicio(mocker):
     )
     request.user = user
     mock_obtener = mocker.patch(
-        "centrodeinfancia.views.ComedorService.obtener_datos_ciudadano_desde_renaper",
+        "centrodeinfancia.views.obtener_datos_ciudadano_desde_renaper",
         return_value={
             "success": True,
             "data": {
@@ -273,25 +278,24 @@ def test_create_view_crea_ficha_cdi_para_ciudadano_existente(client):
 
     response = client.post(
         reverse("centrodeinfancia_nomina_crear", kwargs={"pk": centro.pk}),
-        data={
-            "ciudadano_id": ciudadano.id,
-            "estado": NominaCentroInfancia.ESTADO_ACTIVO,
-            "dni": ciudadano.documento,
-            "apellido": ciudadano.apellido,
-            "nombre": ciudadano.nombre,
-            "fecha_nacimiento": "2020-04-02",
-            "sexo": sexo.sexo,
-            "sala": "Sala Roja",
-            "posee_cud": "false",
-            "posee_obra_social": "true",
-        },
+        data=datos_validos(
+            centro,
+            ciudadano_id=ciudadano.id,
+            estado=NominaCentroInfancia.ESTADO_ACTIVO,
+            dni=ciudadano.documento,
+            apellido=ciudadano.apellido,
+            nombre=ciudadano.nombre,
+            fecha_nacimiento="2020-04-02",
+            sexo=sexo.sexo,
+            sala="Sala Roja",
+            posee_cud="false",
+        ),
     )
 
     assert response.status_code == 302
     nomina = NominaCentroInfancia.objects.get(centro=centro, ciudadano=ciudadano)
     assert nomina.sala == "Sala Roja"
     assert nomina.posee_cud is False
-    assert nomina.posee_obra_social is True
 
 
 def test_nomina_crear_template_conserva_ajax_nativo_ubicacion():

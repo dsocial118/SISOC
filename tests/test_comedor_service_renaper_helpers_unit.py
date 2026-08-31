@@ -189,22 +189,26 @@ def test_match_geo_mapear_and_nacionalidad(mocker):
 
 
 def test_consultar_renaper_and_build_data(mocker):
-    mocker.patch(
+    consultar_mock = mocker.patch(
         "comedores.services.comedor_service.impl.consultar_datos_renaper",
         side_effect=[
-            {"success": False, "error": "x", "raw_response": {"coincidencias": 0}},
+            {"success": False, "error": "x", "error_type": "no_match"},
             {"success": True, "data": {"dni": "123"}},
         ],
     )
     ok = module.ComedorService._consultar_renaper_por_dni("123")
     assert ok["success"] is True
+    assert consultar_mock.call_args_list == [
+        mocker.call("123", "M"),
+        mocker.call("123", "F"),
+    ]
 
     mocker.patch(
         "comedores.services.comedor_service.impl.consultar_datos_renaper",
         side_effect=[
-            {"success": False, "error": "x", "raw_response": {"coincidencias": 0}},
-            {"success": False, "error": "y", "raw_response": {"coincidencias": 0}},
-            {"success": False, "error": "z", "raw_response": {"coincidencias": 0}},
+            {"success": False, "error": "x", "error_type": "no_match"},
+            {"success": False, "error": "y", "error_type": "no_match"},
+            {"success": False, "error": "z", "error_type": "no_match"},
         ],
     )
     fail = module.ComedorService._consultar_renaper_por_dni("123")
@@ -424,6 +428,37 @@ def test_crear_ciudadano_y_agregar_a_nomina_puebla_documento_unico_key(db, mocke
     assert ok is True
     assert msg == "ok"
     assert ciudadano.documento_unico_key == "DNI_30111226"
+
+
+@pytest.mark.parametrize(
+    ("omitir_revision_manual", "requiere_revision_manual"),
+    [(True, False), (False, True)],
+)
+def test_crear_sin_dni_omite_revision_solo_si_se_solicita_desde_nomina(
+    db, mocker, omitir_revision_manual, requiere_revision_manual
+):
+    mocker.patch.object(
+        module.ComedorService,
+        "agregar_ciudadano_a_nomina",
+        return_value=(True, "ok"),
+    )
+
+    ok, _msg = module.ComedorService.crear_ciudadano_y_agregar_a_nomina.__wrapped__(
+        ciudadano_data={
+            "nombre": "Ana",
+            "apellido": "Sin DNI",
+            "tipo_registro_identidad": Ciudadano.TIPO_REGISTRO_SIN_DNI,
+            "motivo_sin_dni": Ciudadano.MOTIVO_SIN_DNI_OTRO,
+        },
+        user=SimpleNamespace(id=1),
+        estado=None,
+        observaciones=None,
+        omitir_revision_manual=omitir_revision_manual,
+    )
+
+    ciudadano = Ciudadano.objects.get(nombre="Ana", apellido="Sin DNI")
+    assert ok is True
+    assert ciudadano.requiere_revision_manual is requiere_revision_manual
 
 
 def test_crear_ciudadano_y_agregar_a_nomina_dup_estandar_devuelve_error(db, mocker):

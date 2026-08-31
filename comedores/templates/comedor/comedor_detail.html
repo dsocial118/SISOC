@@ -3,7 +3,7 @@
 {% block head %}
     <link rel="stylesheet" href="{% static 'custom/css/comedor_detail.css' %}" />
 {% endblock %}
-{% block title %}Comedor: {{ comedor.nombre }}{% endblock %}
+{% block title %}Espacio Comunitario: {{ comedor.nombre }}{% endblock %}
 {% block app-header %}
     <div class="row g-2 align-items-center">
         <div class="col-12 col-lg-auto d-flex justify-content-start">
@@ -11,10 +11,12 @@
                class="btn btn-sm btn-primary w-100 w-sm-auto backbutton-handler">Volver</a>
         </div>
         <div class="col-12 col-lg d-flex flex-wrap justify-content-start justify-content-lg-end gap-2 align-items-center header-actions">
-            <a href="#"
-               class="btn btn-md btn-warning"
-               data-bs-toggle="modal"
-               data-bs-target="#modalValidacion"><i class="bi bi-clipboard-check me-1"></i>Validar</a>
+            {% if puede_validar_comedor %}
+                <a href="#"
+                   class="btn btn-md btn-warning"
+                   data-bs-toggle="modal"
+                   data-bs-target="#modalValidacion"><i class="bi bi-clipboard-check me-1"></i>Validar</a>
+            {% endif %}
             {% if usa_convenio_pnud %}
                 <a href="{% url 'comedor_convenio_pnud' comedor.id %}"
                    class="btn btn-md btn-outline-light"><i class="bi bi-file-earmark-text me-1"></i>Cargar datos del Convenio</a>
@@ -175,6 +177,13 @@
                                 {% endif %}
                             </button>
                         </li>
+                        {% if comedor.es_caritas %}
+                            <li class="list-inline-item">
+                                <span class="badge badge-caritas mb-2">
+                                    <i class="bi bi-heart-fill me-1"></i>CARITAS
+                                </span>
+                            </li>
+                        {% endif %}
                     </ul>
                 </div>
                 {% with selected_admision|default:admision_activa as display_admision %}
@@ -253,7 +262,18 @@
                         </div>
                         <div class="col-12 col-lg-7 overflow-auto mt-3 mt-lg-0 comedor-scroll-370">
                             <p class="mb-2">
-                                <i class="bi bi-house-door-fill me-2"></i><strong>Nombre del comedor:</strong> {{ comedor.nombre | default_if_none:"-" }}
+                                <i class="bi bi-house-door-fill me-2"></i><strong>Nombre del espacio comunitario:</strong> {{ comedor.nombre | default_if_none:"-" }}
+                            </p>
+                            <p class="mb-2">
+                                <i class="bi bi-tags me-2"></i><strong>Categorización:</strong>
+                                {% if comedor.categoria_espacio_comunitario %}
+                                    {{ comedor.get_categoria_espacio_comunitario_display }}
+                                    {% if comedor.categoria_espacio_comunitario == "otra" and comedor.categoria_espacio_comunitario_otra %}
+                                        — {{ comedor.categoria_espacio_comunitario_otra }}
+                                    {% endif %}
+                                {% else %}
+                                    -
+                                {% endif %}
                             </p>
                             <p class="mb-2">
                                 <i class="bi bi-geo me-2"></i><strong>Calle:</strong> {{ comedor.calle | default_if_none:"-" }}
@@ -391,7 +411,9 @@
                                             <i class="bi bi-cup-hot"></i>
                                         </div>
                                         <div class="fw-bold fs-3 mb-0">
-                                            {% if informe_tecnico %}
+                                            {% if es_linea_secos or es_linea_tradicional %}
+                                                -
+                                            {% elif informe_tecnico %}
                                                 {{ prestaciones_aprobadas_total|default_if_none:"-" }}
                                             {% else %}
                                                 -
@@ -408,7 +430,9 @@
                                             <i class="bi bi-currency-dollar"></i>
                                         </div>
                                         <div class="fw-bold fs-3 mb-0">
-                                            {% if informe_tecnico %}
+                                            {% if es_linea_secos or es_linea_tradicional %}
+                                                -
+                                            {% elif informe_tecnico %}
                                                 {{ monto_prestacion_mensual|default_if_none:"-" }}
                                             {% else %}
                                                 -
@@ -1058,7 +1082,13 @@
                             <h3 class="mb-1 mt-2">
                                 <i class="bi bi-cup-hot mb-1"></i>
                             </h3>
-                            <h4 class="fw-bold my-1">{{ prestaciones_aprobadas_total|default_if_none:"0" }}</h4>
+                            <h4 class="fw-bold my-1">
+                                {% if es_linea_secos or es_linea_tradicional %}
+                                    -
+                                {% else %}
+                                    {{ prestaciones_aprobadas_total|default_if_none:"0" }}
+                                {% endif %}
+                            </h4>
                             <p class="fw-bold fs-7">Prestaciones mensuales</p>
                         </div>
                     </div>
@@ -1164,518 +1194,349 @@
                                     {% else %}
                                         Sin informaci&oacute;n
                                     {% endif %}
-                                </strong>
-                            </p>
-                            <p class="mb-0 fs-7">
-                                Nombre del espacio comunitario: <strong>{{ comedor.nombre|default_if_none:"Sin informaci&oacute;n" }}</strong>
-                            </p>
-                            <p class="mb-0 fs-7">
-                                ID externo: <strong>{{ comedor.id_externo|default_if_none:"Sin informaci&oacute;n" }}</strong>
-                            </p>
-                            <p class="mb-0 fs-7">
-                                Domicilio completo: <strong>{{ domicilio_completo_comedor|default_if_none:"Sin informaci&oacute;n" }}</strong>
-                            </p>
-                            <p class="mb-0 fs-7">
-                                Monto total de convenio por Espacio - Prestaciones Alimentarias: <strong>{{ datos_convenio_pnud.monto_convenio_prestaciones_alimentarias|default_if_none:"Sin informaci&oacute;n" }}</strong>
-                            </p>
-                            <p class="mb-0 fs-7">
-                                Monto total de convenio por Espacio - Servicio Integral de Promoci&oacute;n Humana: <strong>{{ datos_convenio_pnud.monto_convenio_siph|default_if_none:"Sin informaci&oacute;n" }}</strong>
-                            </p>
-                            <p class="mb-0 fs-7">
-                                Prestaciones financiadas mensuales: <strong>{{ datos_convenio_pnud.prestaciones_financiadas_mensuales|default_if_none:"Sin informaci&oacute;n" }}</strong>
-                            </p>
-                            <p class="mb-0 fs-7">
-                                Personas conveniadas: <strong>{{ datos_convenio_pnud.personas_conveniadas|default_if_none:"Sin informaci&oacute;n" }}</strong>
-                            </p>
-                            <p class="mb-0 fs-7">
-                                Cantidad m&oacute;dulos mensuales: <strong>{{ datos_convenio_pnud.cantidad_modulos|default_if_none:"Sin informaci&oacute;n" }}</strong>
-                            </p>
-                            <div class="mt-3 d-flex justify-content-center">
-                                <a href="{% url 'comedor_convenio_pnud' comedor.id %}"
-                                   class="btn btn-primary px-2 py-1 fs-7 w-100 w-sm-auto">Editar datos del Convenio</a>
-                            </div>
-                        {% else %}
-                            {% with selected_admision|default:admision_activa as display_admision %}
+                                    </strong>
+                                </p>
                                 <p class="mb-0 fs-7">
-                                    Fecha: <strong>
-                                    {% if display_admision and display_admision.creado %}
-                                        {{ display_admision.creado|date:"d/m/Y" }}
-                                    {% else %}
-                                        Sin informaci&oacute;n
-                                    {% endif %}
-                                </strong>
-                            </p>
-                            <p class="mb-0 fs-7">
-                                N&uacute;mero de expediente: <strong class="text-uppercase">
-                                {% if display_admision and display_admision.num_expediente %}
-                                    {{ display_admision.num_expediente }}
-                                {% else %}
-                                    Sin informaci&oacute;n
+                                    Nombre del espacio comunitario: <strong>{{ comedor.nombre|default_if_none:"Sin informaci&oacute;n" }}</strong>
+                                </p>
+                                <p class="mb-0 fs-7">
+                                    ID externo: <strong>{{ comedor.id_externo|default_if_none:"Sin informaci&oacute;n" }}</strong>
+                                </p>
+                                <p class="mb-0 fs-7">
+                                    Domicilio completo: <strong>{{ domicilio_completo_comedor|default_if_none:"Sin informaci&oacute;n" }}</strong>
+                                </p>
+                                <p class="mb-0 fs-7">
+                                    Monto total de convenio por Espacio - Prestaciones Alimentarias: <strong>{{ datos_convenio_pnud.monto_convenio_prestaciones_alimentarias|default_if_none:"Sin informaci&oacute;n" }}</strong>
+                                </p>
+                                <p class="mb-0 fs-7">
+                                    Monto total de convenio por Espacio - Servicio Integral de Promoci&oacute;n Humana: <strong>{{ datos_convenio_pnud.monto_convenio_siph|default_if_none:"Sin informaci&oacute;n" }}</strong>
+                                </p>
+                                {% if not es_linea_secos and not es_linea_tradicional %}
+                                    <p class="mb-0 fs-7">
+                                        Prestaciones financiadas mensuales: <strong>{{ datos_convenio_pnud.prestaciones_financiadas_mensuales|default_if_none:"Sin informaci&oacute;n" }}</strong>
+                                    </p>
                                 {% endif %}
-                            </strong>
-                        </p>
-                        <p class="mb-0 fs-7">
-                            Estado - t&eacute;cnicos: <strong class="text-uppercase">
-                            {% if display_admision and display_admision.estado_admision %}
-                                {{ display_admision.get_estado_admision_display|default_if_none:"Sin informaci&oacute;n" }}
+                                {% if es_linea_tradicional %}
+                                    <p class="mb-0 fs-7">
+                                        Prestaciones Financiadas Diarias - Desayuno: <strong>{{ datos_convenio_pnud.prestaciones_financiadas_diarias_desayuno|default_if_none:"Sin informaci&oacute;n" }}</strong>
+                                    </p>
+                                    <p class="mb-0 fs-7">
+                                        Prestaciones Financiadas Diarias - Almuerzo: <strong>{{ datos_convenio_pnud.prestaciones_financiadas_diarias_almuerzo|default_if_none:"Sin informaci&oacute;n" }}</strong>
+                                    </p>
+                                    <p class="mb-0 fs-7">
+                                        Prestaciones Financiadas Diarias - Merienda: <strong>{{ datos_convenio_pnud.prestaciones_financiadas_diarias_merienda|default_if_none:"Sin informaci&oacute;n" }}</strong>
+                                    </p>
+                                    <p class="mb-0 fs-7">
+                                        Prestaciones Financiadas Diarias - Merienda Reforzada: <strong>{{ datos_convenio_pnud.prestaciones_financiadas_diarias_merienda_reforzada|default_if_none:"Sin informaci&oacute;n" }}</strong>
+                                    </p>
+                                    <p class="mb-0 fs-7">
+                                        Prestaciones Financiadas Diarias - Cena: <strong>{{ datos_convenio_pnud.prestaciones_financiadas_diarias_cena|default_if_none:"Sin informaci&oacute;n" }}</strong>
+                                    </p>
+                                {% endif %}
+                                <p class="mb-0 fs-7">
+                                    Personas conveniadas: <strong>{{ datos_convenio_pnud.personas_conveniadas|default_if_none:"Sin informaci&oacute;n" }}</strong>
+                                </p>
+                                {% if not es_linea_tradicional %}
+                                    <p class="mb-0 fs-7">
+                                        Cantidad M&oacute;dulos Mensuales: <strong>{{ datos_convenio_pnud.cantidad_modulos|default_if_none:"Sin informaci&oacute;n" }}</strong>
+                                    </p>
+                                {% endif %}
+                                <div class="mt-3 d-flex justify-content-center">
+                                    <a href="{% url 'comedor_convenio_pnud' comedor.id %}"
+                                       class="btn btn-primary px-2 py-1 fs-7 w-100 w-sm-auto">Editar datos del Convenio</a>
+                                </div>
                             {% else %}
-                                Sin informaci&oacute;n
-                            {% endif %}
-                        </strong>
-                    </p>
-                    <p class="mb-0 fs-7">
-                        Estado - legales: <strong class="text-uppercase">
-                        {% if display_admision and display_admision.estado_legales %}
-                            {{ display_admision.get_estado_legales_display|default_if_none:"Sin informaci&oacute;n" }}
-                        {% else %}
-                            Sin informaci&oacute;n
-                        {% endif %}
-                    </strong>
-                </p>
-                <p class="mb-0 fs-7">
-                    Estado actual: <strong class="text-uppercase">
-                    {% if display_admision and display_admision.estado_mostrar %}
-                        {{ display_admision.estado_mostrar|default_if_none:"Sin informaci&oacute;n" }}
-                    {% else %}
-                        Sin informaci&oacute;n
-                    {% endif %}
-                </strong>
-            </p>
-            <p class="mb-0 fs-7">
-                Fecha estado: <strong>
-                {% if display_admision and display_admision.fecha_estado_mostrar %}
-                    {{ display_admision.fecha_estado_mostrar|date:"d/m/Y" }}
-                {% else %}
-                    Sin informaci&oacute;n
-                {% endif %}
-            </strong>
-        </p>
-        <p class="mb-0 fs-7">
-            N&deg; IF: <strong class="text-uppercase">
-            {% if display_admision and display_admision.num_if %}
-                {{ display_admision.num_if }}
-            {% else %}
-                Sin informaci&oacute;n
-            {% endif %}
-        </strong>
-    </p>
-    <p class="mb-0 fs-7">
-        N&deg; IF legales: <strong class="text-uppercase">
-        {% if display_admision and display_admision.legales_num_if %}
-            {{ display_admision.legales_num_if }}
-        {% else %}
-            Sin informaci&oacute;n
-        {% endif %}
-    </strong>
-</p>
-<p class="mb-0 fs-7">
-    N&deg; IF t&eacute;cnico: <strong class="text-uppercase">
-    {% if display_admision and display_admision.numero_if_tecnico %}
-        {{ display_admision.numero_if_tecnico }}
-    {% else %}
-        Sin informaci&oacute;n
-    {% endif %}
-</strong>
-</p>
-<p class="mb-0 fs-7">
-    N&deg; disposici&oacute;n: <strong class="text-uppercase">
-    {% if display_admision and display_admision.numero_disposicion %}
-        {{ display_admision.numero_disposicion }}
-    {% else %}
-        Sin informaci&oacute;n
-    {% endif %}
-</strong>
-</p>
-<p class="mb-0 fs-7">
-    Dupla: <strong class="text-uppercase">{{ comedor.dupla.nombre |default_if_none:"Sin informaci&oacute;n" }}</strong>
-</p>
-<p class="mb-0 fs-7">
-    Tipo de convenio: <strong class="text-uppercase">
-    {% if display_admision and display_admision.tipo_convenio %}
-        {{ display_admision.tipo_convenio.nombre|default_if_none:"Sin informaci&oacute;n" }}
-    {% else %}
-        Sin informaci&oacute;n
-    {% endif %}
-</strong>
-</p>
-<div class="mt-3 d-flex flex-column flex-sm-row justify-content-center gap-2">
-    {% if display_admision %}
-        <a href="{% url 'admision_detalle' comedor.id display_admision.id %}"
-           class="btn btn-primary px-2 py-1 fs-7 w-100 w-sm-auto">Ver detalles</a>
-    {% else %}
-        <button class="btn btn-primary px-2 py-1 fs-7 w-100 w-sm-auto" disabled>Ver detalles</button>
-    {% endif %}
-</div>
-{% endwith %}
-{% endif %}
-</div>
-</div>
-</div>
-</div>
-{% if puede_ver_dw_transacciones or mostrar_mes_ejecucion %}
-    <div class="row mt-3">
-        {% if puede_ver_dw_transacciones %}
-            <div class="col-12 col-lg-6 mb-3 mb-lg-0">{% include "comedor/comedor_transacciones_card.html" %}</div>
-        {% endif %}
-        {% if mostrar_mes_ejecucion %}
-            <div class="col-12 col-lg-6 {% if not puede_ver_dw_transacciones %}ms-lg-auto{% endif %}">
-                {% include "comedor/comedor_mes_ejecucion_card.html" %}
-            </div>
-        {% endif %}
-    </div>
-{% endif %}
-</div>
-<!-- /Cuadros con datos, Avisos y Detalles Admision-->
-<!-- Nomina-->
-<div class="col-12 col-lg-3">
-    <div class="card bg-card">
-        <div class="card-header py-1 d-flex align-items-center justify-content-between">
-            <h4 class="fw-bold my-1">Nómina</h4>
-            {% if selected_admision_id %}
-                <a href="{% url 'nomina_ver' pk=comedor.id admision_pk=selected_admision_id %}"
-                   class="btn btn-success btn-sm ms-auto">
-                    <i class="bi bi-people-fill me-1"></i>Ver nómina
-                </a>
-            {% elif comedor.programa and not comedor.programa.usa_admision_para_nomina %}
-                <a href="{% url 'nomina_directa_ver' comedor.id %}"
-                   class="btn btn-success btn-sm ms-auto">
-                    <i class="bi bi-people-fill me-1"></i>Ver nómina
-                </a>
-            {% endif %}
-        </div>
-        <div class="card-body">
-            {% if selected_admision_id and nomina_total == 0 %}
-                <div class="alert alert-warning py-1 px-2 mb-2 small">
-                    <i class="bi bi-exclamation-triangle me-1"></i>
-                    Nómina pendiente de presentación.
-                </div>
-            {% endif %}
-            {% if selected_admision_id %}
-                <form method="post"
-                      action="{% url 'nomina_importar' pk=comedor.id admision_pk=selected_admision_id %}"
-                      class="mb-2">
-                    {% csrf_token %}
-                    <button type="submit"
-                            class="btn btn-sm btn-outline-light w-100"
-                            title="Importar nómina del convenio anterior">
-                        <i class="bi bi-clipboard-plus me-1"></i>Importar del convenio anterior
-                    </button>
-                </form>
-            {% elif comedor.programa and not comedor.programa.usa_admision_para_nomina %}
-                <div class="alert alert-info py-1 px-2 mb-2 small">
-                    <i class="bi bi-info-circle me-1"></i>
-                    Este comedor usa nómina directa y no depende de admisiones.
-                </div>
-            {% endif %}
-            <div class="col-12">
-                <div class="d-flex align-items-center bg-amarillo px-3 py-2 rounded-3 mb-2">
-                    <div class="d-flex align-items-center justify-content-center bg-amarillo-75 text-white rounded-circle mx-2 me-3 comedor-icon-60">
-                        <i class="bi bi-people-fill fs-1"></i>
-                    </div>
-                    <div>
-                        <div class="fw-bold fs-2 mb-0 py-0 text-white">{{ nomina_total|default:0 }}</div>
-                        <p class="mb-0 text-white fw-bold">Asistentes</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-12">
-                <div class="d-flex align-items-center bg-celeste px-3 py-2 rounded-3 mb-2">
-                    <div class="d-flex align-items-center justify-content-center bg-celeste-75 text-white rounded-circle mx-2 me-3 comedor-icon-60">
-                        <i class="bi bi-person-standing fs-1"></i>
-                    </div>
-                    <div>
-                        <div class="fw-bold fs-2 mb-0 py-0 text-white">{{ nomina_hombres|default:0 }}</div>
-                        <p class="mb-0 text-white fw-bold">Hombres</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-12">
-                <div class="d-flex align-items-center bg-rosa px-3 py-2 rounded-3 mb-2">
-                    <div class="d-flex align-items-center justify-content-center bg-rosa-75 text-white rounded-circle mx-2 me-3 comedor-icon-60">
-                        <i class="bi bi-person-standing-dress fs-1"></i>
-                    </div>
-                    <div>
-                        <div class="fw-bold fs-2 mb-0 py-0 text-white">{{ nomina_mujeres|default:0 }}</div>
-                        <p class="mb-0 text-white fw-bold">Mujeres</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-12">
-                <div class="d-flex align-items-center bg-verde px-3 py-2 rounded-3 mb-2">
-                    <div class="d-flex align-items-center justify-content-center bg-verde-75 text-white rounded-circle mx-2 me-3 comedor-icon-60">
-                        <i class="bi bi-person-arms-up fs-1"></i>
-                    </div>
-                    <div>
-                        <div class="fw-bold fs-2 mb-0 py-0 text-white">{{ nomina_menores|default:0 }}</div>
-                        <p class="mb-0 text-white fw-bold">Menores de edad</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-12">
-                <div class="d-flex align-items-center bg-rojo px-3 py-2 rounded-3 mb-2">
-                    <div class="d-flex align-items-center justify-content-center bg-rojo-75 text-white rounded-circle mx-2 me-3 comedor-icon-60">
-                        <i class="bi bi-list-check fs-1"></i>
-                    </div>
-                    <div>
-                        <div class="fw-bold fs-2 mb-0 py-0 text-white">{{ nomina_espera|default:0 }}</div>
-                        <p class="mb-0 text-white fw-bold">Lista de espera</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-<!-- /Nomina-->
-</div>
-<!-- /Bloque central-->
-<div class="row relevamiento-container mb-3">
-    <div class="col-12">
-        <div class="card bg-card">
-            <div class="card-header">
-                <h3 class="card-title font-weight-bold me-3 pt-1">Colaboradores del espacio</h3>
-                <div class="card-tools">
-                    {% if permite_alta_colaboradores and request.user|has_perm_code:'comedores.add_colaboradorespacio' %}
-                        <a href="{% url 'colaborador_espacio_crear' comedor.id %}"
-                           class="btn btn-primary me-2 btn-sm">Agregar</a>
-                    {% endif %}
-                    <button type="button" class="btn btn-tool" data-card-widget="collapse">
-                        <i class="fas fa-minus"></i>
-                    </button>
-                </div>
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-sm table-bordered table-striped mb-0">
-                        <thead>
-                            <tr>
-                                <th>Apellido y nombre</th>
-                                <th>DNI</th>
-                                <th>CUIL</th>
-                                <th>Sexo</th>
-                                <th>Género</th>
-                                <th>Teléfono</th>
-                                <th>Fecha alta</th>
-                                <th>Fecha baja</th>
-                                <th>Actividades</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for colaborador in colaboradores_espacio %}
-                                <tr>
-                                    <td>{{ colaborador.apellido|default:"-" }}, {{ colaborador.nombre|default:"-" }}</td>
-                                    <td>{{ colaborador.dni|default:"-" }}</td>
-                                    <td>{{ colaborador.cuil_cuit|default:"-" }}</td>
-                                    <td>{{ colaborador.sexo_display|default:"-" }}</td>
-                                    <td>{{ colaborador.get_genero_display|default:"-" }}</td>
-                                    <td>
-                                        {% if colaborador.codigo_telefono or colaborador.numero_telefono %}
-                                            {{ colaborador.codigo_telefono|default:"-" }} {{ colaborador.numero_telefono|default:"" }}
+                                {% with selected_admision|default:admision_activa as display_admision %}
+                                    <p class="mb-0 fs-7">
+                                        Fecha: <strong>
+                                        {% if display_admision and display_admision.creado %}
+                                            {{ display_admision.creado|date:"d/m/Y" }}
                                         {% else %}
-                                            -
+                                            Sin informaci&oacute;n
                                         {% endif %}
-                                    </td>
-                                    <td>{{ colaborador.fecha_alta|date:"d/m/Y"|default:"-" }}</td>
-                                    <td>{{ colaborador.fecha_baja|date:"d/m/Y"|default:"-" }}</td>
-                                    <td>
-                                        {% for actividad in colaborador.actividades.all %}
-                                            {{ actividad.nombre }}
-                                            {% if not forloop.last %},{% endif %}
-                                        {% empty %}
-                                            -
-                                        {% endfor %}
-                                    </td>
-                                    <td class="text-nowrap">
-                                        {% if not colaborador.fecha_baja and request.user|has_perm_code:'comedores.change_colaboradorespacio' %}
-                                            <a href="{% url 'colaborador_espacio_editar' comedor.id colaborador.id %}"
-                                               class="btn btn-sm btn-primary me-1">Editar</a>
-                                        {% endif %}
-                                        {% if request.user|has_perm_code:'comedores.delete_colaboradorespacio' %}
-                                            <form method="post"
-                                                  action="{% url 'colaborador_espacio_eliminar' comedor.id colaborador.id %}"
-                                                  class="d-inline"
-                                                  onsubmit="return confirm('¿Desea dar de baja a este colaborador?');">
-                                                {% csrf_token %}
-                                                <button type="submit"
-                                                        class="btn btn-sm btn-danger"
-                                                        {% if colaborador.fecha_baja %}disabled{% endif %}>
-                                                    Eliminar
-                                                </button>
-                                            </form>
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                            {% empty %}
-                                <tr>
-                                    <td colspan="10" class="text-center text-muted py-3">No hay colaboradores registrados para este espacio.</td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-                <p class="text-muted small mt-2 mb-0">
-                    Se encontraron {{ colaboradores_espacio|length }} resultado{{ colaboradores_espacio|length|pluralize }}.
-                </p>
-            </div>
-        </div>
-    </div>
-</div>
-<!-- Intervenciones y Observaciones -->
-<div class="row mb-3 mt-5">
-    <div class="col-12 tabs-comedor-wrap">
-        <ul class="nav nav-tabs tabs-comedor ms-2 mb-0"
-            id="intervencionesObservacionesTabs"
-            role="tablist">
-            <li class="nav-item" role="presentation">
-                <button class="nav-link active fs-6"
-                        id="intervenciones-tab"
-                        data-bs-toggle="tab"
-                        data-bs-target="#intervenciones-pane"
-                        type="button"
-                        role="tab"
-                        aria-controls="intervenciones-pane"
-                        aria-selected="true">Intervenciones</button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link fs-6"
-                        id="observaciones-tab"
-                        data-bs-toggle="tab"
-                        data-bs-target="#observaciones-pane"
-                        type="button"
-                        role="tab"
-                        aria-controls="observaciones-pane"
-                        aria-selected="false">Observaciones</button>
-            </li>
-        </ul>
-        <div class="card bg-card">
-            <div class="card-body pt-0">
-                <div class="tab-content" id="intervencionesObservacionesContent">
-                    <div class="tab-pane fade show active"
-                         id="intervenciones-pane"
-                         role="tabpanel"
-                         aria-labelledby="intervenciones-tab">
-                        <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
-                            {% if intervenciones_admisiones_disponibles %}
-                                <span class="fw-bold text-muted small"><i class="fas fa-file-contract me-1"></i>Convenio:</span>
-                                {% for adm in intervenciones_admisiones_disponibles %}
-                                    <a href="?admision_id={{ adm.id }}#intervenciones-tab"
-                                       class="btn btn-sm {% if adm.id == intervenciones_admision_id %}btn-primary{% else %}btn-outline-secondary{% endif %}">
-                                        {% if adm.acompanamiento.nro_convenio %}
-                                            {{ adm.acompanamiento.nro_convenio }}
+                                        </strong>
+                                    </p>
+                                    <p class="mb-0 fs-7">
+                                        N&uacute;mero de expediente: <strong class="text-uppercase">
+                                        {% if display_admision and display_admision.num_expediente %}
+                                            {{ display_admision.num_expediente }}
                                         {% else %}
-                                            Admisión #{{ adm.id }}
+                                            Sin informaci&oacute;n
                                         {% endif %}
-                                        {% if not adm.activa %}<span class="badge bg-secondary ms-1">Cerrada</span>{% endif %}
-                                    </a>
-                                {% endfor %}
+                                        </strong>
+                                    </p>
+                                    <p class="mb-0 fs-7">
+                                        Estado - t&eacute;cnicos: <strong class="text-uppercase">
+                                        {% if display_admision and display_admision.estado_admision %}
+                                            {{ display_admision.get_estado_admision_display|default_if_none:"Sin informaci&oacute;n" }}
+                                        {% else %}
+                                            Sin informaci&oacute;n
+                                        {% endif %}
+                                        </strong>
+                                    </p>
+                                    <p class="mb-0 fs-7">
+                                        Estado - legales: <strong class="text-uppercase">
+                                        {% if display_admision and display_admision.estado_legales %}
+                                            {{ display_admision.get_estado_legales_display|default_if_none:"Sin informaci&oacute;n" }}
+                                        {% else %}
+                                            Sin informaci&oacute;n
+                                        {% endif %}
+                                        </strong>
+                                    </p>
+                                    <p class="mb-0 fs-7">
+                                        Estado actual: <strong class="text-uppercase">
+                                        {% if display_admision and display_admision.estado_mostrar %}
+                                            {{ display_admision.estado_mostrar|default_if_none:"Sin informaci&oacute;n" }}
+                                        {% else %}
+                                            Sin informaci&oacute;n
+                                        {% endif %}
+                                        </strong>
+                                    </p>
+                                    <p class="mb-0 fs-7">
+                                        Fecha estado: <strong>
+                                        {% if display_admision and display_admision.fecha_estado_mostrar %}
+                                            {{ display_admision.fecha_estado_mostrar|date:"d/m/Y" }}
+                                        {% else %}
+                                            Sin informaci&oacute;n
+                                        {% endif %}
+                                        </strong>
+                                    </p>
+                                    <p class="mb-0 fs-7">
+                                        N&deg; IF: <strong class="text-uppercase">
+                                        {% if display_admision and display_admision.num_if %}
+                                            {{ display_admision.num_if }}
+                                        {% else %}
+                                            Sin informaci&oacute;n
+                                        {% endif %}
+                                        </strong>
+                                    </p>
+                                    <p class="mb-0 fs-7">
+                                        N&deg; IF legales: <strong class="text-uppercase">
+                                        {% if display_admision and display_admision.legales_num_if %}
+                                            {{ display_admision.legales_num_if }}
+                                        {% else %}
+                                            Sin informaci&oacute;n
+                                        {% endif %}
+                                        </strong>
+                                    </p>
+                                    <p class="mb-0 fs-7">
+                                        N&deg; IF t&eacute;cnico: <strong class="text-uppercase">
+                                        {% if display_admision and display_admision.numero_if_tecnico %}
+                                            {{ display_admision.numero_if_tecnico }}
+                                        {% else %}
+                                            Sin informaci&oacute;n
+                                        {% endif %}
+                                        </strong>
+                                    </p>
+                                    <p class="mb-0 fs-7">
+                                        N&deg; disposici&oacute;n: <strong class="text-uppercase">
+                                        {% if display_admision and display_admision.numero_disposicion %}
+                                            {{ display_admision.numero_disposicion }}
+                                        {% else %}
+                                            Sin informaci&oacute;n
+                                        {% endif %}
+                                        </strong>
+                                    </p>
+                                    <p class="mb-0 fs-7">
+                                        Dupla: <strong class="text-uppercase">{{ comedor.dupla.nombre |default_if_none:"Sin informaci&oacute;n" }}</strong>
+                                    </p>
+                                    <p class="mb-0 fs-7">
+                                        Tipo de convenio: <strong class="text-uppercase">
+                                        {% if display_admision and display_admision.tipo_convenio %}
+                                            {{ display_admision.tipo_convenio.nombre|default_if_none:"Sin informaci&oacute;n" }}
+                                        {% else %}
+                                            Sin informaci&oacute;n
+                                        {% endif %}
+                                        </strong>
+                                    </p>
+                                    <div class="mt-3 d-flex flex-column flex-sm-row justify-content-center gap-2">
+                                        {% if display_admision %}
+                                            <a href="{% url 'admision_detalle' comedor.id display_admision.id %}"
+                                               class="btn btn-primary px-2 py-1 fs-7 w-100 w-sm-auto">Ver detalles</a>
+                                        {% else %}
+                                            <button class="btn btn-primary px-2 py-1 fs-7 w-100 w-sm-auto" disabled>Ver detalles</button>
+                                        {% endif %}
+                                    </div>
+                                {% endwith %}
                             {% endif %}
-                            <button type="button"
-                                    class="btn btn-sm btn-primary ms-auto"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#modalIntervencion">Agregar intervención</button>
                         </div>
-                        {% include 'components/data_table.html' with headers=intervenciones_headers items=intervenciones_items custom_cells=True empty_message='Aún no se han registrado intervenciones.' table_class='table-sm table-compact' include_pagination=True is_paginated=intervenciones_is_paginated page_obj=intervenciones_page_obj page_range=intervenciones_page_range page_param='intervenciones_page' %}
-                    </div>
-                    <div class="tab-pane fade"
-                         id="observaciones-pane"
-                         role="tabpanel"
-                         aria-labelledby="observaciones-tab">
-                        <div class="d-flex justify-content-end mb-2">
-                            <button type="button"
-                                    class="btn btn-sm btn-primary"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#modalObservacion">Agregar observación</button>
-                        </div>
-                        {% include 'components/data_table.html' with headers=observaciones_headers items=observaciones_items custom_cells=True empty_message='Sin observaciones registradas.' table_class='table-sm table-compact' include_pagination=True is_paginated=observaciones_is_paginated page_obj=observaciones_page_obj page_range=observaciones_page_range page_param='observaciones_page' %}
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
-</div>
-<!-- /Intervenciones y Observaciones -->
-<!-- Historial de interacciones -->
-<div class="row mb-3">
-    <div class="col-12">
-        <div class="card bg-card">
-            <div class="card-header py-1">
-                <h4 class="fw-bold my-1">Historial de interacciones</h4>
-            </div>
-            <div class="card-body">
-                <div class="w-100 comedor-chart-h220">
-                    <canvas id="interaccionesChart"></canvas>
+            {% if puede_ver_dw_transacciones or mostrar_mes_ejecucion %}
+                <div class="row mt-3">
+                    {% if puede_ver_dw_transacciones %}
+                        <div class="col-12 col-lg-6 mb-3 mb-lg-0">{% include "comedor/comedor_transacciones_card.html" %}</div>
+                    {% endif %}
+                    {% if mostrar_mes_ejecucion %}
+                        <div class="col-12 col-lg-6 {% if not puede_ver_dw_transacciones %}ms-lg-auto{% endif %}">
+                            {% include "comedor/comedor_mes_ejecucion_card.html" %}
+                        </div>
+                    {% endif %}
                 </div>
-            </div>
+            {% endif %}
         </div>
-    </div>
-</div>
-<!-- /Historial de interacciones -->
-{% if show_capacitaciones_certificados %}
-    <!-- Capacitaciones -->
-    <div class="row mb-3">
-        <div class="col-12">
+        <!-- /Cuadros con datos, Avisos y Detalles Admision-->
+        <!-- Nomina-->
+        <div class="col-12 col-lg-3">
             <div class="card bg-card">
-                <div class="card-header py-2 d-flex justify-content-between align-items-center">
-                    <h4 class="fw-bold my-1">Capacitaciones</h4>
+                <div class="card-header py-1 d-flex align-items-center justify-content-between">
+                    <h4 class="fw-bold my-1">Nómina</h4>
+                    {% if selected_admision_id %}
+                        <a href="{% url 'nomina_ver' pk=comedor.id admision_pk=selected_admision_id %}"
+                           class="btn btn-success btn-sm ms-auto">
+                            <i class="bi bi-people-fill me-1"></i>Ver nómina
+                        </a>
+                    {% elif comedor.programa and not comedor.programa.usa_admision_para_nomina %}
+                        <a href="{% url 'nomina_directa_ver' comedor.id %}"
+                           class="btn btn-success btn-sm ms-auto">
+                            <i class="bi bi-people-fill me-1"></i>Ver nómina
+                        </a>
+                    {% endif %}
                 </div>
                 <div class="card-body">
-                    <div class="table-responsive-lg">
-                        <table class="table table-bordered table-striped projects table-hover align-middle"
-                               id="capacitacionesTable">
+                    {% if selected_admision_id and nomina_total == 0 %}
+                        <div class="alert alert-warning py-1 px-2 mb-2 small">
+                            <i class="bi bi-exclamation-triangle me-1"></i>
+                            Nómina pendiente de presentación.
+                        </div>
+                    {% endif %}
+                    {% if selected_admision_id %}
+                        <form method="post"
+                              action="{% url 'nomina_importar' pk=comedor.id admision_pk=selected_admision_id %}"
+                              class="mb-2">
+                            {% csrf_token %}
+                            <button type="submit"
+                                    class="btn btn-sm btn-outline-light w-100"
+                                    title="Importar nómina del convenio anterior">
+                                <i class="bi bi-clipboard-plus me-1"></i>Importar del convenio anterior
+                            </button>
+                        </form>
+                    {% elif comedor.programa and not comedor.programa.usa_admision_para_nomina %}
+                        <div class="alert alert-info py-1 px-2 mb-2 small">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Este comedor usa nómina directa y no depende de admisiones.
+                        </div>
+                    {% endif %}
+                    <div class="col-12">
+                        <div class="d-flex align-items-center bg-amarillo px-3 py-2 rounded-3 mb-2">
+                            <div class="d-flex align-items-center justify-content-center bg-amarillo-75 text-white rounded-circle mx-2 me-3 comedor-icon-60">
+                                <i class="bi bi-people-fill fs-1"></i>
+                            </div>
+                            <div>
+                                <div class="fw-bold fs-2 mb-0 py-0 text-white">{{ nomina_total|default:0 }}</div>
+                                <p class="mb-0 text-white fw-bold">Asistentes</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="d-flex align-items-center bg-celeste px-3 py-2 rounded-3 mb-2">
+                            <div class="d-flex align-items-center justify-content-center bg-celeste-75 text-white rounded-circle mx-2 me-3 comedor-icon-60">
+                                <i class="bi bi-person-standing fs-1"></i>
+                            </div>
+                            <div>
+                                <div class="fw-bold fs-2 mb-0 py-0 text-white">{{ nomina_hombres|default:0 }}</div>
+                                <p class="mb-0 text-white fw-bold">Hombres</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="d-flex align-items-center bg-rosa px-3 py-2 rounded-3 mb-2">
+                            <div class="d-flex align-items-center justify-content-center bg-rosa-75 text-white rounded-circle mx-2 me-3 comedor-icon-60">
+                                <i class="bi bi-person-standing-dress fs-1"></i>
+                            </div>
+                            <div>
+                                <div class="fw-bold fs-2 mb-0 py-0 text-white">{{ nomina_mujeres|default:0 }}</div>
+                                <p class="mb-0 text-white fw-bold">Mujeres</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="d-flex align-items-center bg-verde px-3 py-2 rounded-3 mb-2">
+                            <div class="d-flex align-items-center justify-content-center bg-verde-75 text-white rounded-circle mx-2 me-3 comedor-icon-60">
+                                <i class="bi bi-person-arms-up fs-1"></i>
+                            </div>
+                            <div>
+                                <div class="fw-bold fs-2 mb-0 py-0 text-white">{{ nomina_menores|default:0 }}</div>
+                                <p class="mb-0 text-white fw-bold">Menores de edad</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="d-flex align-items-center bg-rojo px-3 py-2 rounded-3 mb-2">
+                            <div class="d-flex align-items-center justify-content-center bg-rojo-75 text-white rounded-circle mx-2 me-3 comedor-icon-60">
+                                <i class="bi bi-list-check fs-1"></i>
+                            </div>
+                            <div>
+                                <div class="fw-bold fs-2 mb-0 py-0 text-white">{{ nomina_espera|default:0 }}</div>
+                                <p class="mb-0 text-white fw-bold">Lista de espera</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- /Nomina-->
+    </div>
+    <!-- /Bloque central-->
+    <div class="row relevamiento-container mb-3">
+        <div class="col-12">
+            <div class="card bg-card">
+                <div class="card-header">
+                    <h3 class="card-title font-weight-bold me-3 pt-1">Certificaciones Mensuales de Prestaciones</h3>
+                    <div class="card-tools">
+                        <a href="{% url 'certificaciones_prestaciones_historial' comedor.id %}"
+                           class="btn btn-primary me-2 btn-sm">Ver historial completo</a>
+                        <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered table-striped mb-0">
                             <thead>
                                 <tr>
-                                    <th>Capacitación</th>
-                                    <th>Estado</th>
-                                    <th>Certificado</th>
-                                    <th>Observación</th>
-                                    <th>Acciones</th>
+                                    <th>Período</th>
+                                    <th>Usuario generador</th>
+                                    <th>Estado Conformidad</th>
+                                    <th>Fecha de certificación</th>
+                                    <th>Ver PDF</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for cert in capacitaciones_certificados %}
-                                    <tr data-cert-id="{{ cert.id }}">
-                                        <td>{{ cert.capacitacion_label }}</td>
-                                        <td class="cert-estado">
-                                            {% if cert.estado == 'aceptado' %}
-                                                <span class="badge bg-success">ACEPTADO</span>
-                                            {% elif cert.estado == 'rechazado' %}
-                                                <span class="badge bg-danger">RECHAZADO</span>
-                                            {% elif cert.estado == 'presentado' %}
-                                                <span class="badge bg-warning text-dark">PRESENTADO</span>
-                                            {% else %}
-                                                <span class="badge bg-secondary">SIN PRESENTAR</span>
-                                            {% endif %}
-                                        </td>
-                                        <td class="cert-archivo">
-                                            {% if cert.archivo_url %}
-                                                <a href="{{ cert.archivo_url }}" target="_blank" rel="noreferrer">Ver archivo</a>
+                                {% for certificacion in certificaciones_prestaciones %}
+                                    <tr>
+                                        <td>{{ certificacion.periodo|date:"m/Y" }}</td>
+                                        <td>
+                                            {% if certificacion.usuario %}
+                                                {{ certificacion.usuario.get_full_name|default:certificacion.usuario.username }}
                                             {% else %}
                                                 -
                                             {% endif %}
                                         </td>
-                                        <td class="cert-observacion">{{ cert.observacion|default:"-" }}</td>
                                         <td>
-                                            <div class="d-flex flex-wrap gap-1">
-                                                <button type="button"
-                                                        class="btn btn-sm btn-success cert-accept-btn"
-                                                        data-url="{% url 'capacitacion_certificado_estado_ajax' pk=comedor.id certificado_id=cert.id %}"
-                                                        data-cert-id="{{ cert.id }}"
-                                                        {% if cert.estado == 'sin_presentar' or cert.estado == 'aceptado' or cert.estado == 'rechazado' %}disabled{% endif %}>
-                                                    Aceptar
-                                                </button>
-                                                <button type="button"
-                                                        class="btn btn-sm btn-danger cert-reject-btn"
-                                                        data-url="{% url 'capacitacion_certificado_estado_ajax' pk=comedor.id certificado_id=cert.id %}"
-                                                        data-cert-id="{{ cert.id }}"
-                                                        {% if cert.estado == 'sin_presentar' or cert.estado == 'aceptado' or cert.estado == 'rechazado' %}disabled{% endif %}>
-                                                    Rechazar
-                                                </button>
-                                            </div>
+                                            {% if certificacion.conforme %}
+                                                <span class="badge bg-success">Conforme</span>
+                                            {% else %}
+                                                <span class="badge bg-danger">No conforme</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ certificacion.creado|date:"d/m/Y H:i" }}</td>
+                                        <td>
+                                            {% if certificacion.certificacion_pdf %}
+                                                <a href="{% url 'descargar_certificacion_prestaciones_web' comedor.id certificacion.id %}"
+                                                   class="btn btn-sm btn-primary"
+                                                   target="_blank"
+                                                   rel="noopener">Ver PDF</a>
+                                            {% else %}
+                                                <span class="text-muted">No disponible</span>
+                                            {% endif %}
                                         </td>
                                     </tr>
                                 {% empty %}
                                     <tr>
-                                        <td colspan="5" class="text-center text-muted">Sin capacitaciones registradas.</td>
+                                        <td colspan="5" class="text-center text-muted py-3">No hay certificaciones mensuales registradas.</td>
                                     </tr>
                                 {% endfor %}
                             </tbody>
@@ -1685,248 +1546,507 @@
             </div>
         </div>
     </div>
-    <!-- /Capacitaciones -->
-{% endif %}
-<!-- Modal Intervención -->
-<div class="modal fade"
-     id="modalIntervencion"
-     tabindex="-1"
-     aria-labelledby="modalIntervencionLabel"
-     aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content">
-            <form method="POST"
-                  action="{% url 'comedor_intervencion_crear' comedor.id %}"
-                  enctype="multipart/form-data"
-                  id="intervencionModalForm">
-                {% csrf_token %}
-                <input type="hidden"
-                       name="next"
-                       value="{% url 'comedor_detalle' pk=comedor.id %}{% if intervenciones_admision_id %}?admision_id={{ intervenciones_admision_id }}{% endif %}" />
-                {% if intervenciones_admision_id %}
-                    <input type="hidden"
-                           name="admision_id"
-                           value="{{ intervenciones_admision_id }}" />
-                {% endif %}
-                <div class="modal-header">
-                    <h5 class="modal-title" id="modalIntervencionLabel">Nueva intervención</h5>
-                    <button type="button"
-                            class="btn-close"
-                            data-bs-dismiss="modal"
-                            aria-label="Close"></button>
+    <div class="row relevamiento-container mb-3">
+        <div class="col-12">
+            <div class="card bg-card">
+                <div class="card-header">
+                    <h3 class="card-title font-weight-bold me-3 pt-1">Colaboradores del espacio</h3>
+                    <div class="card-tools">
+                        {% if permite_alta_colaboradores and request.user|has_perm_code:'comedores.add_colaboradorespacio' %}
+                            <a href="{% url 'colaborador_espacio_crear' comedor.id %}"
+                               class="btn btn-primary me-2 btn-sm">Agregar</a>
+                        {% endif %}
+                        <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                    </div>
                 </div>
-                <div class="modal-body">
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label for="{{ intervencion_form.fecha.id_for_label }}" class="form-label">{{ intervencion_form.fecha.label }}</label>
-                            {{ intervencion_form.fecha }}
-                            <div id="fecha-error-intervencion" class="invalid-feedback d-none"></div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered table-striped mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Apellido y nombre</th>
+                                    <th>DNI</th>
+                                    <th>CUIL</th>
+                                    <th>Sexo</th>
+                                    <th>Género</th>
+                                    <th>Teléfono</th>
+                                    <th>Fecha alta</th>
+                                    <th>Fecha baja</th>
+                                    <th>Actividades</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for colaborador in colaboradores_espacio %}
+                                    <tr>
+                                        <td>{{ colaborador.apellido|default:"-" }}, {{ colaborador.nombre|default:"-" }}</td>
+                                        <td>{{ colaborador.dni|default:"-" }}</td>
+                                        <td>{{ colaborador.cuil_cuit|default:"-" }}</td>
+                                        <td>{{ colaborador.sexo_display|default:"-" }}</td>
+                                        <td>{{ colaborador.get_genero_display|default:"-" }}</td>
+                                        <td>
+                                            {% if colaborador.codigo_telefono or colaborador.numero_telefono %}
+                                                {{ colaborador.codigo_telefono|default:"-" }} {{ colaborador.numero_telefono|default:"" }}
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ colaborador.fecha_alta|date:"d/m/Y"|default:"-" }}</td>
+                                        <td>{{ colaborador.fecha_baja|date:"d/m/Y"|default:"-" }}</td>
+                                        <td>
+                                            {% for actividad in colaborador.actividades.all %}
+                                                {{ actividad.nombre }}
+                                                {% if not forloop.last %},{% endif %}
+                                            {% empty %}
+                                                -
+                                            {% endfor %}
+                                        </td>
+                                        <td class="text-nowrap">
+                                            {% if not colaborador.fecha_baja and request.user|has_perm_code:'comedores.change_colaboradorespacio' %}
+                                                <a href="{% url 'colaborador_espacio_editar' comedor.id colaborador.id %}"
+                                                   class="btn btn-sm btn-primary me-1">Editar</a>
+                                            {% endif %}
+                                            {% if request.user|has_perm_code:'comedores.delete_colaboradorespacio' %}
+                                                <form method="post"
+                                                      action="{% url 'colaborador_espacio_eliminar' comedor.id colaborador.id %}"
+                                                      class="d-inline"
+                                                      onsubmit="return confirm('¿Desea dar de baja a este colaborador?');">
+                                                    {% csrf_token %}
+                                                    <button type="submit"
+                                                            class="btn btn-sm btn-danger"
+                                                            {% if colaborador.fecha_baja %}disabled{% endif %}>
+                                                        Eliminar
+                                                    </button>
+                                                </form>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="10" class="text-center text-muted py-3">No hay colaboradores registrados para este espacio.</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="text-muted small mt-2 mb-0">
+                        Se encontraron {{ colaboradores_espacio|length }} resultado{{ colaboradores_espacio|length|pluralize }}.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Intervenciones y Observaciones -->
+    <div class="row mb-3 mt-5">
+        <div class="col-12 tabs-comedor-wrap">
+            <ul class="nav nav-tabs tabs-comedor ms-2 mb-0"
+                id="intervencionesObservacionesTabs"
+                role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active fs-6"
+                            id="intervenciones-tab"
+                            data-bs-toggle="tab"
+                            data-bs-target="#intervenciones-pane"
+                            type="button"
+                            role="tab"
+                            aria-controls="intervenciones-pane"
+                            aria-selected="true">Intervenciones</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link fs-6"
+                            id="observaciones-tab"
+                            data-bs-toggle="tab"
+                            data-bs-target="#observaciones-pane"
+                            type="button"
+                            role="tab"
+                            aria-controls="observaciones-pane"
+                            aria-selected="false">Observaciones</button>
+                </li>
+            </ul>
+            <div class="card bg-card">
+                <div class="card-body pt-0">
+                    <div class="tab-content" id="intervencionesObservacionesContent">
+                        <div class="tab-pane fade show active"
+                             id="intervenciones-pane"
+                             role="tabpanel"
+                             aria-labelledby="intervenciones-tab">
+                            <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
+                                {% if intervenciones_admisiones_disponibles %}
+                                    <span class="fw-bold text-muted small"><i class="fas fa-file-contract me-1"></i>Convenio:</span>
+                                    {% for adm in intervenciones_admisiones_disponibles %}
+                                        <a href="?admision_id={{ adm.id }}#intervenciones-tab"
+                                           class="btn btn-sm {% if adm.id == intervenciones_admision_id %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+                                            {% if adm.acompanamiento.nro_convenio %}
+                                                {{ adm.acompanamiento.nro_convenio }}
+                                            {% else %}
+                                                Admisión #{{ adm.id }}
+                                            {% endif %}
+                                            {% if not adm.activa %}<span class="badge bg-secondary ms-1">Cerrada</span>{% endif %}
+                                        </a>
+                                    {% endfor %}
+                                {% endif %}
+                                <button type="button"
+                                        class="btn btn-sm btn-primary ms-auto"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#modalIntervencion">Agregar intervención</button>
+                            </div>
+                            {% include 'components/data_table.html' with headers=intervenciones_headers items=intervenciones_items custom_cells=True empty_message='Aún no se han registrado intervenciones.' table_class='table-sm table-compact' include_pagination=True is_paginated=intervenciones_is_paginated page_obj=intervenciones_page_obj page_range=intervenciones_page_range page_param='intervenciones_page' %}
                         </div>
-                        <div class="col-md-6">
-                            <label for="{{ intervencion_form.tipo_intervencion.id_for_label }}"
-                                   class="form-label">{{ intervencion_form.tipo_intervencion.label }}</label>
-                            {{ intervencion_form.tipo_intervencion }}
+                        <div class="tab-pane fade"
+                             id="observaciones-pane"
+                             role="tabpanel"
+                             aria-labelledby="observaciones-tab">
+                            <div class="d-flex justify-content-end mb-2">
+                                <button type="button"
+                                        class="btn btn-sm btn-primary"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#modalObservacion">Agregar observación</button>
+                            </div>
+                            {% include 'components/data_table.html' with headers=observaciones_headers items=observaciones_items custom_cells=True empty_message='Sin observaciones registradas.' table_class='table-sm table-compact' include_pagination=True is_paginated=observaciones_is_paginated page_obj=observaciones_page_obj page_range=observaciones_page_range page_param='observaciones_page' %}
                         </div>
-                        <div class="col-md-6">
-                            <label for="{{ intervencion_form.subintervencion.id_for_label }}"
-                                   class="form-label">{{ intervencion_form.subintervencion.label }}</label>
-                            {{ intervencion_form.subintervencion }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- /Intervenciones y Observaciones -->
+    <!-- Historial de interacciones -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="card bg-card">
+                <div class="card-header py-1">
+                    <h4 class="fw-bold my-1">Historial de interacciones</h4>
+                </div>
+                <div class="card-body">
+                    <div class="w-100 comedor-chart-h220">
+                        <canvas id="interaccionesChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- /Historial de interacciones -->
+    {% if show_capacitaciones_certificados %}
+        <!-- Capacitaciones -->
+        <div class="row mb-3">
+            <div class="col-12">
+                <div class="card bg-card">
+                    <div class="card-header py-2 d-flex justify-content-between align-items-center">
+                        <h4 class="fw-bold my-1">Capacitaciones</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive-lg">
+                            <table class="table table-bordered table-striped projects table-hover align-middle"
+                                   id="capacitacionesTable">
+                                <thead>
+                                    <tr>
+                                        <th>Capacitación</th>
+                                        <th>Estado</th>
+                                        <th>Certificado</th>
+                                        <th>Observación</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for cert in capacitaciones_certificados %}
+                                        <tr data-cert-id="{{ cert.id }}">
+                                            <td>{{ cert.capacitacion_label }}</td>
+                                            <td class="cert-estado">
+                                                {% if cert.estado == 'aceptado' %}
+                                                    <span class="badge bg-success">ACEPTADO</span>
+                                                {% elif cert.estado == 'rechazado' %}
+                                                    <span class="badge bg-danger">RECHAZADO</span>
+                                                {% elif cert.estado == 'presentado' %}
+                                                    <span class="badge bg-warning text-dark">PRESENTADO</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">SIN PRESENTAR</span>
+                                                {% endif %}
+                                            </td>
+                                            <td class="cert-archivo">
+                                                {% if cert.archivo_url %}
+                                                    <a href="{{ cert.archivo_url }}" target="_blank" rel="noreferrer">Ver archivo</a>
+                                                {% else %}
+                                                    -
+                                                {% endif %}
+                                            </td>
+                                            <td class="cert-observacion">{{ cert.observacion|default:"-" }}</td>
+                                            <td>
+                                                <div class="d-flex flex-wrap gap-1">
+                                                    <button type="button"
+                                                            class="btn btn-sm btn-success cert-accept-btn"
+                                                            data-url="{% url 'capacitacion_certificado_estado_ajax' pk=comedor.id certificado_id=cert.id %}"
+                                                            data-cert-id="{{ cert.id }}"
+                                                            {% if cert.estado == 'sin_presentar' or cert.estado == 'aceptado' or cert.estado == 'rechazado' %}disabled{% endif %}>
+                                                        Aceptar
+                                                    </button>
+                                                    <button type="button"
+                                                            class="btn btn-sm btn-danger cert-reject-btn"
+                                                            data-url="{% url 'capacitacion_certificado_estado_ajax' pk=comedor.id certificado_id=cert.id %}"
+                                                            data-cert-id="{{ cert.id }}"
+                                                            {% if cert.estado == 'sin_presentar' or cert.estado == 'aceptado' or cert.estado == 'rechazado' %}disabled{% endif %}>
+                                                        Rechazar
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% empty %}
+                                        <tr>
+                                            <td colspan="5" class="text-center text-muted">Sin capacitaciones registradas.</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
                         </div>
-                        <div class="col-md-6">
-                            <label for="{{ intervencion_form.destinatario.id_for_label }}"
-                                   class="form-label">{{ intervencion_form.destinatario.label }}</label>
-                            {{ intervencion_form.destinatario }}
-                        </div>
-                        <div class="col-md-6">
-                            <label for="{{ intervencion_form.forma_contacto.id_for_label }}"
-                                   class="form-label">{{ intervencion_form.forma_contacto.label }}</label>
-                            {{ intervencion_form.forma_contacto }}
-                        </div>
-                        <div class="col-12">
-                            <label for="{{ intervencion_form.observaciones.id_for_label }}"
-                                   class="form-label">{{ intervencion_form.observaciones.label }}</label>
-                            {{ intervencion_form.observaciones }}
-                        </div>
-                        <div class="col-12">
-                            <div class="form-check">
-                                {{ intervencion_form.tiene_documentacion }}
-                                <label class="form-check-label"
-                                       for="{{ intervencion_form.tiene_documentacion.id_for_label }}">
-                                    {{ intervencion_form.tiene_documentacion.label }}
-                                </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- /Capacitaciones -->
+    {% endif %}
+    <!-- Modal Intervención -->
+    <div class="modal fade"
+         id="modalIntervencion"
+         tabindex="-1"
+         aria-labelledby="modalIntervencionLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <form method="POST"
+                      action="{% url 'comedor_intervencion_crear' comedor.id %}"
+                      enctype="multipart/form-data"
+                      id="intervencionModalForm">
+                    {% csrf_token %}
+                    <input type="hidden"
+                           name="next"
+                           value="{% url 'comedor_detalle' pk=comedor.id %}{% if intervenciones_admision_id %}?admision_id={{ intervenciones_admision_id }}{% endif %}" />
+                    {% if intervenciones_admision_id %}
+                        <input type="hidden"
+                               name="admision_id"
+                               value="{{ intervenciones_admision_id }}" />
+                    {% endif %}
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalIntervencionLabel">Nueva intervención</h5>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="{{ intervencion_form.fecha.id_for_label }}" class="form-label">{{ intervencion_form.fecha.label }}</label>
+                                {{ intervencion_form.fecha }}
+                                <div id="fecha-error-intervencion" class="invalid-feedback d-none"></div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ intervencion_form.tipo_intervencion.id_for_label }}"
+                                       class="form-label">{{ intervencion_form.tipo_intervencion.label }}</label>
+                                {{ intervencion_form.tipo_intervencion }}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ intervencion_form.subintervencion.id_for_label }}"
+                                       class="form-label">{{ intervencion_form.subintervencion.label }}</label>
+                                {{ intervencion_form.subintervencion }}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ intervencion_form.destinatario.id_for_label }}"
+                                       class="form-label">{{ intervencion_form.destinatario.label }}</label>
+                                {{ intervencion_form.destinatario }}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ intervencion_form.forma_contacto.id_for_label }}"
+                                       class="form-label">{{ intervencion_form.forma_contacto.label }}</label>
+                                {{ intervencion_form.forma_contacto }}
+                            </div>
+                            <div class="col-12">
+                                <label for="{{ intervencion_form.observaciones.id_for_label }}"
+                                       class="form-label">{{ intervencion_form.observaciones.label }}</label>
+                                {{ intervencion_form.observaciones }}
+                            </div>
+                            <div class="col-12">
+                                <div class="form-check">
+                                    {{ intervencion_form.tiene_documentacion }}
+                                    <label class="form-check-label"
+                                           for="{{ intervencion_form.tiene_documentacion.id_for_label }}">
+                                        {{ intervencion_form.tiene_documentacion.label }}
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-12 d-none" id="documentacion-field-modal">
+                                <label for="{{ intervencion_form.documentacion.id_for_label }}"
+                                       class="form-label">{{ intervencion_form.documentacion.label }}</label>
+                                {{ intervencion_form.documentacion }}
                             </div>
                         </div>
-                        <div class="col-12 d-none" id="documentacion-field-modal">
-                            <label for="{{ intervencion_form.documentacion.id_for_label }}"
-                                   class="form-label">{{ intervencion_form.documentacion.label }}</label>
-                            {{ intervencion_form.documentacion }}
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Guardar intervención</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Observación -->
+    <div class="modal fade"
+         id="modalObservacion"
+         tabindex="-1"
+         aria-labelledby="modalObservacionLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form method="POST"
+                      action="{% url 'observacion_crear' comedor.id %}"
+                      id="observacionModalForm">
+                    {% csrf_token %}
+                    <input type="hidden"
+                           name="next"
+                           value="{% url 'comedor_detalle' pk=comedor.id %}" />
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalObservacionLabel">Nueva observación</h5>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="{{ observacion_form.observacion.id_for_label }}"
+                                   class="form-label">{{ observacion_form.observacion.label }}</label>
+                            {{ observacion_form.observacion }}
                         </div>
                     </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Guardar intervención</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- Modal Observación -->
-<div class="modal fade"
-     id="modalObservacion"
-     tabindex="-1"
-     aria-labelledby="modalObservacionLabel"
-     aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <form method="POST"
-                  action="{% url 'observacion_crear' comedor.id %}"
-                  id="observacionModalForm">
-                {% csrf_token %}
-                <input type="hidden"
-                       name="next"
-                       value="{% url 'comedor_detalle' pk=comedor.id %}" />
-                <div class="modal-header">
-                    <h5 class="modal-title" id="modalObservacionLabel">Nueva observación</h5>
-                    <button type="button"
-                            class="btn-close"
-                            data-bs-dismiss="modal"
-                            aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="{{ observacion_form.observacion.id_for_label }}"
-                               class="form-label">{{ observacion_form.observacion.label }}</label>
-                        {{ observacion_form.observacion }}
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Guardar observación</button>
                     </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Guardar observación</button>
-                </div>
-            </form>
+                </form>
+            </div>
         </div>
     </div>
-</div>
 
-<!-- Modal Selección Admisión -->
-<div class="modal fade"
-     id="modalAdmision"
-     tabindex="-1"
-     aria-labelledby="modalAdmisionLabel"
-     aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <form method="POST" action="">
-                {% csrf_token %}
-                <div class="modal-header">
-                    <h5 class="modal-title">Seleccione el tipo de Admisión</h5>
-                    <button type="button"
-                            class="btn-close"
-                            data-bs-dismiss="modal"
-                            aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <select name="admision"
-                            id="admisionID"
-                            class="form-control form-select"
-                            required>
-                        <option value="" disabled selected>-- Seleccione --</option>
-                        <option value="incorporacion">Incorporación</option>
-                        <option value="renovacion">Renovación</option>
-                    </select>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary" id="seleccionAdmision">Seleccionar</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- Modal Validaci&oacute;n -->
-<div class="modal fade"
-     id="modalValidacion"
-     tabindex="-1"
-     aria-labelledby="modalValidacionLabel"
-     aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="modalValidacionLabel">Validaci&oacute;n del Comedor</h5>
-                <button type="button"
-                        class="btn-close"
-                        data-bs-dismiss="modal"
-                        aria-label="Close"></button>
-            </div>
-            <div class="modal-body text-center">
-                <p class="mb-4">Seleccione una opci&oacute;n para validar el comedor:</p>
-                <div class="d-grid gap-2">
-                    <button type="button"
-                            class="btn btn-success btn-lg"
-                            data-call-click="validarComedor">Validar</button>
-                    <button type="button"
-                            class="btn btn-danger btn-lg"
-                            data-call-click="mostrarOpcionesNoValidar">No Validar</button>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-            </div>
-        </div>
-    </div>
-</div>
-<!-- Modal No Validar -->
-<div class="modal fade"
-     id="modalNoValidar"
-     tabindex="-1"
-     aria-labelledby="modalNoValidarLabel"
-     aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <form method="POST"
-                  action="{% url 'validar_comedor' comedor.pk %}"
-                  id="formNoValidar">
-                {% csrf_token %}
-                <input type="hidden" name="accion" value="no_validar" />
-                <input type="hidden"
-                       name="next"
-                       value="{% url 'comedor_detalle' pk=comedor.id %}" />
-                <div class="modal-header">
-                    <h5 class="modal-title" id="modalNoValidarLabel">Motivos de No Validaci&oacute;n</h5>
-                    <button type="button"
-                            class="btn-close"
-                            data-bs-dismiss="modal"
-                            aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="opcionesSelect" class="form-label">Seleccione uno o m&aacute;s motivos: *</label>
-                        <select class="form-control" id="opcionesSelect" name="opciones" multiple>
-                            {% for value, label in opciones_no_validar %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+    <!-- Modal Selección Admisión -->
+    <div class="modal fade"
+         id="modalAdmision"
+         tabindex="-1"
+         aria-labelledby="modalAdmisionLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form method="POST" action="">
+                    {% csrf_token %}
+                    <div class="modal-header">
+                        <h5 class="modal-title">Seleccione el tipo de Admisión</h5>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <select name="admision"
+                                id="admisionID"
+                                class="form-control form-select"
+                                required>
+                            <option value="" disabled selected>-- Seleccione --</option>
+                            <option value="incorporacion">Incorporación</option>
+                            <option value="renovacion">Renovación</option>
                         </select>
                     </div>
-                    <div class="mb-3 d-none" id="comentarioDiv">
-                        <label for="comentario" class="form-label">Comentario: *</label>
-                        <textarea class="form-control"
-                                  id="comentario"
-                                  name="comentario"
-                                  rows="3"
-                                  placeholder="Especifique el motivo..."></textarea>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary" id="seleccionAdmision">Seleccionar</button>
                     </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit"
-                            class="btn btn-danger"
-                            data-call-click="validarFormNoValidar">No Validar</button>
-                </div>
-            </form>
+                </form>
+            </div>
         </div>
     </div>
-</div>
+
+    {% if puede_validar_comedor %}
+        <!-- Modal Validaci&oacute;n -->
+        <div class="modal fade"
+             id="modalValidacion"
+             tabindex="-1"
+             aria-labelledby="modalValidacionLabel"
+             aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalValidacionLabel">Validaci&oacute;n del Comedor</h5>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body text-center">
+                        <p class="mb-4">Seleccione una opci&oacute;n para validar el comedor:</p>
+                        <div class="d-grid gap-2">
+                            <button type="button"
+                                    class="btn btn-success btn-lg"
+                                    data-call-click="validarComedor">Validar</button>
+                            <button type="button"
+                                    class="btn btn-danger btn-lg"
+                                    data-call-click="mostrarOpcionesNoValidar">No Validar</button>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Modal No Validar -->
+        <div class="modal fade"
+             id="modalNoValidar"
+             tabindex="-1"
+             aria-labelledby="modalNoValidarLabel"
+             aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <form method="POST"
+                          action="{% url 'validar_comedor' comedor.pk %}"
+                          id="formNoValidar">
+                        {% csrf_token %}
+                        <input type="hidden" name="accion" value="no_validar" />
+                        <input type="hidden"
+                               name="next"
+                               value="{% url 'comedor_detalle' pk=comedor.id %}" />
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="modalNoValidarLabel">Motivos de No Validaci&oacute;n</h5>
+                            <button type="button"
+                                    class="btn-close"
+                                    data-bs-dismiss="modal"
+                                    aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label for="opcionesSelect" class="form-label">Seleccione uno o m&aacute;s motivos: *</label>
+                                <select class="form-control" id="opcionesSelect" name="opciones" multiple>
+                                    {% for value, label in opciones_no_validar %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+                                </select>
+                            </div>
+                            <div class="mb-3 d-none" id="comentarioDiv">
+                                <label for="comentario" class="form-label">Comentario: *</label>
+                                <textarea class="form-control"
+                                          id="comentario"
+                                          name="comentario"
+                                          rows="3"
+                                          placeholder="Especifique el motivo..."></textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit"
+                                    class="btn btn-danger"
+                                    data-call-click="validarFormNoValidar">No Validar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    {% endif %}
 {% endblock %}
 {% block customJS %}
     <script nonce="{{ request.csp_nonce }}">
@@ -2115,7 +2235,8 @@
             });
         });
     </script>
-    <script nonce="{{ request.csp_nonce }}">
+    {% if puede_validar_comedor %}
+        <script nonce="{{ request.csp_nonce }}">
     function validarComedor() {
       const form = document.createElement('form');
       form.method = 'POST';
@@ -2202,7 +2323,8 @@
 
       return true;
     }
-    </script>
+        </script>
+    {% endif %}
     <script nonce="{{ request.csp_nonce }}">
     document.addEventListener("DOMContentLoaded", function () {
       const tieneDocumentacion = document.getElementById("id_tiene_documentacion");

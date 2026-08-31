@@ -1,5 +1,6 @@
 """Tests for test admisiones web views unit."""
 
+from io import BytesIO
 from types import SimpleNamespace
 
 import pytest
@@ -354,6 +355,28 @@ def test_tecnicos_update_view_post_docx_and_router_paths(mocker):
     mocker.patch("admisiones.views.web_views.messages.success")
     mocker.patch("admisiones.views.web_views.safe_redirect", return_value="sr2")
     assert view.post(req_router) == "sr2"
+
+
+def test_tecnicos_update_view_renders_invalid_caratulacion_form(mocker):
+    view = module.AdmisionesTecnicosUpdateView()
+    admision = SimpleNamespace(pk=1, comedor=SimpleNamespace())
+    invalid_form = mocker.Mock(is_valid=mocker.Mock(return_value=False))
+    request = _Req(
+        POST={"btnCaratulacion": "1"},
+        FILES={},
+        user=_user(),
+        get_full_path=lambda: "/admisiones/1",
+    )
+    view.get_object = lambda: admision
+    view.get_context_data = mocker.Mock(return_value={"base": "context"})
+    view.render_to_response = mocker.Mock(return_value="rendered")
+    mocker.patch("admisiones.views.web_views.CaratularForm", return_value=invalid_form)
+
+    assert view.post(request) == "rendered"
+    view.get_context_data.assert_called_once_with(
+        caratular_form=invalid_form,
+        abrir_modal_caratulacion=True,
+    )
 
 
 def test_tecnicos_update_view_post_docx_happy_path(mocker):
@@ -955,6 +978,40 @@ def test_informe_tecnico_detail_context_muestra_revision_tecnico(mocker):
     assert context["mostrar_revision_tecnico"] is True
 
 
+def test_descargar_informe_tecnico_para_gde_usa_el_docx_editado(mocker):
+    request = _Req(user=_user(superuser=True), method="GET")
+    informe = SimpleNamespace(
+        pk=44,
+        id=44,
+        admision=SimpleNamespace(pk=12),
+    )
+    archivo_borrador = SimpleNamespace(name="borrador.docx")
+    archivo_editado = SimpleNamespace(name="editado.docx")
+    documento_informe = SimpleNamespace(
+        archivo_docx=archivo_borrador,
+        archivo_docx_editado=archivo_editado,
+    )
+    mocker.patch("admisiones.views.web_views.get_object_or_404", return_value=informe)
+    mocker.patch(
+        "admisiones.views.web_views.InformeTecnicoPDF.objects.filter",
+        return_value=SimpleNamespace(first=lambda: documento_informe),
+    )
+    generar = mocker.patch(
+        "admisiones.views.web_views.GdeDocxService.generar",
+        return_value=BytesIO(b"contenido"),
+    )
+
+    response = module.descargar_informe_tecnico_para_gde(
+        request,
+        tipo="base",
+        pk=44,
+    )
+
+    assert response.status_code == 200
+    assert "informe-44-para-gde.docx" in response["Content-Disposition"]
+    generar.assert_called_once_with(archivo_editado, informe_pk=44)
+
+
 def test_informe_tecnico_detail_post_subir_docx_branches(mocker):
     view = module.InformeTecnicoDetailView()
     informe = SimpleNamespace(
@@ -1122,6 +1179,25 @@ def test_admisiones_legales_detail_contexto_y_post(mocker):
     assert view.post(_Req(user=_user()), pk=99) == "OK_POST"
 
 
+def test_admisiones_legales_detail_renders_invalid_num_if_form(mocker):
+    view = module.AdmisionesLegalesDetailView()
+    admision = SimpleNamespace(pk=99)
+    invalid_form = mocker.Mock(is_valid=mocker.Mock(return_value=False))
+    request = _Req(POST={"btnLegalesNumIF": "1"}, user=_user())
+    view.get_object = lambda: admision
+    view.get_context_data = mocker.Mock(return_value={"base": "context"})
+    view.render_to_response = mocker.Mock(return_value="rendered")
+    mocker.patch(
+        "admisiones.views.web_views.LegalesNumIFForm", return_value=invalid_form
+    )
+
+    assert view.post(request, pk=99) == "rendered"
+    view.get_context_data.assert_called_once_with(
+        form_legales_num_if=invalid_form,
+        abrir_modal_legales_num_if=True,
+    )
+
+
 def test_informe_complementario_review_contexto_con_y_sin_informe(mocker):
     view = module.InformeTecnicoComplementarioReviewView()
     view.object = SimpleNamespace()
@@ -1174,6 +1250,7 @@ def test_informe_complementario_detail_contexto_y_post_success(mocker):
     view.kwargs = {"tipo": "base", "pk": 88}
     req = _Req(
         POST={"campo_estado": " valor "},
+        GET={},
         user=_user(),
         get_full_path=lambda: "/x",
     )
@@ -1189,11 +1266,22 @@ def test_informe_complementario_detail_contexto_y_post_success(mocker):
         return_value={"base": True},
     )
     mocker.patch(
+        "admisiones.views.web_views.InformeService.get_campos_agrupados_informe",
+        return_value=[
+            {
+                "titulo": "Datos",
+                "tipo": "campos",
+                "campos": [],
+            }
+        ],
+    )
+    mocker.patch(
         "admisiones.models.admisiones.InformeComplementario.objects.filter",
         return_value=SimpleNamespace(first=lambda: None),
     )
     context = view.get_context_data()
     assert context["base"] is True
+    assert context["campos_agrupados"][0]["titulo"] == "Datos"
 
     informe_complementario = SimpleNamespace(estado=None, save=mocker.Mock())
     mocker.patch(
@@ -1211,3 +1299,36 @@ def test_informe_complementario_detail_contexto_y_post_success(mocker):
     assert response.status_code == 302
     assert informe_complementario.estado == "enviado_validacion"
     assert informe_complementario.save.called
+
+
+def test_informe_complementario_detail_post_vuelve_a_acompanamiento(mocker):
+    view = module.InformeTecnicoComplementarioDetailView()
+    admision = SimpleNamespace(id=12, comedor_id=5)
+    informe_tecnico = SimpleNamespace(admision=admision, admision_id=12)
+    view.kwargs = {"tipo": "base", "pk": 88}
+    view.get_object = lambda: informe_tecnico
+    request = _Req(
+        POST={"campo_estado": " valor "},
+        GET={"origen": "acompanamiento"},
+        user=_user(),
+        get_full_path=lambda: "/x?origen=acompanamiento",
+    )
+    informe_complementario = SimpleNamespace(estado=None, save=mocker.Mock())
+    mocker.patch(
+        "admisiones.views.web_views.InformeService.guardar_campos_complementarios",
+        return_value=informe_complementario,
+    )
+    mocker.patch(
+        "admisiones.services.legales_service.LegalesService.actualizar_estado_por_accion",
+        return_value=None,
+    )
+    mocker.patch("admisiones.views.web_views.messages.success")
+    reverse = mocker.patch(
+        "admisiones.views.web_views.reverse",
+        return_value="/acompanamientos/acompanamiento/5/detalle/",
+    )
+
+    response = view.post(request, pk=88)
+
+    assert response.url == "/acompanamientos/acompanamiento/5/detalle/?admision_id=12"
+    reverse.assert_called_once_with("detalle_acompanamiento", args=[5])

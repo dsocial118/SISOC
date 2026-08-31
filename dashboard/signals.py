@@ -1,96 +1,69 @@
-from django.db.models.signals import post_delete, post_save
-from django.dispatch import receiver
+"""Actualización de métricas del dashboard mediante contratos de dominio."""
 
-from relevamientos.models import Relevamiento
-from relevamientos.models import Prestacion
-from comedores.models import Comedor, ValorComida
+from django.core.cache import cache
+
+from comedores.api import registrar_observador_dashboard as observar_comedores
 from dashboard.models import Dashboard
 from dashboard.utils import (
-    contar_comedores_activos,
-    contar_relevamientos_activos,
+    calcular_presupuesto_comida,
     calcular_presupuesto_desayuno,
     calcular_presupuesto_merienda,
-    calcular_presupuesto_comida,
+    contar_comedores_activos,
+    contar_relevamientos_activos,
+    table_exists,
 )
-from core.soft_delete.signals import post_soft_delete, post_restore
+from relevamientos.api import registrar_observador_dashboard as observar_relevamientos
 
-from .utils import table_exists
+
+TABLES_REQUERIDAS = (
+    "comedores_comedor",
+    "relevamientos_relevamiento",
+    "relevamientos_prestacion",
+    "comedores_valorcomida",
+)
+
+DASHBOARD_CACHE_KEYS = (
+    "contar_comedores_activos",
+    "contar_relevamientos_activos",
+    "calcular_presupuesto_desayuno",
+    "calcular_presupuesto_merienda",
+    "calcular_presupuesto_comida",
+)
+
+
+def _tablas_requeridas_existen():
+    """Evita actualizar métricas mientras las migraciones aún no crearon sus tablas."""
+
+    return all(table_exists(table) for table in TABLES_REQUERIDAS)
 
 
 def update_dashboard_key(llave, cantidad):
-    """
-    Actualiza o crea un elemento del Dashboard para el concepto deseado con la cantidad recibida
+    """Actualiza la métrica persistida identificada por ``llave``."""
 
-    :param llave: Concepto en el Dashboard
-    :param cantidad: Cantidad a definir del concepto en el Dashboard
-    """
-    dashboard = Dashboard.objects.update_or_create(
+    return Dashboard.objects.update_or_create(
         llave=llave,
         defaults={"cantidad": cantidad},
     )
-    return dashboard
 
 
-def update_dashboard_comedores(sender, instance, **kwargs):
+def update_dashboard_comedores():
+    """Refresca el agregado de Comedores y Relevamientos."""
+
+    if not _tablas_requeridas_existen():
+        return
+
+    cache.delete_many(DASHBOARD_CACHE_KEYS)
     update_dashboard_key("cantidad_comedores_activos", contar_comedores_activos())
     update_dashboard_key(
         "cantidad_relevamientos_activos", contar_relevamientos_activos()
     )
-    # update_dashboard_key("cantidad_beneficiarios", contar_beneficiarios())
     update_dashboard_key("presupuesto_desayuno", calcular_presupuesto_desayuno())
     update_dashboard_key("presupuesto_merienda", calcular_presupuesto_merienda())
     update_dashboard_key("presupuesto_comida", calcular_presupuesto_comida())
 
 
 def register_signals():
-    if (
-        table_exists("comedores_comedor")
-        and table_exists("comedores_relevamiento")
-        and table_exists("comedores_prestacion")
-        and table_exists("comedores_valorcomida")
-    ):
+    """Registra observers sin consultar la base durante el arranque de Django."""
 
-        @receiver(post_save, sender=Comedor)
-        def trigger_update_comedor(sender, instance, **kwargs):
-            return update_dashboard_comedores(sender, instance, **kwargs)
-
-        @receiver(post_save, sender=Relevamiento)
-        def trigger_update_relevamiento(sender, instance, **kwargs):
-            return update_dashboard_comedores(sender, instance, **kwargs)
-
-        @receiver(post_save, sender=Prestacion)
-        def trigger_update_prestacion(sender, instance, **kwargs):
-            return update_dashboard_comedores(sender, instance, **kwargs)
-
-        @receiver(post_save, sender=ValorComida)
-        def trigger_update_valorcomida(sender, instance, **kwargs):
-            return update_dashboard_comedores(sender, instance, **kwargs)
-
-        @receiver(post_delete, sender=Comedor)
-        def trigger_update_delete_comedor(sender, instance, **kwargs):
-            return update_dashboard_comedores(sender, instance, **kwargs)
-
-        @receiver(post_delete, sender=Relevamiento)
-        def trigger_update_delete_relevamiento(sender, instance, **kwargs):
-            return update_dashboard_comedores(sender, instance, **kwargs)
-
-        @receiver(post_soft_delete, sender=Comedor)
-        @receiver(post_restore, sender=Comedor)
-        def trigger_update_soft_delete_comedor(sender, instance, **kwargs):
-            return update_dashboard_comedores(sender, instance, **kwargs)
-
-        @receiver(post_soft_delete, sender=Relevamiento)
-        @receiver(post_restore, sender=Relevamiento)
-        def trigger_update_soft_delete_relevamiento(sender, instance, **kwargs):
-            return update_dashboard_comedores(sender, instance, **kwargs)
-
-        @receiver(post_delete, sender=Prestacion)
-        def trigger_update_delete_prestacion(sender, instance, **kwargs):
-            return update_dashboard_comedores(sender, instance, **kwargs)
-
-        @receiver(post_delete, sender=ValorComida)
-        def trigger_update_delete_valorcomida(sender, instance, **kwargs):
-            return update_dashboard_comedores(sender, instance, **kwargs)
-
-
-register_signals()
+    observar_comedores(update_dashboard_comedores)
+    observar_relevamientos(update_dashboard_comedores)

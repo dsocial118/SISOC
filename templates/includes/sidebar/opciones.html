@@ -1,5 +1,5 @@
 {% load static custom_filters dashboard_tags %}
-{% with pagina_actual=request.resolver_match.route vat_sidebar_only=request.user|is_vat_sidebar_only %}
+{% with pagina_actual=request.resolver_match.route vat_sidebar_only=request.user|is_vat_sidebar_only cdi_local_sidebar_only=request.user|is_cdi_local_sidebar_only %}
     <!-- INFORMACIÓN DE USUARIO -->
     <li class="nav-item user-info mb-2 mt-2">
         <div class="user-panel d-flex align-items-center p-3">
@@ -35,10 +35,10 @@
             <p>Inicio</p>
         </a>
     </li>
-    {% if not vat_sidebar_only %}
+    {% if not vat_sidebar_only and not cdi_local_sidebar_only %}
         <!-- COMUNICADOS -->
         <li class="nav-item nav-main-item {% if 'comunicados' in pagina_actual %}menu-open{% endif %}"
-            style="order: 6;
+            style="order: 7;
                    border-bottom: 1px solid var(--sidebar-border-color)">
             <a href="#"
                class="nav-link {% if 'comunicados' in pagina_actual %}active{% endif %}">
@@ -80,12 +80,14 @@
                         <p>Usuarios</p>
                     </a>
                 </li>
-                <li class="nav-item">
-                    <a href="{% url 'grupos' %}"
-                       class="nav-link nav-dot ms-2 {% if 'grupos' in pagina_actual %}active{% endif %}">
-                        <p>Grupos</p>
-                    </a>
-                </li>
+                {% if request.user|has_perm_code:"auth.view_group" %}
+                    <li class="nav-item">
+                        <a href="{% url 'grupos' %}"
+                           class="nav-link nav-dot ms-2 {% if 'grupos' in pagina_actual %}active{% endif %}">
+                            <p>Grupos</p>
+                        </a>
+                    </li>
+                {% endif %}
                 <li class="nav-item">
                     <a href="{% url 'programa_listar' %}"
                        class="nav-link nav-dot ms-2 {% if 'programas/' in pagina_actual %}active{% endif %}">
@@ -115,20 +117,11 @@
                         <p>Parametrías de Voucher</p>
                     </a>
                 </li>
-                {% if perms.ocr.use_ocr or request.user.is_superuser %}
-                    <li class="nav-item">
-                        <a href="{% url 'ocr_upload' %}"
-                           class="nav-link nav-dot ms-2 {% if 'ocr/' in pagina_actual %}active{% endif %}">
-                            <i class="nav-icon bi bi-file-text"></i>
-                            <p>OCR</p>
-                        </a>
-                    </li>
-                {% endif %}
             </ul>
         </li>
     {% endif %}
-    {% if not vat_sidebar_only and request.user|has_any_perm:"auth.role_admin,core.view_montoprestacionprograma,pwa.view_catalogoactividadpwa,pwa.manage_catalogoactividadpwa,insumos.view_insumo" %}
-        <li class="nav-item nav-main-item {% if 'dupla' in pagina_actual or 'equipo-tecnico' in pagina_actual or 'montoprestacion' in pagina_actual or 'cursos-app-mobile' in pagina_actual or 'actividades-pnud' in pagina_actual or 'insumos' in pagina_actual %}menu-open{% endif %}"
+    {% if not vat_sidebar_only and request.user|has_any_perm:"auth.role_admin,core.view_montoprestacionprograma,pwa.view_catalogoactividadpwa,pwa.manage_catalogoactividadpwa,insumos.view_insumo,admisiones.gestionar_templates_informe_tecnico" %}
+        <li class="nav-item nav-main-item {% if 'dupla' in pagina_actual or 'equipo-tecnico' in pagina_actual or 'montoprestacion' in pagina_actual or 'cursos-app-mobile' in pagina_actual or 'actividades-pnud' in pagina_actual or 'insumos' in pagina_actual or 'configuracion/templates' in pagina_actual %}menu-open{% endif %}"
             style="order: 5">
             <a href="#" class="nav-link">
                 <img src="{% static 'custom/img/iconos_sidebar/legajos.svg' %}" alt="" />
@@ -176,8 +169,51 @@
                         </a>
                     </li>
                 {% endif %}
+                {% if request.user|has_perm_code:"admisiones.gestionar_templates_informe_tecnico" %}
+                    <li class="nav-item {% if 'configuracion/templates' in pagina_actual %}menu-open{% endif %}">
+                        <a href="#"
+                           class="nav-link nav-dot ms-2 {% if 'configuracion/templates' in pagina_actual %}active{% endif %}">
+                            <p>Gestor de templates</p>
+                            <i class="nav-arrow bi bi-chevron-right"></i>
+                        </a>
+                        <ul class="nav nav-treeview">
+                            <li class="nav-item">
+                                <a href="{% url 'gestor_templates_listar' %}"
+                                   class="nav-link ms-4 {% if 'configuracion/templates' in pagina_actual and 'incidencias' not in pagina_actual and 'variables' not in pagina_actual %}active{% endif %}">
+                                    <i class="nav-icon bi bi-arrow-return-right"></i>
+                                    <p>Templates</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{% url 'gestor_templates_variables_listar' %}"
+                                   class="nav-link ms-4 {% if 'configuracion/templates/variables' in pagina_actual %}active{% endif %}">
+                                    <i class="nav-icon bi bi-arrow-return-right"></i>
+                                    <p>Variables documentales</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{% url 'gestor_templates_incidencias_listar' %}"
+                                   class="nav-link ms-4 {% if 'configuracion/templates/incidencias' in pagina_actual %}active{% endif %}">
+                                    <i class="nav-icon bi bi-arrow-return-right"></i>
+                                    <p>Incidencias de templates</p>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                {% endif %}
             </ul>
         </li>
+    {% endif %}
+    {% if not vat_sidebar_only %}
+        {% if perms.ocr.use_ocr or request.user.is_superuser %}
+            <li class="nav-item nav-main-item" style="order: 6">
+                <a href="{% url 'ocr_upload' %}"
+                   class="nav-link {% if 'ocr/' in pagina_actual %}active{% endif %}">
+                    <i class="nav-icon bi bi-file-text"></i>
+                    <p>OCR</p>
+                </a>
+            </li>
+        {% endif %}
     {% endif %}
     {% if not vat_sidebar_only %}
         {% tableros_para_sidebar as tableros %}
@@ -192,14 +228,6 @@
                         <i class="nav-arrow bi bi-chevron-right"></i>
                     </a>
                     <ul class="nav nav-treeview">
-                        {% if has_dashboard_cf %}
-                            <li class="nav-item">
-                                <a href="{% url 'dashboard' %}"
-                                   class="nav-link nav-dot ms-2 {% if 'centro-de-familia' in pagina_actual %}active{% endif %}">
-                                    <p>Centros de Familia</p>
-                                </a>
-                            </li>
-                        {% endif %}
                         {% for item in tableros %}
                             {% if item.tipo == 'grupo' %}
                                 <li class="nav-item {% if item.activo %}menu-open{% endif %}">
@@ -284,10 +312,10 @@
                     </li>
                 {% endif %}
                 <!-- COMEDORES -->
-                {% if request.user|has_perm_code:"comedores.view_comedor" %}
-                    <li class="nav-item {% if 'comedores' in pagina_actual or 'admisiones' in pagina_actual or 'acompanamiento' in pagina_actual or 'rendicion_cuentas' in pagina_actual %}menu-open{% endif %}">
+                {% if request.user|has_perm_code:"comedores.view_comedor" or request.user|has_perm_code:"importarexpediente.view_archivosimportados" %}
+                    <li class="nav-item {% if 'comedores' in pagina_actual or 'admisiones' in pagina_actual or 'acompanamiento' in pagina_actual or 'rendicion_cuentas' in pagina_actual or 'importarexpediente' in pagina_actual %}menu-open{% endif %}">
                         <a href="#"
-                           class="nav-link nav-dot ms-2 {% if 'comedores' in pagina_actual %}active{% endif %}">
+                           class="nav-link nav-dot ms-2 {% if 'comedores' in pagina_actual or 'importarexpediente' in pagina_actual %}active{% endif %}">
                             <p>Comedores</p>
                             <i class="nav-arrow bi bi-chevron-right"></i>
                         </a>
@@ -339,6 +367,15 @@
                                     </a>
                                 </li>
                             {% endif %}
+                            {% if request.user|has_perm_code:"importarexpediente.view_archivosimportados" %}
+                                <li class="nav-item">
+                                    <a href="{% url 'importarexpedientes_list' %}"
+                                       class="nav-link ms-4 {% if 'importarexpediente/listar' in pagina_actual %}active{% endif %}">
+                                        <i class="nav-icon bi bi-arrow-return-right"></i>
+                                        <p>Expedientes de Pago</p>
+                                    </a>
+                                </li>
+                            {% endif %}
                             {% comment %}
                         <!-- RENDICIÓN DE CUENTAS FINAL -->
                         {% if not vat_sidebar_only and request.user|has_perm_code:"rendicioncuentasfinal.view_rendicioncuentasfinal" %}
@@ -354,7 +391,7 @@
                     </li>
                 {% endif %}
                 <!-- ORGANIZACIONES -->
-                {% if request.user|has_perm_code:"organizaciones.view_organizacion" or request.user|has_perm_code:"auth.role_tecnico_comedor" or request.user|has_perm_code:"auth.role_abogado_dupla" or request.user|has_perm_code:"rendicioncuentasmensual.view_rendicioncuentamensual" %}
+                {% if request.user|has_perm_code:"organizaciones.view_organizacion" or request.user|has_perm_code:"auth.role_tecnico_comedor" or request.user|has_perm_code:"auth.role_abogado_dupla" or request.user|has_any_perm:"rendicioncuentasmensual.view_rendicioncuentamensual,rendicioncuentasmensual.manage_territorial_stage,rendicioncuentasmensual.manage_auditoria_review_stage,rendicioncuentasmensual.manage_auditoria_stage,rendicioncuentasmensual.manage_regularizacion_stage" %}
                     <li class="nav-item {% if 'organizaciones' in pagina_actual or 'rendicioncuentasmensual' in pagina_actual %}menu-open{% endif %}">
                         <a href="#"
                            class="nav-link nav-dot ms-2 {% if 'organizaciones' in pagina_actual or 'rendicioncuentasmensual' in pagina_actual %}active{% endif %}">
@@ -371,7 +408,7 @@
                                     </a>
                                 </li>
                             {% endif %}
-                            {% if request.user|has_perm_code:"rendicioncuentasmensual.view_rendicioncuentamensual" %}
+                            {% if request.user|has_any_perm:"rendicioncuentasmensual.view_rendicioncuentamensual,rendicioncuentasmensual.manage_territorial_stage,rendicioncuentasmensual.manage_auditoria_review_stage,rendicioncuentasmensual.manage_auditoria_stage,rendicioncuentasmensual.manage_regularizacion_stage" %}
                                 <li class="nav-item">
                                     <a href="{% url 'rendicioncuentasmensual_global_list' %}"
                                        class="nav-link ms-4 {% if 'rendicioncuentasmensual' in pagina_actual %}active{% endif %}">
@@ -380,25 +417,6 @@
                                     </a>
                                 </li>
                             {% endif %}
-                        </ul>
-                    </li>
-                {% endif %}
-
-                {% if request.user|has_perm_code:"importarexpediente.view_archivosimportados" %}
-                    <li class="nav-item {% if 'importarexpediente' in pagina_actual %}menu-open{% endif %}">
-                        <a href="#"
-                           class="nav-link nav-dot ms-2 {% if 'importarexpediente' in pagina_actual %}active{% endif %}">
-                            <p>Importar Expediente de Pago</p>
-                            <i class="nav-arrow bi bi-chevron-right"></i>
-                        </a>
-                        <ul class="nav nav-treeview">
-                            <li class="nav-item">
-                                <a href="{% url 'importarexpedientes_list' %}"
-                                   class="nav-link ms-4 {% if 'importarexpediente/listar' in pagina_actual %}active{% endif %}">
-                                    <i class="nav-icon bi bi-arrow-return-right"></i>
-                                    <p>Ver Importar Expediente de Pago</p>
-                                </a>
-                            </li>
                         </ul>
                     </li>
                 {% endif %}
@@ -678,20 +696,27 @@
             {% endif %}
             {% if not vat_sidebar_only %}
                 <!-- CELIAQUÍA -->
-                {% if request.user|has_perm_code:"celiaquia.view_expediente" or request.user.is_superuser %}
+                {% comment %}
+                El menú se muestra con cualquiera de los tres permisos: un grupo
+                puede tener sólo el de Reporte (o sólo el de Dashboard) sin ver
+                expedientes, y aun así necesita llegar a su módulo.
+                {% endcomment %}
+                {% if request.user|has_perm_code:"celiaquia.view_expediente" or request.user|has_perm_code:"celiaquia.view_cupo_dashboard" or request.user|has_perm_code:"celiaquia.view_reporte_provincias" or request.user.is_superuser %}
                     <li class="nav-item">
                         <a href="#" class="nav-link nav-dot ms-2">
                             <p>Celiaquía</p>
                             <i class="nav-arrow bi bi-chevron-right"></i>
                         </a>
                         <ul class="nav nav-treeview">
-                            <li class="nav-item">
-                                <a href="{% url 'expediente_list' %}" class="nav-link ms-2">
-                                    <i class="nav-icon fas fa-folder-open"></i>
-                                    <p>Expedientes</p>
-                                </a>
-                            </li>
                             {% if request.user|has_perm_code:"celiaquia.view_expediente" %}
+                                <li class="nav-item">
+                                    <a href="{% url 'expediente_list' %}" class="nav-link ms-2">
+                                        <i class="nav-icon fas fa-folder-open"></i>
+                                        <p>Expedientes</p>
+                                    </a>
+                                </li>
+                            {% endif %}
+                            {% if request.user|has_perm_code:"celiaquia.view_cupo_dashboard" %}
                                 <li class="nav-item">
                                     <a href="{% url 'cupo_dashboard' %}" class="nav-link ms-2">
                                         <i class="nav-icon fas fa-chart-bar"></i>
@@ -699,7 +724,7 @@
                                     </a>
                                 </li>
                             {% endif %}
-                            {% if request.user|has_perm_code:"celiaquia.view_expediente" or request.user|has_perm_code:"celiaquia.view_expediente" %}
+                            {% if request.user|has_perm_code:"celiaquia.view_reporte_provincias" %}
                                 <li class="nav-item">
                                     <a href="{% url 'reporter_provincias' %}" class="nav-link ms-2">
                                         <i class="nav-icon fas fa-chart-pie"></i>
@@ -712,5 +737,13 @@
                 {% endif %}
             {% endif %}
         </ul>
+    </li>
+    <!-- MI CUENTA (siempre al pie del sidebar) -->
+    <li class="nav-item mt-auto border-top pt-2">
+        <a href="{% url 'mi_cuenta' %}"
+           class="nav-link {% if pagina_actual == 'mi-cuenta/' %}active{% endif %}">
+            <i class="nav-icon fas fa-user-circle"></i>
+            <p>Mi cuenta</p>
+        </a>
     </li>
 {% endwith %}

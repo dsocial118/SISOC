@@ -5,7 +5,11 @@
 /* Colores Oficiales de Poncho */
 :root {
     /* Principales */
-    --poncho-azul-principal: #230D4F;
+    /* --poncho-azul-principal vive en poncho.css (#232d4f, verificado contra
+       las variables del archivo de Figma). Aca estaba definida como #230D4F,
+       que difiere en un caracter y es visiblemente violeta; como hitos.css se
+       carga despues, pisaba el valor bueno y teñia el buscador y las tablas de
+       los listados. No volver a declararla aca. */
     --poncho-azul-cobalto: #4564E7;
     
     /* Estados */

@@ -57,6 +57,20 @@ def test_create_groups_assigns_cross_group_role_permissions():
     assert admin.permissions.filter(pk=export_permission.pk).exists()
 
 
+def test_create_groups_creates_comedor_validator_role_and_group():
+    """El validador debe existir como rol asignable sin permisos de edición."""
+    Group.objects.all().delete()
+
+    call_command("create_groups", verbosity=0)
+
+    validator = Group.objects.get(name="Validador Comedores")
+    validator_codes = set(validator.permissions.values_list("codename", flat=True))
+    admin = Group.objects.get(name="Admin")
+
+    assert validator_codes == {"role_validador_comedores"}
+    assert admin.permissions.filter(codename="role_validador_comedores").exists()
+
+
 def test_create_groups_creates_cfpinet_with_vat_permissions():
     """CFPINET debe conservar el rol VAT SSE y permisos VAT globales."""
     Group.objects.all().delete()
@@ -286,6 +300,27 @@ def test_create_groups_creates_cfp_revisor_readonly_group():
     )
     assert not any(
         code.startswith(("add_", "change_", "delete_")) for code in group_codes
+    )
+
+
+def test_create_groups_creates_revisor_relevamientos_group():
+    """El revisor debe poder ver y revisar/finalizar relevamientos, sin editarlos."""
+    Group.objects.all().delete()
+
+    call_command("create_groups", verbosity=0)
+
+    revisor = Group.objects.get(name="Revisor Relevamientos")
+    group_codes = set(revisor.permissions.values_list("codename", flat=True))
+
+    assert {"view_relevamiento", "review_relevamiento"}.issubset(group_codes)
+    # No puede editar/crear/borrar el contenido del relevamiento.
+    assert (
+        not {
+            "change_relevamiento",
+            "add_relevamiento",
+            "delete_relevamiento",
+        }
+        & group_codes
     )
 
 

@@ -195,6 +195,8 @@
                 {% include "centrodeinfancia/_nomina_campo.html" with label="Dpto." value=nomina.departamento_domicilio %}
                 {% include "centrodeinfancia/_nomina_campo.html" with label="Tipo de barrio" value=nomina.get_tipo_barrio_display %}
                 {% include "centrodeinfancia/_nomina_campo.html" with label="Jurisdicción" value=nomina.provincia_domicilio %}
+                {% include "centrodeinfancia/_nomina_campo.html" with label="Departamento (jurisdicción)" value=nomina.departamento %}
+                {% include "centrodeinfancia/_nomina_campo.html" with label="Decil de CDI" value=nomina.departamento.decil_ipi %}
                 {% include "centrodeinfancia/_nomina_campo.html" with label="Municipio" value=nomina.municipio_domicilio %}
                 {% include "centrodeinfancia/_nomina_campo.html" with label="Localidad" value=nomina.localidad_domicilio %}
                 {% include "centrodeinfancia/_nomina_campo.html" with label="Convivientes" value=nomina.convivientes %}
@@ -277,7 +279,7 @@
         <div class="section-body collapse show" id="section-discapacidad">
             <div class="row g-3 mb-3">
                 {% include "centrodeinfancia/_nomina_campo.html" with label="¿Tiene discapacidad?" value=nomina.get_tiene_discapacidad_display %}
-                {% include "centrodeinfancia/_nomina_campo.html" with label="¿Recibe apoyo?" value=nomina.recibe_apoyo_discapacidad|yesno:"Sí,No,—" %}
+                {% include "centrodeinfancia/_nomina_campo.html" with label="¿Recibe apoyo al desarrollo?" value=nomina.apoyo_desarrollo_unificado_display %}
                 {% include "centrodeinfancia/_nomina_campo.html" with label="¿Posee CUD?" value=nomina.posee_cud|yesno:"Sí,No,—" %}
                 {% include "centrodeinfancia/_nomina_campo.html" with label="N° CUD" value=nomina.numero_cud %}
             </div>
@@ -388,7 +390,7 @@
                     <i class="fas fa-syringe"></i>
                 </div>
                 <div class="section-title-group">
-                    <h3 class="section-title">Vacunación NOMIVAC y Desarrollo Infantil</h3>
+                    <h3 class="section-title">Vacunación NOMIVAC</h3>
                 </div>
             </div>
             <div class="section-status">
@@ -515,10 +517,6 @@
             {% else %}
                 <p style="color:#9ca3af;" class="mb-0">Sin datos de vacunación cargados.</p>
             {% endif %}
-            <hr style="border-color:#374151" />
-            <div class="row g-3">
-                {% include "centrodeinfancia/_nomina_campo.html" with label="¿Recibe apoyo al desarrollo?" value=nomina.get_recibe_apoyo_desarrollo_display %}
-            </div>
         </div>
     </div>
 

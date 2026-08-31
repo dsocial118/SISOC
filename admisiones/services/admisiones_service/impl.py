@@ -27,10 +27,12 @@ from admisiones.models.admisiones import (
 from admisiones.forms.admisiones_forms import (
     CaratularForm,
     IFInformeTecnicoForm,
+    ValidacionesTemplateAdmisionForm,
 )
 from acompanamientos.acompanamiento_service import AcompanamientoService
 from ..docx_service import DocumentTemplateService, TextFormatterService
 from core.services.advanced_filters import AdvancedFilterEngine
+from core.services.list_ordering import apply_allowed_ordering
 from iam.services import user_has_any_permission_codes, user_has_permission_code
 from admisiones.services.admisiones_filter_config import (
     FIELD_MAP as ADMISION_FILTER_MAP,
@@ -140,18 +142,18 @@ class AdmisionService:
             "acta de asamblea": "acta de asamblea constitutiva",
             "dni responsable 1": "dni del responsable 1",
             "dni responsable 2": "dni del responsable 2",
-            "acta designacion aval 1 designacion de cargo aval 1 persona fisica": "acta designacion aval 1 designacion de cargo aval 1 persona fisica o juridica",
-            "dni autoridad maxima aval 1 dni aval 1 persona fisica": "dni de la autoridad maxima del aval 1 dni del aval 1 segun corresponda",
-            "acta designacion aval 2 designacion de cargo aval 2 persona fisica": "acta designacion aval 2 designacion de cargo aval 2 persona fisica o juridica",
-            "dni autoridad maxima aval 2 dni aval 2 persona fisica": "dni de la autoridad maxima del aval 2 dni del aval 2 segun corresponda",
-            "nota aval 1": "nota de aval emitida por el aval 1",
-            "nota aval 2": "nota de aval emitida por el aval 2",
-            "acta constitutiva aval 1": "acta constitutiva del aval 1",
-            "estatuto aval 1": "estatuto del aval 1",
-            "reso personeria juridica aval 1": "resolucion de personeria juridica del aval 1",
-            "acta constitutiva aval 2": "acta constitutiva del aval 2",
-            "estatuto aval 2": "estatuto del aval 2",
-            "reso personeria juridica aval 2": "resolucion de personeria juridica del aval 2",
+            "acta designacion aval 1 designacion de cargo aval 1 persona fisica": "acta de designacion de avales designacion de cargo avales persona fisica o juridica",
+            "dni autoridad maxima aval 1 dni aval 1 persona fisica": "dni de la autoridad maxima avales dni avales segun corresponda",
+            "acta designacion aval 2 designacion de cargo aval 2 persona fisica": "acta de designacion de avales designacion de cargo avales persona fisica o juridica",
+            "dni autoridad maxima aval 2 dni aval 2 persona fisica": "dni de la autoridad maxima avales dni avales segun corresponda",
+            "nota aval 1": "nota avales",
+            "nota aval 2": "nota avales",
+            "acta constitutiva aval 1": "acta constitutiva avales",
+            "estatuto aval 1": "estatuto de avales",
+            "reso personeria juridica aval 1": "resolucion de personeria juridica avales",
+            "acta constitutiva aval 2": "acta constitutiva avales",
+            "estatuto aval 2": "estatuto de avales",
+            "reso personeria juridica aval 2": "resolucion de personeria juridica avales",
             "preinscripcion renacom": "constancia de preinscripcion en renacom",
             "validacion renacom": "constancia de validacion en renacom",
             "inscripcion renacom": "constancia de inscripcion definitiva en renacom",
@@ -521,8 +523,19 @@ class AdmisionService:
         obligatorios_totales = 0
         obligatorios_completos = 0
         ids_documentacion_admision_usados = set()
+        nombres_documentos_organizacion = set()
 
         if admision:
+            categoria_organizacional = (
+                AdmisionService._categoria_organizacional_admision(admision)
+            )
+            if categoria_organizacional:
+                nombres_documentos_organizacion = {
+                    AdmisionService._normalizar_nombre_documental(nombre)
+                    for nombre in DocumentacionOrganizacion.objects.filter(
+                        categoria=categoria_organizacional
+                    ).values_list("nombre", flat=True)
+                }
             (
                 documentos_info,
                 ids_documentacion_admision_usados,
@@ -551,10 +564,26 @@ class AdmisionService:
                 if doc_serializado.get("estado") == "Aceptado":
                     obligatorios_completos += 1
 
+        # Un adjunto sin ``documentacion`` no es necesariamente adicional: al
+        # materializar un documento catalogado del legajo de la organizacion
+        # que no tiene equivalente en ``Documentacion`` se conserva con nombre
+        # personalizado. Ese archivo ya se muestra en la seccion organizacional
+        # y no debe duplicarse como documentacion adicional. Tambien se cubren
+        # registros legacy que no guardaron la FK de origen: su nombre coincide
+        # con el catalogo vigente de documentos de la organizacion.
         documentos_personalizados_info = [
             AdmisionService.serialize_documento_personalizado(archivo)
             for archivo in archivos_subidos
             if not archivo.documentacion_id
+            and not getattr(
+                getattr(archivo, "archivo_organizacion_origen", None),
+                "documentacion_id",
+                None,
+            )
+            and AdmisionService._normalizar_nombre_documental(
+                archivo.nombre_personalizado
+            )
+            not in nombres_documentos_organizacion
         ]
 
         resumen_estados = AdmisionService._resumen_documentos(
@@ -670,16 +699,18 @@ class AdmisionService:
 
         distinct_ids = queryset.values_list("id", flat=True).distinct()
 
-        return (
-            Admision.objects.filter(id__in=distinct_ids)
-            .select_related(
-                "comedor",
-                "comedor__provincia",
-                "comedor__tipocomedor",
-                "comedor__referente",
-                "estado",
-            )
-            .order_by("-creado")
+        queryset = Admision.objects.filter(id__in=distinct_ids).select_related(
+            "comedor",
+            "comedor__provincia",
+            "comedor__tipocomedor",
+            "comedor__referente",
+            "estado",
+        )
+        return apply_allowed_ordering(
+            queryset,
+            request_or_query,
+            {"nombre": "comedor__nombre"},
+            default=("-creado",),
         )
 
     @staticmethod
@@ -753,6 +784,8 @@ class AdmisionService:
                         # Nombre
                         {
                             "content": comedor_nombre,
+                            "data_attr": "nombre",
+                            "data_value": comedor_nombre,
                             "link_url": comedor_link_url,
                             "link_class": "font-weight-bold link-handler",
                             "link_title": "Ver detalles",
@@ -820,6 +853,13 @@ class AdmisionService:
                 and informe_complementario_pendiente.estado == "rectificar"
             )
         )
+        informe_complementario_requerido = bool(
+            admision.estado_legales == "Informe Complementario Solicitado"
+            or (
+                informe_complementario_pendiente
+                and informe_complementario_pendiente.estado == "rectificar"
+            )
+        )
 
         observaciones_complementario = None
         if (
@@ -832,6 +872,7 @@ class AdmisionService:
 
         return {
             "mostrar_informe_complementario": mostrar_informe_complementario,
+            "informe_complementario_requerido": informe_complementario_requerido,
             "observaciones_complementario": observaciones_complementario,
         }
 
@@ -935,6 +976,9 @@ class AdmisionService:
             "mostrar_informe_complementario": informe_complementario_context[
                 "mostrar_informe_complementario"
             ],
+            "informe_complementario_requerido": informe_complementario_context[
+                "informe_complementario_requerido"
+            ],
             "observaciones_complementario": informe_complementario_context[
                 "observaciones_complementario"
             ],
@@ -959,15 +1003,20 @@ class AdmisionService:
     @staticmethod
     def get_admision_update_context(admision, user=None):
         try:
+            # Con un convenio sin seleccionar, ``convenios=None`` devuelve los
+            # documentos que no pertenecen a ningun convenio. No son requisitos
+            # de la admision y no deben mostrarse detras del modal inicial.
             documentaciones = (
-                Documentacion.objects.filter(models.Q(convenios=admision.tipo_convenio))
+                Documentacion.objects.filter(convenios=admision.tipo_convenio)
                 .distinct()
                 .order_by("orden")
+                if admision.tipo_convenio_id
+                else Documentacion.objects.none()
             )
 
             archivos_subidos = ArchivoAdmision.objects.filter(
                 admision=admision
-            ).select_related("documentacion")
+            ).select_related("documentacion", "archivo_organizacion_origen")
             documentos_context = AdmisionService._build_documentos_update_context(
                 documentaciones=documentaciones,
                 archivos_subidos=archivos_subidos,
@@ -1127,7 +1176,13 @@ class AdmisionService:
             (
                 "confirmar_tipo_convenio",
                 lambda: AdmisionService._procesar_post_confirmar_tipo_convenio(
-                    admision
+                    request, admision
+                ),
+            ),
+            (
+                "guardar_validaciones_template",
+                lambda: AdmisionService.guardar_validaciones_template(
+                    admision, request.POST, request.user
                 ),
             ),
         )
@@ -1562,7 +1617,36 @@ class AdmisionService:
         return admision
 
     @staticmethod
-    def confirmar_tipo_convenio_desde_organizacion(admision):
+    def puede_editar_validaciones_template(admision):
+        return not InformeTecnico.objects.filter(
+            admision=admision,
+            estado_formulario="finalizado",
+        ).exists()
+
+    @staticmethod
+    def guardar_validaciones_template(admision, data, user=None):
+        if not AdmisionService.puede_editar_validaciones_template(admision):
+            return (
+                False,
+                "No se pueden modificar las validaciones después de generar el Informe Técnico.",
+            )
+
+        if user is not None and not (
+            user.is_superuser
+            or AdmisionService._verificar_permiso_tecnico_dupla(user, admision.comedor)
+        ):
+            return False, "No tiene permisos para modificar estas validaciones."
+
+        form = ValidacionesTemplateAdmisionForm(data, instance=admision)
+        if not form.is_valid():
+            errores = " ".join(", ".join(messages) for messages in form.errors.values())
+            return False, errores or "Las validaciones ingresadas no son válidas."
+
+        form.save()
+        return True, "Validaciones de templates guardadas correctamente."
+
+    @staticmethod
+    def confirmar_tipo_convenio_desde_organizacion(admision, data=None, user=None):
         tipo_convenio = AdmisionService.resolver_tipo_convenio_desde_organizacion(
             getattr(getattr(admision, "comedor", None), "organizacion", None)
         )
@@ -1572,18 +1656,43 @@ class AdmisionService:
                 "No se pudo resolver el Tipo de Convenio desde el Tipo de Entidad de la organización.",
             )
 
-        admision.tipo_convenio = tipo_convenio
-        admision.estado_admision = "convenio_seleccionado"
-        admision.save(update_fields=["tipo_convenio", "estado_admision"])
-        AdmisionService.congelar_documentacion_organizacional(admision)
-        # Sincronizar snapshot tras materializar docs: sin este paso la primera
-        # modificacion en el legajo no dispararia la advertencia (Bug A #1799).
-        AdmisionService.refrescar_snapshot_documentacion_organizacional(admision)
+        if user is not None and not (
+            user.is_superuser
+            or AdmisionService._verificar_permiso_tecnico_dupla(user, admision.comedor)
+        ):
+            return False, "No tiene permisos para confirmar estas validaciones."
+
+        validaciones_form = None
+        if data is not None:
+            validaciones_form = ValidacionesTemplateAdmisionForm(
+                data, instance=admision
+            )
+            if not validaciones_form.is_valid():
+                errores = " ".join(
+                    ", ".join(messages)
+                    for messages in validaciones_form.errors.values()
+                )
+                return False, errores or "Las validaciones ingresadas no son válidas."
+
+        with transaction.atomic():
+            admision.tipo_convenio = tipo_convenio
+            admision.estado_admision = "convenio_seleccionado"
+            admision.save(update_fields=["tipo_convenio", "estado_admision"])
+            if validaciones_form is not None:
+                validaciones_form.save()
+            AdmisionService.congelar_documentacion_organizacional(admision)
+            # Sincronizar snapshot tras materializar docs: sin este paso la primera
+            # modificacion en el legajo no dispararia la advertencia (Bug A #1799).
+            AdmisionService.refrescar_snapshot_documentacion_organizacional(admision)
         return True, "Tipo de convenio precargado desde la organización."
 
     @staticmethod
-    def _procesar_post_confirmar_tipo_convenio(admision):
-        return AdmisionService.confirmar_tipo_convenio_desde_organizacion(admision)
+    def _procesar_post_confirmar_tipo_convenio(request, admision):
+        return AdmisionService.confirmar_tipo_convenio_desde_organizacion(
+            admision,
+            data=request.POST,
+            user=request.user,
+        )
 
     @staticmethod
     def _build_defaults_handle_file_upload(archivo, usuario=None):
@@ -3011,7 +3120,34 @@ class AdmisionService:
                     "El número de expediente es obligatorio."
                 )
 
+            if not re.fullmatch(
+                r"EX-\d{4}-\d{9}- -APN-[A-Z0-9]+#[A-Z0-9]+",
+                numero_raw,
+                re.IGNORECASE,
+            ):
+                return AdmisionService._build_error_response_actualizar_num_expediente(
+                    "Formato inválido. Use EX-AÑO-NÚMERO- -APN-REPARTICIÓN#ORGANISMO."
+                )
+
+            numero_raw = numero_raw.upper()
+
             admision = get_object_or_404(Admision, id=admision_id)
+
+            duplicada = (
+                Admision.objects.filter(num_expediente__iexact=numero_raw)
+                .exclude(pk=admision.pk)
+                .select_related("comedor__organizacion")
+                .first()
+            )
+            if duplicada:
+                comedor = duplicada.comedor
+                organizacion = comedor.organizacion if comedor else None
+                tipo = duplicada.get_tipo_display() if duplicada.tipo else "Sin tipo"
+                return AdmisionService._build_error_response_actualizar_num_expediente(
+                    f"El expediente ya pertenece a la admisión #{duplicada.pk}; "
+                    f"comedor: {comedor or 'Sin comedor'}; organización: "
+                    f"{organizacion or 'Sin organización'}; tipo: {tipo}."
+                )
 
             if not AdmisionService._puede_editar_num_expediente(request.user, admision):
                 if admision.enviado_legales:

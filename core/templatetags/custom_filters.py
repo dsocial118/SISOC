@@ -8,6 +8,7 @@ from django.templatetags.static import static
 from django.utils.html import format_html
 
 from core.permissions.registry import resolve_permission_codes
+from core.services.sidebar_access import resolver_predicado_sidebar
 from iam.services import user_has_permission_code
 
 register = template.Library()
@@ -85,18 +86,13 @@ def has_any_group(user, group_names):
 @register.filter
 def is_vat_sidebar_only(user):
     """Indica si el usuario debe ver solo opciones VAT en el sidebar."""
-    if not user or not user.is_authenticated:
-        return False
-    if user.is_superuser:
-        return False
+    return resolver_predicado_sidebar("vat", user)
 
-    from VAT.services.access_scope import (
-        is_vat_provincial,
-        is_vat_referente,
-        is_vat_sse,
-    )
 
-    return bool(is_vat_sse(user) or is_vat_referente(user) or is_vat_provincial(user))
+@register.filter
+def is_cdi_local_sidebar_only(user):
+    """Indica si el menú debe ocultar Comunicados para un usuario CDI local."""
+    return resolver_predicado_sidebar("cdi_local", user)
 
 
 @register.filter

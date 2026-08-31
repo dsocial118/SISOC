@@ -11,6 +11,9 @@ from admisiones.views.web_views import (
     actualizar_personas_conveniadas_nomina,
     actualizar_num_expediente,
     crear_documento_personalizado,
+    previsualizar_informe_tecnico_template,
+    descargar_informe_tecnico_para_gde,
+    reportar_configuracion_faltante_template,
     resync_convenio_admision,
     AdmisionesTecnicosListView,
     AdmisionesTecnicosUpdateView,
@@ -24,8 +27,114 @@ from admisiones.views.web_views import (
     AdmisionesLegalesDetailView,
     admisiones_legales_ajax,
 )
+from admisiones.views.templates_informe_tecnico import (
+    IncidenciaTemplateInformeTecnicoDetailView,
+    IncidenciaTemplateInformeTecnicoListView,
+    PlantillaInformeTecnicoCreateView,
+    PlantillaInformeTecnicoDeactivateView,
+    PlantillaInformeTecnicoDetailView,
+    PlantillaInformeTecnicoListView,
+    PlantillaInformeTecnicoVersionCreateView,
+    PlantillaInformeTecnicoVersionDiscardView,
+    PlantillaInformeTecnicoVersionPreviewView,
+    PlantillaInformeTecnicoVersionPublishView,
+    PlantillaInformeTecnicoVersionUpdateView,
+    VariableTemplateInformeTecnicoListView,
+    VariableTemplateInformeTecnicoToggleView,
+)
 
 urlpatterns = [
+    path(
+        "comedores/configuracion/templates/",
+        permissions_any_required(["admisiones.gestionar_templates_informe_tecnico"])(
+            PlantillaInformeTecnicoListView.as_view()
+        ),
+        name="gestor_templates_listar",
+    ),
+    path(
+        "comedores/configuracion/templates/crear/",
+        permissions_any_required(["admisiones.gestionar_templates_informe_tecnico"])(
+            PlantillaInformeTecnicoCreateView.as_view()
+        ),
+        name="gestor_templates_crear",
+    ),
+    path(
+        "comedores/configuracion/templates/incidencias/",
+        permissions_any_required(["admisiones.gestionar_templates_informe_tecnico"])(
+            IncidenciaTemplateInformeTecnicoListView.as_view()
+        ),
+        name="gestor_templates_incidencias_listar",
+    ),
+    path(
+        "comedores/configuracion/templates/incidencias/<int:pk>/",
+        permissions_any_required(["admisiones.gestionar_templates_informe_tecnico"])(
+            IncidenciaTemplateInformeTecnicoDetailView.as_view()
+        ),
+        name="gestor_templates_incidencia_detalle",
+    ),
+    path(
+        "comedores/configuracion/templates/variables/",
+        permissions_any_required(["admisiones.gestionar_templates_informe_tecnico"])(
+            VariableTemplateInformeTecnicoListView.as_view()
+        ),
+        name="gestor_templates_variables_listar",
+    ),
+    path(
+        "comedores/configuracion/templates/variables/<int:pk>/alternar/",
+        permissions_any_required(["admisiones.gestionar_templates_informe_tecnico"])(
+            VariableTemplateInformeTecnicoToggleView.as_view()
+        ),
+        name="gestor_templates_variables_alternar",
+    ),
+    path(
+        "comedores/configuracion/templates/<int:pk>/",
+        permissions_any_required(["admisiones.gestionar_templates_informe_tecnico"])(
+            PlantillaInformeTecnicoDetailView.as_view()
+        ),
+        name="gestor_templates_detalle",
+    ),
+    path(
+        "comedores/configuracion/templates/<int:plantilla_pk>/versiones/crear/",
+        permissions_any_required(["admisiones.gestionar_templates_informe_tecnico"])(
+            PlantillaInformeTecnicoVersionCreateView.as_view()
+        ),
+        name="gestor_templates_version_crear",
+    ),
+    path(
+        "comedores/configuracion/templates/<int:plantilla_pk>/versiones/<int:version_pk>/editar/",
+        permissions_any_required(["admisiones.gestionar_templates_informe_tecnico"])(
+            PlantillaInformeTecnicoVersionUpdateView.as_view()
+        ),
+        name="gestor_templates_version_editar",
+    ),
+    path(
+        "comedores/configuracion/templates/<int:plantilla_pk>/versiones/<int:version_pk>/descartar/",
+        permissions_any_required(["admisiones.gestionar_templates_informe_tecnico"])(
+            PlantillaInformeTecnicoVersionDiscardView.as_view()
+        ),
+        name="gestor_templates_version_descartar",
+    ),
+    path(
+        "comedores/configuracion/templates/<int:plantilla_pk>/versiones/<int:version_pk>/previsualizar/",
+        permissions_any_required(["admisiones.gestionar_templates_informe_tecnico"])(
+            PlantillaInformeTecnicoVersionPreviewView.as_view()
+        ),
+        name="gestor_templates_version_previsualizar",
+    ),
+    path(
+        "comedores/configuracion/templates/<int:plantilla_pk>/versiones/<int:version_pk>/publicar/",
+        permissions_any_required(["admisiones.gestionar_templates_informe_tecnico"])(
+            PlantillaInformeTecnicoVersionPublishView.as_view()
+        ),
+        name="gestor_templates_version_publicar",
+    ),
+    path(
+        "comedores/configuracion/templates/<int:pk>/inactivar/",
+        permissions_any_required(["admisiones.gestionar_templates_informe_tecnico"])(
+            PlantillaInformeTecnicoDeactivateView.as_view()
+        ),
+        name="gestor_templates_inactivar",
+    ),
     path(
         "comedores/admisiones/tecnicos/listar",
         permissions_any_required(
@@ -95,6 +204,27 @@ urlpatterns = [
             ]
         )(InformeTecnicosUpdateView.as_view()),
         name="informe_tecnico_editar",
+    ),
+    path(
+        "comedores/admision/informe_tecnico/<str:tipo>/<int:pk>/previsualizar/",
+        previsualizar_informe_tecnico_template,
+        name="informe_tecnico_previsualizar_template",
+    ),
+    path(
+        "comedores/admision/informe_tecnico/<str:tipo>/<int:pk>/descargar-para-gde/",
+        permissions_any_required(
+            [
+                "comedores.view_comedor",
+                "admisiones.view_admision",
+                "acompanamientos.view_informacionrelevante",
+            ]
+        )(descargar_informe_tecnico_para_gde),
+        name="informe_tecnico_descargar_para_gde",
+    ),
+    path(
+        "comedores/admisiones/<int:pk>/templates/reportar-faltante/",
+        reportar_configuracion_faltante_template,
+        name="admisiones_reportar_configuracion_faltante_template",
     ),
     path(
         "comedores/admision/informe_tecnico/<str:tipo>/<int:pk>/ver/",

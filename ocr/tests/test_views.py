@@ -34,6 +34,17 @@ class OCRUploadViewTest(TestCase):
         response = self.client.get(self.url)
         self.assertRedirects(response, f"/login/?next={self.url}")
 
+    def test_authenticated_user_without_ocr_permission_is_denied(self):
+        user_without_permission = User.objects.create_user(
+            username="without_ocr_permission",
+            password="pass",
+        )
+        self.client.force_login(user_without_permission)
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, 403)
+
     def test_get_renders_form(self):
         self._login()
         response = self.client.get(self.url)

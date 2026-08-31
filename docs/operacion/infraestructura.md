@@ -76,7 +76,7 @@
 
 - App runtime:
   - Python 3.11.9.
-  - Django 4.2.x + DRF.
+  - Django 5.2.16 + DRF 3.16.1.
   - Gunicorn en qa/homologacion/prd; runserver en dev.
 
 - Process model:

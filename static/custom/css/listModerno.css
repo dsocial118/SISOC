@@ -73,27 +73,11 @@
   transform: translateY(-1px);
 }
 
-/* Input de búsqueda */
-#ajax-search-input {
-  background-color: #1e2a3a !important;
-  border: 2px solid #3d4f63 !important;
-  color: #e5e7eb !important;
-  border-radius: 12px !important;
-  padding: 16px 24px !important;
-  font-size: 16px !important;
-  transition: all 0.3s ease !important;
-}
-
-#ajax-search-input:focus {
-  background-color: #253446 !important;
-  border-color: #e7ba61 !important;
-  box-shadow: 0 0 0 0.3rem rgba(243, 156, 18, 0.2) !important;
-  color: #e5e7eb !important;
-}
-
-#ajax-search-input::placeholder {
-  color: #9ca3af !important;
-}
+/* Los estilos de #ajax-search-input se eliminaron. Ese id existe unicamente en
+   el input del componente compartido (components/search_bar.html), que ahora lo
+   estila .poncho-search__input dentro de una caja con borde propio. Al ser
+   selector de ID con !important, estas reglas le dibujaban al input un segundo
+   fondo con borde y radio: se veia un buscador dentro del buscador. */
 
 /* ============================================
    TABLA MODERNIZADA
@@ -358,6 +342,51 @@
 
 .badge-validacion i {
   font-size: 10px;
+}
+
+/* Celiaquía: los legajos subsanados usaban el mismo verde que el estado
+   "Cruce finalizado" del expediente, que se muestra en la misma celda del
+   listado. El violeta los separa sin invadir el amarillo de "a subsanar". */
+.badge-subsanado {
+  background-color: #6f42c1;
+  color: #fff;
+  border: 1px solid #59359a;
+}
+
+/* Etapas de rendición: paleta pastel independiente del estado semántico. */
+.etapa-badge {
+    border: 1px solid transparent;
+    font-weight: 600;
+}
+
+.etapa-badge.etapa-carga {
+    color: #2f3439;
+    background-color: #dee2e6;
+    border-color: #adb5bd;
+}
+
+.etapa-badge.etapa-territorial {
+    color: #073b82;
+    background-color: #b6d4fe;
+    border-color: #86b7fe;
+}
+
+.etapa-badge.etapa-revision-auditoria {
+    color: #3d2368;
+    background-color: #d2c1ed;
+    border-color: #b197db;
+}
+
+.etapa-badge.etapa-auditoria {
+    color: #743800;
+    background-color: #ffd7b5;
+    border-color: #ffb97a;
+}
+
+.etapa-badge.etapa-regularizacion {
+    color: #5f4700;
+    background-color: #ffe69c;
+    border-color: #ffd75e;
 }
 
 .fecha-validacion {
@@ -866,10 +895,6 @@
     font-size: 12px;
   }
 
-  #ajax-search-input {
-    font-size: 14px !important;
-    padding: 12px 16px !important;
-  }
 }
 
 /* ============================================
@@ -967,27 +992,8 @@ h2.text-center.display-4 {
   transform: translateY(-1px);
 }
 
-/* Botón "Agregar filtro" */
-#add-filter {
-  background: #10b981 !important;
-  color: white !important;
-  border: 2px solid #10b981 !important;
-  border-radius: 6px !important;
-  padding: 6px 16px !important;
-  font-weight: 600 !important;
-  font-size: 13px !important;
-  transition: all 0.3s ease !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.3px !important;
-  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2) !important;
-}
-
-#add-filter:hover {
-  background: #059669 !important;
-  border-color: #047857 !important;
-  transform: translateY(-2px) !important;
-  box-shadow: 0 6px 12px rgba(16, 185, 129, 0.3) !important;
-}
+/* Las reglas de #add-filter se eliminaron: el componente ya no usa ese id
+   (el boton "+ Filtro" es .poncho-addfilter con data-rol="agregar"). */
 
 /* Botón "Favoritos" */
 #favorite-filters-open {

@@ -3,6 +3,7 @@
 import contextlib
 import json
 
+from datetime import date
 from types import SimpleNamespace
 
 import pytest
@@ -242,7 +243,8 @@ def test_prepare_helpers_agregan_campos_display():
     beneficiario = SimpleNamespace(
         apellido="Perez",
         nombre="Ana",
-        responsable=SimpleNamespace(apellido="Lopez", nombre="Mario"),
+        fecha_nacimiento=date(2012, 3, 4),
+        responsable=SimpleNamespace(apellido="Lopez", nombre="Mario", cuil=20285551113),
         get_genero_display=lambda: "Femenino",
     )
     responsable = SimpleNamespace(
@@ -257,7 +259,22 @@ def test_prepare_helpers_agregan_campos_display():
 
     assert beneficiario.apellido_nombre == "Perez, Ana"
     assert beneficiario.responsable_nombre == "Lopez, Mario"
+    assert beneficiario.fecha_nacimiento_display == "04/03/2012"
+    assert beneficiario.responsable_cuil == 20285551113
     assert responsable.vinculo_display == "Padre"
+
+
+@pytest.mark.parametrize(
+    "fecha,vacio,esperado",
+    [
+        (date(2012, 3, 4), "-", "04/03/2012"),
+        (None, "-", "-"),
+        (None, "", ""),
+    ],
+)
+def test_formatear_fecha_nacimiento(fecha, vacio, esperado):
+    """Formatea dd/mm/aaaa y respeta el placeholder de fecha vacía."""
+    assert service.formatear_fecha_nacimiento(fecha, vacio=vacio) == esperado
 
 
 def test_filtered_wrappers_delegan_a_motor_avanzado(mocker):

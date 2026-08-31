@@ -1022,12 +1022,13 @@ function volverAModoVistaPersonasConveniadasNomina() {
 
 function prefillModalNumExpediente() {
     const displaySpan = document.getElementById("num-expediente-display");
-    const input = document.getElementById("num-expediente-input");
-    if (!input) {
-        return;
-    }
     const raw = (displaySpan?.textContent || "").trim();
-    input.value = raw === "-" || raw === "Sin información" ? "" : raw;
+    const match = raw.match(/^EX-(\d{4})-(\d{9})- -APN-([A-Z0-9]+)#([A-Z0-9]+)$/i);
+    const values = match ? match.slice(1) : ["", "", "", "MCH"];
+    ["anio", "numero", "reparticion", "organismo"].forEach((part, index) => {
+        const input = document.getElementById(`num-expediente-${part}`);
+        if (input) input.value = values[index];
+    });
 }
 
 function mostrarErrorNumExpediente(message) {
@@ -1069,20 +1070,19 @@ function actualizarVistaNumExpediente(numero) {
 }
 
 function guardarNumExpedienteDesdeModal() {
-    const input = document.getElementById("num-expediente-input");
-    const value = input ? input.value.trim() : "";
-    if (!value) {
-        mostrarErrorNumExpediente("El número de expediente es obligatorio.");
-        if (input) {
-            input.focus();
-        }
+    const anio = document.getElementById("num-expediente-anio")?.value.trim() || "";
+    const numero = document.getElementById("num-expediente-numero")?.value.trim() || "";
+    const reparticion = document.getElementById("num-expediente-reparticion")?.value.trim().toUpperCase() || "";
+    const organismo = document.getElementById("num-expediente-organismo")?.value.trim().toUpperCase() || "";
+    if (!/^\d{4}$/.test(anio) || !/^\d{9}$/.test(numero) ||
+        !/^[A-Z0-9]+$/.test(reparticion) || !/^[A-Z0-9]+$/.test(organismo)) {
+        mostrarErrorNumExpediente("Complete el año (4 dígitos), número (9 dígitos), repartición y organismo.");
         return;
     }
-    actualizarNumExpediente(value);
+    actualizarNumExpediente(`EX-${anio}-${numero}- -APN-${reparticion}#${organismo}`);
 }
 
 function actualizarNumExpediente(numero) {
-    const input = document.getElementById("num-expediente-input");
     const csrfInput = document.querySelector('[name=csrfmiddlewaretoken]');
     if (!csrfInput) {
         alert("No se encontro el token CSRF.");
@@ -1122,10 +1122,6 @@ function actualizarNumExpediente(numero) {
             }
 
             actualizarVistaNumExpediente(data.num_expediente || "");
-            if (input) {
-                input.value = data.num_expediente || "";
-            }
-
             const toastEl = document.getElementById("toastNumExpedienteExito");
             if (toastEl) {
                 new bootstrap.Toast(toastEl).show();

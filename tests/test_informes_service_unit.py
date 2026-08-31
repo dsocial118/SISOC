@@ -3,9 +3,13 @@
 from datetime import date, datetime
 from io import BytesIO
 from types import SimpleNamespace
+from zipfile import ZipFile
 
 import pytest
 from django.utils import timezone
+from docx import Document
+from docx.oxml.ns import qn
+from docx.shared import Mm, Pt
 
 from admisiones.services import informes_service as module
 
@@ -129,6 +133,193 @@ def test_formateo_campos_and_visibles(mocker):
     assert len(visibles) >= 4
 
 
+def test_campos_complementarios_se_agrupan_como_informe_original(mocker):
+    fields = [
+        SimpleNamespace(name="nombre_organizacion", verbose_name="Organización"),
+        SimpleNamespace(name="representante_nombre", verbose_name="Representante"),
+        SimpleNamespace(name="nombre_espacio", verbose_name="Espacio"),
+        SimpleNamespace(
+            name="responsable_tarjeta_nombre", verbose_name="Responsable tarjeta"
+        ),
+        SimpleNamespace(name="observaciones", verbose_name="Observaciones"),
+    ]
+    informe = SimpleNamespace(
+        admision=SimpleNamespace(tipo="incorporacion"),
+        _meta=SimpleNamespace(fields=fields),
+    )
+    mocker.patch.object(
+        module.InformeService,
+        "get_campos_visibles_informe",
+        return_value=[(field.verbose_name, f"valor-{field.name}") for field in fields],
+    )
+
+    grupos = {
+        grupo["titulo"]: grupo
+        for grupo in module.InformeService.get_campos_agrupados_informe(informe)
+    }
+
+    assert grupos["Datos de la Organización"]["campos"][0]["nombre"] == "Organización"
+    assert grupos["Datos del Representante"]["campos"][0]["nombre"] == "Representante"
+    assert grupos["Datos del Comedor/Merendero"]["campos"][0]["nombre"] == "Espacio"
+    assert (
+        grupos["Responsable de la Tarjeta"]["campos"][0]["nombre"]
+        == "Responsable tarjeta"
+    )
+    assert grupos["Información Adicional"]["campos"][0]["nombre"] == "Observaciones"
+
+
+@pytest.mark.parametrize("tipo_informe", ["base", "juridico"])
+def test_campos_complementarios_no_muestran_secciones_de_renovacion(
+    mocker, tipo_informe
+):
+    fields = [
+        SimpleNamespace(name="observaciones", verbose_name="Observaciones"),
+        SimpleNamespace(
+            name="aprobadas_ultimo_convenio_lunes", verbose_name="Prestación anterior"
+        ),
+        SimpleNamespace(name="resolucion_de_pago_1", verbose_name="Resolución"),
+        SimpleNamespace(name="monto_1", verbose_name="Monto"),
+    ]
+    informe = SimpleNamespace(
+        tipo=tipo_informe,
+        admision=SimpleNamespace(tipo="incorporacion"),
+        _meta=SimpleNamespace(fields=fields),
+    )
+    mocker.patch.object(
+        module.InformeService,
+        "get_campos_visibles_informe",
+        return_value=[(field.verbose_name, "valor") for field in fields],
+    )
+
+    grupos = {
+        grupo["titulo"]: grupo
+        for grupo in module.InformeService.get_campos_agrupados_informe(informe)
+    }
+
+    assert "Prestaciones aprobadas en el último convenio" not in grupos
+    assert "Resolución de pago" not in grupos
+
+
+def test_campos_complementarios_renovacion_incluye_sus_secciones_y_avalistas(
+    mocker,
+):
+    fields = [
+        SimpleNamespace(
+            name="aprobadas_ultimo_convenio_desayuno_lunes",
+            verbose_name="Prestación anterior",
+        ),
+        SimpleNamespace(name="resolucion_de_pago_1", verbose_name="Resolución"),
+        SimpleNamespace(name="organizacion_avalista_1", verbose_name="Avalista 1"),
+        SimpleNamespace(name="organizacion_avalista_2", verbose_name="Avalista 2"),
+    ]
+    informe = SimpleNamespace(
+        tipo="base",
+        admision=SimpleNamespace(tipo="renovacion"),
+        _meta=SimpleNamespace(fields=fields),
+    )
+    mocker.patch.object(
+        module.InformeService,
+        "get_campos_visibles_informe",
+        return_value=[(field.verbose_name, "valor") for field in fields],
+    )
+
+    grupos = {
+        grupo["titulo"]: grupo
+        for grupo in module.InformeService.get_campos_agrupados_informe(informe)
+    }
+
+    assert "Prestaciones aprobadas en el último convenio" in grupos
+    assert "Resolución de pago" in grupos
+    assert grupos["Prestaciones aprobadas en el último convenio"]["tipo"] == "matriz"
+    assert (
+        grupos["Prestaciones aprobadas en el último convenio"]["filas"][0]["titulo"]
+        == "Desayuno"
+    )
+    assert [
+        campo["nombre"]
+        for campo in grupos["Campos Específicos - Organización de Base"]["campos"]
+    ] == [
+        "Avalista 1",
+        "Avalista 2",
+    ]
+
+
+def test_campos_complementarios_arma_matrices_por_comida_y_dia(mocker):
+    fields = [
+        SimpleNamespace(
+            name="solicitudes_desayuno_lunes", verbose_name="Solicitud desayuno lunes"
+        ),
+        SimpleNamespace(
+            name="solicitudes_desayuno_martes", verbose_name="Solicitud desayuno martes"
+        ),
+        SimpleNamespace(
+            name="aprobadas_almuerzo_lunes", verbose_name="Aprobada almuerzo lunes"
+        ),
+    ]
+    informe = SimpleNamespace(
+        tipo="base",
+        admision=SimpleNamespace(tipo="incorporacion"),
+        _meta=SimpleNamespace(fields=fields),
+    )
+    mocker.patch.object(
+        module.InformeService,
+        "get_campos_visibles_informe",
+        return_value=[(field.verbose_name, 1) for field in fields],
+    )
+
+    grupos = {
+        grupo["titulo"]: grupo
+        for grupo in module.InformeService.get_campos_agrupados_informe(informe)
+    }
+
+    solicitudes = grupos["Solicitudes"]
+    assert solicitudes["tipo"] == "matriz"
+    assert solicitudes["filas"][0]["titulo"] == "Desayuno"
+    assert [campo["identificador"] for campo in solicitudes["filas"][0]["campos"]] == [
+        "solicitudes_desayuno_lunes",
+        "solicitudes_desayuno_martes",
+    ]
+    assert grupos["Prestaciones Aprobadas"]["tipo"] == "matriz"
+
+
+@pytest.mark.parametrize(
+    ("tipo_informe", "field_name", "titulo_esperado"),
+    [
+        (
+            "base",
+            "declaracion_jurada_recepcion_subsidios",
+            "Campos Específicos - Organización de Base",
+        ),
+        (
+            "juridico",
+            "validacion_registro_nacional",
+            "Campos Específicos - Organización Jurídica",
+        ),
+    ],
+)
+def test_campos_complementarios_conservan_el_titulo_especifico_por_tipo(
+    mocker, tipo_informe, field_name, titulo_esperado
+):
+    field = SimpleNamespace(name=field_name, verbose_name="Campo específico")
+    informe = SimpleNamespace(
+        tipo=tipo_informe,
+        admision=SimpleNamespace(tipo="incorporacion"),
+        _meta=SimpleNamespace(fields=[field]),
+    )
+    mocker.patch.object(
+        module.InformeService,
+        "get_campos_visibles_informe",
+        return_value=[(field.verbose_name, "valor")],
+    )
+
+    grupos = {
+        grupo["titulo"]: grupo
+        for grupo in module.InformeService.get_campos_agrupados_informe(informe)
+    }
+
+    assert titulo_esperado in grupos
+
+
 def test_generate_docx_content_primary_and_fallback(mocker):
     """DOCX generation should return content in normal and fallback branches."""
     file_obj = module.InformeService._generate_docx_content("<p>Hola</p>", informe_pk=1)
@@ -148,6 +339,97 @@ def test_generate_docx_content_primary_and_fallback(mocker):
     )
     out = module.InformeService._generate_docx_content("<p>Hola</p>", informe_pk=2)
     assert out is not None
+
+
+def test_generate_docx_content_estiliza_tablas_de_templates_dinamicos():
+    contenido = (
+        "<table><tr><th>Dato</th><th>Información</th></tr>"
+        "<tr><td>Nombre</td><td>Caritas X</td></tr></table>"
+    )
+
+    archivo_docx = module.InformeService._generate_docx_content(
+        contenido,
+        estilizar_tablas_templates=True,
+    )
+
+    documento = Document(BytesIO(archivo_docx.read()))
+    tabla = documento.tables[0]
+    propiedades_tabla = tabla._tbl.tblPr.xml
+    propiedades_encabezado = tabla.cell(0, 0)._tc.tcPr.xml
+    propiedades_celda = tabla.cell(1, 0)._tc.tcPr.xml
+    seccion = documento.sections[0]
+    estilo_normal = documento.styles["Normal"]
+
+    assert "w:tblBorders" in propiedades_tabla
+    assert 'w:color="7A8EA1"' in propiedades_tabla
+    assert 'w:fill="EAF3F2"' in propiedades_encabezado
+    assert "w:tcMar" in propiedades_celda
+    assert abs(seccion.page_width - Mm(210)) <= 635
+    assert abs(seccion.page_height - Mm(297)) <= 635
+    assert abs(seccion.top_margin - Mm(20)) <= 635
+    assert abs(seccion.right_margin - Mm(20)) <= 635
+    assert abs(seccion.bottom_margin - Mm(20)) <= 635
+    assert abs(seccion.left_margin - Mm(20)) <= 635
+    assert estilo_normal.font.name == "Times New Roman"
+    assert estilo_normal.font.size == Pt(12)
+
+
+def test_generar_docx_para_gde_normaliza_tablas_y_prioriza_docx_editado():
+    documento = Document()
+    tabla = documento.add_table(rows=2, cols=3)
+    tabla.cell(0, 0).text = "Encabezado"
+    tabla.cell(0, 1).merge(tabla.cell(0, 2))
+    tabla.cell(1, 0).text = "A"
+    tabla.cell(1, 1).text = "B"
+    tabla.cell(1, 2).text = "C"
+    buffer = BytesIO()
+    documento.save(buffer)
+
+    original = BytesIO(buffer.getvalue())
+    original.name = "borrador.docx"
+    editado = BytesIO(buffer.getvalue())
+    editado.name = "editado.docx"
+    informe_pdf = SimpleNamespace(
+        archivo_docx=original,
+        archivo_docx_editado=editado,
+    )
+
+    archivo = module.GdeDocxService.seleccionar_ultimo_archivo(informe_pdf)
+    resultado = module.GdeDocxService.generar(archivo)
+
+    assert archivo is editado
+    assert resultado is not None
+    normalizado = Document(BytesIO(resultado.read()))
+    tabla_normalizada = normalizado.tables[0]
+    ancho_disponible = (
+        normalizado.sections[0].page_width.twips
+        - normalizado.sections[0].left_margin.twips
+        - normalizado.sections[0].right_margin.twips
+    )
+    columnas = list(tabla_normalizada._tbl.tblGrid.gridCol_lst)
+    anchos = [int(columna.get(qn("w:w"))) for columna in columnas]
+    propiedades = tabla_normalizada._tbl.tblPr.xml
+    ancho_tabla = tabla_normalizada._tbl.tblPr.first_child_found_in("w:tblW")
+
+    assert sum(anchos) == ancho_disponible
+    assert int(ancho_tabla.get(qn("w:w"))) == ancho_disponible
+    assert ancho_tabla.get(qn("w:type")) == "dxa"
+    assert 'w:tblLayout w:type="fixed"' in propiedades
+    assert "w:tblInd" not in propiedades
+
+    for fila in tabla_normalizada._tbl.tr_lst:
+        columna_actual = 0
+        for celda in fila.tc_lst:
+            propiedades_celda = celda.tcPr
+            span_elemento = propiedades_celda.first_child_found_in("w:gridSpan")
+            span = (
+                int(span_elemento.get(qn("w:val"))) if span_elemento is not None else 1
+            )
+            ancho_celda = propiedades_celda.first_child_found_in("w:tcW")
+            assert int(ancho_celda.get(qn("w:w"))) == sum(
+                anchos[columna_actual : columna_actual + span]
+            )
+            columna_actual += span
 
 
 def test_generar_y_guardar_pdf_and_context_helpers(mocker):
@@ -249,6 +531,11 @@ def test_guardar_informe_and_detail_context(mocker):
         module.InformeService, "generar_docx_borrador", return_value=SimpleNamespace()
     )
     mocker.patch(
+        "admisiones.services.templates_informe_tecnico_service."
+        "PlantillaInformeTecnicoService.resolver_publicacion_para_admision",
+        return_value=(SimpleNamespace(), None),
+    )
+    mocker.patch(
         "admisiones.services.admisiones_service.AdmisionService._todos_obligatorios_tienen_archivos",
         return_value=True,
     )
@@ -277,6 +564,127 @@ def test_guardar_informe_and_detail_context(mocker):
     )
     detail = module.InformeService.get_context_informe_detail(informe_det, "base")
     assert detail["pdf"] == "pdf"
+
+
+def test_guardar_informe_submit_sin_publicacion_lo_conserva_en_borrador(mocker):
+    admision = SimpleNamespace(id=12, estado_admision="x", save=mocker.Mock())
+    instance = SimpleNamespace(
+        tipo="base",
+        pk=None,
+        _state=SimpleNamespace(adding=True),
+        estado_formulario="borrador",
+        estado="Iniciado",
+        observaciones_subsanacion=None,
+        admision=None,
+        save=mocker.Mock(),
+    )
+    form = mocker.Mock(
+        instance=instance,
+        save=mocker.Mock(return_value=instance),
+        save_m2m=mocker.Mock(),
+    )
+    mocker.patch(
+        "admisiones.services.informes_service.InformeTecnico.objects.filter",
+        return_value=SimpleNamespace(
+            order_by=lambda *_: SimpleNamespace(first=lambda: None)
+        ),
+    )
+    mocker.patch(
+        "admisiones.services.admisiones_service.AdmisionService."
+        "_todos_obligatorios_tienen_archivos",
+        return_value=True,
+    )
+    mocker.patch(
+        "admisiones.services.admisiones_service.AdmisionService."
+        "_todos_obligatorios_aceptados",
+        return_value=True,
+    )
+    actualizar_estado = mocker.patch(
+        "admisiones.services.admisiones_service.AdmisionService."
+        "actualizar_estado_admision"
+    )
+    generar_docx = mocker.patch.object(
+        module.InformeService,
+        "generar_docx_borrador",
+        return_value=SimpleNamespace(),
+    )
+    mocker.patch(
+        "admisiones.services.templates_informe_tecnico_service."
+        "PlantillaInformeTecnicoService.resolver_publicacion_para_admision",
+        return_value=(
+            None,
+            "No existe una versión publicada de template para la combinación de esta admisión.",
+        ),
+    )
+
+    resultado = module.InformeService.guardar_informe(
+        form,
+        admision,
+        es_creacion=True,
+        action="submit",
+        usuario=SimpleNamespace(),
+    )
+
+    assert resultado["success"] is False
+    assert "No existe una versión publicada" in resultado["error"]
+    assert "guardó el Informe Técnico como borrador" in resultado["error"]
+    form.save.assert_called_once()
+    generar_docx.assert_not_called()
+    actualizar_estado.assert_called_once_with(admision, "iniciar_informe_tecnico")
+
+
+def test_generar_docx_con_version_publicada_renderiza_variables(mocker):
+    informe = SimpleNamespace(admision=SimpleNamespace(comedor=SimpleNamespace()))
+    version = SimpleNamespace(
+        pk=4,
+        contenido_html="<p>{{ nombre_organizacion }}</p>",
+    )
+    mocker.patch.object(
+        module.AdmisionesContextService,
+        "preparar_contexto_informe_tecnico",
+        return_value={"nombre_organizacion": "Organización de prueba"},
+    )
+    generar = mocker.patch.object(
+        module.InformeService,
+        "_generate_docx_content",
+        return_value=SimpleNamespace(),
+    )
+
+    resultado = module.InformeService.generar_docx_con_version_publicada(
+        informe,
+        version,
+    )
+
+    assert resultado is not None
+    generar.assert_called_once_with(
+        "<p>Organización de prueba</p>",
+        None,
+        estilizar_tablas_templates=True,
+    )
+
+
+def test_generar_docx_vista_previa_agrega_marca_de_agua(mocker):
+    contenido_original = module.InformeService._generate_docx_content("<p>Prueba</p>")
+    mocker.patch.object(
+        module.InformeService,
+        "generar_docx_con_version_publicada",
+        return_value=contenido_original,
+    )
+
+    resultado = module.InformeService.generar_docx_vista_previa(
+        SimpleNamespace(pk=7),
+        SimpleNamespace(pk=3),
+    )
+
+    assert resultado is not None
+    with ZipFile(BytesIO(resultado.read())) as archivo_docx:
+        encabezados = "".join(
+            archivo_docx.read(nombre).decode("utf-8")
+            for nombre in archivo_docx.namelist()
+            if nombre.startswith("word/header")
+        )
+    assert "VISTA PREVIA" in encabezados
+    assert "DOCUMENTO NO VÁLIDO" in encabezados
 
 
 def test_guardar_informe_submit_bloquea_si_faltan_obligatorios(mocker):
@@ -376,7 +784,7 @@ def test_revision_and_complementarios_flows(mocker):
                 k, d
             ),
             getlist=lambda k: ["Campo"],
-        )
+        ),
     )
     upd = mocker.patch.object(module.InformeService, "actualizar_estado_informe")
     mocker.patch(
@@ -442,10 +850,10 @@ def test_revision_and_complementarios_flows(mocker):
 
     mocker.patch.object(
         module.InformeService,
-        "generar_docx_con_template",
+        "generar_docx_con_version_publicada",
         return_value=BytesIO(b"docx"),
     )
-    mocker.patch(
+    guardar_docx = mocker.patch(
         "admisiones.services.informes_service.InformeTecnicoPDF.objects.update_or_create",
         return_value=(SimpleNamespace(pk=1), True),
     )
@@ -458,9 +866,16 @@ def test_revision_and_complementarios_flows(mocker):
             admision=SimpleNamespace(id=4, comedor=SimpleNamespace()),
             admision_id=4,
             save=mocker.Mock(),
-        )
+        ),
+        SimpleNamespace(
+            plantilla=SimpleNamespace(pk=2),
+            version=SimpleNamespace(pk=3),
+        ),
     )
     assert borrador is not None
+    defaults_docx = guardar_docx.call_args.kwargs["defaults"]
+    assert defaults_docx["plantilla_informe_tecnico"].pk == 2
+    assert defaults_docx["version_plantilla_informe_tecnico"].pk == 3
 
     pdf_obj = SimpleNamespace(save=mocker.Mock())
     mocker.patch(

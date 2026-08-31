@@ -16,7 +16,6 @@ from django.db.models import (
     IntegerField,
     F,
     Func,
-    OuterRef,
     Subquery,
     BooleanField,
 )
@@ -28,7 +27,7 @@ from django.shortcuts import redirect
 from django.urls import reverse
 from django.shortcuts import get_object_or_404
 from django.db.models.functions import Coalesce, Now
-from django.utils.html import format_html
+from django.utils.safestring import mark_safe
 
 from relevamientos.models import Relevamiento, ClasificacionComedor
 from ciudadanos.models import Ciudadano
@@ -51,7 +50,7 @@ from comedores.utils import (
     preload_valores_comida_cache,
     usa_datos_convenio_pnud,
 )
-from centrodefamilia.services.consulta_renaper import consultar_datos_renaper
+from core.services.renaper import consultar_datos_renaper
 from core.models import Provincia, Municipio, Localidad, Nacionalidad
 from admisiones.models.admisiones import (
     Admision,
@@ -61,8 +60,6 @@ from admisiones.models.admisiones import (
 )
 from rendicioncuentasmensual.models import RendicionCuentaMensual
 from intervenciones.models.intervenciones import Intervencion
-from expedientespagos.models import ExpedientePago
-from expedientespagos.services import ordenar_expedientes_por_periodo_desc
 from duplas.models import Dupla
 from organizaciones.models import Aval, Firmante
 
@@ -307,6 +304,11 @@ MENSAJE_ERROR_AGREGAR_NOMINA = (
     "Ocurrió un error al agregar a la nómina. "
     "Verificá los datos e intentá nuevamente."
 )
+CAMPOS_SOCIALES_CIUDADANO_NOMINA = (
+    "pertenece_comunidad_indigena",
+    "en_situacion_de_calle",
+    "persona_con_celiaquia",
+)
 
 
 def _ciudadano_puede_ingresar_a_nomina(ciudadano):
@@ -401,9 +403,6 @@ def _calcular_presupuesto_desde_prestaciones(count, valor_map):
 
 
 def _build_comedores_list_values_queryset(base_qs):
-    latest_mes_ejecucion = ordenar_expedientes_por_periodo_desc(
-        ExpedientePago.objects.filter(comedor_id=OuterRef("pk"))
-    ).values("mes_convenio")[:1]
     return (
         base_qs.select_related(
             "provincia",
@@ -419,11 +418,6 @@ def _build_comedores_list_values_queryset(base_qs):
             estado_general=Coalesce(
                 "ultimo_estado__estado_general__estado_actividad__estado",
                 Value(Comedor.ESTADO_GENERAL_DEFAULT),
-            ),
-            mes_ejecucion=Case(
-                When(programa_id=2, then=Subquery(latest_mes_ejecucion)),
-                default=Value(None),
-                output_field=IntegerField(),
             ),
         )
         .values(
@@ -446,8 +440,8 @@ def _build_comedores_list_values_queryset(base_qs):
             "referente__apellido",
             "referente__celular",
             "ultimo_estado__estado_general__estado_actividad__estado",
-            "ultimo_estado__estado_general__estado_proceso",
-            "ultimo_estado__estado_general__estado_detalle",
+            "ultimo_estado__estado_general__estado_proceso__estado",
+            "ultimo_estado__estado_general__estado_detalle__estado",
             "estado_validacion",
             "fecha_validado",
             "es_judicializado",
@@ -748,7 +742,7 @@ class ComedorService:
 
         if admision_enviada:
             admision_step_class = "step completed"
-            admision_circle_html = format_html('<i class="bi bi-check-lg"></i>')
+            admision_circle_html = mark_safe('<i class="bi bi-check-lg"></i>')
             connector_class = "connector completed"
             ejecucion_step_class = "step active"
         else:
@@ -785,7 +779,7 @@ class ComedorService:
 
         if admision_enviada:
             admision_step_class = "step completed"
-            admision_circle_html = format_html('<i class="bi bi-check-lg"></i>')
+            admision_circle_html = mark_safe('<i class="bi bi-check-lg"></i>')
             connector_class = "connector completed"
             ejecucion_step_class = "step active"
         else:
@@ -1383,7 +1377,7 @@ class ComedorService:
             if resultado.get("success"):
                 return resultado
             last_error = resultado.get("error") or last_error
-            if not resultado.get("raw_response"):
+            if resultado.get("error_type") != "no_match":
                 return {
                     "success": False,
                     "error": last_error or "No se encontraron datos en RENAPER.",
@@ -1656,6 +1650,7 @@ class ComedorService:
         observaciones=None,
         admision_id=None,
         comedor_id=None,
+        datos_complementarios=None,
     ):
         ciudadano = get_object_or_404(Ciudadano, pk=ciudadano_id)
 
@@ -1693,6 +1688,10 @@ class ComedorService:
                     estado=estado,
                     observaciones=observaciones,
                 )
+                if datos_complementarios is not None:
+                    for campo in CAMPOS_SOCIALES_CIUDADANO_NOMINA:
+                        setattr(ciudadano, campo, datos_complementarios.get(campo))
+                    ciudadano.save(update_fields=list(CAMPOS_SOCIALES_CIUDADANO_NOMINA))
 
             return True, "Persona añadida correctamente a la nómina."
         except IntegrityError:
@@ -1710,6 +1709,8 @@ class ComedorService:
         observaciones,
         admision_id=None,
         comedor_id=None,
+        omitir_revision_manual=False,
+        return_ciudadano=False,
     ):
         """
         Crea un ciudadano nuevo y lo agrega a la nómina con estado y observaciones.
@@ -1720,10 +1721,19 @@ class ComedorService:
                 try:
                     ciudadano = Ciudadano.objects.create(**ciudadano_data)
                 except IntegrityError:
-                    return (
+                    result = (
                         False,
                         "Ya existe un ciudadano estandar con este tipo y numero de documento.",
                     )
+                    return (*result, None) if return_ciudadano else result
+
+                if (
+                    omitir_revision_manual
+                    and ciudadano.tipo_registro_identidad
+                    == Ciudadano.TIPO_REGISTRO_SIN_DNI
+                ):
+                    ciudadano.requiere_revision_manual = False
+                    ciudadano.save(update_fields=["requiere_revision_manual"])
 
                 ok, msg = ComedorService.agregar_ciudadano_a_nomina(
                     ciudadano_id=ciudadano.id,
@@ -1735,12 +1745,15 @@ class ComedorService:
                 )
                 if not ok:
                     ciudadano.delete()
+                if return_ciudadano:
+                    return ok, msg, ciudadano if ok else None
                 return ok, msg
         except IntegrityError:
             logger.exception(
                 "Error de integridad al crear ciudadano y agregarlo a la nómina."
             )
-            return False, MENSAJE_ERROR_AGREGAR_NOMINA
+            result = (False, MENSAJE_ERROR_AGREGAR_NOMINA)
+            return (*result, None) if return_ciudadano else result
 
     @staticmethod
     def importar_nomina_ultimo_convenio(admision_id, comedor_id):

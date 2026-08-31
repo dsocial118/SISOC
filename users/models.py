@@ -60,6 +60,10 @@ class Profile(models.Model):
     -------
     user : OneToOneField
         Usuario de Django asociado (relación 1:1)
+    dni, cuil : CharField
+        Datos identificatorios informativos del usuario
+    tipo_usuario : CharField
+        Clasificación informativa independiente de permisos y alcances
     dark_mode : BooleanField
         Preferencia de tema oscuro en la UI
     es_usuario_provincial : BooleanField
@@ -68,6 +72,10 @@ class Profile(models.Model):
         Provincia legacy; la autorización territorial usa ProfileTerritorialScope
     rol : CharField
         Descripción textual del rol (complementa groups)
+    correo_institucional : EmailField
+        Correo institucional informado por el usuario (opcional)
+    needs_profile_confirmation : BooleanField
+        Obliga a confirmar datos personales en el próximo ingreso web
     es_coordinador : BooleanField
         Marca si este usuario es coordinador de gestión
     duplas_asignadas : ManyToManyField
@@ -82,7 +90,20 @@ class Profile(models.Model):
     - duplas.models.Dupla: Modelo de equipos técnicos
     """
 
+    class TipoUsuario(models.TextChoices):
+        INTERNO = "interno", "Interno"
+        PROVINCIAL = "provincial", "Provincial"
+        EXTERNO = "externo", "Externo"
+
     user = models.OneToOneField(User, on_delete=models.CASCADE)
+    dni = models.CharField(max_length=16, blank=True)
+    cuil = models.CharField(max_length=16, blank=True)
+    tipo_usuario = models.CharField(
+        max_length=10,
+        choices=TipoUsuario.choices,
+        null=True,
+        blank=True,
+    )
     dark_mode = models.BooleanField(default=True)
     es_usuario_provincial = models.BooleanField(default=False)
     provincia = models.ForeignKey(
@@ -119,6 +140,28 @@ class Profile(models.Model):
         null=True,
         blank=True,
         verbose_name="Contraseña temporal visible",
+    )
+    correo_institucional = models.EmailField(
+        blank=True,
+        verbose_name="Correo institucional",
+    )
+    declaracion_aceptada = models.BooleanField(
+        default=False,
+        verbose_name="Declaración aceptada",
+        help_text="El usuario aceptó la declaración al confirmar sus datos personales.",
+    )
+    needs_profile_confirmation = models.BooleanField(
+        default=False,
+        verbose_name="Debe confirmar datos personales",
+        help_text=(
+            "Obliga al usuario a confirmar o corregir sus datos personales "
+            "en su próximo ingreso web."
+        ),
+    )
+    datos_confirmados_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Datos personales confirmados en",
     )
     source = models.CharField(
         max_length=50,
@@ -204,7 +247,7 @@ class ProfileTerritorialScope(models.Model):
         verbose_name_plural = "Alcances territoriales de perfil"
         constraints = [
             models.CheckConstraint(
-                check=Q(localidad__isnull=True) | Q(municipio__isnull=False),
+                condition=Q(localidad__isnull=True) | Q(municipio__isnull=False),
                 name="profile_scope_localidad_requires_municipio",
             ),
             models.UniqueConstraint(
@@ -368,6 +411,55 @@ class AccesoComedorPWA(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.comedor_id} - {self.rol}"
+
+
+class AccesoOrganizacionPWA(models.Model):
+    """Organizaciones asignadas a un usuario PWA.
+
+    Es la fuente de verdad de la relación usuario-organización: los accesos
+    por comedor (`AccesoComedorPWA` con `tipo_asociacion='organizacion'`) se
+    derivan de esta membresía y se reconcilian cuando cambia la organización
+    de un comedor.
+    """
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="accesos_organizacion_pwa",
+    )
+    organizacion = models.ForeignKey(
+        "organizaciones.Organizacion",
+        on_delete=models.PROTECT,
+        related_name="accesos_organizacion_pwa",
+    )
+    creado_por = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="accesos_organizacion_pwa_creados",
+    )
+    activo = models.BooleanField(default=True)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_baja = models.DateTimeField(null=True, blank=True)
+    fecha_actualizacion = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Acceso PWA a organización"
+        verbose_name_plural = "Accesos PWA a organización"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "organizacion"],
+                name="unique_pwa_user_organizacion",
+            )
+        ]
+        indexes = [
+            models.Index(fields=["user", "activo"]),
+            models.Index(fields=["organizacion", "activo"]),
+        ]
+
+    def __str__(self):
+        return f"{self.user.username} - organización {self.organizacion_id}"
 
 
 class AuditAccesoComedorPWA(models.Model):

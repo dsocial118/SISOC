@@ -17,27 +17,27 @@ from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from comedores.api_serializers import ComedorDetailSerializer
+from comedores.api_serializers import ComedorDetailSerializer, NoSaveSerializer
 from comedores.models import Comedor
 from comedores.services.comedor_service import ComedorService
 from relevamientos.models import Relevamiento
 from users.api_permissions import IsTerritorialComedorUser
-from users.services_pwa import (
-    get_territorial_comedor_provincia_ids,
-    get_territorial_comedor_provincias,
-)
+from users.services_pwa import get_territorial_comedor_provincias
 
 MAX_IMAGENES_COMEDOR = 15
 MAX_FIRMA_FILE_SIZE = 3 * 1024 * 1024  # 3 MB
 
 
-class TerritorialUltimoRelevamientoSerializer(serializers.Serializer):
+class TerritorialUltimoRelevamientoSerializer(NoSaveSerializer):
     id = serializers.IntegerField()
     estado = serializers.CharField(allow_null=True)
     fecha_visita = serializers.DateTimeField(allow_null=True)
+    territorial_user = serializers.IntegerField(
+        source="territorial_user_id", allow_null=True
+    )
 
 
-class TerritorialComedorSerializer(serializers.Serializer):
+class TerritorialComedorSerializer(NoSaveSerializer):
     id = serializers.IntegerField()
     nombre = serializers.CharField()
     provincia = serializers.SerializerMethodField()
@@ -127,18 +127,34 @@ class TerritorialComedorViewSet(
     permission_classes = [IsAuthenticated, IsTerritorialComedorUser]
 
     def get_queryset(self):
-        provincia_ids = get_territorial_comedor_provincia_ids(self.request.user)
-        if not provincia_ids:
-            return Comedor.objects.none()
+        # Visibilidad "solo asignados a mí": el territorial ve los comedores que
+        # tienen al menos un relevamiento asignado a él (``territorial_user``), y
+        # dentro de cada comedor solo sus relevamientos asignados. Reemplaza el
+        # scope por provincia (un territorial ve exactamente su trabajo asignado,
+        # aunque el comedor sea de otra provincia; la asignación se hace desde el
+        # backoffice).
+        user = self.request.user
+        # ``Relevamiento.objects`` (manager soft-delete) ya excluye borrados en el
+        # prefetch. Pero el JOIN ``relevamiento__...`` del filtro de comedores NO
+        # aplica el manager, así que hay que excluir los borrados explícitamente;
+        # de lo contrario un comedor cuyo único relevamiento asignado esté borrado
+        # aparecería con ``items: []``.
+        relevamientos_asignados = (
+            Relevamiento.objects.filter(territorial_user=user)
+            .select_related("primer_seguimiento")
+            .order_by("-fecha_visita", "-id")
+        )
         return (
-            Comedor.objects.filter(provincia_id__in=provincia_ids)
+            Comedor.objects.filter(
+                relevamiento__territorial_user=user,
+                relevamiento__deleted_at__isnull=True,
+            )
+            .distinct()
             .select_related("provincia", "municipio", "localidad")
             .prefetch_related(
                 Prefetch(
                     "relevamiento_set",
-                    queryset=Relevamiento.objects.select_related(
-                        "primer_seguimiento"
-                    ).order_by("-fecha_visita", "-id"),
+                    queryset=relevamientos_asignados,
                     to_attr="relevamientos_territorial",
                 )
             )
@@ -206,7 +222,9 @@ class TerritorialComedorViewSet(
                 id=relevamiento_id, comedor=comedor
             ).exists():
                 return Response(
-                    {"detail": "El sisoc_id no corresponde a un relevamiento de este comedor."},
+                    {
+                        "detail": "El sisoc_id no corresponde a un relevamiento de este comedor."
+                    },
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 

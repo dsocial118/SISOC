@@ -1,14 +1,25 @@
-from datetime import date
+from datetime import date, timedelta
+from decimal import Decimal
 
 import pytest
+from django import forms
 from django.contrib.auth.models import Permission, User
 from django.test import Client
 from django.urls import reverse
 
 from ciudadanos.models import Ciudadano
-from centrodeinfancia.models import CentroDeInfancia, NominaCentroInfancia
+from centrodeinfancia.models import (
+    NOMINA_VACUNAS,
+    CentroDeInfancia,
+    NominaCentroInfancia,
+)
+from centrodeinfancia.tests.test_destinatario_form import datos_validos
 from core.models import Provincia
 from users.models import Profile
+
+
+def _fecha_menor_48_meses():
+    return date.today() - timedelta(days=365 * 3)
 
 
 # ─────────────────────────────────────────────────────────
@@ -31,7 +42,7 @@ def ciudadano():
     return Ciudadano.objects.create(
         apellido="Ramirez",
         nombre="Sofia",
-        fecha_nacimiento=date(2020, 3, 15),
+        fecha_nacimiento=_fecha_menor_48_meses(),
         documento=44555666,
     )
 
@@ -77,13 +88,90 @@ def usuario_change():
     return _make_user("change_nominacentroinfancia", "view_centrodeinfancia")
 
 
-_VALID_POST = {
-    "estado": NominaCentroInfancia.ESTADO_ACTIVO,
-    "apellido": "Ramirez",
-    "nombre": "Sofia",
-    "fecha_nacimiento": "2020-03-15",
-    "dni": "44555666",
-}
+def _valid_post(centro, **overrides):
+    """Payload completo del legajo (todos los campos obligatorios)."""
+
+    defaults = {
+        "apellido": "Ramirez",
+        "nombre": "Sofia",
+        "fecha_nacimiento": _fecha_menor_48_meses().isoformat(),
+        "dni": "44555666",
+    }
+    defaults.update(overrides)
+    return datos_validos(centro, **defaults)
+
+
+def _post_completo(centro, **overrides):
+    """Valores distintivos para cada campo editable que renderiza el legajo."""
+
+    data = _valid_post(
+        centro,
+        sala="3_anios",
+        piso_domicilio="2",
+        convivientes="4",
+        pueblo_originario_cual="Mapuche",
+        responsable_legal_1_telefono="1122334455",
+        responsable_legal_2_relacion="padre",
+        responsable_legal_2_apellido="Ramirez",
+        responsable_legal_2_nombre="Pablo",
+        responsable_legal_2_fecha_nacimiento="1988-09-12",
+        responsable_legal_2_tipo_documentacion="dni_permanente",
+        responsable_legal_2_dni="30123457",
+        responsable_legal_2_cuit="27-30123456-8",
+        responsable_legal_2_pais_nacimiento="Argentina",
+        responsable_legal_2_nacionalidad="Argentino",
+        responsable_legal_2_sexo_registral="varon",
+        responsable_legal_2_nivel_educativo="superior_completo",
+        responsable_legal_2_consentimiento="si",
+        responsable_legal_2_telefono="1122334456",
+        grupo_pertenencia=["indigena", "asiatico"],
+        lenguajes=["espanol_castellano", "lsa"],
+        tiene_discapacidad="si",
+        tipo_discapacidad=["motora", "visual"],
+        posee_cud="true",
+        numero_cud="123456",
+        cobertura_salud="obra_social",
+        controles_sanitarios_ultimo_anio="3",
+        calendario_vacunacion_al_dia="true",
+        peso="14.2",
+        longitud_acostado="80.0",
+        talla="95.0",
+        perimetro_cefalico="48.0",
+        lactancia="complementaria",
+        alergias_alimentarias=["leche_vaca", "tacc"],
+        anses_auh="si",
+        anses_aue="no",
+        anses_acsi="si",
+        anses_acn="no",
+        recibe_apoyo_desarrollo="si",
+        observaciones="Seguimiento integral sin novedades.",
+    )
+    for index, (code, _label) in enumerate(NOMINA_VACUNAS, start=1):
+        data[f"vacuna_{code}_dosis"] = f"{min(index, 3)}_dosis"
+        year = 2024 + ((index - 1) // 12)
+        month = ((index - 1) % 12) + 1
+        data[f"vacuna_{code}_fecha"] = f"{year}-{month:02d}-10"
+    data.update(overrides)
+    return data
+
+
+def _valor_comparable(field_name, field, value):
+    """Normaliza únicamente diferencias de representación HTML/modelo."""
+
+    if isinstance(value, (list, tuple)):
+        return sorted(str(item) for item in value)
+    if value in (None, ""):
+        return ""
+    if field_name.endswith("cuit") or field_name == "cuit_nino":
+        return "".join(character for character in str(value) if character.isdigit())
+    if isinstance(field, forms.DateField):
+        return value.isoformat() if hasattr(value, "isoformat") else str(value)
+    if isinstance(field, forms.DecimalField):
+        return Decimal(str(value))
+    if isinstance(field, forms.IntegerField):
+        return int(value)
+    rendered = str(value)
+    return rendered.lower() if rendered.lower() in {"true", "false"} else rendered
 
 
 # ─────────────────────────────────────────────────────────
@@ -182,7 +270,7 @@ class TestNominaCentroInfanciaCreateView:
     ):
         client = Client()
         client.force_login(usuario_add)
-        data = {**_VALID_POST, "ciudadano_id": ciudadano.pk}
+        data = _valid_post(centro, ciudadano_id=ciudadano.pk)
         resp = client.post(self._url(centro), data)
         assert resp.status_code == 302
         assert NominaCentroInfancia.objects.filter(
@@ -192,7 +280,7 @@ class TestNominaCentroInfanciaCreateView:
     def test_post_crea_ciudadano_si_no_existe(self, usuario_add, centro):
         client = Client()
         client.force_login(usuario_add)
-        data = {**_VALID_POST, "dni": "55666777", "apellido": "Nuevo", "nombre": "Niño"}
+        data = _valid_post(centro, dni="55666777", apellido="Nuevo", nombre="Niño")
         assert not Ciudadano.objects.filter(documento="55666777").exists()
         resp = client.post(self._url(centro), data)
         assert resp.status_code == 302
@@ -203,7 +291,7 @@ class TestNominaCentroInfanciaCreateView:
     ):
         client = Client()
         client.force_login(usuario_add)
-        data = {**_VALID_POST, "ciudadano_id": ciudadano.pk}
+        data = _valid_post(centro, ciudadano_id=ciudadano.pk)
         resp = client.post(self._url(centro), data)
         assert resp.status_code == 302
         assert (
@@ -261,15 +349,70 @@ class TestNominaCentroInfanciaEditView:
         assert resp.context["is_edit"] is True
         assert resp.context["centro"] == centro
 
+    def test_get_edicion_precarga_todos_los_campos_visibles(
+        self, usuario_change, centro, nomina
+    ):
+        client = Client()
+        client.force_login(usuario_change)
+        url = self._url(centro, nomina)
+        data = _post_completo(centro)
+
+        update_response = client.post(url, data)
+        assert update_response.status_code == 302
+
+        response = client.get(url)
+        assert response.status_code == 200
+        form = response.context["form"]
+        html = response.content.decode("utf-8")
+
+        assert set(data).issubset(form.fields)
+        for field_name, expected in data.items():
+            field = form.fields[field_name]
+            assert _valor_comparable(
+                field_name, field, form[field_name].value()
+            ) == _valor_comparable(field_name, field, expected), field_name
+            assert f'name="{field_name}"' in html, field_name
+
+    def test_post_invalido_conserva_todos_los_campos_visibles_y_no_guarda(
+        self, usuario_change, centro, nomina
+    ):
+        client = Client()
+        client.force_login(usuario_change)
+        url = self._url(centro, nomina)
+        nombre_original = nomina.nombre
+        data = _post_completo(
+            centro,
+            nombre="Nombre Nuevo",
+            fecha_registro="2026-99-99",
+        )
+
+        response = client.post(url, data)
+
+        assert response.status_code == 200
+        form = response.context["form"]
+        html = response.content.decode("utf-8")
+        assert form.is_bound
+        assert "fecha_registro" in form.errors
+        assert set(data).issubset(form.fields)
+        for field_name, expected in data.items():
+            field = form.fields[field_name]
+            assert _valor_comparable(
+                field_name, field, form[field_name].value()
+            ) == _valor_comparable(field_name, field, expected), field_name
+            assert f'name="{field_name}"' in html, field_name
+
+        nomina.refresh_from_db()
+        assert nomina.nombre == nombre_original
+
     def test_post_actualiza_campos(self, usuario_change, centro, nomina):
         client = Client()
         client.force_login(usuario_change)
-        data = {
-            **_VALID_POST,
-            "apellido": "Ramirez-Editado",
-            "nombre": "Sofia M.",
-            "estado": NominaCentroInfancia.ESTADO_BAJA,
-        }
+        data = _valid_post(
+            centro,
+            apellido="Ramirez-Editado",
+            nombre="Sofia",
+            estado=NominaCentroInfancia.ESTADO_BAJA,
+        )
         resp = client.post(self._url(centro, nomina), data)
         assert resp.status_code == 302
         nomina.refresh_from_db()
@@ -279,7 +422,7 @@ class TestNominaCentroInfanciaEditView:
     def test_post_redirige_a_nomina(self, usuario_change, centro, nomina):
         client = Client()
         client.force_login(usuario_change)
-        resp = client.post(self._url(centro, nomina), _VALID_POST)
+        resp = client.post(self._url(centro, nomina), _valid_post(centro))
         expected = reverse("centrodeinfancia_nomina_ver", kwargs={"pk": centro.pk})
         assert resp.status_code == 302
         assert expected in resp.url
