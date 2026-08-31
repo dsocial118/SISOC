@@ -8,7 +8,7 @@ from dataclasses import dataclass
 
 from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator
-from openpyxl import load_workbook
+from openpyxl import Workbook, load_workbook
 
 LISTADO_ALLOWED_EXTENSIONS = ("xlsx", "csv")
 LISTADO_MAX_SIZE_BYTES = 5 * 1024 * 1024
@@ -46,11 +46,31 @@ TIPOS_PREGUNTA_CON_OPCIONES = ("opcion_unica", "opcion_multiple")
 OPERADORES_CONDICION_VALIDOS = ("igual", "distinto")
 
 
+LISTADO_TEMPLATE_HEADERS = ("tipo_documento", "numero_documento")
+LISTADO_TEMPLATE_FILENAME = "plantilla_encuestas_listado_destinatarios.xlsx"
+LISTADO_TEMPLATE_SHEET_NAME = "destinatarios"
+LISTADO_TEMPLATE_EJEMPLO = ("dni", "12345678")
+
+
 @dataclass(frozen=True)
 class ParsedDestinatarioRow:
     fila: int
     tipo_documento: str
     numero_documento: str
+
+
+def generar_plantilla_listado() -> bytes:
+    """Genera el Excel de plantilla para cargar destinatarios por listado,
+    con las mismas columnas que espera ``_parse_rows`` de este módulo."""
+    workbook = Workbook()
+    worksheet = workbook.active
+    worksheet.title = LISTADO_TEMPLATE_SHEET_NAME
+    worksheet.append(list(LISTADO_TEMPLATE_HEADERS))
+    worksheet.append(list(LISTADO_TEMPLATE_EJEMPLO))
+
+    output = io.BytesIO()
+    workbook.save(output)
+    return output.getvalue()
 
 
 def _normalize_header(value: object) -> str:

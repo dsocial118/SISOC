@@ -167,7 +167,10 @@
                         <select class="form-select pregunta-condicion-operador">
                             {% for value, label in operadores_condicion %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
                         </select>
-                        <input type="text" class="form-control pregunta-condicion-valor" placeholder="Valor esperado">
+                        <div>
+                            <input type="text" class="form-control pregunta-condicion-valor" placeholder="Valor esperado">
+                            <select class="form-select pregunta-condicion-valor-select d-none"></select>
+                        </div>
                     </div>
                 </div>
             </div>

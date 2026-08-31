@@ -319,6 +319,133 @@
   color: #e5e7eb;
 }
 
+/* Badge de cantidad genérico (mismo estilo que .pregunta-count) */
+.encuesta-editor .count-badge {
+  color: #9ca3af;
+  font-size: 12.5px;
+}
+
+/* Fila genérica flexible, para formularios inline cortos (ej. alta de
+   destinatario) sin acoplar el nombre de la clase a "pregunta" */
+.encuesta-editor .field-row {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.encuesta-editor .field-row > div {
+  flex: 1;
+  min-width: 160px;
+}
+
+.encuesta-editor .field-row > .field-row-action {
+  flex: 0 0 auto;
+}
+
+/* Tarjetas de radio (tipo de segmentación) */
+.encuesta-editor .radio-cards {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.encuesta-editor .radio-card {
+  flex: 1;
+  min-width: 240px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: #1a2332;
+  border: 1px solid #3d4f63;
+  border-radius: 8px;
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.encuesta-editor .radio-card:hover {
+  border-color: #4b5563;
+}
+
+.encuesta-editor .radio-card input[type="radio"] {
+  margin-top: 3px;
+  flex-shrink: 0;
+}
+
+.encuesta-editor .radio-card:has(input:checked) {
+  border-color: #f39c12;
+  background: rgba(243, 156, 18, 0.08);
+}
+
+.encuesta-editor .radio-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.encuesta-editor .radio-card-title {
+  color: #e5e7eb;
+  font-weight: 600;
+  font-size: 13.5px;
+}
+
+.encuesta-editor .radio-card-title i {
+  color: #f39c12;
+  margin-right: 6px;
+}
+
+.encuesta-editor .radio-card-help {
+  color: #6b7280;
+  font-size: 11.5px;
+}
+
+/* Lista de destinatarios */
+.encuesta-editor .destinatarios-list {
+  border: 1px solid #374151;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.encuesta-editor .destinatario-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 16px;
+  background: #1a2332;
+  border-bottom: 1px solid rgba(55, 65, 81, 0.6);
+}
+
+.encuesta-editor .destinatario-row:last-child {
+  border-bottom: none;
+}
+
+.encuesta-editor .destinatario-row:hover {
+  background: #1e2a3a;
+}
+
+.encuesta-editor .destinatario-tipo {
+  background: rgba(96, 165, 250, 0.12);
+  color: #60a5fa;
+  border: 1px solid rgba(96, 165, 250, 0.25);
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.encuesta-editor .destinatario-numero {
+  color: #e5e7eb;
+  font-size: 13.5px;
+  flex: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.encuesta-editor .destinatario-row form {
+  flex-shrink: 0;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .encuesta-editor .cond-grid {

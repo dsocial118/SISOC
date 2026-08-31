@@ -47,7 +47,18 @@ class EncuestaObligatoriaMiddleware:
 
     @staticmethod
     def _is_exempt_path(path):
-        if path in COMMON_EXEMPT_PATHS:
+        # Contraseña y datos personales pendientes tienen prioridad sobre
+        # responder una encuesta (ver docstring de la clase): hay que eximir
+        # sus rutas acá también, no solo la del propio middleware que las
+        # redirige, o se arma un loop de redirects entre ese middleware y
+        # este (mismo motivo por el que ProfileConfirmationMiddleware exime
+        # "/password/first-change/" en users/middleware.py).
+        exempt_paths = set(COMMON_EXEMPT_PATHS) | {"/password/first-change/"}
+        try:
+            exempt_paths.add(reverse("confirmar_datos_personales"))
+        except NoReverseMatch:
+            exempt_paths.add("/mi-cuenta/confirmar/")
+        if path in exempt_paths:
             return True
         if path.startswith(COMMON_EXEMPT_PREFIXES) or path.startswith(
             ENCUESTAS_EXEMPT_PREFIXES

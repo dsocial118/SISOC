@@ -1,120 +1,166 @@
 {% extends "includes/main.html" %}
+{% load static %}
 {% block title %}Segmentación: {{ encuesta.titulo }}{% endblock %}
 {% block content %}
-    <div class="container mt-4">
-        <div class="d-flex justify-content-between mb-3">
-            <h2>Segmentación: {{ encuesta.titulo }}</h2>
-            <a href="{% url 'encuestas_listar' %}" class="btn btn-secondary">Volver</a>
+    <link rel="stylesheet" href="{% static 'custom/css/encuestaForm.css' %}" />
+    <div class="encuesta-editor">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+            <div>
+                <h2 class="mb-1">Segmentación</h2>
+                <p class="switch-help mb-0">{{ encuesta.titulo }}</p>
+            </div>
+            <a href="{% url 'encuestas_listar' %}" class="btn-cancel">
+                <i class="fas fa-arrow-left me-1"></i> Volver
+            </a>
         </div>
 
-        <div class="card mb-4">
-            <div class="card-body">
-                <h5 class="card-title">Tipo de segmentación</h5>
+        <div class="editor-panel">
+            <div class="panel-label">
+                <span class="panel-label-title"><i class="fas fa-bullseye"></i> Tipo de segmentación</span>
+            </div>
+            <div class="panel-body">
                 <form method="post"
                       action="{% url 'encuestas_segmentacion_tipo' encuesta.pk %}"
-                      enctype="multipart/form-data">
+                      enctype="multipart/form-data"
+                      id="segmentacion-tipo-form">
                     {% csrf_token %}
-                    <div class="mb-3">
-                        <div class="form-check">
-                            <input class="form-check-input"
-                                   type="radio"
+                    <div class="radio-cards">
+                        <label class="radio-card">
+                            <input type="radio"
                                    name="tipo"
                                    value="todos_los_usuarios"
                                    id="tipo-todos"
                                    {% if not segmentacion or segmentacion.tipo == "todos_los_usuarios" %}checked{% endif %}>
-                            <label class="form-check-label" for="tipo-todos">Todos los usuarios logueados</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input"
-                                   type="radio"
+                            <span class="radio-card-body">
+                                <span class="radio-card-title"><i class="fas fa-users"></i>Todos los usuarios logueados</span>
+                                <span class="radio-card-help">Se envía a cualquier usuario que inicie sesión en el sistema.</span>
+                            </span>
+                        </label>
+                        <label class="radio-card">
+                            <input type="radio"
                                    name="tipo"
                                    value="listado_documentos"
                                    id="tipo-listado"
                                    {% if segmentacion.tipo == "listado_documentos" %}checked{% endif %}>
-                            <label class="form-check-label" for="tipo-listado">Listado de documentos (DNI/CUIT/CUIL)</label>
+                            <span class="radio-card-body">
+                                <span class="radio-card-title"><i class="fas fa-list-ul"></i>Listado de documentos</span>
+                                <span class="radio-card-help">Solo los DNI/CUIT/CUIL cargados manualmente o por archivo.</span>
+                            </span>
+                        </label>
+                    </div>
+
+                    <div id="listado-archivo-field"
+                         class="subfields"
+                         style="border-top: none; padding-top: 0; margin-top: 18px;
+                                {% if not segmentacion or segmentacion.tipo != "listado_documentos" %}display:none;{% endif %}">
+                        <div class="field-col" style="min-width: 100%;">
+                            <div class="d-flex justify-content-between align-items-end mb-1"
+                                 style="flex-wrap: wrap; gap: 8px;">
+                                <label for="archivo_listado" class="mb-0">Reemplazar listado por archivo (Excel o CSV, opcional)</label>
+                                <a href="{% url 'encuestas_segmentacion_plantilla' encuesta.pk %}"
+                                   class="btn-cancel"
+                                   style="padding: 4px 12px; font-size: 12px;">
+                                    <i class="fas fa-download me-1"></i> Descargar plantilla
+                                </a>
+                            </div>
+                            <input type="file"
+                                   class="form-control"
+                                   name="archivo_listado"
+                                   id="archivo_listado"
+                                   accept=".xlsx,.csv">
+                            <small class="form-text d-block mt-1">
+                                Columnas requeridas: tipo_documento, numero_documento. Si subís un
+                                archivo, reemplaza el listado actual completo.
+                            </small>
                         </div>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label" for="archivo_listado">
-                            Reemplazar listado por archivo (Excel o CSV, opcional)
-                        </label>
-                        <input type="file"
-                               class="form-control"
-                               name="archivo_listado"
-                               id="archivo_listado"
-                               accept=".xlsx,.csv">
-                        <small class="text-muted">
-                            Columnas requeridas: tipo_documento, numero_documento. Si subís un
-                            archivo, reemplaza el listado actual completo.
-                        </small>
+
+                    <div class="editor-actions" style="padding-top: 18px;">
+                        <span></span>
+                        <button type="submit" class="btn-save">
+                            <i class="fas fa-save me-1"></i> Guardar
+                        </button>
                     </div>
-                    <button type="submit" class="btn btn-primary">Guardar</button>
                 </form>
             </div>
         </div>
 
         {% if segmentacion.tipo == "listado_documentos" %}
-            <div class="card mb-4">
-                <div class="card-body">
-                    <h5 class="card-title">Agregar destinatario individual</h5>
+            <div class="editor-panel">
+                <div class="panel-label">
+                    <span class="panel-label-title"><i class="fas fa-user-plus"></i> Agregar destinatario</span>
+                </div>
+                <div class="panel-body">
                     <form method="post"
                           action="{% url 'encuestas_segmentacion_agregar' encuesta.pk %}"
-                          class="row g-2 align-items-end">
+                          class="field-row">
                         {% csrf_token %}
-                        <div class="col-md-4">
-                            <label class="form-label">Tipo</label>
-                            <select name="tipo_documento" class="form-select">
+                        <div>
+                            <label for="tipo_documento">Tipo</label>
+                            <select name="tipo_documento" id="tipo_documento" class="form-select">
                                 <option value="dni">DNI</option>
                                 <option value="cuit">CUIT</option>
                                 <option value="cuil">CUIL</option>
                             </select>
                         </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Número</label>
-                            <input type="text" name="numero_documento" class="form-control" required>
+                        <div>
+                            <label for="numero_documento">Número</label>
+                            <input type="text"
+                                   name="numero_documento"
+                                   id="numero_documento"
+                                   class="form-control"
+                                   required>
                         </div>
-                        <div class="col-md-4">
-                            <button type="submit" class="btn btn-outline-primary">Agregar</button>
+                        <div class="field-row-action">
+                            <button type="submit" class="btn-dashed">
+                                <i class="fas fa-plus"></i> Agregar
+                            </button>
                         </div>
                     </form>
                 </div>
             </div>
 
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Destinatarios actuales ({{ destinatarios|length }})</h5>
-                    <div class="table-responsive">
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>Tipo</th>
-                                    <th>Número</th>
-                                    <th></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for destinatario in destinatarios %}
-                                    <tr>
-                                        <td>{{ destinatario.get_tipo_documento_display }}</td>
-                                        <td>{{ destinatario.numero_documento }}</td>
-                                        <td>
-                                            <form method="post"
-                                                  action="{% url 'encuestas_segmentacion_quitar' encuesta.pk destinatario.pk %}">
-                                                {% csrf_token %}
-                                                <button type="submit" class="btn btn-sm btn-outline-danger">Quitar</button>
-                                            </form>
-                                        </td>
-                                    </tr>
-                                {% empty %}
-                                    <tr>
-                                        <td colspan="3">No hay destinatarios cargados todavía.</td>
-                                    </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
+            <div class="editor-panel">
+                <div class="panel-label">
+                    <span class="panel-label-title"><i class="fas fa-address-book"></i> Destinatarios</span>
+                    <span class="count-badge"><b>{{ destinatarios|length }}</b> cargados</span>
+                </div>
+                <div class="panel-body">
+                    {% if destinatarios %}
+                        <div class="destinatarios-list">
+                            {% for destinatario in destinatarios %}
+                                <div class="destinatario-row">
+                                    <span class="destinatario-tipo">{{ destinatario.get_tipo_documento_display }}</span>
+                                    <span class="destinatario-numero">{{ destinatario.numero_documento }}</span>
+                                    <form method="post"
+                                          action="{% url 'encuestas_segmentacion_quitar' encuesta.pk destinatario.pk %}">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn-quitar-pregunta btn btn-sm">
+                                            <i class="fas fa-times"></i> Quitar
+                                        </button>
+                                    </form>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="switch-help mb-0">No hay destinatarios cargados todavía.</p>
+                    {% endif %}
                 </div>
             </div>
         {% endif %}
     </div>
+{% endblock %}
+{% block customJS %}
+    <script nonce="{{ request.csp_nonce }}">
+document.addEventListener("DOMContentLoaded", function () {
+    var archivoField = document.getElementById("listado-archivo-field");
+    var radioListado = document.getElementById("tipo-listado");
+    if (!archivoField || !radioListado) return;
+    document.querySelectorAll('input[name="tipo"]').forEach(function (radio) {
+        radio.addEventListener("change", function () {
+            archivoField.style.display = radioListado.checked ? "" : "none";
+        });
+    });
+});
+    </script>
 {% endblock %}

@@ -100,6 +100,24 @@ def test_no_bloquea_a_usuario_anonimo(client, usuario_creador):
 
 
 @pytest.mark.django_db
+def test_no_hace_loop_con_cambio_de_contrasena_obligatorio(
+    client, usuario, usuario_creador
+):
+    """Regresión: un usuario con must_change_password=True *y* una ronda
+    obligatoria pendiente no debe quedar en loop entre /password/first-change/
+    e 'inicio' (FirstLoginPasswordChangeMiddleware corre antes que este
+    middleware y tiene prioridad, ver docstring de la clase)."""
+    _publicar_encuesta(usuario_creador, obligatoria=True)
+    usuario.profile.must_change_password = True
+    usuario.profile.save(update_fields=["must_change_password"])
+    client.force_login(usuario)
+
+    response = client.get(reverse("password_change_required"))
+
+    assert response.status_code == 200
+
+
+@pytest.mark.django_db
 def test_deja_de_bloquear_despues_de_responder(client, usuario, usuario_creador):
     ronda = _publicar_encuesta(usuario_creador, obligatoria=True)
     pregunta = ronda.encuesta.preguntas.get()

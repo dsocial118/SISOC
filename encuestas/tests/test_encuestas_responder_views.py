@@ -57,6 +57,25 @@ def test_modal_no_aparece_sin_ronda_pendiente(client, respondiente):
 
 
 @pytest.mark.django_db
+def test_modal_no_aparece_con_cambio_de_contrasena_pendiente(
+    client, respondiente, ronda_todos
+):
+    """Regresión: si el modal apareciera en /password/first-change/, el POST
+    de "Responder" a /encuestas/responder/<id>/ quedaría interceptado por
+    FirstLoginPasswordChangeMiddleware (esa ruta no está en su lista de
+    exenciones) y la respuesta se perdería en silencio -sin guardar nada y
+    sin ningún error visible-, dando la sensación de un loop infinito."""
+    respondiente.profile.must_change_password = True
+    respondiente.profile.save(update_fields=["must_change_password"])
+    client.force_login(respondiente)
+
+    response = client.get(reverse("password_change_required"))
+
+    assert response.status_code == 200
+    assert b"modal-encuesta-pendiente" not in response.content
+
+
+@pytest.mark.django_db
 def test_responder_ronda_exitoso_redirige_a_next(client, respondiente, ronda_todos):
     pregunta = ronda_todos.encuesta.preguntas.get()
     client.force_login(respondiente)

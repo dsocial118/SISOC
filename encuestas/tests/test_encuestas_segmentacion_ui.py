@@ -169,6 +169,35 @@ def test_vista_segmentacion_muestra_destinatarios_actuales(
 
 
 @pytest.mark.django_db
+def test_vista_plantilla_requiere_permiso(client, user_sin_permiso, encuesta):
+    client.force_login(user_sin_permiso)
+    response = client.get(reverse("encuestas_segmentacion_plantilla", args=[encuesta.pk]))
+    assert response.status_code == 403
+
+
+@pytest.mark.django_db
+def test_vista_plantilla_descarga_excel_con_columnas_esperadas(
+    client, user_gestor, encuesta
+):
+    from openpyxl import load_workbook
+    from io import BytesIO
+
+    client.force_login(user_gestor)
+
+    response = client.get(reverse("encuestas_segmentacion_plantilla", args=[encuesta.pk]))
+
+    assert response.status_code == 200
+    assert response["Content-Type"] == (
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    assert "plantilla_encuestas_listado_destinatarios.xlsx" in response["Content-Disposition"]
+
+    workbook = load_workbook(BytesIO(response.content))
+    filas = list(workbook.active.iter_rows(values_only=True))
+    assert filas[0] == ("tipo_documento", "numero_documento")
+
+
+@pytest.mark.django_db
 def test_vista_tipo_update_cambia_a_listado_documentos(client, user_gestor, encuesta):
     client.force_login(user_gestor)
 

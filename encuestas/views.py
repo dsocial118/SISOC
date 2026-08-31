@@ -37,7 +37,11 @@ from .services_resultados import (
     build_resultados_filename,
     get_resultados_ronda,
 )
-from .validators import TIPOS_PREGUNTA_CON_OPCIONES
+from .validators import (
+    LISTADO_TEMPLATE_FILENAME,
+    TIPOS_PREGUNTA_CON_OPCIONES,
+    generar_plantilla_listado,
+)
 
 EXCEL_CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 
@@ -46,6 +50,28 @@ def _mensaje_error(exc: ValidationError) -> str:
     if hasattr(exc, "messages"):
         return " ".join(exc.messages)
     return str(exc)
+
+
+def _anotar_presentacion_resultado(resultado):
+    """Agrega al ``ResultadoPregunta`` (encuestas/services_resultados.py) un
+    par de atributos que solo hacen falta para pintar el dashboard de
+    resultados (encuesta_resultados.html): a qué opción destacar como líder
+    y en qué posición del 0-100% cae el promedio dentro del rango
+    mínimo-máximo. Es presentación pura, por eso vive acá y no en el
+    servicio, que no sabe nada de cómo se dibuja."""
+    resultado.opcion_lider_texto = None
+    if resultado.opciones and resultado.total_respuestas:
+        lider = max(resultado.opciones, key=lambda opcion: opcion.cantidad)
+        resultado.opcion_lider_texto = lider.texto
+
+    resultado.posicion_promedio = None
+    if resultado.promedio is not None:
+        rango = resultado.maximo - resultado.minimo
+        resultado.posicion_promedio = (
+            round((resultado.promedio - resultado.minimo) / rango * 100, 1)
+            if rango
+            else 50
+        )
 
 
 def _redirect_next(request, fallback_url_name="inicio"):
@@ -234,11 +260,13 @@ class EncuestaResultadosView(LoginRequiredMixin, DetailView):
         elif rondas:
             ronda_actual = rondas[0]
 
+        resultados = get_resultados_ronda(ronda_actual) if ronda_actual else []
+        for resultado in resultados:
+            _anotar_presentacion_resultado(resultado)
+
         context["rondas"] = rondas
         context["ronda_actual"] = ronda_actual
-        context["resultados"] = (
-            get_resultados_ronda(ronda_actual) if ronda_actual else []
-        )
+        context["resultados"] = resultados
         return context
 
 
@@ -293,6 +321,21 @@ class EncuestaSegmentacionView(LoginRequiredMixin, DetailView):
             else []
         )
         return context
+
+
+class SegmentacionPlantillaDownloadView(LoginRequiredMixin, View):
+    """Descarga el Excel de plantilla para cargar el listado de destinatarios
+    (columnas tipo_documento/numero_documento, ver encuestas/validators.py)."""
+
+    def get(self, request, pk):
+        get_object_or_404(get_encuestas_queryset(), pk=pk)
+        response = HttpResponse(
+            generar_plantilla_listado(), content_type=EXCEL_CONTENT_TYPE
+        )
+        response["Content-Disposition"] = (
+            f'attachment; filename="{LISTADO_TEMPLATE_FILENAME}"'
+        )
+        return response
 
 
 class SegmentacionTipoUpdateView(LoginRequiredMixin, View):

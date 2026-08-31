@@ -29,6 +29,14 @@
         .map(function (tipo) { return tipo.trim(); })
         .filter(Boolean);
 
+    // Si/No y las preguntas de opción (única o múltiple) tienen un conjunto
+    // fijo y conocido de valores posibles: para esas, "Valor esperado" se
+    // arma con un <select> en vez de texto libre, para no depender de que
+    // alguien escriba exactamente "si"/"Sí"/"SI" (motivo real de un bug: la
+    // condición nunca coincidía porque el value real que viaja en el POST es
+    // "si" en minúscula, ver campo_pregunta.html).
+    var OPCIONES_SI_NO = [["si", "Sí"], ["no", "No"]];
+
     function actualizarVacioMsg() {
         var hayFilas = container.children.length > 0;
         if (vacioMsg) vacioMsg.classList.toggle("d-none", hayFilas);
@@ -61,6 +69,70 @@
                 refs.condicionRef.value = "";
             }
         });
+        refrescarCondicionesValor();
+    }
+
+    /** Devuelve las opciones [valor, etiqueta] disponibles para la condición
+     * según el tipo de la pregunta referenciada, o null si ese tipo no tiene
+     * un conjunto fijo (texto/número/fecha siguen siendo texto libre). */
+    function opcionesCondicionParaFila(filaReferencia) {
+        var refsRef = filaReferencia._preguntaRefs;
+        if (refsRef.tipo.value === "si_no") return OPCIONES_SI_NO;
+        if (tiposConOpciones.indexOf(refsRef.tipo.value) !== -1) {
+            return refsRef.opciones.value
+                .split("\n")
+                .map(function (linea) { return linea.trim(); })
+                .filter(Boolean)
+                .map(function (linea) { return [linea, linea]; });
+        }
+        return null;
+    }
+
+    function leerValorCondicionActivo(refs) {
+        if (!refs.condicionValorSelect.classList.contains("d-none")) {
+            return refs.condicionValorSelect.value;
+        }
+        return refs.condicionValor.value;
+    }
+
+    function escribirValorCondicionActivo(refs, valor) {
+        if (!refs.condicionValorSelect.classList.contains("d-none")) {
+            refs.condicionValorSelect.value = valor;
+        } else {
+            refs.condicionValor.value = valor;
+        }
+    }
+
+    /** Muestra el <select> de valores fijos (y lo repuebla) o el <input> de
+     * texto libre, según el tipo de la pregunta que esta fila referencia. */
+    function actualizarValorCondicion(refs) {
+        var ordenRef = parseInt(refs.condicionRef.value, 10);
+        var filaReferencia = ordenRef ? container.children[ordenRef - 1] : null;
+        var opciones = filaReferencia ? opcionesCondicionParaFila(filaReferencia) : null;
+
+        if (!opciones) {
+            refs.condicionValorSelect.classList.add("d-none");
+            refs.condicionValorSelect.innerHTML = "";
+            refs.condicionValor.classList.remove("d-none");
+            return;
+        }
+
+        var valorPrevio = leerValorCondicionActivo(refs);
+        refs.condicionValorSelect.innerHTML = "";
+        opciones.forEach(function (par) {
+            refs.condicionValorSelect.appendChild(crearOption(par[0], par[1]));
+        });
+        if (opciones.some(function (par) { return par[0] === valorPrevio; })) {
+            refs.condicionValorSelect.value = valorPrevio;
+        }
+        refs.condicionValor.classList.add("d-none");
+        refs.condicionValorSelect.classList.remove("d-none");
+    }
+
+    function refrescarCondicionesValor() {
+        Array.from(container.children).forEach(function (fila) {
+            actualizarValorCondicion(fila._preguntaRefs);
+        });
     }
 
     function crearOption(value, label) {
@@ -91,10 +163,16 @@
             condicionRef: fila.querySelector(".pregunta-condicion-referencia"),
             condicionOperador: fila.querySelector(".pregunta-condicion-operador"),
             condicionValor: fila.querySelector(".pregunta-condicion-valor"),
+            condicionValorSelect: fila.querySelector(".pregunta-condicion-valor-select"),
         };
 
         refs.tipo.addEventListener("change", function () {
             actualizarVisibilidadOpciones(refs);
+            refrescarCondicionesValor();
+        });
+        refs.opciones.addEventListener("input", refrescarCondicionesValor);
+        refs.condicionRef.addEventListener("change", function () {
+            actualizarValorCondicion(refs);
         });
         refs.texto.addEventListener("input", renumerarFilas);
         refs.quitarBtn.addEventListener("click", function () {
@@ -129,7 +207,8 @@
             var refs = fila._preguntaRefs;
             refs.condicionRef.value = String(datos.condicion.orden);
             refs.condicionOperador.value = datos.condicion.operador;
-            refs.condicionValor.value = datos.condicion.valor;
+            actualizarValorCondicion(refs);
+            escribirValorCondicionActivo(refs, datos.condicion.valor);
         });
     }
 
@@ -155,7 +234,7 @@
                 item.condicion = {
                     orden: parseInt(refs.condicionRef.value, 10),
                     operador: refs.condicionOperador.value,
-                    valor: refs.condicionValor.value.trim(),
+                    valor: leerValorCondicionActivo(refs).trim(),
                 };
             }
             return item;

@@ -14,6 +14,7 @@ from .views import (
     ResponderRondaView,
     RondaCerrarView,
     SegmentacionAgregarDestinatarioView,
+    SegmentacionPlantillaDownloadView,
     SegmentacionQuitarDestinatarioView,
     SegmentacionTipoUpdateView,
 )
@@ -84,6 +85,13 @@ urlpatterns = [
             EncuestaSegmentacionView.as_view()
         ),
         name="encuestas_segmentacion",
+    ),
+    path(
+        "encuestas/<int:pk>/segmentacion/plantilla/",
+        permissions_any_required(["encuestas.change_encuesta"])(
+            SegmentacionPlantillaDownloadView.as_view()
+        ),
+        name="encuestas_segmentacion_plantilla",
     ),
     path(
         "encuestas/<int:pk>/segmentacion/tipo/",
