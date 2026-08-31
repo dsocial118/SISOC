@@ -2,6 +2,7 @@ import pytest
 from django.contrib.auth.models import Group, Permission, User
 from django.urls import reverse
 
+from ciudadanos.models import Ciudadano
 from centrodeinfancia.models import (
     AccesoCDI,
     CentroDeInfancia,
@@ -237,6 +238,32 @@ def test_trabajador_renaper_normaliza_id_de_nacionalidad_al_catalogo_central(
     form = response.context["form"]
     assert form.initial["nacionalidad_trabajador"] == "Argentina"
     assert ("Argentina", "Argentina") in form.fields["nacionalidad_trabajador"].choices
+
+
+@pytest.mark.django_db
+def test_trabajador_create_precarga_provincia_del_cdi_sin_geografia_dependiente(
+    client,
+):
+    user = _crear_usuario("super-trabajador-provincia", superuser=True)
+    client.force_login(user)
+    provincia = Provincia.objects.create(nombre="Chubut")
+    centro = CentroDeInfancia.objects.create(
+        nombre="CDI Provincia", provincia=provincia
+    )
+    ciudadano = Ciudadano.objects.create(
+        nombre="Julia", apellido="Mendez", documento=44555666
+    )
+
+    response = client.get(
+        reverse("centrodeinfancia_trabajador_crear", kwargs={"pk": centro.pk})
+        + f"?ciudadano_id={ciudadano.pk}"
+    )
+
+    form = response.context["form"]
+    assert form["provincia_contacto"].value() == provincia.pk
+    assert form["departamento_contacto"].value() is None
+    assert form["municipio_contacto"].value() is None
+    assert form["localidad_contacto"].value() is None
 
 
 @pytest.mark.django_db
