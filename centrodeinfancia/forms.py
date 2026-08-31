@@ -2166,16 +2166,28 @@ class TrabajadorCDIForm(forms.ModelForm):
                 provincia_id=provincia_id
             ).order_by("nombre")
 
+        valor_enviado = (
+            self.data.get(self.add_prefix("departamento_contacto"), "")
+            if self.is_bound
+            else ""
+        )
+        if self.is_bound and str(valor_enviado).isdigit():
+            departamento_enviado = departamentos.filter(pk=valor_enviado).first()
+            if departamento_enviado:
+                data = self.data.copy()
+                data[self.add_prefix("departamento_contacto")] = (
+                    departamento_enviado.nombre
+                )
+                self.data = data
+                valor_enviado = departamento_enviado.nombre
+
         choices = [("", "---------")] + [
             (departamento.nombre, departamento.nombre) for departamento in departamentos
         ]
         valores_catalogo = {valor for valor, _etiqueta in choices}
         heredado = (self.instance.departamento_contacto or "").strip()
-        valor_enviado = (
-            self.data.get(self.add_prefix("departamento_contacto"), "")
-            if self.is_bound
-            else heredado
-        )
+        if not self.is_bound:
+            valor_enviado = heredado
         if (
             heredado
             and heredado not in valores_catalogo
