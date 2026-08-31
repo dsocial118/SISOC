@@ -216,6 +216,46 @@ class TestNominaCentroInfanciaCreateView:
         assert resp.context.get("no_resultados")
         assert resp.context.get("mostrar_formulario")
 
+    def test_get_precarga_la_provincia_del_cdi_sin_geografia_dependiente(
+        self, usuario_add, centro
+    ):
+        client = Client()
+        client.force_login(usuario_add)
+        url = self._url(centro) + "?query=99999999"
+
+        response = client.get(url)
+
+        form = response.context["form"]
+        assert form["provincia_domicilio"].value() == centro.provincia_id
+        assert form["departamento_domicilio"].value() is None
+        assert form["municipio_domicilio"].value() is None
+        assert form["localidad_domicilio"].value() is None
+
+    def test_get_prioriza_la_provincia_del_cdi_sobre_la_del_ciudadano(
+        self, usuario_add, centro, ciudadano
+    ):
+        provincia_ciudadano = Provincia.objects.create(nombre="Cordoba")
+        ciudadano.provincia = provincia_ciudadano
+        ciudadano.save(update_fields=["provincia"])
+        client = Client()
+        client.force_login(usuario_add)
+
+        response = client.get(self._url(centro) + f"?ciudadano_id={ciudadano.pk}")
+
+        assert (
+            response.context["form"]["provincia_domicilio"].value()
+            == centro.provincia_id
+        )
+
+    def test_get_sin_provincia_del_cdi_no_precarga_provincia(self, usuario_add):
+        centro = CentroDeInfancia.objects.create(nombre="CDI Sin Provincia")
+        client = Client()
+        client.force_login(usuario_add)
+
+        response = client.get(self._url(centro) + "?query=99999999")
+
+        assert response.context["form"]["provincia_domicilio"].value() is None
+
     def test_get_usa_template_destinatario(self, usuario_add, centro):
         client = Client()
         client.force_login(usuario_add)
