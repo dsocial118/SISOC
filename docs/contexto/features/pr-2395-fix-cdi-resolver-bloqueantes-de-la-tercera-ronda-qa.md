@@ -51,15 +51,17 @@
 - `centrodeinfancia/tests/test_trabajadores_views.py`
 - `centrodeinfancia/views_usuario_egp.py`
 - `comunicados/migrations/0011_rearchive_importacion_nomina.py`
+- `docs/contexto/features/pr-2395-fix-cdi-resolver-bloqueantes-de-la-tercera-ronda-qa.md`
 - `docs/registro/cambios/2026-08-31-bloqueantes-cdi-tercera-ronda.md`
-- `tests/test_comunicados_migration_0010.py`
-- ... y 5 archivo(s) adicional(es) relacionados.
+- ... y 7 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`
+- `docs/contexto/features/pr-2395-fix-cdi-resolver-bloqueantes-de-la-tercera-ronda-qa.md`
 - `docs/registro/cambios/2026-08-31-bloqueantes-cdi-tercera-ronda.md`
+- `docs/registro/prs/PR-2395.md`
 
 ## Trazabilidad
 
