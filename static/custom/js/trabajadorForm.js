@@ -285,7 +285,7 @@ function initializeGeography() {
         sel.value = value;
     }
 
-    async function loadOptions(url, sel, emptyLabel) {
+    async function loadOptions(url, sel, emptyLabel, valueKey = "id") {
         if (!sel || !url) return;
         const resp = await fetch(url, {
             headers: { "X-Requested-With": "XMLHttpRequest" },
@@ -296,7 +296,7 @@ function initializeGeography() {
         resetSelect(sel, emptyLabel);
         data.forEach(function (item) {
             const opt = document.createElement("option");
-            opt.value = item.id;
+            opt.value = item[valueKey];
             opt.textContent = item.nombre || item.nombre_region || "";
             sel.appendChild(opt);
         });
@@ -311,7 +311,7 @@ function initializeGeography() {
                 if (!this.value) return;
                 await loadOptions(
                     window.ajaxLoadDepartamentosIpiUrl + "?provincia_id=" + this.value,
-                    departamentoSelect, "Seleccionar departamento..."
+                    departamentoSelect, "Seleccionar departamento...", "nombre"
                 );
                 await loadOptions(
                     window.ajaxLoadMunicipiosUrl + "?provincia_id=" + this.value,
@@ -339,7 +339,7 @@ function initializeGeography() {
         Promise.all([
             loadOptions(
                 window.ajaxLoadDepartamentosIpiUrl + "?provincia_id=" + provinciaSelect.value,
-                departamentoSelect, "Seleccionar departamento..."
+                departamentoSelect, "Seleccionar departamento...", "nombre"
             ),
             loadOptions(
             window.ajaxLoadMunicipiosUrl + "?provincia_id=" + provinciaSelect.value,
