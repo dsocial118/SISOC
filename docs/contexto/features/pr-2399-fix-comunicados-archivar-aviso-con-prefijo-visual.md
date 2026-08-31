@@ -31,14 +31,18 @@
 - Empezar por `docs/registro/prs/PR-2399.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
 - `comunicados/migrations/0012_rearchive_importacion_nomina_with_prefix.py`
+- `docs/contexto/features/pr-2399-fix-comunicados-archivar-aviso-con-prefijo-visual.md`
 - `docs/registro/cambios/2026-08-31-correccion-comunicado-importacion-nomina-hml.md`
+- `docs/registro/prs/PR-2399.md`
 - `tests/test_comunicados_migration_0010.py`
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`
+- `docs/contexto/features/pr-2399-fix-comunicados-archivar-aviso-con-prefijo-visual.md`
 - `docs/registro/cambios/2026-08-31-correccion-comunicado-importacion-nomina-hml.md`
+- `docs/registro/prs/PR-2399.md`
 
 ## Trazabilidad
 
