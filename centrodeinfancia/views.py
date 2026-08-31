@@ -198,6 +198,19 @@ def _trabajadores_cdi_queryset_scoped(user):
     return _aplicar_scope_provincia_centro_relacion(queryset, user)
 
 
+def _build_initial_with_centro_provincia(
+    initial, centro, provincia_field, dependent_fields
+):
+    initial = dict(initial or {})
+    if not centro.provincia_id:
+        return initial
+
+    initial[provincia_field] = centro.provincia_id
+    for field_name in dependent_fields:
+        initial.pop(field_name, None)
+    return initial
+
+
 def _observaciones_cdi_queryset_scoped(user):
     queryset = ObservacionCentroInfancia.objects.select_related("centro")
     return _aplicar_scope_provincia_centro_relacion(queryset, user)
@@ -796,6 +809,21 @@ class TrabajadorCentroInfanciaCreateView(
         self.centro = _get_centro_cdi_scoped_or_404(request.user, pk=kwargs["pk"])
         return super().dispatch(request, *args, **kwargs)
 
+    def _get_form_initial(self, initial=None):
+        return _build_initial_with_centro_provincia(
+            initial,
+            self.centro,
+            "provincia_contacto",
+            (
+                "departamento_contacto",
+                "municipio_contacto",
+                "localidad_contacto",
+            ),
+        )
+
+    def get_initial(self):
+        return self._get_form_initial(super().get_initial())
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["centro"] = self.centro
@@ -847,13 +875,19 @@ class TrabajadorCentroInfanciaCreateView(
             return
         if selected_ciudadano:
             context["form"] = self.form_class(
-                initial=self._build_initial_from_ciudadano(selected_ciudadano)
+                initial=self._get_form_initial(
+                    self._build_initial_from_ciudadano(selected_ciudadano)
+                )
             )
         elif renaper_data:
-            context["form"] = self.form_class(initial=renaper_data)
+            context["form"] = self.form_class(
+                initial=self._get_form_initial(renaper_data)
+            )
         elif query and not ciudadanos:
             context["form"] = self.form_class(
-                initial={"dni": query if query.isdigit() else None}
+                initial=self._get_form_initial(
+                    {"dni": query if query.isdigit() else None}
+                )
             )
 
     def _get_selected_ciudadano(self):
@@ -1294,6 +1328,21 @@ class NominaCentroInfanciaCreateView(
             )
         return self._centro_cache
 
+    def _get_form_initial(self, initial=None):
+        return _build_initial_with_centro_provincia(
+            initial,
+            self._get_centro(),
+            "provincia_domicilio",
+            (
+                "departamento_domicilio",
+                "municipio_domicilio",
+                "localidad_domicilio",
+            ),
+        )
+
+    def get_initial(self):
+        return self._get_form_initial(super().get_initial())
+
     @staticmethod
     def _crear_nomina_con_bloqueo(centro, ciudadano, form):
         CentroDeInfancia.objects.select_for_update().filter(pk=centro.pk).exists()
@@ -1398,20 +1447,24 @@ class NominaCentroInfanciaCreateView(
         if not form:
             if selected_ciudadano:
                 form = self.form_class(
-                    initial=self._build_nomina_initial_from_ciudadano(
-                        selected_ciudadano
+                    initial=self._get_form_initial(
+                        self._build_nomina_initial_from_ciudadano(selected_ciudadano)
                     ),
                     centro=centro,
                 )
             elif renaper_data:
-                form = self.form_class(initial=renaper_data, centro=centro)
+                form = self.form_class(
+                    initial=self._get_form_initial(renaper_data), centro=centro
+                )
             elif query and not ciudadanos:
                 form = self.form_class(
-                    initial={"dni": query if query.isdigit() else None},
+                    initial=self._get_form_initial(
+                        {"dni": query if query.isdigit() else None}
+                    ),
                     centro=centro,
                 )
             else:
-                form = self.form_class(centro=centro)
+                form = self.form_class(initial=self._get_form_initial(), centro=centro)
 
         context["query"] = query
         context["ciudadanos"] = ciudadanos
