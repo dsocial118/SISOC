@@ -30,7 +30,7 @@
                                    name="tipo"
                                    value="todos_los_usuarios"
                                    id="tipo-todos"
-                                   {% if not segmentacion or segmentacion.tipo == "todos_los_usuarios" %}checked{% endif %}>
+                                   {% if not segmentacion or segmentacion.tipo == "todos_los_usuarios" %}checked{% endif %} />
                             <span class="radio-card-body">
                                 <span class="radio-card-title"><i class="fas fa-users"></i>Todos los usuarios logueados</span>
                                 <span class="radio-card-help">Se envía a cualquier usuario que inicie sesión en el sistema.</span>
@@ -41,7 +41,7 @@
                                    name="tipo"
                                    value="listado_documentos"
                                    id="tipo-listado"
-                                   {% if segmentacion.tipo == "listado_documentos" %}checked{% endif %}>
+                                   {% if segmentacion.tipo == "listado_documentos" %}checked{% endif %} />
                             <span class="radio-card-body">
                                 <span class="radio-card-title"><i class="fas fa-list-ul"></i>Listado de documentos</span>
                                 <span class="radio-card-help">Solo los DNI/CUIT/CUIL cargados manualmente o por archivo.</span>
@@ -51,15 +51,20 @@
 
                     <div id="listado-archivo-field"
                          class="subfields"
-                         style="border-top: none; padding-top: 0; margin-top: 18px;
-                                {% if not segmentacion or segmentacion.tipo != "listado_documentos" %}display:none;{% endif %}">
+                         style="border-top: none;
+                                padding-top: 0;
+                                margin-top: 18px;
+                                {% if not segmentacion or segmentacion.tipo != "listado_documentos" %}display:none;
+                                {% endif %}">
                         <div class="field-col" style="min-width: 100%;">
                             <div class="d-flex justify-content-between align-items-end mb-1"
-                                 style="flex-wrap: wrap; gap: 8px;">
+                                 style="flex-wrap: wrap;
+                                        gap: 8px">
                                 <label for="archivo_listado" class="mb-0">Reemplazar listado por archivo (Excel o CSV, opcional)</label>
                                 <a href="{% url 'encuestas_segmentacion_plantilla' encuesta.pk %}"
                                    class="btn-cancel"
-                                   style="padding: 4px 12px; font-size: 12px;">
+                                   style="padding: 4px 12px;
+                                          font-size: 12px">
                                     <i class="fas fa-download me-1"></i> Descargar plantilla
                                 </a>
                             </div>
@@ -67,7 +72,7 @@
                                    class="form-control"
                                    name="archivo_listado"
                                    id="archivo_listado"
-                                   accept=".xlsx,.csv">
+                                   accept=".xlsx,.csv" />
                             <small class="form-text d-block mt-1">
                                 Columnas requeridas: tipo_documento, numero_documento. Si subís un
                                 archivo, reemplaza el listado actual completo.
@@ -109,7 +114,7 @@
                                    name="numero_documento"
                                    id="numero_documento"
                                    class="form-control"
-                                   required>
+                                   required />
                         </div>
                         <div class="field-row-action">
                             <button type="submit" class="btn-dashed">

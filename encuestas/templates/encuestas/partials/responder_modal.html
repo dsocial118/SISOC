@@ -33,15 +33,11 @@ y clases de Bootstrap 5 que el componente para que se vea y comporte igual.
                       action="{% url 'encuestas_responder' ronda_pendiente.pk %}"
                       id="form-responder-encuesta">
                     {% csrf_token %}
-                    <input type="hidden" name="next" value="{{ request.path }}">
+                    <input type="hidden" name="next" value="{{ request.path }}" />
                     {% for pregunta in ronda_pendiente.encuesta.preguntas.all %}
                         <div class="mb-3 pregunta-respuesta"
                              data-orden="{{ pregunta.orden }}"
-                             {% if pregunta.pregunta_condicion_id %}
-                             data-condicion-orden="{{ pregunta.pregunta_condicion.orden }}"
-                             data-condicion-operador="{{ pregunta.operador_condicion }}"
-                             data-condicion-valor="{{ pregunta.valor_condicion }}"
-                             {% endif %}>
+                             {% if pregunta.pregunta_condicion_id %} data-condicion-orden="{{ pregunta.pregunta_condicion.orden }}" data-condicion-operador="{{ pregunta.operador_condicion }}" data-condicion-valor="{{ pregunta.valor_condicion }}" {% endif %}>
                             <label class="form-label">
                                 {{ pregunta.texto }}
                                 {% if pregunta.obligatoria %}<span class="text-danger">*</span>{% endif %}
@@ -53,9 +49,10 @@ y clases de Bootstrap 5 que el componente para que se vea y comporte igual.
             </div>
             <div class="modal-footer">
                 {% if not ronda_pendiente.encuesta.es_obligatoria %}
-                    <form method="post" action="{% url 'encuestas_responder_mas_tarde' ronda_pendiente.pk %}">
+                    <form method="post"
+                          action="{% url 'encuestas_responder_mas_tarde' ronda_pendiente.pk %}">
                         {% csrf_token %}
-                        <input type="hidden" name="next" value="{{ request.path }}">
+                        <input type="hidden" name="next" value="{{ request.path }}" />
                         <button type="submit" class="btn btn-outline-secondary">Responder más tarde</button>
                     </form>
                 {% endif %}

@@ -2,7 +2,7 @@
     <input type="text"
            class="form-control"
            name="respuesta-{{ pregunta.pk }}"
-           {% if pregunta.obligatoria %}required{% endif %}>
+           {% if pregunta.obligatoria %}required{% endif %} />
 {% elif pregunta.tipo == "texto_largo" %}
     <textarea class="form-control"
               name="respuesta-{{ pregunta.pk }}"
@@ -16,7 +16,7 @@
                    name="respuesta-{{ pregunta.pk }}"
                    value="{{ opcion.valor }}"
                    id="opcion-{{ opcion.pk }}"
-                   {% if pregunta.obligatoria %}required{% endif %}>
+                   {% if pregunta.obligatoria %}required{% endif %} />
             <label class="form-check-label" for="opcion-{{ opcion.pk }}">{{ opcion.texto }}</label>
         </div>
     {% endfor %}
@@ -27,7 +27,7 @@
                    type="checkbox"
                    name="respuesta-{{ pregunta.pk }}"
                    value="{{ opcion.valor }}"
-                   id="opcion-{{ opcion.pk }}">
+                   id="opcion-{{ opcion.pk }}" />
             <label class="form-check-label" for="opcion-{{ opcion.pk }}">{{ opcion.texto }}</label>
         </div>
     {% endfor %}
@@ -37,7 +37,7 @@
            name="respuesta-{{ pregunta.pk }}"
            min="1"
            max="10"
-           {% if pregunta.obligatoria %}required{% endif %}>
+           {% if pregunta.obligatoria %}required{% endif %} />
 {% elif pregunta.tipo == "si_no" %}
     <select class="form-select"
             name="respuesta-{{ pregunta.pk }}"
@@ -51,10 +51,10 @@
            step="any"
            class="form-control"
            name="respuesta-{{ pregunta.pk }}"
-           {% if pregunta.obligatoria %}required{% endif %}>
+           {% if pregunta.obligatoria %}required{% endif %} />
 {% elif pregunta.tipo == "fecha" %}
     <input type="date"
            class="form-control"
            name="respuesta-{{ pregunta.pk }}"
-           {% if pregunta.obligatoria %}required{% endif %}>
+           {% if pregunta.obligatoria %}required{% endif %} />
 {% endif %}
