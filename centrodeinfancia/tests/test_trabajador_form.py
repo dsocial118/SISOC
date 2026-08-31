@@ -102,6 +102,26 @@ def test_departamento_contacto_usa_catalogo_de_la_provincia(catalogos):
 
 
 @pytest.mark.django_db
+def test_departamento_contacto_normaliza_id_enviado_por_desplegable(catalogos):
+    provincia = Provincia.objects.create(nombre="Ciudad Autónoma de Buenos Aires")
+    departamento = DepartamentoIpi.objects.create(
+        codigo_departamento="02001",
+        provincia=provincia,
+        nombre="Comuna 1",
+    )
+
+    form = TrabajadorCDIForm(
+        data=datos_validos(
+            provincia_contacto=str(provincia.pk),
+            departamento_contacto=str(departamento.pk),
+        )
+    )
+
+    assert form.is_valid(), form.errors
+    assert form.cleaned_data["departamento_contacto"] == departamento.nombre
+
+
+@pytest.mark.django_db
 def test_departamento_contacto_rechaza_valor_fuera_del_catalogo(catalogos):
     provincia = Provincia.objects.create(nombre="Neuquén")
     DepartamentoIpi.objects.create(
@@ -113,6 +133,27 @@ def test_departamento_contacto_rechaza_valor_fuera_del_catalogo(catalogos):
     form = TrabajadorCDIForm(
         data=datos_validos(
             provincia_contacto=str(provincia.pk), departamento_contacto="Inventado"
+        )
+    )
+
+    assert not form.is_valid()
+    assert "departamento_contacto" in form.errors
+
+
+@pytest.mark.django_db
+def test_departamento_contacto_rechaza_id_de_otra_provincia(catalogos):
+    provincia_elegida = Provincia.objects.create(nombre="Neuquén")
+    otra_provincia = Provincia.objects.create(nombre="Río Negro")
+    departamento_ajeno = DepartamentoIpi.objects.create(
+        codigo_departamento="62001",
+        provincia=otra_provincia,
+        nombre="Adolfo Alsina",
+    )
+
+    form = TrabajadorCDIForm(
+        data=datos_validos(
+            provincia_contacto=str(provincia_elegida.pk),
+            departamento_contacto=str(departamento_ajeno.pk),
         )
     )
 
