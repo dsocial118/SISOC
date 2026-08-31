@@ -303,6 +303,27 @@ def test_create_groups_creates_cfp_revisor_readonly_group():
     )
 
 
+def test_create_groups_creates_revisor_relevamientos_group():
+    """El revisor debe poder ver y revisar/finalizar relevamientos, sin editarlos."""
+    Group.objects.all().delete()
+
+    call_command("create_groups", verbosity=0)
+
+    revisor = Group.objects.get(name="Revisor Relevamientos")
+    group_codes = set(revisor.permissions.values_list("codename", flat=True))
+
+    assert {"view_relevamiento", "review_relevamiento"}.issubset(group_codes)
+    # No puede editar/crear/borrar el contenido del relevamiento.
+    assert (
+        not {
+            "change_relevamiento",
+            "add_relevamiento",
+            "delete_relevamiento",
+        }
+        & group_codes
+    )
+
+
 def test_rename_vat_sse_group_migration_forward_renames_existing_group():
     """La migración debe renombrar el grupo histórico VAT SSE a CFPINET."""
     Group.objects.filter(name__in=["VAT SSE", "CFPINET"]).delete()

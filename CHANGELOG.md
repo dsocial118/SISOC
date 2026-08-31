@@ -1,3 +1,13 @@
+<!-- AUTO-GENERATED RELEASE START: 2026-09-02 -->
+# Versión SISOC 02.09.2026
+
+## Actualizaciones
+
+- [sin-area] feat(relevamientos): asignación por usuario territorial + corte AppSheet por flag. (PR #2380)
+- [sin-area] fix(relevamientos): feedback QA territoriales (visibilidad, finalizar, estados, permisos). (PR #2386)
+- [sin-area] fix(territorial): excluir relevamientos borrados del scope por asignación. (PR #2389)
+<!-- AUTO-GENERATED RELEASE END: 2026-09-02 -->
+
 <!-- AUTO-GENERATED RELEASE START: 2026-08-26 -->
 # Versión SISOC 26.08.2026
 

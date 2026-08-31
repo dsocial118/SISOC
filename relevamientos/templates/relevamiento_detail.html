@@ -23,7 +23,7 @@
 {% endblock %}
 
 {% block customJS %}
-    {% if relevamiento.estado == "Pendiente" and perms.relevamientos.change_relevamiento %}
+    {% if relevamiento.estado != "Finalizado" and relevamiento.estado != "Finalizado/Excepciones" and perms.relevamientos.change_relevamiento %}
         <script nonce="{{ request.csp_nonce }}">const comedorId = "{{ relevamiento.comedor.id }}";</script>
         <script src="{% static 'custom/js/comedordetail_territorial_cache.js' %}"></script>
     {% endif %}
@@ -51,11 +51,11 @@
         <div class="col-auto"></div>
         <div class="col-auto">
             <!-- <a href="{% url 'relevamiento_editar' relevamiento.comedor.id relevamiento.id %}" class="btn btn-primary mr-1">Editar</a> -->
-            {% if relevamiento.estado == "Pendiente" and perms.relevamientos.change_relevamiento %}
+            {% if relevamiento.estado != "Finalizado" and relevamiento.estado != "Finalizado/Excepciones" and perms.relevamientos.change_relevamiento %}
                 <button type="button"
                         class="btn btn-primary mr-1"
                         data-bs-toggle="modal"
-                        data-bs-target="#modalAsignarTerritorial">Asignar</button>
+                        data-bs-target="#modalAsignarTerritorial">Reasignar territorial</button>
             {% endif %}
             {% if relevamiento.estado == "Finalizado" or relevamiento.estado == "Finalizado/Excepciones" %}
                 <a href="{{ relevamiento.docPDF }}"
@@ -76,7 +76,7 @@
                class="btn btn-danger">Eliminar</a>
         </div>
     </div>
-    {% if relevamiento.estado == "Pendiente" and perms.relevamientos.change_relevamiento %}
+    {% if relevamiento.estado != "Finalizado" and relevamiento.estado != "Finalizado/Excepciones" and perms.relevamientos.change_relevamiento %}
         <div class="modal fade"
              id="modalAsignarTerritorial"
              tabindex="-1"

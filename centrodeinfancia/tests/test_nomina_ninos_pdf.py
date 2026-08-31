@@ -134,23 +134,20 @@ def test_superadmin_debe_elegir_una_provincia_valida(client, query):
 
 
 @pytest.mark.django_db
-def test_egp_ignora_una_provincia_inyectada_en_la_descarga(client):
+def test_egp_no_puede_descargar_una_provincia_fuera_de_su_alcance(client):
     provincia_egp = Provincia.objects.create(nombre="Provincia EGP")
     provincia_inyectada = Provincia.objects.create(nombre="Provincia Inyectada")
     egp = _create_egp("egp-parametro-inyectado", provincia_egp)
     client.force_login(egp)
 
-    with patch(
-        "centrodeinfancia.views_export.generar_nomina_ninos_pdf",
-        return_value=b"%PDF-1.4\nprueba",
-    ) as generar_pdf:
+    with patch("centrodeinfancia.views_export.generar_nomina_ninos_pdf") as generar_pdf:
         response = client.get(
             reverse("centrodeinfancia_nomina_ninos_pdf"),
             {"provincia": provincia_inyectada.pk},
         )
 
-    assert response.status_code == 200
-    generar_pdf.assert_called_once_with(user=egp, provincia=provincia_egp)
+    assert response.status_code == 403
+    generar_pdf.assert_not_called()
 
 
 @pytest.mark.django_db
@@ -163,7 +160,9 @@ def test_descarga_pdf_define_attachment_y_no_cache(client):
         "centrodeinfancia.views_export.generar_nomina_ninos_pdf",
         return_value=b"%PDF-1.4\nprueba",
     ):
-        response = client.get(reverse("centrodeinfancia_nomina_ninos_pdf"))
+        response = client.get(
+            reverse("centrodeinfancia_nomina_ninos_pdf"), {"provincia": provincia.pk}
+        )
 
     assert response.status_code == 200
     assert response["Content-Type"] == "application/pdf"
@@ -185,7 +184,9 @@ def test_descarga_devuelve_error_controlado_sin_detalles(client):
         "centrodeinfancia.views_export.generar_nomina_ninos_pdf",
         side_effect=NominaNinosPDFError("detalle interno"),
     ):
-        response = client.get(reverse("centrodeinfancia_nomina_ninos_pdf"))
+        response = client.get(
+            reverse("centrodeinfancia_nomina_ninos_pdf"), {"provincia": provincia.pk}
+        )
 
     assert response.status_code == 503
     assert "detalle interno" not in response.content.decode()

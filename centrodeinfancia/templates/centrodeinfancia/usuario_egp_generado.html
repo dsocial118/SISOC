@@ -24,8 +24,8 @@
                     {% endif %}
 
                     <p class="text-muted">
-                        El usuario tiene alcance completo sobre la provincia
-                        <strong>{{ provincia }}</strong>.
+                        El usuario tiene alcance completo sobre las provincias
+                        <strong>{% for provincia in provincias %}{{ provincia }}{% if not forloop.last %}, {% endif %}{% endfor %}</strong>.
                     </p>
                     <p class="text-muted">
                         Esta contraseña temporal también queda visible en la

@@ -1,5 +1,6 @@
 """Tests for test cruce service helpers unit."""
 
+import codecs
 import io
 from types import SimpleNamespace
 
@@ -136,8 +137,8 @@ def test_generar_nomina_sintys_excel_without_db(mocker):
     assert len(data) > 0
 
 
-def test_leer_tabla_csv_fallback_and_prd_csv_generation(mocker):
-    """Table reader should fallback to CSV and PRD CSV should include summary sections."""
+def test_leer_tabla_csv_fallback(mocker):
+    """Table reader should fallback to semicolon-separated CSV."""
 
     class F:
         def __init__(self):
@@ -168,22 +169,6 @@ def test_leer_tabla_csv_fallback_and_prd_csv_generation(mocker):
     )
     df = CruceService._leer_tabla(F())
     assert "documento" in df.columns
-
-    with pytest.raises(TypeError):
-        CruceService._generar_prd_csv(
-            expediente=SimpleNamespace(),
-            resumen={
-                "total_legajos": 2,
-                "total_cuits_archivo": 1,
-                "total_dnis_archivo": 1,
-                "matcheados": 1,
-                "no_matcheados": 1,
-                "cupo": {"total_asignado": 10, "usados": 5, "disponibles": 5},
-                "cupo_fuera_count": 0,
-                "detalle_no_match": ["x"],
-                "detalle_fuera_cupo": ["y"],
-            },
-        )
 
 
 def test_procesar_cruce_validations(mocker):
@@ -353,17 +338,7 @@ def test_generar_prd_pdf_reportlab_with_detail_sections():
     assert len(pdf) > 0
 
 
-def test_generar_prd_csv_with_writer_stub(mocker):
-    rows = []
-
-    class _Writer:
-        def writerow(self, row):
-            rows.append(row)
-
-    mocker.patch(
-        "celiaquia.services.cruce_service.impl.csv.writer", return_value=_Writer()
-    )
-
+def test_generar_prd_csv_devuelve_utf8_con_bom_y_conserva_unicode():
     out = CruceService._generar_prd_csv(
         expediente=SimpleNamespace(),
         resumen={
@@ -374,11 +349,15 @@ def test_generar_prd_csv_with_writer_stub(mocker):
             "no_matcheados": 1,
             "cupo": {"total_asignado": 10, "usados": 5, "disponibles": 5},
             "cupo_fuera_count": 0,
-            "detalle_no_match": ["no1"],
-            "detalle_fuera_cupo": ["fc1"],
+            "detalle_no_match": ["José Muñoz · Córdoba"],
+            "detalle_fuera_cupo": ["Ñandú · acción"],
         },
     )
 
     assert isinstance(out, (bytes, bytearray))
-    assert any(r and r[0] == "Resumen" for r in rows)
-    assert any(r and r[0] == "Detalle_no_matcheados" for r in rows)
+    assert out.startswith(codecs.BOM_UTF8)
+    decoded = out.decode("utf-8-sig")
+    assert "Resumen" in decoded
+    assert "Detalle_no_matcheados" in decoded
+    assert "José Muñoz · Córdoba" in decoded
+    assert "Ñandú · acción" in decoded
