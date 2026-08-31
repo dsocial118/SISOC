@@ -11,6 +11,9 @@ MIGRATION = import_module("comunicados.migrations.0010_archive_importacion_nomin
 CORRECTIVE_MIGRATION = import_module(
     "comunicados.migrations.0011_rearchive_importacion_nomina"
 )
+PREFIX_CORRECTIVE_MIGRATION = import_module(
+    "comunicados.migrations.0012_rearchive_importacion_nomina_with_prefix"
+)
 
 
 @pytest.mark.django_db
@@ -82,3 +85,46 @@ def test_migracion_correctiva_archiva_objetivo_creado_despues_de_0010():
     objetivo.refresh_from_db()
     assert objetivo.estado == "archivado"
     assert objetivo.destacado is False
+
+
+@pytest.mark.django_db
+def test_migracion_correctiva_archiva_objetivo_con_emoji_inicial():
+    creador = User.objects.create_user(username="comunicados-correctivo-emoji")
+    objetivo = Comunicado.objects.create(
+        titulo="📋 Importación de nómina en nuevas admisiones",
+        cuerpo="Contenido obsoleto publicado en HML",
+        estado="publicado",
+        destacado=True,
+        tipo="interno",
+        usuario_creador=creador,
+    )
+    externo = Comunicado.objects.create(
+        titulo="📋 Importación de nómina para destinatarios externos",
+        cuerpo="Contenido externo vigente",
+        estado="publicado",
+        destacado=True,
+        tipo="externo",
+        usuario_creador=creador,
+    )
+    no_coincidente = Comunicado.objects.create(
+        titulo="📋 Nueva funcionalidad de admisiones",
+        cuerpo="Contenido interno vigente",
+        estado="publicado",
+        destacado=True,
+        tipo="interno",
+        usuario_creador=creador,
+    )
+
+    PREFIX_CORRECTIVE_MIGRATION.archivar_comunicado_importacion_nomina_con_prefijo(
+        apps, None
+    )
+
+    objetivo.refresh_from_db()
+    externo.refresh_from_db()
+    no_coincidente.refresh_from_db()
+    assert objetivo.estado == "archivado"
+    assert objetivo.destacado is False
+    assert externo.estado == "publicado"
+    assert externo.destacado is True
+    assert no_coincidente.estado == "publicado"
+    assert no_coincidente.destacado is True
