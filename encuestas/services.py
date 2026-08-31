@@ -7,13 +7,14 @@ from decimal import Decimal, InvalidOperation
 from typing import Iterable
 
 from django.core.exceptions import ValidationError
-from django.db import transaction
-from django.db.models import Q
+from django.db import IntegrityError, transaction
+from django.db.models import Prefetch, Q
 from django.utils import timezone
 from django.utils.dateparse import parse_date
 
 from .models import (
     Encuesta,
+    CumplimientoRonda,
     EstadoEncuesta,
     EstadoRonda,
     OpcionPregunta,
@@ -404,13 +405,6 @@ def _documentos_de_usuario(usuario) -> set[tuple[str, str]]:
 
 
 def usuario_esta_segmentado(encuesta: Encuesta, usuario) -> bool:
-    # Evita que quien creó la encuesta quede bloqueado (o se le muestre el
-    # modal) por su propia encuesta cuando la segmentación es "todos los
-    # usuarios": de lo contrario un Gestor podría autobloquearse al publicar
-    # una encuesta obligatoria, sin poder ni siquiera cerrarla después.
-    if getattr(usuario, "pk", None) == encuesta.usuario_creador_id:
-        return False
-
     segmentacion = getattr(encuesta, "segmentacion", None)
     if segmentacion is None:
         return False
@@ -423,6 +417,9 @@ def usuario_esta_segmentado(encuesta: Encuesta, usuario) -> bool:
     query = Q()
     for tipo_documento, numero_documento in documentos:
         query |= Q(tipo_documento=tipo_documento, numero_documento=numero_documento)
+    destinatarios_usuario = getattr(segmentacion, "destinatarios_usuario", None)
+    if destinatarios_usuario is not None:
+        return bool(destinatarios_usuario)
     return segmentacion.destinatarios.filter(query).exists()
 
 
@@ -430,10 +427,30 @@ def get_rondas_pendientes(usuario) -> list[RondaEncuesta]:
     """Rondas abiertas que le corresponden a ``usuario``, en cola por fecha de
     vencimiento más próxima (regla de negocio 12)."""
     ahora = timezone.now()
-    candidatas = (
+    documentos = _documentos_de_usuario(usuario)
+    destinatarios_queryset = SegmentacionDestinatario.objects.none()
+    if documentos:
+        query = Q()
+        for tipo_documento, numero_documento in documentos:
+            query |= Q(tipo_documento=tipo_documento, numero_documento=numero_documento)
+        destinatarios_queryset = SegmentacionDestinatario.objects.filter(query)
+
+    candidatas = list(
         RondaEncuesta.objects.filter(estado=EstadoRonda.ABIERTA)
-        .exclude(respuestas__usuario=usuario)
+        .exclude(cumplimientos__usuario=usuario)
         .select_related("encuesta", "encuesta__segmentacion")
+        .prefetch_related(
+            Prefetch(
+                "encuesta__segmentacion__destinatarios",
+                queryset=destinatarios_queryset,
+                to_attr="destinatarios_usuario",
+            ),
+            Prefetch(
+                "recordatorios",
+                queryset=RecordatorioUsuario.objects.filter(usuario=usuario),
+                to_attr="recordatorios_usuario",
+            ),
+        )
         .order_by("fecha_cierre_programada")
     )
 
@@ -441,9 +458,7 @@ def get_rondas_pendientes(usuario) -> list[RondaEncuesta]:
     for ronda in candidatas:
         if not usuario_esta_segmentado(ronda.encuesta, usuario):
             continue
-        recordatorio = RecordatorioUsuario.objects.filter(
-            ronda=ronda, usuario=usuario
-        ).first()
+        recordatorio = next(iter(ronda.recordatorios_usuario), None)
         if recordatorio and recordatorio.fecha_proximo_aviso > ahora:
             continue
         pendientes.append(ronda)
@@ -507,17 +522,20 @@ def _asignar_valor_respuesta(
     respuesta_pregunta: RespuestaPregunta, pregunta: Pregunta, post_data
 ) -> None:
     if pregunta.tipo == TipoPregunta.OPCION_UNICA:
-        respuesta_pregunta.save()
         valor = post_data.get(f"respuesta-{pregunta.pk}")
         opcion = pregunta.opciones.filter(valor=valor).first()
-        if opcion:
-            respuesta_pregunta.opciones_seleccionadas.add(opcion)
+        if opcion is None:
+            raise ValidationError(f"La respuesta a '{pregunta.texto}' no es válida.")
+        respuesta_pregunta.save()
+        respuesta_pregunta.opciones_seleccionadas.add(opcion)
         return
 
     if pregunta.tipo == TipoPregunta.OPCION_MULTIPLE:
-        respuesta_pregunta.save()
         valores = post_data.getlist(f"respuesta-{pregunta.pk}")
         opciones = pregunta.opciones.filter(valor__in=valores)
+        if opciones.count() != len(set(valores)):
+            raise ValidationError(f"La respuesta a '{pregunta.texto}' no es válida.")
+        respuesta_pregunta.save()
         respuesta_pregunta.opciones_seleccionadas.set(opciones)
         return
 
@@ -529,6 +547,16 @@ def _asignar_valor_respuesta(
             raise ValidationError(
                 f"La respuesta a '{pregunta.texto}' debe ser numérica."
             ) from exc
+        if not respuesta_pregunta.valor_numero.is_finite():
+            raise ValidationError(
+                f"La respuesta a '{pregunta.texto}' debe ser numérica."
+            )
+        if pregunta.tipo == TipoPregunta.ESCALA and not (
+            Decimal("1") <= respuesta_pregunta.valor_numero <= Decimal("10")
+        ):
+            raise ValidationError(
+                f"La respuesta a '{pregunta.texto}' debe estar entre 1 y 10."
+            )
     elif pregunta.tipo == TipoPregunta.FECHA:
         parsed = parse_date(valor)
         if not parsed:
@@ -536,6 +564,10 @@ def _asignar_valor_respuesta(
                 f"La respuesta a '{pregunta.texto}' debe ser una fecha válida."
             )
         respuesta_pregunta.valor_fecha = parsed
+    elif pregunta.tipo == TipoPregunta.SI_NO:
+        if valor not in {"si", "no"}:
+            raise ValidationError(f"La respuesta a '{pregunta.texto}' no es válida.")
+        respuesta_pregunta.valor_texto = valor
     else:
         respuesta_pregunta.valor_texto = valor
     respuesta_pregunta.save()
@@ -545,14 +577,12 @@ def registrar_respuesta(ronda: RondaEncuesta, usuario, post_data) -> RespuestaRo
     """Registra la respuesta de ``usuario`` a ``ronda`` a partir del POST del
     modal (ver encuestas/templates/encuestas/partials/responder_modal.html).
 
-    El contenido nunca se vincula a la identidad en encuestas anónimas (regla
-    de negocio 1); acá solo importa que la ronda quede marcada como
-    respondida por este usuario, sin distinción — la anonimización es un
-    recorte que se aplica en los reportes (fase de resultados), no acá.
+    El contenido no se vincula a la identidad en encuestas anónimas: el
+    cumplimiento se persiste por separado, sin referencia a la respuesta.
     """
     if ronda.estado != EstadoRonda.ABIERTA:
         raise ValidationError("Esta ronda ya no acepta respuestas.")
-    if RespuestaRonda.objects.filter(ronda=ronda, usuario=usuario).exists():
+    if CumplimientoRonda.objects.filter(ronda=ronda, usuario=usuario).exists():
         raise ValidationError("Ya respondiste esta encuesta.")
     if not usuario_esta_segmentado(ronda.encuesta, usuario):
         raise ValidationError("No estás habilitado para responder esta encuesta.")
@@ -565,32 +595,39 @@ def registrar_respuesta(ronda: RondaEncuesta, usuario, post_data) -> RespuestaRo
     # Atómico a propósito: si una pregunta obligatoria posterior falla la
     # validación, no debe quedar una RespuestaRonda ni RespuestaPregunta a
     # medio completar (regla de negocio: no se guardan respuestas parciales).
-    with transaction.atomic():
-        respuesta_ronda = RespuestaRonda.objects.create(ronda=ronda, usuario=usuario)
-
-        for pregunta in preguntas:
-            if not _pregunta_es_visible(pregunta, post_data, preguntas_por_orden):
-                continue
-
-            tiene_valor = bool(
-                post_data.getlist(f"respuesta-{pregunta.pk}")
-                if pregunta.tipo == TipoPregunta.OPCION_MULTIPLE
-                else post_data.get(f"respuesta-{pregunta.pk}")
+    try:
+        with transaction.atomic():
+            respuesta_ronda = RespuestaRonda.objects.create(
+                ronda=ronda,
+                usuario=None if ronda.encuesta.es_anonima else usuario,
             )
-            if not tiene_valor:
-                if pregunta.obligatoria:
-                    raise ValidationError(
-                        f"La pregunta '{pregunta.texto}' es obligatoria."
-                    )
-                continue
 
-            respuesta_pregunta = RespuestaPregunta(
-                respuesta_ronda=respuesta_ronda, pregunta=pregunta
-            )
-            _asignar_valor_respuesta(respuesta_pregunta, pregunta, post_data)
+            for pregunta in preguntas:
+                if not _pregunta_es_visible(pregunta, post_data, preguntas_por_orden):
+                    continue
 
-        respuesta_ronda.completa = True
-        respuesta_ronda.save(update_fields=["completa"])
+                tiene_valor = bool(
+                    post_data.getlist(f"respuesta-{pregunta.pk}")
+                    if pregunta.tipo == TipoPregunta.OPCION_MULTIPLE
+                    else post_data.get(f"respuesta-{pregunta.pk}")
+                )
+                if not tiene_valor:
+                    if pregunta.obligatoria:
+                        raise ValidationError(
+                            f"La pregunta '{pregunta.texto}' es obligatoria."
+                        )
+                    continue
+
+                respuesta_pregunta = RespuestaPregunta(
+                    respuesta_ronda=respuesta_ronda, pregunta=pregunta
+                )
+                _asignar_valor_respuesta(respuesta_pregunta, pregunta, post_data)
+
+            respuesta_ronda.completa = True
+            respuesta_ronda.save(update_fields=["completa"])
+            CumplimientoRonda.objects.create(ronda=ronda, usuario=usuario)
+    except IntegrityError as exc:
+        raise ValidationError("Ya respondiste esta encuesta.") from exc
 
     RecordatorioUsuario.objects.filter(ronda=ronda, usuario=usuario).delete()
     return respuesta_ronda

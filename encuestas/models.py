@@ -332,6 +332,8 @@ class RespuestaRonda(models.Model):
         settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
         related_name="respuestas_encuesta",
+        null=True,
+        blank=True,
         verbose_name="Usuario",
     )
     fecha_respuesta = models.DateTimeField(
@@ -342,14 +344,52 @@ class RespuestaRonda(models.Model):
     class Meta:
         verbose_name = "Respuesta de ronda"
         verbose_name_plural = "Respuestas de ronda"
-        constraints = [
-            models.UniqueConstraint(
-                fields=["ronda", "usuario"], name="uniq_respuesta_ronda_usuario"
+
+    def clean(self):
+        super().clean()
+        if not self.ronda_id:
+            return
+        if self.ronda.encuesta.es_anonima and self.usuario_id:
+            raise ValidationError(
+                "Las respuestas anónimas no pueden vincularse a un usuario."
             )
-        ]
+        if not self.ronda.encuesta.es_anonima and not self.usuario_id:
+            raise ValidationError("Las respuestas identificadas requieren un usuario.")
 
     def __str__(self):
-        return f"Respuesta de {self.usuario} a {self.ronda}"
+        if self.usuario_id:
+            return f"Respuesta de {self.usuario} a {self.ronda}"
+        return f"Respuesta anónima a {self.ronda}"
+
+
+class CumplimientoRonda(models.Model):
+    """Registra que un usuario completó una ronda sin enlazarlo a su contenido.
+
+    Para encuestas anónimas, este modelo es el único que conserva la identidad
+    necesaria para no volver a mostrar la ronda. No referencia RespuestaRonda.
+    """
+
+    ronda = models.ForeignKey(
+        RondaEncuesta,
+        on_delete=models.PROTECT,
+        related_name="cumplimientos",
+        verbose_name="Ronda",
+    )
+    usuario = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="cumplimientos_encuesta",
+        verbose_name="Usuario",
+    )
+
+    class Meta:
+        verbose_name = "Cumplimiento de ronda"
+        verbose_name_plural = "Cumplimientos de ronda"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["ronda", "usuario"], name="uniq_cumplimiento_ronda_usuario"
+            )
+        ]
 
 
 class RespuestaPregunta(models.Model):

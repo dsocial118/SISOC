@@ -31,7 +31,7 @@ class EncuestaObligatoriaMiddleware:
         if (
             user
             and getattr(user, "is_authenticated", False)
-            and not self._is_exempt_path(request.path)
+            and not self._is_exempt_path(request)
             and self._tiene_ronda_obligatoria_pendiente(request)
         ):
             return redirect("inicio")
@@ -46,7 +46,8 @@ class EncuestaObligatoriaMiddleware:
         )
 
     @staticmethod
-    def _is_exempt_path(path):
+    def _is_exempt_path(request):
+        path = request.path
         # Contraseña y datos personales pendientes tienen prioridad sobre
         # responder una encuesta (ver docstring de la clase): hay que eximir
         # sus rutas acá también, no solo la del propio middleware que las
@@ -62,6 +63,10 @@ class EncuestaObligatoriaMiddleware:
             return True
         if path.startswith(COMMON_EXEMPT_PREFIXES) or path.startswith(
             ENCUESTAS_EXEMPT_PREFIXES
+        ):
+            return True
+        if path.startswith("/encuestas/") and request.user.has_perm(
+            "encuestas.change_encuesta"
         ):
             return True
         try:

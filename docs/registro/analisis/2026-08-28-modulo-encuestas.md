@@ -99,7 +99,7 @@ Además, hoy conviven dos modelos "Programa" no unificados (`core.Programa`, vin
   - No hay una sección de "mis encuestas respondidas": una vez completada, la encuesta no vuelve a ser accesible para el usuario que la respondió.
 
 ## Reglas de negocio
-1. **Anonimato vs. obligatoriedad**: una encuesta anónima registra el *hecho* de que un usuario respondió una ronda (para poder desbloquearlo y no volver a mostrarle la encuesta), pero el *contenido* de sus respuestas nunca se vincula a su identidad en reportes, exportaciones ni pantallas de resultados.
+1. **Anonimato vs. obligatoriedad**: una encuesta anónima registra el *hecho* de que un usuario respondió una ronda (para poder desbloquearlo y no volver a mostrarle la encuesta) en un registro de cumplimiento separado, sin referencia al contenido. Las respuestas anónimas no se vinculan a su identidad en persistencia, reportes, exportaciones ni pantallas de resultados.
 2. Cada pregunta tiene su propio flag obligatoria/opcional, independiente del flag general de la encuesta.
 3. La lógica condicional solo permite mostrar/ocultar preguntas individuales según la respuesta de una pregunta anterior (no hay saltos de sección ni condiciones combinadas con AND/OR).
 4. Editar una encuesta que ya tiene respuestas genera una nueva versión; las respuestas emitidas quedan asociadas a la versión vigente al momento de responder.

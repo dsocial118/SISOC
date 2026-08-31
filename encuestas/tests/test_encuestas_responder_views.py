@@ -2,6 +2,7 @@ import pytest
 from django.urls import reverse
 
 from encuestas.models import (
+    CumplimientoRonda,
     Pregunta,
     RecordatorioUsuario,
     RespuestaRonda,
@@ -85,7 +86,8 @@ def test_responder_ronda_exitoso_redirige_a_next(client, respondiente, ronda_tod
     )
     assert response.status_code == 302
     assert response.url == "/algun-lugar/"
-    assert RespuestaRonda.objects.filter(
+    assert RespuestaRonda.objects.filter(ronda=ronda_todos).exists()
+    assert CumplimientoRonda.objects.filter(
         ronda=ronda_todos, usuario=respondiente
     ).exists()
 
@@ -111,9 +113,7 @@ def test_responder_ronda_sin_respuesta_obligatoria_no_falla_la_request(
         reverse("encuestas_responder", args=[ronda_todos.pk]), {"next": "/x/"}
     )
     assert response.status_code == 302
-    assert not RespuestaRonda.objects.filter(
-        ronda=ronda_todos, usuario=respondiente
-    ).exists()
+    assert not RespuestaRonda.objects.filter(ronda=ronda_todos).exists()
 
 
 @pytest.mark.django_db
