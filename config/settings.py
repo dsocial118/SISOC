@@ -207,6 +207,7 @@ INSTALLED_APPS = [
     "comunicados",
     "centrodeinfancia",
     "ver_para_ser_libre",
+    "pas",
     "dispositivos",
     "insumos",
     "pwa",
