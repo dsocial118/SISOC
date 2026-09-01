@@ -279,8 +279,7 @@
         <div class="section-body collapse show" id="section-discapacidad">
             <div class="row g-3 mb-3">
                 {% include "centrodeinfancia/_nomina_campo.html" with label="¿Tiene discapacidad?" value=nomina.get_tiene_discapacidad_display %}
-                {% include "centrodeinfancia/_nomina_campo.html" with label="¿Recibe apoyo?" value=nomina.recibe_apoyo_discapacidad|yesno:"Sí,No,—" %}
-                {% include "centrodeinfancia/_nomina_campo.html" with label="¿Recibe apoyo al desarrollo?" value=nomina.get_recibe_apoyo_desarrollo_display %}
+                {% include "centrodeinfancia/_nomina_campo.html" with label="¿Recibe apoyo al desarrollo?" value=nomina.apoyo_desarrollo_unificado_display %}
                 {% include "centrodeinfancia/_nomina_campo.html" with label="¿Posee CUD?" value=nomina.posee_cud|yesno:"Sí,No,—" %}
                 {% include "centrodeinfancia/_nomina_campo.html" with label="N° CUD" value=nomina.numero_cud %}
             </div>
