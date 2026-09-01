@@ -255,7 +255,7 @@ def _referente(username, centro):
 
 
 @pytest.mark.django_db
-def test_puede_ver_usuarios_cdi_solo_referente_o_superadmin():
+def test_puede_ver_usuarios_cdi_referente_superadmin_o_gestor_territorial():
     provincia = Provincia.objects.create(nombre="Rio Negro")
     centro = CentroDeInfancia.objects.create(nombre="CDI Ver", provincia=provincia)
     otro_centro = CentroDeInfancia.objects.create(
@@ -271,7 +271,7 @@ def test_puede_ver_usuarios_cdi_solo_referente_o_superadmin():
 
     assert puede_ver_usuarios_cdi(referente, centro) is True
     assert puede_ver_usuarios_cdi(superadmin, centro) is True
-    assert puede_ver_usuarios_cdi(provincial, centro) is False
+    assert puede_ver_usuarios_cdi(provincial, centro) is True
     assert puede_ver_usuarios_cdi(referente_otro, centro) is False
 
 

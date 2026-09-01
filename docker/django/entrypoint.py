@@ -18,6 +18,7 @@ SERVICE_ROLE_CIUDADANOS_IMPORT_WORKER = "ciudadanos_import_worker"
 SERVICE_ROLE_MAILING_WORKER = "mailing_worker"
 SERVICE_ROLE_USER_IMPORT_WORKER = "user_import_worker"
 SERVICE_ROLE_OCR_WORKER = "ocr_worker"
+SERVICE_ROLE_ENCUESTAS_WORKER = "encuestas_worker"
 
 
 def run_command(cmd, *, stage, **kwargs):
@@ -222,6 +223,15 @@ def run_ocr_worker():
     )
 
 
+def run_encuestas_worker():
+    """Inicia el worker dedicado al scheduler de rondas de encuestas."""
+    logger.info("[worker] Iniciando worker de encuestas...")
+    run_command(
+        ["python", "manage.py", "process_encuestas_rondas"],
+        stage="encuestas_worker",
+    )
+
+
 def main():
     wait_for_mysql()
     service_role = os.getenv("DJANGO_SERVICE_ROLE", SERVICE_ROLE_WEB).strip().lower()
@@ -239,6 +249,9 @@ def main():
         return
     if service_role == SERVICE_ROLE_OCR_WORKER:
         run_ocr_worker()
+        return
+    if service_role == SERVICE_ROLE_ENCUESTAS_WORKER:
+        run_encuestas_worker()
         return
     run_django_commands()
 

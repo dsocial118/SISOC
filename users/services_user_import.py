@@ -674,10 +674,11 @@ def _procesar_usuario_existente(params: _ActualizarUsuarioParams) -> dict:
                 profile,
                 [
                     {
-                        "provincia_id": params.provincias_objs[0].pk,
+                        "provincia_id": provincia.pk,
                         "municipio_id": None,
                         "localidad_id": None,
                     }
+                    for provincia in params.provincias_objs
                 ],
             )
             changed = True
@@ -822,10 +823,8 @@ def _validar_y_preparar_fila(row_data: dict, job: UserImportJob) -> _DatosFilaVa
     asigna_egp = accion_grupos != GROUP_ACTION_QUITAR and any(
         grupo.name == UserGroups.SIMEPI_EGP for grupo in permisos_fila.grupos
     )
-    if asigna_egp and len(provincias_objs) != 1:
-        raise ValidationError(
-            "El grupo SIMEPI - EGP requiere exactamente una provincia."
-        )
+    if asigna_egp and not provincias_objs:
+        raise ValidationError("El grupo SIMEPI - EGP requiere al menos una provincia.")
 
     return _DatosFilaValidados(
         nombre=nombre,
