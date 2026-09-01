@@ -93,7 +93,9 @@ def test_presentacion_crea_pdf_inmutable_e_impacta_datos_actuales(
 
 
 @pytest.mark.django_db
-def test_presentacion_conserva_literalmente_el_marcado_en_el_pdf(persona_ddjj, tmp_path):
+def test_presentacion_conserva_literalmente_el_marcado_en_el_pdf(
+    persona_ddjj, tmp_path
+):
     invitacion = crear_invitacion(persona_ddjj)
     domicilio = "Calle <br/> 123 & 456"
     form = PasDeclaracionJuradaForm(

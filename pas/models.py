@@ -22,6 +22,7 @@ class PasEstado(models.Model):
     def __str__(self):
         return self.nombre
 
+
 class PasAviso(models.Model):
     codigo = models.PositiveIntegerField(unique=True)
     descripcion = models.CharField(max_length=255)
