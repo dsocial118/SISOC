@@ -134,7 +134,7 @@
                             <td>
                                 <strong>Calendario de vacunación al día</strong>
                             </td>
-                            <td>{{ nomina.calendario_vacunacion_al_dia|yesno:"Sí,No,-" }}</td>
+                            <td>{{ nomina.get_calendario_vacunacion_al_dia_display|default:"-" }}</td>
                         </tr>
                         <tr>
                             <td>
