@@ -45,8 +45,10 @@
 - `centrodeinfancia/tests/test_issue_2417_migration.py`
 - `centrodeinfancia/tests/test_trabajador_form.py`
 - `core/tests/test_sidebar_menu.py`
+- `docs/contexto/features/pr-2419-fix-cdi-resolver-bloqueantes-del-issue-2417.md`
 - `docs/plans/2026-09-01-issue-2417-bloqueantes-cdi-design.md`
 - `docs/registro/cambios/2026-09-01-bloqueantes-cdi-issue-2417.md`
+- `docs/registro/prs/PR-2419.md`
 - `templates/includes/sidebar/opciones.html`
 - `tests/test_users_regressions.py`
 - `users/templates/user/user_list.html`
@@ -56,8 +58,10 @@
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`
+- `docs/contexto/features/pr-2419-fix-cdi-resolver-bloqueantes-del-issue-2417.md`
 - `docs/plans/2026-09-01-issue-2417-bloqueantes-cdi-design.md`
 - `docs/registro/cambios/2026-09-01-bloqueantes-cdi-issue-2417.md`
+- `docs/registro/prs/PR-2419.md`
 
 ## Trazabilidad
 
