@@ -22,6 +22,14 @@ def is_relevador_calle_user(user) -> bool:
     return bool(getattr(profile, "es_relevador_calle", False))
 
 
+def get_relevador_calle_rol(user) -> str:
+    """Rol con el que el usuario opera en DataCalle (``""`` si no es relevador)."""
+    if not is_relevador_calle_user(user):
+        return ""
+    profile = get_profile_or_none(user)
+    return getattr(profile, "datacalle_rol", "") or ""
+
+
 def get_relevador_calle_provincia_ids(user) -> list[int]:
     """IDs de provincias de alcance de un relevador de DataCalle."""
     if not is_relevador_calle_user(user):

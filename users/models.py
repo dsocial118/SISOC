@@ -95,6 +95,15 @@ class Profile(models.Model):
         PROVINCIAL = "provincial", "Provincial"
         EXTERNO = "externo", "Externo"
 
+    class DataCalleRol(models.TextChoices):
+        """Roles del relevamiento de situacion de calle (SISOC - Mobile DataCalle).
+
+        Por ahora solo existe el entrevistador; coordinador y administrador se
+        agregaran cuando se definan sus reglas de alcance.
+        """
+
+        ENTREVISTADOR = "entrevistador", "Entrevistador"
+
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     dni = models.CharField(max_length=16, blank=True)
     cuil = models.CharField(max_length=16, blank=True)
@@ -194,6 +203,17 @@ class Profile(models.Model):
             "Marca al usuario como relevador de personas en situacion de calle "
             "en SISOC - Mobile (DataCalle). El alcance se define por provincia "
             "en RelevadorCalleProvincia."
+        ),
+    )
+    datacalle_rol = models.CharField(
+        max_length=20,
+        choices=DataCalleRol.choices,
+        blank=True,
+        default="",
+        verbose_name="Rol en DataCalle",
+        help_text=(
+            "Rol con el que el usuario opera en SISOC - Mobile DataCalle. "
+            "Obligatorio cuando es_relevador_calle esta activo."
         ),
     )
     duplas_asignadas = models.ManyToManyField(

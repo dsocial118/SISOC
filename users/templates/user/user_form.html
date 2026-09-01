@@ -290,7 +290,8 @@
                     </div>
                     <div class="card-body">
                         <div id="relevador-calle-toggle-wrapper">{{ form.es_relevador_calle|as_crispy_field }}</div>
-                        <div id="relevador-calle-provincias-wrapper" style="display: none">
+                        <div id="relevador-calle-detalle-wrapper" style="display: none">
+                            {{ form.datacalle_rol|as_crispy_field }}
                             {{ form.provincias_datacalle|as_crispy_field }}
                         </div>
                     </div>
@@ -837,15 +838,41 @@
     if (!relevadorCheckbox) {
       return;
     }
-    const relevadorProvinciasWrapper = document.getElementById('relevador-calle-provincias-wrapper');
+    const relevadorDetalleWrapper = document.getElementById('relevador-calle-detalle-wrapper');
+    const repCheckbox = document.getElementById('id_es_representante_pwa');
+    const terrComedorCheckbox = document.getElementById('id_es_territorial_comedor');
 
     const syncRelevadorVisibility = () => {
-      if (relevadorProvinciasWrapper) {
-        relevadorProvinciasWrapper.style.display = relevadorCheckbox.checked ? '' : 'none';
+      if (relevadorDetalleWrapper) {
+        relevadorDetalleWrapper.style.display = relevadorCheckbox.checked ? '' : 'none';
       }
     };
 
-    relevadorCheckbox.addEventListener('change', syncRelevadorVisibility);
+    relevadorCheckbox.addEventListener('change', () => {
+      // DataCalle es solo-app: excluyente con los roles mobile de comedores.
+      if (relevadorCheckbox.checked) {
+        [repCheckbox, terrComedorCheckbox].forEach((otro) => {
+          if (otro && otro.checked) {
+            otro.checked = false;
+            otro.dispatchEvent(new Event('change', { bubbles: true }));
+          }
+        });
+      }
+      syncRelevadorVisibility();
+    });
+
+    [repCheckbox, terrComedorCheckbox].forEach((otro) => {
+      if (!otro) {
+        return;
+      }
+      otro.addEventListener('change', () => {
+        if (otro.checked && relevadorCheckbox.checked) {
+          relevadorCheckbox.checked = false;
+          syncRelevadorVisibility();
+        }
+      });
+    });
+
     syncRelevadorVisibility();
   })();
     </script>

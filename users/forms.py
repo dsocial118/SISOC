@@ -24,6 +24,7 @@ from users.models import (
     TerritorialComedorProvincia,
 )
 from users.profile_utils import get_profile_or_none
+from users.services_datacalle import is_relevador_calle_user
 from users.services_delegation import effective_delegatable_groups_qs
 from users.services_pwa import (
     PWA_ASSIGNABLE_PERMISSION_CODES,
@@ -233,6 +234,11 @@ class BackofficeAuthenticationForm(AuthenticationForm):
             raise forms.ValidationError(
                 "Este usuario solo puede ingresar desde la PWA.",
                 code="pwa_only",
+            )
+        if is_relevador_calle_user(user):
+            raise forms.ValidationError(
+                "Este usuario solo puede ingresar desde SISOC - Mobile DataCalle.",
+                code="datacalle_only",
             )
         profile = getattr(user, "profile", None)
         expires_at = getattr(profile, "initial_password_expires_at", None)
@@ -818,17 +824,26 @@ class TerritorialComedorFormMixin:
 class RelevadorCalleFormMixin:
     """Campos del rol "Relevador DataCalle" (SISOC - Mobile).
 
-    Flag simple sobre ``Profile.es_relevador_calle`` + alcance por provincia en
-    ``RelevadorCalleProvincia``. Espejo de ``TerritorialComedorFormMixin`` para
-    el modulo de situacion de calle: el relevador es un usuario normal con una
-    marca de rol y su alcance provincial, sin la maquinaria del representante
-    PWA (auto-password, limpieza de grupos, ocultamiento del backoffice).
+    Flag ``Profile.es_relevador_calle`` + rol en ``Profile.datacalle_rol`` +
+    alcance por provincia en ``RelevadorCalleProvincia``.
+
+    A diferencia del territorial de comedores, el relevador de DataCalle es un
+    usuario *solo de la app*: no entra al backoffice (ver
+    ``BackofficeAuthenticationForm.confirm_login_allowed``) y por eso es
+    excluyente con los otros roles de SISOC - Mobile.
     """
 
     def _setup_relevador_calle_fields(self):
         self.fields["es_relevador_calle"] = forms.BooleanField(
             required=False,
             label="Habilitar acceso a SISOC - Mobile DataCalle",
+        )
+        self.fields["datacalle_rol"] = forms.ChoiceField(
+            choices=[("", "---------")] + list(Profile.DataCalleRol.choices),
+            required=False,
+            widget=forms.Select(attrs={"class": "select2"}),
+            label="Rol",
+            help_text="Rol con el que opera en DataCalle.",
         )
         self.fields["provincias_datacalle"] = forms.ModelMultipleChoiceField(
             queryset=Provincia.objects.all().order_by("nombre"),
@@ -842,6 +857,7 @@ class RelevadorCalleFormMixin:
         if not profile:
             return
         self.fields["es_relevador_calle"].initial = profile.es_relevador_calle
+        self.fields["datacalle_rol"].initial = profile.datacalle_rol
         self.fields["provincias_datacalle"].initial = list(
             profile.relevador_calle_provincias.values_list("provincia_id", flat=True)
         )
@@ -851,9 +867,29 @@ class RelevadorCalleFormMixin:
         provincias = cleaned.get("provincias_datacalle")
 
         if not es_relevador:
+            cleaned["datacalle_rol"] = ""
             cleaned["provincias_datacalle"] = Provincia.objects.none()
             return cleaned
 
+        # Solo-app: no puede sumar los roles mobile de comedores.
+        if cleaned.get("es_representante_pwa", False):
+            self.add_error(
+                "es_relevador_calle",
+                "Un relevador de DataCalle no puede tener acceso como "
+                "representante de SISOC - Mobile a la vez.",
+            )
+        if cleaned.get("es_territorial_comedor", False):
+            self.add_error(
+                "es_relevador_calle",
+                "Un relevador de DataCalle no puede ser territorial de comedores "
+                "a la vez.",
+            )
+
+        if not cleaned.get("datacalle_rol"):
+            self.add_error(
+                "datacalle_rol",
+                "Seleccione el rol del relevador de DataCalle.",
+            )
         if not provincias:
             self.add_error(
                 "provincias_datacalle",
@@ -1015,6 +1051,9 @@ class UserCreationForm(
         user.set_password(self.cleaned_data["password"])
         self.generated_password = None
         self.password_was_auto_generated = False
+        if self.cleaned_data.get("es_relevador_calle", False):
+            user.is_staff = False
+            return
         if self.cleaned_data.get("es_coordinador", False):
             user.is_staff = True
 
@@ -1047,6 +1086,7 @@ class UserCreationForm(
             "es_territorial_comedor", False
         )
         profile.es_relevador_calle = self.cleaned_data.get("es_relevador_calle", False)
+        profile.datacalle_rol = self.cleaned_data.get("datacalle_rol", "")
         profile.rol = self.cleaned_data.get("rol")
         profile.must_change_password = True
         profile.password_changed_at = None
@@ -1251,6 +1291,8 @@ class CustomUserChangeForm(
         is_pwa_operator = self._is_active_pwa_operator()
         if self.cleaned_data.get("es_representante_pwa", False):
             user.is_staff = False
+        elif self.cleaned_data.get("es_relevador_calle", False):
+            user.is_staff = False
         elif self.cleaned_data.get("es_coordinador", False):
             user.is_staff = True
 
@@ -1293,6 +1335,7 @@ class CustomUserChangeForm(
             profile.es_relevador_calle = self.cleaned_data.get(
                 "es_relevador_calle", False
             )
+            profile.datacalle_rol = self.cleaned_data.get("datacalle_rol", "")
             profile.rol = self.cleaned_data.get("rol")
             if new_pwd:
                 self._set_initial_password_flags(

@@ -326,7 +326,8 @@ def test_api_login_allows_relevador_calle_user():
         password="testpass123",
     )
     user.profile.es_relevador_calle = True
-    user.profile.save(update_fields=["es_relevador_calle"])
+    user.profile.datacalle_rol = "entrevistador"
+    user.profile.save(update_fields=["es_relevador_calle", "datacalle_rol"])
 
     client = APIClient()
     response = client.post(
@@ -369,7 +370,8 @@ def test_users_me_includes_datacalle_context():
         password="testpass123",
     )
     user.profile.es_relevador_calle = True
-    user.profile.save(update_fields=["es_relevador_calle"])
+    user.profile.datacalle_rol = "entrevistador"
+    user.profile.save(update_fields=["es_relevador_calle", "datacalle_rol"])
     from users.models import RelevadorCalleProvincia
 
     RelevadorCalleProvincia.objects.create(profile=user.profile, provincia=provincia)
@@ -381,6 +383,7 @@ def test_users_me_includes_datacalle_context():
 
     assert response.status_code == 200
     assert response.data["profile"]["es_relevador_calle"] is True
+    assert response.data["profile"]["datacalle_rol"] == "entrevistador"
     assert response.data["profile"]["datacalle_provincias"] == [
         {"id": provincia.id, "nombre": "DataCalle Me Prov"}
     ]
@@ -407,4 +410,5 @@ def test_users_me_datacalle_provincias_vacio_sin_flag():
 
     assert response.status_code == 200
     assert response.data["profile"]["es_relevador_calle"] is False
+    assert response.data["profile"]["datacalle_rol"] == ""
     assert response.data["profile"]["datacalle_provincias"] == []

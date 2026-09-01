@@ -622,6 +622,7 @@ def test_user_creation_form_creates_relevador_calle_with_provincia():
             "password": "Sisoc12345!",
             "tipo_usuario": "interno",
             "es_relevador_calle": True,
+            "datacalle_rol": "entrevistador",
             "provincias_datacalle": [provincia.id],
         }
     )
@@ -650,6 +651,7 @@ def test_user_creation_form_relevador_calle_requires_provincia():
             "password": "Sisoc12345!",
             "tipo_usuario": "interno",
             "es_relevador_calle": True,
+            "datacalle_rol": "entrevistador",
         }
     )
 
@@ -658,7 +660,25 @@ def test_user_creation_form_relevador_calle_requires_provincia():
 
 
 @pytest.mark.django_db
-def test_user_creation_form_relevador_calle_convive_con_territorial():
+def test_user_creation_form_relevador_calle_requiere_rol():
+    provincia = Provincia.objects.create(nombre="DataCalle Sin Rol Prov")
+    form = UserCreationForm(
+        data={
+            "username": "relevador_sin_rol",
+            "email": "relevador_sin_rol@example.com",
+            "password": "Sisoc12345!",
+            "tipo_usuario": "interno",
+            "es_relevador_calle": True,
+            "provincias_datacalle": [provincia.id],
+        }
+    )
+
+    assert form.is_valid() is False
+    assert "datacalle_rol" in form.errors
+
+
+@pytest.mark.django_db
+def test_user_creation_form_relevador_calle_excluye_territorial():
     provincia = Provincia.objects.create(nombre="DataCalle Y Comedor Prov")
     form = UserCreationForm(
         data={
@@ -669,15 +689,60 @@ def test_user_creation_form_relevador_calle_convive_con_territorial():
             "es_territorial_comedor": True,
             "provincias_territorial": [provincia.id],
             "es_relevador_calle": True,
+            "datacalle_rol": "entrevistador",
             "provincias_datacalle": [provincia.id],
         }
     )
 
+    assert form.is_valid() is False
+    assert "es_relevador_calle" in form.errors
+
+
+@pytest.mark.django_db
+def test_user_creation_form_relevador_calle_excluye_representante(comedor):
+    form = UserCreationForm(
+        data={
+            "username": "relevador_y_rep",
+            "email": "relevador_y_rep@example.com",
+            "es_representante_pwa": True,
+            "comedores_pwa": [comedor.id],
+            "es_relevador_calle": True,
+            "datacalle_rol": "entrevistador",
+            "provincias_datacalle": [comedor.provincia_id],
+        }
+    )
+
+    assert form.is_valid() is False
+    assert "es_relevador_calle" in form.errors
+
+
+@pytest.mark.django_db
+def test_user_creation_form_relevador_calle_no_entra_al_backoffice():
+    provincia = Provincia.objects.create(nombre="DataCalle Backoffice Prov")
+    form = UserCreationForm(
+        data={
+            "username": "relevador_backoffice",
+            "email": "relevador_backoffice@example.com",
+            "password": "Sisoc12345!",
+            "tipo_usuario": "interno",
+            "es_relevador_calle": True,
+            "datacalle_rol": "entrevistador",
+            "provincias_datacalle": [provincia.id],
+        }
+    )
     assert form.is_valid(), form.errors
     user = form.save()
 
-    assert user.profile.es_territorial_comedor is True
-    assert user.profile.es_relevador_calle is True
+    assert user.is_staff is False
+
+    login_form = BackofficeAuthenticationForm(
+        data={"username": "relevador_backoffice", "password": "Sisoc12345!"}
+    )
+
+    assert login_form.is_valid() is False
+    assert "solo puede ingresar desde SISOC - Mobile DataCalle" in str(
+        login_form.errors
+    )
 
 
 @pytest.mark.django_db
@@ -690,6 +755,7 @@ def test_custom_user_change_form_disables_relevador_calle_clears_provincias():
             "password": "Sisoc12345!",
             "tipo_usuario": "interno",
             "es_relevador_calle": True,
+            "datacalle_rol": "entrevistador",
             "provincias_datacalle": [provincia.id],
         }
     )
@@ -726,6 +792,7 @@ def test_custom_user_change_form_precarga_provincias_datacalle():
             "password": "Sisoc12345!",
             "tipo_usuario": "interno",
             "es_relevador_calle": True,
+            "datacalle_rol": "entrevistador",
             "provincias_datacalle": [provincia.id],
         }
     )
