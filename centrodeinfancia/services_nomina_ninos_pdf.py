@@ -32,6 +32,7 @@ from reportlab.platypus import (
 
 from ciudadanos.models import Ciudadano
 from centrodeinfancia.models import AccesoCDI, NominaCentroInfancia
+from core.services.text_encoding import repair_utf8_mojibake
 
 
 logger = logging.getLogger(__name__)
@@ -101,7 +102,7 @@ def _value(primary, fallback=None):
 def _text(value):
     if value in (None, ""):
         return "-"
-    return str(value).strip() or "-"
+    return repair_utf8_mojibake(str(value)).strip() or "-"
 
 
 def _date_text(value):

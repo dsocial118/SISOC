@@ -6,8 +6,8 @@ Fecha: 2026-09-01
 
 La nómina provincial de niños genera un PDF Unicode válido, pero algunos
 apellidos y nombres llegan al generador con mojibake, por ejemplo secuencias
-como `Ã…`, `Â…` o `â…`. Los títulos estáticos y otros textos Unicode del mismo
-PDF se renderizan correctamente.
+iniciadas por los caracteres U+00C3, U+00C2 o U+00E2. Los títulos estáticos y
+otros textos Unicode del mismo PDF se renderizan correctamente.
 
 La inspección read-only de producción confirmó:
 
