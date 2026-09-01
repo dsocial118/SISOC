@@ -16,9 +16,18 @@ from import_export.admin import ExportMixin, ImportExportModelAdmin
 from import_export.forms import ExportForm
 from import_export.formats import base_formats
 
+from core.services.csv_export import CSV_CONTENT_TYPE
+
+
+class UTF8CSV(base_formats.CSV):
+    """CSV con el charset declarado para descargas HTTP."""
+
+    CONTENT_TYPE = CSV_CONTENT_TYPE
+
+
 # Solo Excel y CSV: evita exponer JSON/YAML/HTML, que no aportan al caso de uso
 # y amplían la superficie de parseo de archivos subidos.
-FORMATOS_HABILITADOS = [base_formats.XLSX, base_formats.CSV]
+FORMATOS_HABILITADOS = [base_formats.XLSX, UTF8CSV]
 
 
 class BaseImportExportAdmin(ImportExportModelAdmin):
@@ -27,6 +36,7 @@ class BaseImportExportAdmin(ImportExportModelAdmin):
     # Mantiene el flujo previo a django-import-export 4.x: el usuario elige el
     # formato, pero no una selección parcial de columnas.
     export_form_class = ExportForm
+    to_encoding = "utf-8-sig"
     formats = FORMATOS_HABILITADOS
     # django-import-export 4.x reemplaza `formats` por estos dos atributos.
     # Se declaran los tres para que la restricción siga vigente si se sube el
@@ -39,5 +49,6 @@ class BaseExportAdmin(ExportMixin, admin.ModelAdmin):
     """Admin que solo exporta: no habilita la carga de archivos."""
 
     export_form_class = ExportForm
+    to_encoding = "utf-8-sig"
     formats = FORMATOS_HABILITADOS
     export_formats = FORMATOS_HABILITADOS

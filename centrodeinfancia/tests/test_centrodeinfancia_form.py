@@ -1,6 +1,7 @@
 from datetime import date
 
 import pytest
+from django import forms
 from django.contrib.auth.models import User
 from django.urls import reverse
 
@@ -65,6 +66,7 @@ def datos_validos(ubicacion, servicio, **overrides):
         "calle": "San Martín",
         "numero": "1234",
         "meses_funcionamiento": ["enero", "febrero"],
+        "dias_funcionamiento": ["lunes", "martes"],
         "tipo_jornada": "simple_single_shift",
         "oferta_servicios": [str(servicio.pk)],
         "modalidad_gestion": "gobierno_municipal",
@@ -86,6 +88,16 @@ def fixture_user():
 def construir_form(datos, user=None, **kwargs):
     kwargs.setdefault("lock_provincia_from_user", False)
     return CentroDeInfanciaForm(data=datos, user=user, **kwargs)
+
+
+@pytest.mark.django_db
+def test_servicios_se_muestran_como_casillas_de_seleccion_multiple():
+    form = CentroDeInfanciaForm()
+
+    assert isinstance(
+        form.fields["oferta_servicios"].widget,
+        forms.CheckboxSelectMultiple,
+    )
 
 
 # --- Alta completa (caso feliz, no-regresión) --------------------------------
@@ -451,6 +463,16 @@ def test_acepta_anio_inicio_valido(user, ubicacion, servicio):
 
     assert form.is_valid(), form.errors
     assert form.cleaned_data["fecha_inicio"] == date(1995, 1, 1)
+
+
+@pytest.mark.django_db
+def test_acepta_anio_inicio_minimo_historico(user, ubicacion, servicio):
+    form = construir_form(
+        datos_validos(ubicacion, servicio, fecha_inicio="1900"), user=user
+    )
+
+    assert form.is_valid(), form.errors
+    assert form.cleaned_data["fecha_inicio"] == date(1900, 1, 1)
 
 
 @pytest.mark.django_db

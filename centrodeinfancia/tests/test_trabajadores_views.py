@@ -1,15 +1,18 @@
 import pytest
-from django.contrib.auth.models import Permission, User
+from django.contrib.auth.models import Group, Permission, User
 from django.urls import reverse
 
+from ciudadanos.models import Ciudadano
 from centrodeinfancia.models import (
+    AccesoCDI,
     CentroDeInfancia,
     NominaNacionalidad,
     NominaPais,
     Trabajador,
 )
 from centrodeinfancia.tests.test_trabajador_form import datos_validos
-from core.models import Provincia
+from core.constants import UserGroups
+from core.models import Nacionalidad, Provincia
 from users.models import Profile
 
 
@@ -90,6 +93,35 @@ def test_trabajador_create_post_crea_y_redirige(client):
     assert trabajador.subcomponente == "cdi"
     assert trabajador.sala_cdi == "2_anios"
     assert trabajador.campos_verificados_renaper == []
+
+
+@pytest.mark.django_db
+def test_referente_cdi_con_acceso_activo_puede_abrir_alta_trabajador(client):
+    provincia = Provincia.objects.create(nombre="Provincia referente trabajador")
+    centro = CentroDeInfancia.objects.create(
+        nombre="CDI alta por referente",
+        provincia=provincia,
+    )
+    referente = User.objects.create_user(
+        username="referente-alta-trabajador",
+        password="test1234",
+    )
+    grupo, _ = Group.objects.get_or_create(name=UserGroups.CDI_REFERENTE_CENTRO)
+    grupo.permissions.add(
+        Permission.objects.get(
+            content_type__app_label="centrodeinfancia",
+            codename="add_trabajador",
+        )
+    )
+    referente.groups.add(grupo)
+    AccesoCDI.objects.create(user=referente, centro=centro, activo=True)
+    client.force_login(referente)
+
+    response = client.get(
+        reverse("centrodeinfancia_trabajador_crear", kwargs={"pk": centro.pk})
+    )
+
+    assert response.status_code == 200
 
 
 @pytest.mark.django_db
@@ -175,6 +207,63 @@ def test_trabajador_create_persiste_y_bloquea_solo_prefill_renaper_servidor(
     assert trabajador.apellido == "Pérez"
     assert trabajador.dni == 30123456
     assert trabajador.campos_verificados_renaper == ["nombre", "apellido", "dni"]
+
+
+@pytest.mark.django_db
+def test_trabajador_renaper_normaliza_id_de_nacionalidad_al_catalogo_central(
+    client, monkeypatch
+):
+    user = _crear_usuario("super-trabajador-renaper-nacionalidad", superuser=True)
+    client.force_login(user)
+    centro = CentroDeInfancia.objects.create(nombre="CDI RENAPER nacionalidad")
+    Nacionalidad.objects.create(pk=7, nacionalidad="Argentina")
+    url = reverse("centrodeinfancia_trabajador_crear", kwargs={"pk": centro.pk})
+    monkeypatch.setattr(
+        "centrodeinfancia.views.obtener_datos_ciudadano_desde_renaper",
+        lambda _dni: {
+            "success": True,
+            "data": {
+                "nombre": "Juana",
+                "apellido": "Pérez",
+                "dni": "30123456",
+                "nacionalidad": 7,
+            },
+            "datos_api": {},
+        },
+    )
+
+    response = client.get(f"{url}?query=30123456")
+
+    assert response.status_code == 200
+    form = response.context["form"]
+    assert form.initial["nacionalidad_trabajador"] == "Argentina"
+    assert ("Argentina", "Argentina") in form.fields["nacionalidad_trabajador"].choices
+
+
+@pytest.mark.django_db
+def test_trabajador_create_precarga_provincia_del_cdi_sin_geografia_dependiente(
+    client,
+):
+    user = _crear_usuario("super-trabajador-provincia", superuser=True)
+    client.force_login(user)
+    provincia = Provincia.objects.create(nombre="Chubut")
+    centro = CentroDeInfancia.objects.create(
+        nombre="CDI Provincia", provincia=provincia
+    )
+    ciudadano = Ciudadano.objects.create(
+        nombre="Julia", apellido="Mendez", documento=44555666
+    )
+
+    response = client.get(
+        reverse("centrodeinfancia_trabajador_crear", kwargs={"pk": centro.pk})
+        + f"?ciudadano_id={ciudadano.pk}"
+    )
+
+    form = response.context["form"]
+    assert form["provincia_contacto"].value() == provincia.pk
+    assert form["departamento_contacto"].value() is None
+    assert form["municipio_contacto"].value() is None
+    assert form["localidad_contacto"].value() is None
 
 
 @pytest.mark.django_db

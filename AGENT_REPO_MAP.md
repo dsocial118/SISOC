@@ -371,6 +371,9 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 
 - `users/services_user_import.py`: parsing, alta/actualizacion, mail de
   credenciales y exportacion CSV.
+- El alta canónica de `SIMEPI - EGP` es `users.UserCreationForm` en
+  `/usuarios/crear/`; admite uno o más scopes provinciales completos. La URL
+  histórica `/simepi/egp/generar-usuario/` sólo redirige por compatibilidad.
 - `users/services_user_import_jobs.py`: procesamiento y reanudacion del lote.
 - `users/views_user_import.py`, `users/urls.py` y
   `users/templates/user/user_import_job_detail.html`: detalle y descargas.
@@ -522,7 +525,8 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
   `centrodeinfancia_nomina_ninos_pdf`, servicio
   `centrodeinfancia/services_nomina_ninos_pdf.py` y pruebas
   `centrodeinfancia/tests/test_nomina_ninos_pdf.py`; exige grupo `SIMEPI - EGP`
-  y un único alcance provincial completo, y entrega un JPEG por página
+  y selección explícita de una provincia dentro de uno o más alcances completos,
+  excluye fichas mayores de 48 meses y entrega un JPEG por página
 - contrato canónico de esa descarga, privacidad y formularios CDI:
   `docs/implementaciones/centrodeinfancia_nomina_ninos_simepi.md`
 - conversión e incrustación de Office en rendiciones: `rendicioncuentasmensual/service_helpers.py`
@@ -545,6 +549,15 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
   `comedores/services/comedor_service/impl.py`
 - `tests/test_comedor_form_unit.py` y `tests/test_nomina_views_unit.py`
 - documentación canónica: `docs/implementaciones/comedores_nomina_ciudadanos.md`
+
+### Si necesitas cambiar exportaciones CSV
+
+- Política UTF-8/BOM y helpers HTTP: `core/services/csv_export.py`.
+- Streaming reutilizable: `core/mixins.py:CSVExportMixin`.
+- Admin import/export: `core/admin_import_export.py`.
+- Guía y contrato: `docs/implementaciones/exportar_listados.md`.
+- Los productores CSV nuevos deben reutilizar la política central; el guard
+  vive en `tests/test_csv_export_architecture.py`.
 
 ### Si necesitas cambiar OCR / procesamiento documental
 

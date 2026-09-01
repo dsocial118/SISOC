@@ -1,4 +1,3 @@
-import itertools
 import re
 import unicodedata
 
@@ -139,7 +138,4 @@ class BeneficiariosExportView(LoginRequiredMixin, CSVExportMixin, View):
                 request.META.get("HTTP_REFERER") or reverse("beneficiarios_list")
             )
 
-        response = self.export_csv(queryset)
-        # BOM UTF-8 para que Excel muestre correctamente tildes y ñ.
-        response.streaming_content = itertools.chain(["﻿"], response.streaming_content)
-        return response
+        return self.export_csv(queryset)

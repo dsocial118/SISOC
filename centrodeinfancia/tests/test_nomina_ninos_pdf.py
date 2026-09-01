@@ -51,7 +51,7 @@ def _create_egp(username, provincia, *, full_scope=True):
     return user
 
 
-def _create_child(documento, *, validated=True, birth_date=date(2020, 1, 15)):
+def _create_child(documento, *, validated=True, birth_date=date(2024, 1, 15)):
     return Ciudadano.objects.create(
         apellido="Pérez",
         nombre=f"Niño {documento}",
@@ -64,7 +64,7 @@ def _create_child(documento, *, validated=True, birth_date=date(2020, 1, 15)):
 
 
 @pytest.mark.django_db
-def test_descarga_exige_egp_con_unico_scope_provincial_completo(client):
+def test_descarga_exige_egp_con_scope_provincial_completo(client):
     provincia = Provincia.objects.create(nombre="Provincia Uno")
     user = User.objects.create_user(username="sin-rol", password="test1234")
     client.force_login(user)
@@ -134,23 +134,20 @@ def test_superadmin_debe_elegir_una_provincia_valida(client, query):
 
 
 @pytest.mark.django_db
-def test_egp_ignora_una_provincia_inyectada_en_la_descarga(client):
+def test_egp_no_puede_descargar_una_provincia_fuera_de_su_alcance(client):
     provincia_egp = Provincia.objects.create(nombre="Provincia EGP")
     provincia_inyectada = Provincia.objects.create(nombre="Provincia Inyectada")
     egp = _create_egp("egp-parametro-inyectado", provincia_egp)
     client.force_login(egp)
 
-    with patch(
-        "centrodeinfancia.views_export.generar_nomina_ninos_pdf",
-        return_value=b"%PDF-1.4\nprueba",
-    ) as generar_pdf:
+    with patch("centrodeinfancia.views_export.generar_nomina_ninos_pdf") as generar_pdf:
         response = client.get(
             reverse("centrodeinfancia_nomina_ninos_pdf"),
             {"provincia": provincia_inyectada.pk},
         )
 
-    assert response.status_code == 200
-    generar_pdf.assert_called_once_with(user=egp, provincia=provincia_egp)
+    assert response.status_code == 403
+    generar_pdf.assert_not_called()
 
 
 @pytest.mark.django_db
@@ -163,7 +160,9 @@ def test_descarga_pdf_define_attachment_y_no_cache(client):
         "centrodeinfancia.views_export.generar_nomina_ninos_pdf",
         return_value=b"%PDF-1.4\nprueba",
     ):
-        response = client.get(reverse("centrodeinfancia_nomina_ninos_pdf"))
+        response = client.get(
+            reverse("centrodeinfancia_nomina_ninos_pdf"), {"provincia": provincia.pk}
+        )
 
     assert response.status_code == 200
     assert response["Content-Type"] == "application/pdf"
@@ -185,7 +184,9 @@ def test_descarga_devuelve_error_controlado_sin_detalles(client):
         "centrodeinfancia.views_export.generar_nomina_ninos_pdf",
         side_effect=NominaNinosPDFError("detalle interno"),
     ):
-        response = client.get(reverse("centrodeinfancia_nomina_ninos_pdf"))
+        response = client.get(
+            reverse("centrodeinfancia_nomina_ninos_pdf"), {"provincia": provincia.pk}
+        )
 
     assert response.status_code == 503
     assert "detalle interno" not in response.content.decode()
@@ -272,7 +273,7 @@ def test_export_data_filtra_deduplica_ordena_y_resuelve_validaciones():
     AccesoCDI.objects.create(user=referente, centro=centro, activo=True)
 
     child_months = _create_child(40000001, validated=True, birth_date=date(2024, 1, 1))
-    child_years = _create_child(40000002, validated=False, birth_date=date(2020, 1, 1))
+    child_years = _create_child(40000002, validated=False, birth_date=date(2023, 1, 1))
     child_foreign = _create_child(40000003)
     adult = Ciudadano.objects.create(
         apellido="Adulto",
@@ -389,7 +390,7 @@ def test_export_data_no_duplica_mismo_ciudadano_si_sus_fichas_difieren():
         nombre="CDI Sin Duplicados",
         provincia=provincia,
     )
-    child = _create_child(42000001)
+    child = _create_child(42000001, birth_date=date(2024, 1, 15))
 
     ficha_anterior = NominaCentroInfancia.objects.create(
         centro=centro,
@@ -398,7 +399,7 @@ def test_export_data_no_duplica_mismo_ciudadano_si_sus_fichas_difieren():
         apellido="Apellido anterior",
         nombre="Nombre anterior",
         dni=42000001,
-        fecha_nacimiento=date(2020, 1, 15),
+        fecha_nacimiento=date(2024, 1, 15),
         sexo=NominaCentroInfancia.SexoChoices.MASCULINO,
     )
     NominaCentroInfancia.objects.filter(pk=ficha_anterior.pk).update(
@@ -411,7 +412,7 @@ def test_export_data_no_duplica_mismo_ciudadano_si_sus_fichas_difieren():
         apellido="Apellido corregido",
         nombre="Nombre corregido",
         dni=42000001,
-        fecha_nacimiento=date(2020, 1, 16),
+        fecha_nacimiento=date(2024, 1, 16),
         sexo=NominaCentroInfancia.SexoChoices.FEMENINO,
     )
     NominaCentroInfancia.objects.filter(pk=ficha_reciente.pk).update(
@@ -435,14 +436,14 @@ def test_export_data_no_duplica_mismo_dni_en_ciudadanos_distintos():
     child_anterior = Ciudadano.objects.create(
         apellido="Apellido ciudadano anterior",
         nombre="Nombre ciudadano anterior",
-        fecha_nacimiento=date(2020, 1, 15),
+        fecha_nacimiento=date(2024, 1, 15),
         documento=43000001,
         tipo_registro_identidad=Ciudadano.TIPO_REGISTRO_DNI_NO_VALIDADO,
     )
     child_reciente = Ciudadano.objects.create(
         apellido="Apellido ciudadano reciente",
         nombre="Nombre ciudadano reciente",
-        fecha_nacimiento=date(2020, 1, 16),
+        fecha_nacimiento=date(2024, 1, 16),
         documento=43000001,
         tipo_registro_identidad=Ciudadano.TIPO_REGISTRO_DNI_NO_VALIDADO,
     )
@@ -474,6 +475,39 @@ def test_export_data_no_duplica_mismo_dni_en_ciudadanos_distintos():
 
     assert data.total_ninos == 1
     assert data.centros[0].rows[0].apellido == "Apellido corregido"
+
+
+@pytest.mark.django_db
+def test_export_data_excluye_mayores_de_48_meses_aunque_sigan_activos():
+    provincia = Provincia.objects.create(nombre="Provincia Límite Edad")
+    user = _create_egp("egp-limite-edad", provincia)
+    centro = CentroDeInfancia.objects.create(
+        nombre="CDI Límite Edad",
+        provincia=provincia,
+    )
+    fecha_exportacion = timezone.make_aware(datetime(2026, 8, 31, 12, 0))
+
+    for documento, nacimiento in (
+        (44000001, date(2022, 8, 31)),  # exactamente 48 meses
+        (44000002, date(2022, 8, 30)),  # 48 meses y un día
+    ):
+        ciudadano = _create_child(documento, birth_date=nacimiento)
+        NominaCentroInfancia.objects.create(
+            centro=centro,
+            ciudadano=ciudadano,
+            estado=NominaCentroInfancia.ESTADO_ACTIVO,
+            fecha_nacimiento=nacimiento,
+            edad_unidad="anios",
+        )
+
+    data = build_export_data(
+        user=user,
+        provincia=provincia,
+        generado_en=fecha_exportacion,
+    )
+
+    assert data.total_ninos == 1
+    assert data.centros[0].rows[0].dni == "44000001"
 
 
 def _sample_export_data():

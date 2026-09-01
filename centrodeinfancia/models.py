@@ -192,7 +192,7 @@ class CentroDeInfancia(SoftDeleteModelMixin, models.Model):
         blank=True,
         null=True,
         verbose_name="Año de inicio de actividades del CDI",
-        validators=[MinValueValidator(date(1990, 1, 1))],
+        validators=[MinValueValidator(date(1900, 1, 1))],
     )
     fecha_creacion = models.DateTimeField(auto_now_add=True)
 
@@ -1306,7 +1306,7 @@ class NominaCentroInfancia(SoftDeleteModelMixin, models.Model):
     class RespuestaSiNoNsNc(models.TextChoices):
         SI = "si", "Si"
         NO = "no", "No"
-        NS_NC = "ns_nc", "Ns/Nc"
+        NS_NC = "ns_nc", "No sabe"
 
     class TipoDiscapacidad(models.TextChoices):
         MOTORA = "motora", "Motora"
@@ -1316,7 +1316,7 @@ class NominaCentroInfancia(SoftDeleteModelMixin, models.Model):
         MENTAL = "mental", "Mental"
         VISCERAL = "visceral", "Visceral"
         MULTIPLE = "multiple", "Múltiple"
-        NS_NC = "ns_nc", "Ns/Nc"
+        NS_NC = "ns_nc", "No sabe"
 
     class SexoChoices(models.TextChoices):
         FEMENINO = "Femenino", "Femenino"
@@ -1723,6 +1723,14 @@ class NominaCentroInfancia(SoftDeleteModelMixin, models.Model):
             )
         )
 
+    @property
+    def apoyo_desarrollo_unificado_display(self):
+        if self.recibe_apoyo_desarrollo:
+            return self.get_recibe_apoyo_desarrollo_display()
+        if self.recibe_apoyo_discapacidad is None:
+            return "-"
+        return "Sí" if self.recibe_apoyo_discapacidad else "No"
+
     @staticmethod
     def _validar_multiselect(field_name, value, choices):
         allowed = {item[0] for item in choices}
@@ -1758,6 +1766,11 @@ class NominaCentroInfancia(SoftDeleteModelMixin, models.Model):
             self.recibe_apoyo_discapacidad = None
             self.tipo_discapacidad = []
             self.numero_cud = None
+        else:
+            self.recibe_apoyo_discapacidad = {
+                "si": True,
+                "no": False,
+            }.get(self.recibe_apoyo_desarrollo)
         if not self.posee_cud:
             self.numero_cud = None
 

@@ -8,7 +8,8 @@ from django.utils.text import slugify
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxLengthValidator
 
-from core.models import Localidad, Municipio, Provincia
+from core.models import Localidad, Municipio, Nacionalidad, Provincia
+from core.constants import UserGroups
 from core.validators import (
     solo_digitos,
     validate_codigo_postal_ar,
@@ -96,7 +97,7 @@ class CentroDeInfanciaForm(forms.ModelForm):
     LATITUD_MAXIMA = Decimal("-21")
     LONGITUD_MINIMA = Decimal("-74")
     LONGITUD_MAXIMA = Decimal("-53")
-    # `dias_funcionamiento`, los horarios y latitud/longitud siguen siendo optativos.
+    # Los horarios y latitud/longitud siguen siendo optativos.
     # (Latitud/longitud pasarían a obligatorias si se implementa la toma por GPS.)
     CAMPOS_OBLIGATORIOS = [
         "nombre",
@@ -114,6 +115,7 @@ class CentroDeInfanciaForm(forms.ModelForm):
         "calle",
         "numero",
         "meses_funcionamiento",
+        "dias_funcionamiento",
         "tipo_jornada",
         "oferta_servicios",
         "modalidad_gestion",
@@ -128,7 +130,7 @@ class CentroDeInfanciaForm(forms.ModelForm):
         widget=forms.CheckboxSelectMultiple,
     )
     dias_funcionamiento = forms.MultipleChoiceField(
-        required=False,
+        required=True,
         choices=CAMPOS_OPCIONES_MULTIPLES["dias_funcionamiento"],
         widget=forms.CheckboxSelectMultiple,
     )
@@ -641,6 +643,7 @@ class CentroDeInfanciaForm(forms.ModelForm):
             "fecha_inicio": forms.DateInput(format="%Y-%m-%d", attrs={"type": "date"}),
             "meses_funcionamiento": forms.CheckboxSelectMultiple(),
             "dias_funcionamiento": forms.CheckboxSelectMultiple(),
+            "oferta_servicios": forms.CheckboxSelectMultiple(),
         }
 
 
@@ -842,10 +845,12 @@ class NominaCentroInfanciaBaseForm(forms.ModelForm):
             "observaciones": forms.Textarea(attrs={"rows": 3}),
         }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, actor=None, **kwargs):
+        self.actor = actor
         super().__init__(*args, **kwargs)
         self._configure_sala_choices()
         self._configure_boolean_fields()
+        self._configure_apoyo_desarrollo_unificado()
         self._configure_choice_fields()
         self._configure_widgets()
         self._configure_geography_fields()
@@ -887,6 +892,8 @@ class NominaCentroInfanciaBaseForm(forms.ModelForm):
             },
         }
         for field_name, config in boolean_fields.items():
+            if field_name not in self.fields:
+                continue
             current_value = None
             if self.instance.pk:
                 current_value = getattr(self.instance, field_name)
@@ -901,6 +908,22 @@ class NominaCentroInfanciaBaseForm(forms.ModelForm):
             if "choices" in config:
                 field_kwargs["choices"] = config["choices"]
             self.fields[field_name] = NullableBooleanChoiceField(**field_kwargs)
+
+    def _configure_apoyo_desarrollo_unificado(self):
+        field_name = "recibe_apoyo_desarrollo"
+        if field_name not in self.fields:
+            return
+        field = self.fields[field_name]
+        field.required = True
+        field.error_messages["required"] = "Este campo es obligatorio."
+        if (
+            self.instance.pk
+            and not self.instance.recibe_apoyo_desarrollo
+            and self.instance.recibe_apoyo_discapacidad is not None
+        ):
+            self.initial[field_name] = (
+                "si" if self.instance.recibe_apoyo_discapacidad else "no"
+            )
 
     def _configure_choice_fields(self):
         self.fields["sexo"].choices = [("", "---------")] + list(
@@ -1117,12 +1140,31 @@ class NominaCentroInfanciaBaseForm(forms.ModelForm):
             self.instance, "fecha_nacimiento", None
         )
         if fecha_nacimiento:
-            temp_nomina = (
-                self.instance
-                if self.instance.pk
-                else NominaCentroInfancia(fecha_nacimiento=fecha_nacimiento)
-            )
-            self.fields["edad_calculada"].initial = temp_nomina.edad
+            edad, unidad = self._calculate_age_and_unit(fecha_nacimiento)
+            self.fields["edad_calculada"].initial = edad
+            if "edad_unidad" in self.fields:
+                self.fields["edad_unidad"].initial = unidad
+        if "edad_unidad" in self.fields:
+            self.fields["edad_unidad"].disabled = True
+
+    @staticmethod
+    def _calculate_age_and_unit(fecha_nacimiento: date) -> tuple[int, str]:
+        """Devuelve meses antes del primer año y años cumplidos desde entonces."""
+        hoy = date.today()
+        meses = (
+            (hoy.year - fecha_nacimiento.year) * 12
+            + hoy.month
+            - fecha_nacimiento.month
+            - (hoy.day < fecha_nacimiento.day)
+        )
+        if meses < 12:
+            return max(meses, 0), "meses"
+        anios = (
+            hoy.year
+            - fecha_nacimiento.year
+            - ((hoy.month, hoy.day) < (fecha_nacimiento.month, fecha_nacimiento.day))
+        )
+        return max(anios, 0), "anios"
 
     def _apply_required_flags(self):
         for field_name in ["estado", "dni", "apellido", "nombre", "fecha_nacimiento"]:
@@ -1155,15 +1197,40 @@ class NominaCentroInfanciaBaseForm(forms.ModelForm):
         cleaned_data = super().clean()
         fecha_nacimiento = cleaned_data.get("fecha_nacimiento")
         if fecha_nacimiento:
-            cleaned_data["edad_calculada"] = NominaCentroInfancia(
-                fecha_nacimiento=fecha_nacimiento
-            ).edad
+            edad, unidad = self._calculate_age_and_unit(fecha_nacimiento)
+            cleaned_data["edad_calculada"] = edad
+            if "edad_unidad" in self.fields:
+                cleaned_data["edad_unidad"] = unidad
         self._validar_vigencia_unica_cdi(cleaned_data)
+        if (
+            self.actor
+            and fecha_nacimiento
+            and fecha_nacimiento < date.today().replace(year=date.today().year - 4)
+            and cleaned_data.get("estado") != NominaCentroInfancia.ESTADO_PENDIENTE
+            and not (
+                self.actor.is_superuser
+                or self.actor.groups.filter(
+                    name=UserGroups.SIMEPI_ADMINISTRADOR
+                ).exists()
+            )
+        ):
+            self.add_error(
+                "estado",
+                "Para niños y niñas mayores de 48 meses el estado debe ser Pendiente.",
+            )
         return cleaned_data
 
 
 class NominaCentroInfanciaForm(NominaCentroInfanciaBaseForm):
-    pass
+    class Meta(NominaCentroInfanciaBaseForm.Meta):
+        fields = [
+            (
+                "recibe_apoyo_desarrollo"
+                if field_name == "recibe_apoyo_discapacidad"
+                else field_name
+            )
+            for field_name in NominaCentroInfanciaBaseForm.Meta.fields
+        ]
 
 
 class NominaCentroInfanciaAdminForm(forms.ModelForm):
@@ -1268,6 +1335,7 @@ class NominaCentroInfanciaDestinatariosForm(NominaCentroInfanciaBaseForm):
         "responsable_legal_1_sexo_registral",
         "responsable_legal_1_nivel_educativo",
         "responsable_legal_1_consentimiento",
+        "responsable_legal_1_cuit",
         # Domicilio
         "calle_domicilio",
         "altura_domicilio",
@@ -1387,6 +1455,7 @@ class NominaCentroInfanciaDestinatariosForm(NominaCentroInfanciaBaseForm):
         "diagnostico_peso",
         "diagnostico_talla",
         "orientacion_msal",
+        "recibe_apoyo_discapacidad",
     )
 
     class Meta(NominaCentroInfanciaBaseForm.Meta):
@@ -1399,6 +1468,7 @@ class NominaCentroInfanciaDestinatariosForm(NominaCentroInfanciaBaseForm):
                 "diagnostico_peso",
                 "diagnostico_talla",
                 "orientacion_msal",
+                "recibe_apoyo_discapacidad",
             )
         ] + [
             # Sección 3: Registro
@@ -1526,9 +1596,7 @@ class NominaCentroInfanciaDestinatariosForm(NominaCentroInfanciaBaseForm):
         paises = [empty] + [
             (p.nombre, p.nombre) for p in NominaPais.objects.order_by("nombre")
         ]
-        nacionalidades = [empty] + [
-            (n.nombre, n.nombre) for n in NominaNacionalidad.objects.order_by("nombre")
-        ]
+        nacionalidades = self.opciones_nacionalidad()
         for fname in (
             "pais_nacimiento",
             "responsable_legal_1_pais_nacimiento",
@@ -1541,6 +1609,26 @@ class NominaCentroInfanciaDestinatariosForm(NominaCentroInfanciaBaseForm):
             "responsable_legal_2_nacionalidad",
         ):
             self.fields[fname].choices = nacionalidades
+
+    @staticmethod
+    def opciones_nacionalidad():
+        """Acepta el catálogo central usado por RENAPER y valores históricos CDI."""
+        opciones = [("", "---------")]
+        valores = set()
+        for nombre in list(
+            Nacionalidad.objects.order_by("nacionalidad").values_list(
+                "nacionalidad", flat=True
+            )
+        ) + list(
+            NominaNacionalidad.objects.order_by("nombre").values_list(
+                "nombre", flat=True
+            )
+        ):
+            nombre = (nombre or "").strip()
+            if nombre and nombre not in valores:
+                opciones.append((nombre, nombre))
+                valores.add(nombre)
+        return opciones
 
     def _apply_required_flags(self):
         # Reemplaza la lista mínima del form base por la que pidió QA.
@@ -1763,9 +1851,9 @@ class NominaCentroInfanciaDestinatariosForm(NominaCentroInfanciaBaseForm):
                 self.add_error(
                     "tipo_discapacidad", "Debe seleccionar al menos una opción."
                 )
-            if cleaned_data.get("recibe_apoyo_discapacidad") is None:
+            if not cleaned_data.get("recibe_apoyo_desarrollo"):
                 self.add_error(
-                    "recibe_apoyo_discapacidad", "Debe seleccionar una opción."
+                    "recibe_apoyo_desarrollo", "Debe seleccionar una opción."
                 )
         if cleaned_data.get("posee_cud") is True and not cleaned_data.get("numero_cud"):
             self.add_error("numero_cud", "Debe ingresar el número de CUD.")
@@ -2047,19 +2135,14 @@ class TrabajadorCDIForm(forms.ModelForm):
 
     def _configurar_pais_nacionalidad(self):
         # Mismas listas que ya usa el legajo de Nómina, en vez de texto libre.
-        empty = ("", "---------")
         self.fields["pais_nacimiento"] = forms.ChoiceField(
             label=self.fields["pais_nacimiento"].label,
-            choices=[empty]
+            choices=[("", "---------")]
             + [(p.nombre, p.nombre) for p in NominaPais.objects.order_by("nombre")],
         )
         self.fields["nacionalidad_trabajador"] = forms.ChoiceField(
             label=self.fields["nacionalidad_trabajador"].label,
-            choices=[empty]
-            + [
-                (n.nombre, n.nombre)
-                for n in NominaNacionalidad.objects.order_by("nombre")
-            ],
+            choices=NominaCentroInfanciaDestinatariosForm.opciones_nacionalidad(),
         )
 
     def _configurar_departamento_contacto(self):
@@ -2083,16 +2166,28 @@ class TrabajadorCDIForm(forms.ModelForm):
                 provincia_id=provincia_id
             ).order_by("nombre")
 
+        valor_enviado = (
+            self.data.get(self.add_prefix("departamento_contacto"), "")
+            if self.is_bound
+            else ""
+        )
+        if self.is_bound and str(valor_enviado).isdigit():
+            departamento_enviado = departamentos.filter(pk=valor_enviado).first()
+            if departamento_enviado:
+                data = self.data.copy()
+                data[self.add_prefix("departamento_contacto")] = (
+                    departamento_enviado.nombre
+                )
+                self.data = data
+                valor_enviado = departamento_enviado.nombre
+
         choices = [("", "---------")] + [
             (departamento.nombre, departamento.nombre) for departamento in departamentos
         ]
         valores_catalogo = {valor for valor, _etiqueta in choices}
         heredado = (self.instance.departamento_contacto or "").strip()
-        valor_enviado = (
-            self.data.get(self.add_prefix("departamento_contacto"), "")
-            if self.is_bound
-            else heredado
-        )
+        if not self.is_bound:
+            valor_enviado = heredado
         if (
             heredado
             and heredado not in valores_catalogo
