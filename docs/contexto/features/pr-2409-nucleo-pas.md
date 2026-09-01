@@ -34,7 +34,9 @@
 - `.importlinter`
 - `AGENT_REPO_MAP.md`
 - `config/settings.py`
+- `docs/contexto/features/pr-2409-nucleo-pas.md`
 - `docs/registro/cambios/2026-09-01-nucleo-pas.md`
+- `docs/registro/prs/PR-2409.md`
 - `pas/__init__.py`
 - `pas/api.py`
 - `pas/apps.py`
@@ -49,7 +51,9 @@
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`
+- `docs/contexto/features/pr-2409-nucleo-pas.md`
 - `docs/registro/cambios/2026-09-01-nucleo-pas.md`
+- `docs/registro/prs/PR-2409.md`
 
 ## Trazabilidad
 
