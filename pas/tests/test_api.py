@@ -1,10 +1,10 @@
 from core.models import Municipio, Provincia
 from pas.api import ResumenTitularPAS, obtener_resumen_titular
-from pas.models import PasEstado, PasPersona
+from pas.models import PasAviso, PasEstado, PasPersona
 
 
 def test_obtener_resumen_titular_devuelve_dto_sin_modelos(db):
-    estado = PasEstado.objects.create(nombre="Activo")
+    estado = PasEstado.objects.get(nombre="Activo")
     provincia = Provincia.objects.create(nombre="Buenos Aires")
     municipio = Municipio.objects.create(nombre="La Plata", provincia=provincia)
     persona = PasPersona.objects.create(
@@ -27,3 +27,22 @@ def test_obtener_resumen_titular_devuelve_dto_sin_modelos(db):
 
 def test_obtener_resumen_titular_inexistente_devuelve_none(db):
     assert obtener_resumen_titular(999_999) is None
+
+
+def test_migracion_inicial_siembra_catalogo_basico_pas(db):
+    assert set(PasEstado.objects.values_list("nombre", flat=True)) == {
+        "Activo",
+        "Suspendido",
+        "Baja",
+    }
+
+    estados_por_aviso = {
+        aviso.codigo: set(aviso.estados.values_list("nombre", flat=True))
+        for aviso in PasAviso.objects.filter(codigo__in=[1, 10, 55])
+    }
+
+    assert estados_por_aviso == {
+        1: {"Activo"},
+        10: {"Suspendido", "Baja"},
+        55: {"Baja"},
+    }
