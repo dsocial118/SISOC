@@ -388,10 +388,9 @@ def quitar_destinatario(encuesta: Encuesta, destinatario_pk: int) -> None:
 def _documentos_de_usuario(usuario) -> set[tuple[str, str]]:
     """Documentos con los que un usuario puede matchear una segmentación.
 
-    Solo DNI y CUIL: el perfil de un usuario del sistema (``users.Profile``)
-    no tiene un CUIT propio (es un dato de persona, no de organización), así
-    que un destinatario cargado con tipo CUIT nunca coincide con un usuario
-    individual. Queda documentado como límite conocido de esta fase.
+    El perfil conserva CUIL, no un CUIT separado. Para la segmentación, ambos
+    tipos se comparan contra el mismo valor numérico: permite incluir a una
+    persona cuando el listado la identifica como CUIT.
     """
     profile = getattr(usuario, "profile", None)
     if profile is None:
@@ -401,7 +400,16 @@ def _documentos_de_usuario(usuario) -> set[tuple[str, str]]:
         documentos.add((TipoDocumento.DNI, profile.dni))
     if profile.cuil:
         documentos.add((TipoDocumento.CUIL, profile.cuil))
+        documentos.add((TipoDocumento.CUIT, profile.cuil))
     return documentos
+
+
+def _construir_filtro_documentos(documentos: set[tuple[str, str]]) -> Q:
+    """Construye el filtro de destinatarios para los documentos del usuario."""
+    filtro = Q()
+    for tipo_documento, numero_documento in documentos:
+        filtro |= Q(tipo_documento=tipo_documento, numero_documento=numero_documento)
+    return filtro
 
 
 def usuario_esta_segmentado(encuesta: Encuesta, usuario) -> bool:
@@ -414,13 +422,11 @@ def usuario_esta_segmentado(encuesta: Encuesta, usuario) -> bool:
     documentos = _documentos_de_usuario(usuario)
     if not documentos:
         return False
-    query = Q()
-    for tipo_documento, numero_documento in documentos:
-        query |= Q(tipo_documento=tipo_documento, numero_documento=numero_documento)
+    filtro_documentos = _construir_filtro_documentos(documentos)
     destinatarios_usuario = getattr(segmentacion, "destinatarios_usuario", None)
     if destinatarios_usuario is not None:
         return bool(destinatarios_usuario)
-    return segmentacion.destinatarios.filter(query).exists()
+    return segmentacion.destinatarios.filter(filtro_documentos).exists()
 
 
 def get_rondas_pendientes(usuario) -> list[RondaEncuesta]:
@@ -430,13 +436,15 @@ def get_rondas_pendientes(usuario) -> list[RondaEncuesta]:
     documentos = _documentos_de_usuario(usuario)
     destinatarios_queryset = SegmentacionDestinatario.objects.none()
     if documentos:
-        query = Q()
-        for tipo_documento, numero_documento in documentos:
-            query |= Q(tipo_documento=tipo_documento, numero_documento=numero_documento)
-        destinatarios_queryset = SegmentacionDestinatario.objects.filter(query)
+        destinatarios_queryset = SegmentacionDestinatario.objects.filter(
+            _construir_filtro_documentos(documentos)
+        )
 
     candidatas = list(
-        RondaEncuesta.objects.filter(estado=EstadoRonda.ABIERTA)
+        RondaEncuesta.objects.filter(
+            estado=EstadoRonda.ABIERTA,
+            fecha_cierre_programada__gt=ahora,
+        )
         .exclude(cumplimientos__usuario=usuario)
         .select_related("encuesta", "encuesta__segmentacion")
         .prefetch_related(
@@ -518,6 +526,25 @@ def _pregunta_es_visible(pregunta: Pregunta, post_data, preguntas_por_orden) -> 
     return cumple
 
 
+def _asignar_valor_numerico(
+    respuesta_pregunta: RespuestaPregunta, pregunta, valor
+) -> None:
+    try:
+        respuesta_pregunta.valor_numero = Decimal(valor)
+    except InvalidOperation as exc:
+        raise ValidationError(
+            f"La respuesta a '{pregunta.texto}' debe ser numérica."
+        ) from exc
+    if not respuesta_pregunta.valor_numero.is_finite():
+        raise ValidationError(f"La respuesta a '{pregunta.texto}' debe ser numérica.")
+    if pregunta.tipo == TipoPregunta.ESCALA and not (
+        Decimal("1") <= respuesta_pregunta.valor_numero <= Decimal("10")
+    ):
+        raise ValidationError(
+            f"La respuesta a '{pregunta.texto}' debe estar entre 1 y 10."
+        )
+
+
 def _asignar_valor_respuesta(
     respuesta_pregunta: RespuestaPregunta, pregunta: Pregunta, post_data
 ) -> None:
@@ -541,22 +568,7 @@ def _asignar_valor_respuesta(
 
     valor = post_data.get(f"respuesta-{pregunta.pk}", "")
     if pregunta.tipo in (TipoPregunta.NUMERICO, TipoPregunta.ESCALA):
-        try:
-            respuesta_pregunta.valor_numero = Decimal(valor)
-        except InvalidOperation as exc:
-            raise ValidationError(
-                f"La respuesta a '{pregunta.texto}' debe ser numérica."
-            ) from exc
-        if not respuesta_pregunta.valor_numero.is_finite():
-            raise ValidationError(
-                f"La respuesta a '{pregunta.texto}' debe ser numérica."
-            )
-        if pregunta.tipo == TipoPregunta.ESCALA and not (
-            Decimal("1") <= respuesta_pregunta.valor_numero <= Decimal("10")
-        ):
-            raise ValidationError(
-                f"La respuesta a '{pregunta.texto}' debe estar entre 1 y 10."
-            )
+        _asignar_valor_numerico(respuesta_pregunta, pregunta, valor)
     elif pregunta.tipo == TipoPregunta.FECHA:
         parsed = parse_date(valor)
         if not parsed:
@@ -581,6 +593,8 @@ def registrar_respuesta(ronda: RondaEncuesta, usuario, post_data) -> RespuestaRo
     cumplimiento se persiste por separado, sin referencia a la respuesta.
     """
     if ronda.estado != EstadoRonda.ABIERTA:
+        raise ValidationError("Esta ronda ya no acepta respuestas.")
+    if ronda.fecha_cierre_programada <= timezone.now():
         raise ValidationError("Esta ronda ya no acepta respuestas.")
     if CumplimientoRonda.objects.filter(ronda=ronda, usuario=usuario).exists():
         raise ValidationError("Ya respondiste esta encuesta.")

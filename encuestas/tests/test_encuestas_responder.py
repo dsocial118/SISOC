@@ -106,18 +106,28 @@ def test_usuario_no_segmentado_por_dni_ajeno(usuario_creador, respondiente):
 
 
 @pytest.mark.django_db
-def test_listado_por_cuit_nunca_matchea_un_usuario_individual(
+def test_usuario_esta_segmentado_por_cuit_equivalente_a_su_cuil(
     usuario_creador, respondiente
 ):
-    """Límite documentado: el perfil de un usuario no tiene CUIT propio."""
     encuesta, _ = _publicar_con_pregunta_si_no(
         usuario_creador,
         tipo_segmentacion=TipoSegmentacion.LISTADO_DOCUMENTOS,
         destinatarios=[
-            {"tipo_documento": TipoDocumento.CUIT, "numero_documento": "30301112223"}
+            {"tipo_documento": TipoDocumento.CUIT, "numero_documento": "20301112223"}
         ],
     )
-    assert not usuario_esta_segmentado(encuesta, respondiente)
+    assert usuario_esta_segmentado(encuesta, respondiente)
+
+
+@pytest.mark.django_db
+def test_get_rondas_pendientes_excluye_ronda_vencida_aun_sin_worker(
+    usuario_creador, respondiente
+):
+    _, ronda = _publicar_con_pregunta_si_no(usuario_creador)
+    ronda.fecha_cierre_programada = timezone.now() - timedelta(seconds=1)
+    ronda.save(update_fields=["fecha_cierre_programada"])
+
+    assert get_rondas_pendientes(respondiente) == []
 
 
 @pytest.mark.django_db
@@ -380,6 +390,21 @@ def test_registrar_respuesta_ronda_cerrada_falla(usuario_creador, respondiente):
 
     with pytest.raises(ValidationError):
         registrar_respuesta(ronda, respondiente, {})
+
+
+@pytest.mark.django_db
+def test_registrar_respuesta_ronda_vencida_falla_aun_sin_worker(
+    usuario_creador, respondiente
+):
+    _, ronda = _publicar_con_pregunta_si_no(usuario_creador)
+    pregunta = ronda.encuesta.preguntas.get()
+    ronda.fecha_cierre_programada = timezone.now() - timedelta(seconds=1)
+    ronda.save(update_fields=["fecha_cierre_programada"])
+
+    with pytest.raises(ValidationError):
+        registrar_respuesta(ronda, respondiente, {f"respuesta-{pregunta.pk}": "si"})
+
+    assert not RespuestaRonda.objects.filter(ronda=ronda).exists()
 
 
 @pytest.mark.django_db
