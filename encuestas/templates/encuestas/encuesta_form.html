@@ -35,16 +35,16 @@
                 </div>
                 <div class="panel-body">
                     <div class="mb-3">
-                        <label for="{{ form.titulo.id_for_label }}">Título <span class="text-danger">*</span></label>
+                        <label for="{{ form.titulo.id_for_label }}">
+                            Título <span class="text-danger">*</span>
+                        </label>
                         {{ form.titulo }}
                         {% if form.titulo.errors %}<div class="invalid-feedback d-block">{{ form.titulo.errors.0 }}</div>{% endif %}
                     </div>
                     <div class="mb-0">
                         <label for="{{ form.descripcion.id_for_label }}">Descripción</label>
                         {{ form.descripcion }}
-                        {% if form.descripcion.errors %}
-                            <div class="invalid-feedback d-block">{{ form.descripcion.errors.0 }}</div>
-                        {% endif %}
+                        {% if form.descripcion.errors %}<div class="invalid-feedback d-block">{{ form.descripcion.errors.0 }}</div>{% endif %}
                     </div>
 
                     <div class="options-row">
