@@ -281,6 +281,21 @@
                     </div>
                 </div>
 
+                <!-- Acceso SISOC - Mobile DataCalle -->
+                <div class="card card-custom mb-3 shadow-sm" id="relevador-calle-card">
+                    <div class="card-header card-header-custom">
+                        <h5 class="mb-0">
+                            <i class="fas fa-street-view mr-3"></i>Acceso SISOC - Mobile DataCalle
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="relevador-calle-toggle-wrapper">{{ form.es_relevador_calle|as_crispy_field }}</div>
+                        <div id="relevador-calle-provincias-wrapper" style="display: none">
+                            {{ form.provincias_datacalle|as_crispy_field }}
+                        </div>
+                    </div>
+                </div>
+
                 {% if pwa_created_users %}
                     <div class="card card-custom mb-3 shadow-sm"
                          id="mobile-created-users-card">
@@ -814,6 +829,24 @@
     }
 
     syncTerritorialVisibility();
+  })();
+    </script>
+    <script nonce="{{ request.csp_nonce }}">
+  (() => {
+    const relevadorCheckbox = document.getElementById('id_es_relevador_calle');
+    if (!relevadorCheckbox) {
+      return;
+    }
+    const relevadorProvinciasWrapper = document.getElementById('relevador-calle-provincias-wrapper');
+
+    const syncRelevadorVisibility = () => {
+      if (relevadorProvinciasWrapper) {
+        relevadorProvinciasWrapper.style.display = relevadorCheckbox.checked ? '' : 'none';
+      }
+    };
+
+    relevadorCheckbox.addEventListener('change', syncRelevadorVisibility);
+    syncRelevadorVisibility();
   })();
     </script>
     <script src="{% static 'custom/js/usuarioprovincial.js' %}?v=territorial-scopes-1737-2"></script>
