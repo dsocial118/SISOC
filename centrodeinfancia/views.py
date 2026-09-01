@@ -52,6 +52,8 @@ from centrodeinfancia.access import (
     get_provincias_completas_egp_ids,
     get_object_scoped_cdi_or_404,
     puede_generar_usuario_cdi,
+    puede_gestionar_referentes_cdi,
+    puede_ver_credenciales_cdi,
     puede_ver_usuarios_cdi,
     tiene_alcance_simepi_nacional,
 )
@@ -210,6 +212,19 @@ def _nomina_cdi_queryset_scoped(user):
 def _trabajadores_cdi_queryset_scoped(user):
     queryset = Trabajador.objects.select_related("centro")
     return _aplicar_scope_provincia_centro_relacion(queryset, user)
+
+
+def _build_initial_with_centro_provincia(
+    initial, centro, provincia_field, dependent_fields
+):
+    initial = dict(initial or {})
+    if not centro.provincia_id:
+        return initial
+
+    initial[provincia_field] = centro.provincia_id
+    for field_name in dependent_fields:
+        initial.pop(field_name, None)
+    return initial
 
 
 def _observaciones_cdi_queryset_scoped(user):
@@ -752,12 +767,18 @@ class CentroDeInfanciaDetailView(LoginRequiredMixin, DetailView):
         context["puede_generar_usuario_cdi"] = puede_generar_usuario_cdi(
             self.request.user, self.object
         )
+        context["puede_gestionar_referentes_cdi"] = puede_gestionar_referentes_cdi(
+            self.request.user, self.object
+        )
+        context["puede_ver_credenciales_cdi"] = puede_ver_credenciales_cdi(
+            self.request.user, self.object
+        )
         context["puede_ver_usuarios_cdi"] = puede_ver_usuarios_cdi(
             self.request.user, self.object
         )
         if context["puede_ver_usuarios_cdi"]:
             usuarios_cdi = AccesoCDI.objects.filter(centro=self.object)
-            if not getattr(self.request.user, "is_superuser", False):
+            if not context["puede_gestionar_referentes_cdi"]:
                 usuarios_cdi = usuarios_cdi.filter(
                     user=self.request.user,
                     activo=True,
@@ -765,6 +786,9 @@ class CentroDeInfanciaDetailView(LoginRequiredMixin, DetailView):
             context["usuarios_cdi"] = usuarios_cdi.select_related(
                 "user", "user__profile"
             ).order_by("-activo", "user__username")
+            context["usuarios_cdi_columnas"] = (
+                5 if context["puede_ver_credenciales_cdi"] else 4
+            )
         return context
 
 
@@ -846,6 +870,21 @@ class TrabajadorCentroInfanciaCreateView(
         self.centro = _get_centro_cdi_scoped_or_404(request.user, pk=kwargs["pk"])
         return super().dispatch(request, *args, **kwargs)
 
+    def _get_form_initial(self, initial=None):
+        return _build_initial_with_centro_provincia(
+            initial,
+            self.centro,
+            "provincia_contacto",
+            (
+                "departamento_contacto",
+                "municipio_contacto",
+                "localidad_contacto",
+            ),
+        )
+
+    def get_initial(self):
+        return self._get_form_initial(super().get_initial())
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["centro"] = self.centro
@@ -898,17 +937,21 @@ class TrabajadorCentroInfanciaCreateView(
             return
         if selected_ciudadano:
             context["form"] = self.form_class(
-                initial=self._build_initial_from_ciudadano(selected_ciudadano)
+                initial=self._get_form_initial(
+                    self._build_initial_from_ciudadano(selected_ciudadano)
+                )
             )
         elif renaper_data:
             campos = self._campos_renaper_con_valor(renaper_data)
             context["form"] = self.form_class(
-                initial=renaper_data, campos_renaper=campos
+                initial=self._get_form_initial(renaper_data), campos_renaper=campos
             )
             context["renaper_prefill_token"] = self._crear_token_renaper(renaper_data)
         elif query and not ciudadanos:
             context["form"] = self.form_class(
-                initial={"dni": query if query.isdigit() else None}
+                initial=self._get_form_initial(
+                    {"dni": query if query.isdigit() else None}
+                )
             )
 
     def _campos_renaper_con_valor(self, renaper_data):
@@ -1430,6 +1473,21 @@ class NominaCentroInfanciaCreateView(
             )
         return self._centro_cache
 
+    def _get_form_initial(self, initial=None):
+        return _build_initial_with_centro_provincia(
+            initial,
+            self._get_centro(),
+            "provincia_domicilio",
+            (
+                "departamento_domicilio",
+                "municipio_domicilio",
+                "localidad_domicilio",
+            ),
+        )
+
+    def get_initial(self):
+        return self._get_form_initial(super().get_initial())
+
     @staticmethod
     def _crear_nomina_con_bloqueo(centro, ciudadano, form):
         """Crea la nómina si la persona no tiene otra vigente.
@@ -1548,20 +1606,24 @@ class NominaCentroInfanciaCreateView(
         if not form:
             if selected_ciudadano:
                 form = self.form_class(
-                    initial=self._build_nomina_initial_from_ciudadano(
-                        selected_ciudadano
+                    initial=self._get_form_initial(
+                        self._build_nomina_initial_from_ciudadano(selected_ciudadano)
                     ),
                     centro=centro,
                 )
             elif renaper_data:
-                form = self.form_class(initial=renaper_data, centro=centro)
+                form = self.form_class(
+                    initial=self._get_form_initial(renaper_data), centro=centro
+                )
             elif query and not ciudadanos:
                 form = self.form_class(
-                    initial={"dni": query if query.isdigit() else None},
+                    initial=self._get_form_initial(
+                        {"dni": query if query.isdigit() else None}
+                    ),
                     centro=centro,
                 )
             else:
-                form = self.form_class(centro=centro)
+                form = self.form_class(initial=self._get_form_initial(), centro=centro)
 
         context["query"] = query
         context["ciudadanos"] = ciudadanos
