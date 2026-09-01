@@ -92,7 +92,8 @@ class PasDeclaracionJuradaForm(forms.Form):
     )
     gastos_bajo_limite_smvm = forms.ChoiceField(
         label=(
-            "En los últimos seis meses, ¿tu promedio mensual de gastos por medios electrónicos se mantuvo por debajo de un Salario Mínimo Vital y Móvil?"
+            "En los últimos seis meses, ¿tu promedio mensual de gastos por medios "
+            "electrónicos se mantuvo por debajo de un Salario Mínimo Vital y Móvil?"
         ),
         choices=SI_NO,
         widget=forms.RadioSelect,
