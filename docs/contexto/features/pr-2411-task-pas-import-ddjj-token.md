@@ -43,7 +43,6 @@
 - `docs/operacion/qa_trixie_deploy.md`
 - `docs/registro/cambios/2026-08-06-pas-declaracion-jurada.md`
 - `docs/registro/prs/PR-2411.md`
-- `pas/__init__.py`
 - `pas/admin.py`
 - `pas/forms.py`
 - `pas/migrations/0002_pas_import_ddjj_tokens.py`
@@ -54,7 +53,8 @@
 - `pas/templates/pas/ddjj_confirmacion.html`
 - `pas/templates/pas/ddjj_formulario.html`
 - `pas/templates/pas/titulares_import.html`
-- ... y 6 archivo(s) adicional(es) relacionados.
+- `pas/tests/test_ddjj.py`
+- ... y 5 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
