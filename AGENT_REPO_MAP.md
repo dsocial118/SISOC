@@ -202,7 +202,7 @@ SISOC/
 | Seguridad/CSP | `ENABLE_CSP`, `CSP_REPORT_ONLY`, `CSP_ALLOW_UNSAFE_INLINE_SCRIPTS`, `CSP_ALLOW_UNSAFE_EVAL` |
 | Async | `DISABLE_ASYNC_THREADS` |
 | Testing | `USE_SQLITE_FOR_TESTS`, `PYTEST_RUNNING` |
-| Integracion GESTIONAR | `GESTIONAR_API_KEY`, endpoints `GESTIONAR_API_*`, workers `GESTIONAR_*`, `DOMINIO` |
+| Integracion GESTIONAR | `GESTIONAR_INTEGRATION_ENABLED` (corte total de envíos, pulls y comandos), `GESTIONAR_API_KEY`, endpoints `GESTIONAR_API_*`, workers `GESTIONAR_*`, `DOMINIO` |
 | Ticketera | `TICKETERA_ENABLED` |
 | RENAPER | `RENAPER_API_USERNAME`, `RENAPER_API_PASSWORD`, `RENAPER_REQUEST_TIMEOUT_SECONDS`, retries/backoff; sin cache ni TTL de token |
 | Google Maps | `GOOGLE_MAPS_API_KEY` |
@@ -438,9 +438,10 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 ### Si necesitas cambiar Relevamientos
 
 - `relevamientos/models.py`
+- `relevamientos/service.py` (asignación territorial local/legacy)
 - `relevamientos/tasks.py`
 - `relevamientos/views.py`
-- `tests/test_relevamientos*`
+- `tests/test_relevamientos*` y `tests/test_territorial_api.py`
 - docs: `docs/flujos/relevamiento_sync.md`
 
 ### Si necesitas cambiar importacion de expedientes de pago
@@ -567,7 +568,11 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 
 ### Si necesitas cambiar syncs externos
 
-- GESTIONAR: `comedores/tasks.py`, `relevamientos/tasks.py`, management commands relacionados, `.env.example`
+- GESTIONAR: `config/settings.py`, `comedores/tasks.py`,
+  `comedores/services/territorial_service/impl.py`, `relevamientos/tasks.py`,
+  management commands relacionados, `.env.example`. El flag
+  `GESTIONAR_INTEGRATION_ENABLED` corta todo el tráfico AppSheet/GESTIONAR; no
+  usarlo como interruptor parcial.
 - RENAPER: `core/integrations/renaper.py`, `core/services/renaper.py`, docs `docs/flujos/consulta_renaper.md`
 - Ticketera: `ticketera/`, `docs/integraciones/ticketera_api.md`
 
