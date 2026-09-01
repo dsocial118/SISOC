@@ -5,11 +5,10 @@ from __future__ import annotations
 from collections import defaultdict
 from dataclasses import dataclass, field
 
+from django.apps import apps
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
-from ciudadanos.models import Ciudadano
-from centrodeinfancia.models import NominaCentroInfancia
 from core.services.text_encoding import (
     contains_mojibake_marker,
     repair_utf8_mojibake,
@@ -18,8 +17,12 @@ from core.services.text_encoding import (
 
 DEFAULT_BATCH_SIZE = 2000
 TARGETS = {
-    "ciudadano": (Ciudadano, ("apellido", "nombre")),
-    "nomina_cdi": (NominaCentroInfancia, ("apellido", "nombre")),
+    "ciudadano": ("ciudadanos", "Ciudadano", ("apellido", "nombre")),
+    "nomina_cdi": (
+        "centrodeinfancia",
+        "NominaCentroInfancia",
+        ("apellido", "nombre"),
+    ),
 }
 
 
@@ -112,7 +115,9 @@ class Command(BaseCommand):
 
         totals = TargetStats()
         for target_name in target_names:
-            model, available_fields = TARGETS[target_name]
+            target = TARGETS[target_name]
+            model = apps.get_model(*target[:2])
+            available_fields = target[2]
             fields = tuple(
                 field_name
                 for field_name in available_fields
