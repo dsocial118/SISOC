@@ -17,7 +17,12 @@ from core.constants import UserGroups
 from core.models import Provincia
 from core.validators import solo_digitos, validate_cuit
 from users.form_catalogs import obtener_queryset_formulario
-from users.models import AccesoComedorPWA, Profile, TerritorialComedorProvincia
+from users.models import (
+    AccesoComedorPWA,
+    Profile,
+    RelevadorCalleProvincia,
+    TerritorialComedorProvincia,
+)
 from users.profile_utils import get_profile_or_none
 from users.services_delegation import effective_delegatable_groups_qs
 from users.services_pwa import (
@@ -810,10 +815,79 @@ class TerritorialComedorFormMixin:
             )
 
 
+class RelevadorCalleFormMixin:
+    """Campos del rol "Relevador DataCalle" (SISOC - Mobile).
+
+    Flag simple sobre ``Profile.es_relevador_calle`` + alcance por provincia en
+    ``RelevadorCalleProvincia``. Espejo de ``TerritorialComedorFormMixin`` para
+    el modulo de situacion de calle: el relevador es un usuario normal con una
+    marca de rol y su alcance provincial, sin la maquinaria del representante
+    PWA (auto-password, limpieza de grupos, ocultamiento del backoffice).
+    """
+
+    def _setup_relevador_calle_fields(self):
+        self.fields["es_relevador_calle"] = forms.BooleanField(
+            required=False,
+            label="Habilitar acceso a SISOC - Mobile DataCalle",
+        )
+        self.fields["provincias_datacalle"] = forms.ModelMultipleChoiceField(
+            queryset=Provincia.objects.all().order_by("nombre"),
+            required=False,
+            widget=forms.SelectMultiple(attrs={"class": "select2"}),
+            label="Provincias",
+            help_text="Provincias que releva este usuario en DataCalle.",
+        )
+
+    def _init_relevador_calle_fields(self, profile):
+        if not profile:
+            return
+        self.fields["es_relevador_calle"].initial = profile.es_relevador_calle
+        self.fields["provincias_datacalle"].initial = list(
+            profile.relevador_calle_provincias.values_list("provincia_id", flat=True)
+        )
+
+    def _clean_relevador_calle_fields(self, cleaned):
+        es_relevador = cleaned.get("es_relevador_calle", False)
+        provincias = cleaned.get("provincias_datacalle")
+
+        if not es_relevador:
+            cleaned["provincias_datacalle"] = Provincia.objects.none()
+            return cleaned
+
+        if not provincias:
+            self.add_error(
+                "provincias_datacalle",
+                "Seleccione al menos una provincia para el relevador de DataCalle.",
+            )
+        return cleaned
+
+    def _sync_relevador_calle_provincias(self, profile):
+        if not profile.es_relevador_calle:
+            profile.relevador_calle_provincias.all().delete()
+            return
+        selected_ids = {
+            provincia.id
+            for provincia in self.cleaned_data.get("provincias_datacalle") or []
+        }
+        existing_ids = set(
+            profile.relevador_calle_provincias.values_list("provincia_id", flat=True)
+        )
+        to_delete = existing_ids - selected_ids
+        if to_delete:
+            profile.relevador_calle_provincias.filter(
+                provincia_id__in=to_delete
+            ).delete()
+        for provincia_id in selected_ids - existing_ids:
+            RelevadorCalleProvincia.objects.create(
+                profile=profile, provincia_id=provincia_id
+            )
+
+
 class UserCreationForm(
     TerritorialScopeFormMixin,
     PWAAccessMixin,
     TerritorialComedorFormMixin,
+    RelevadorCalleFormMixin,
     DelegationScopeMixin,
     forms.ModelForm,
 ):
@@ -900,6 +974,7 @@ class UserCreationForm(
         )
         self._setup_pwa_fields()
         self._setup_territorial_comedor_fields()
+        self._setup_relevador_calle_fields()
         self._setup_delegation_fields()
         self._scope_assignable_fields_for_actor()
         self.fields["email"].required = False
@@ -923,7 +998,8 @@ class UserCreationForm(
             self.add_error("duplas_asignadas", "Seleccione al menos una dupla.")
         self._validate_selected_within_allowed(cleaned)
         cleaned = self._clean_pwa_fields(cleaned)
-        return self._clean_territorial_comedor_fields(cleaned)
+        cleaned = self._clean_territorial_comedor_fields(cleaned)
+        return self._clean_relevador_calle_fields(cleaned)
 
     def save(self, commit=True):
         with transaction.atomic():
@@ -970,6 +1046,7 @@ class UserCreationForm(
         profile.es_territorial_comedor = self.cleaned_data.get(
             "es_territorial_comedor", False
         )
+        profile.es_relevador_calle = self.cleaned_data.get("es_relevador_calle", False)
         profile.rol = self.cleaned_data.get("rol")
         profile.must_change_password = True
         profile.password_changed_at = None
@@ -979,6 +1056,7 @@ class UserCreationForm(
         profile.temporary_password_plaintext = self.generated_password
         profile.save()
         self._sync_territorial_comedor_provincias(profile)
+        self._sync_relevador_calle_provincias(profile)
         sync_profile_territorial_scopes(
             profile,
             self.cleaned_data.get("territorial_scopes_data", []),
@@ -1023,6 +1101,7 @@ class CustomUserChangeForm(
     TerritorialScopeFormMixin,
     PWAAccessMixin,
     TerritorialComedorFormMixin,
+    RelevadorCalleFormMixin,
     DelegationScopeMixin,
     forms.ModelForm,
 ):
@@ -1113,6 +1192,7 @@ class CustomUserChangeForm(
         )
         self._setup_pwa_fields()
         self._setup_territorial_comedor_fields()
+        self._setup_relevador_calle_fields()
         self._setup_delegation_fields()
         self._scope_assignable_fields_for_actor()
         self.fields["email"].required = False
@@ -1127,6 +1207,7 @@ class CustomUserChangeForm(
 
         self._setup_territorial_scope_fields(prof)
         self._init_territorial_comedor_fields(prof)
+        self._init_relevador_calle_fields(prof)
         if prof:
             self.fields["dni"].initial = prof.dni
             self.fields["cuil"].initial = prof.cuil
@@ -1148,7 +1229,8 @@ class CustomUserChangeForm(
             self.add_error("duplas_asignadas", "Seleccione al menos una dupla.")
         self._validate_selected_within_allowed(cleaned)
         cleaned = self._clean_pwa_fields(cleaned)
-        return self._clean_territorial_comedor_fields(cleaned)
+        cleaned = self._clean_territorial_comedor_fields(cleaned)
+        return self._clean_relevador_calle_fields(cleaned)
 
     def save(self, commit=True):
         with transaction.atomic():
@@ -1208,6 +1290,9 @@ class CustomUserChangeForm(
             profile.es_territorial_comedor = self.cleaned_data.get(
                 "es_territorial_comedor", False
             )
+            profile.es_relevador_calle = self.cleaned_data.get(
+                "es_relevador_calle", False
+            )
             profile.rol = self.cleaned_data.get("rol")
             if new_pwd:
                 self._set_initial_password_flags(
@@ -1229,6 +1314,7 @@ class CustomUserChangeForm(
                 profile.temporary_password_plaintext = None
             profile.save()
             self._sync_territorial_comedor_provincias(profile)
+            self._sync_relevador_calle_provincias(profile)
             sync_profile_territorial_scopes(
                 profile,
                 self.cleaned_data.get("territorial_scopes_data", []),

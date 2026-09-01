@@ -6,6 +6,7 @@ from iam.services import get_effective_permission_codes, get_effective_role_name
 from users.models import AccesoComedorPWA
 from users.profile_utils import get_profile_or_none
 from users.services import UserPermissionService
+from users.services_datacalle import get_relevador_calle_provincias
 from users.services_pwa import get_pwa_context, get_territorial_comedor_provincias
 from users.services_auth import get_user_by_uid
 from users.territorial_scope import serialize_profile_scopes
@@ -52,6 +53,8 @@ class UserContextSerializer(serializers.Serializer):
             "es_coordinador": profile.es_coordinador,
             "es_territorial_comedor": profile.es_territorial_comedor,
             "territorial_comedor_provincias": get_territorial_comedor_provincias(obj),
+            "es_relevador_calle": profile.es_relevador_calle,
+            "datacalle_provincias": get_relevador_calle_provincias(obj),
             "duplas_asignadas": list(
                 profile.duplas_asignadas.values_list("id", flat=True)
             ),

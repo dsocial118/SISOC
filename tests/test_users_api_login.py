@@ -315,3 +315,96 @@ def test_password_change_required_validates_new_password(comedor):
 
     assert response.status_code == 400
     assert "new_password" in response.data
+
+
+@pytest.mark.django_db
+def test_api_login_allows_relevador_calle_user():
+    user_model = get_user_model()
+    user = user_model.objects.create_user(
+        username="relevador_login",
+        email="relevador_login@example.com",
+        password="testpass123",
+    )
+    user.profile.es_relevador_calle = True
+    user.profile.save(update_fields=["es_relevador_calle"])
+
+    client = APIClient()
+    response = client.post(
+        "/api/users/login/",
+        {"username": "relevador_login", "password": "testpass123"},
+        format="json",
+    )
+
+    assert response.status_code == 200
+    assert response.data["token_type"] == "Token"
+    assert Token.objects.filter(user=user, key=response.data["token"]).exists()
+
+
+@pytest.mark.django_db
+def test_api_login_rejects_user_without_relevador_calle_flag():
+    user_model = get_user_model()
+    user_model.objects.create_user(
+        username="sin_datacalle",
+        email="sin_datacalle@example.com",
+        password="testpass123",
+    )
+
+    client = APIClient()
+    response = client.post(
+        "/api/users/login/",
+        {"username": "sin_datacalle", "password": "testpass123"},
+        format="json",
+    )
+
+    assert response.status_code == 401
+
+
+@pytest.mark.django_db
+def test_users_me_includes_datacalle_context():
+    provincia = Provincia.objects.create(nombre="DataCalle Me Prov")
+    user_model = get_user_model()
+    user = user_model.objects.create_user(
+        username="relevador_me",
+        email="relevador_me@example.com",
+        password="testpass123",
+    )
+    user.profile.es_relevador_calle = True
+    user.profile.save(update_fields=["es_relevador_calle"])
+    from users.models import RelevadorCalleProvincia
+
+    RelevadorCalleProvincia.objects.create(profile=user.profile, provincia=provincia)
+    token, _ = Token.objects.get_or_create(user=user)
+    client = APIClient()
+    client.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
+
+    response = client.get("/api/users/me/")
+
+    assert response.status_code == 200
+    assert response.data["profile"]["es_relevador_calle"] is True
+    assert response.data["profile"]["datacalle_provincias"] == [
+        {"id": provincia.id, "nombre": "DataCalle Me Prov"}
+    ]
+
+
+@pytest.mark.django_db
+def test_users_me_datacalle_provincias_vacio_sin_flag():
+    provincia = Provincia.objects.create(nombre="DataCalle Sin Flag Prov")
+    user_model = get_user_model()
+    user = user_model.objects.create_user(
+        username="relevador_sin_flag",
+        email="relevador_sin_flag@example.com",
+        password="testpass123",
+    )
+    from users.models import RelevadorCalleProvincia
+
+    # Alcance huerfano: sin el flag no debe filtrarse alcance a la app.
+    RelevadorCalleProvincia.objects.create(profile=user.profile, provincia=provincia)
+    token, _ = Token.objects.get_or_create(user=user)
+    client = APIClient()
+    client.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
+
+    response = client.get("/api/users/me/")
+
+    assert response.status_code == 200
+    assert response.data["profile"]["es_relevador_calle"] is False
+    assert response.data["profile"]["datacalle_provincias"] == []

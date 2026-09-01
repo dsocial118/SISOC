@@ -187,6 +187,15 @@ class Profile(models.Model):
             "TerritorialComedorProvincia."
         ),
     )
+    es_relevador_calle = models.BooleanField(
+        default=False,
+        verbose_name="Acceso SISOC - Mobile DataCalle",
+        help_text=(
+            "Marca al usuario como relevador de personas en situacion de calle "
+            "en SISOC - Mobile (DataCalle). El alcance se define por provincia "
+            "en RelevadorCalleProvincia."
+        ),
+    )
     duplas_asignadas = models.ManyToManyField(
         "duplas.Dupla",
         blank=True,
@@ -332,6 +341,44 @@ class TerritorialComedorProvincia(models.Model):
             models.UniqueConstraint(
                 fields=["profile", "provincia"],
                 name="uniq_territorial_comedor_provincia",
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["provincia"]),
+        ]
+
+    def __str__(self):
+        return f"{self.profile.user.username} / {self.provincia}"
+
+
+class RelevadorCalleProvincia(models.Model):
+    """Provincia de alcance de un relevador de DataCalle (SISOC - Mobile).
+
+    Espejo de ``TerritorialComedorProvincia`` para el modulo de situacion de
+    calle: mantiene el alcance del relevador desacoplado de
+    ``ProfileTerritorialScope`` (usuarios provinciales del backoffice) y de
+    ``AccesoComedorPWA`` (representantes PWA de comedores). Solo modela
+    provincia, que es el eje con el que se arman los operativos de relevamiento.
+    """
+
+    profile = models.ForeignKey(
+        Profile,
+        on_delete=models.CASCADE,
+        related_name="relevador_calle_provincias",
+    )
+    provincia = models.ForeignKey(
+        Provincia,
+        on_delete=models.PROTECT,
+        related_name="+",
+    )
+
+    class Meta:
+        verbose_name = "Provincia de relevador DataCalle"
+        verbose_name_plural = "Provincias de relevador DataCalle"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["profile", "provincia"],
+                name="uniq_relevador_calle_provincia",
             ),
         ]
         indexes = [
