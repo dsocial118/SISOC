@@ -28,6 +28,9 @@ from pas.services.cruces_service import (
     registrar_exportacion_sintys,
     registrar_importacion_sintys,
 )
+    PasTitularesImportForm,
+)
+from pas.models import PasDeclaracionJurada, PasInforme, PasInvitacionDDJJ
 from pas.services.ddjj_service import presentar_ddjj
 from pas.services.informe_service import (
     buscar_informes,

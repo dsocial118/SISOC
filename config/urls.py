@@ -75,6 +75,7 @@ urlpatterns = [
     path("", include("importarexpediente.urls")),
     path("", include("comunicados.urls")),
     path("ocr/", include("ocr.urls")),
+    path("", include("encuestas.urls")),
 ]
 
 if settings.DEBUG and not getattr(settings, "RUNNING_TESTS", False):
