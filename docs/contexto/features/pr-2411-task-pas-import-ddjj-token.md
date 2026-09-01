@@ -35,36 +35,37 @@
 - Empezar por `docs/registro/prs/PR-2411.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
 - `.gitignore`
-- `.importlinter`
 - `AGENT_REPO_MAP.md`
-- `config/settings.py`
 - `config/urls.py`
+- `docs/contexto/features/pr-2411-task-pas-import-ddjj-token.md`
 - `docs/operacion/deploy_entornos_docker_nginx_mysql.md`
 - `docs/operacion/nginx/sisoc-produccion.conf`
 - `docs/operacion/qa_trixie_deploy.md`
 - `docs/registro/cambios/2026-08-06-pas-declaracion-jurada.md`
-- `docs/registro/cambios/2026-09-01-nucleo-pas.md`
+- `docs/registro/prs/PR-2411.md`
 - `pas/__init__.py`
 - `pas/admin.py`
-- `pas/api.py`
-- `pas/apps.py`
 - `pas/forms.py`
-- `pas/migrations/0001_initial.py`
 - `pas/migrations/0002_pas_import_ddjj_tokens.py`
-- `pas/migrations/__init__.py`
 - `pas/models.py`
 - `pas/services/__init__.py`
-- ... y 13 archivo(s) adicional(es) relacionados.
+- `pas/services/ddjj_service.py`
+- `pas/services/titulares_import_service.py`
+- `pas/templates/pas/ddjj_confirmacion.html`
+- `pas/templates/pas/ddjj_formulario.html`
+- `pas/templates/pas/titulares_import.html`
+- ... y 6 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`
+- `docs/contexto/features/pr-2411-task-pas-import-ddjj-token.md`
 - `docs/operacion/deploy_entornos_docker_nginx_mysql.md`
 - `docs/operacion/nginx/sisoc-produccion.conf`
 - `docs/operacion/qa_trixie_deploy.md`
 - `docs/registro/cambios/2026-08-06-pas-declaracion-jurada.md`
-- `docs/registro/cambios/2026-09-01-nucleo-pas.md`
+- `docs/registro/prs/PR-2411.md`
 
 ## Trazabilidad
 
