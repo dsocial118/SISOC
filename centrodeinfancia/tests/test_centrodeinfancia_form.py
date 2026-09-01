@@ -1,6 +1,7 @@
 from datetime import date
 
 import pytest
+from django import forms
 from django.contrib.auth.models import User
 from django.urls import reverse
 
@@ -87,6 +88,16 @@ def fixture_user():
 def construir_form(datos, user=None, **kwargs):
     kwargs.setdefault("lock_provincia_from_user", False)
     return CentroDeInfanciaForm(data=datos, user=user, **kwargs)
+
+
+@pytest.mark.django_db
+def test_servicios_se_muestran_como_casillas_de_seleccion_multiple():
+    form = CentroDeInfanciaForm()
+
+    assert isinstance(
+        form.fields["oferta_servicios"].widget,
+        forms.CheckboxSelectMultiple,
+    )
 
 
 # --- Alta completa (caso feliz, no-regresión) --------------------------------
