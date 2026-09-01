@@ -1,0 +1,68 @@
+{% extends "includes/main.html" %}
+{% block title %}Encuestas{% endblock %}
+{% block content %}
+    <div class="list-container">
+        {% include 'components/search_bar.html' with titulo='Buscar encuestas' placeholder='Buscar por título' help_text='Buscar por título.' reset_url='encuestas_listar' query=busqueda show_add_button=puede_gestionar add_url='encuestas_crear' add_text='Generar encuesta' request=request only %}
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Título</th>
+                                <th>Versión</th>
+                                <th>Estado</th>
+                                <th>Obligatoria</th>
+                                <th>Anónima</th>
+                                <th>Creada por</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for encuesta in encuestas %}
+                                <tr>
+                                    <td>{{ encuesta.titulo }}</td>
+                                    <td>v{{ encuesta.version }}</td>
+                                    <td>{{ encuesta.get_estado_display }}</td>
+                                    <td>{{ encuesta.es_obligatoria|yesno:"Sí,No" }}</td>
+                                    <td>{{ encuesta.es_anonima|yesno:"Sí,No" }}</td>
+                                    <td>{{ encuesta.usuario_creador }}</td>
+                                    <td>
+                                        {% if puede_gestionar %}
+                                            <a href="{% url 'encuestas_editar' encuesta.pk %}"
+                                               class="btn btn-sm btn-outline-secondary">Editar</a>
+                                            <a href="{% url 'encuestas_segmentacion' encuesta.pk %}"
+                                               class="btn btn-sm btn-outline-secondary">Segmentación</a>
+                                            {% if encuesta.estado == "borrador" %}
+                                                <form method="post"
+                                                      action="{% url 'encuestas_publicar' encuesta.pk %}"
+                                                      class="d-inline">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="btn btn-sm btn-primary">Publicar</button>
+                                                </form>
+                                            {% endif %}
+                                        {% endif %}
+                                        {% if puede_ver_resultados %}
+                                            <a href="{% url 'encuestas_resultados' encuesta.pk %}"
+                                               class="btn btn-sm btn-outline-primary">Resultados</a>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="7">
+                                        <div class="no-data-message">
+                                            <h3>No se encontraron encuestas</h3>
+                                            <p>No hay encuestas que coincidan con los criterios de búsqueda.</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% include 'components/pagination.html' with is_paginated=is_paginated page_obj=page_obj prev_text='Volver' next_text='Continuar' %}
+    </div>
+{% endblock %}

@@ -1,0 +1,174 @@
+{% extends "includes/main.html" %}
+{% load static %}
+{% block title %}Resultados: {{ encuesta.titulo }}{% endblock %}
+{% block content %}
+    <link rel="stylesheet" href="{% static 'custom/css/encuestaForm.css' %}" />
+    <link rel="stylesheet"
+          href="{% static 'custom/css/encuestaResultados.css' %}" />
+    <div class="encuesta-editor">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+            <div>
+                <h2 class="mb-1">Resultados</h2>
+                <p class="switch-help mb-0">{{ encuesta.titulo }}</p>
+            </div>
+            <a href="{% url 'encuestas_listar' %}" class="btn-cancel">
+                <i class="fas fa-arrow-left me-1"></i> Volver
+            </a>
+        </div>
+
+        {% if not rondas %}
+            <div class="editor-panel">
+                <div class="panel-body">
+                    <p class="resultado-vacio mb-0">Esta encuesta todavía no tiene rondas.</p>
+                </div>
+            </div>
+        {% else %}
+            <div class="resultados-toolbar">
+                <form method="get" class="ronda-select-wrap">
+                    <label for="ronda">Ronda</label>
+                    <select name="ronda"
+                            id="ronda"
+                            class="form-select"
+                            onchange="this.form.submit()">
+                        {% for ronda in rondas %}
+                            <option value="{{ ronda.pk }}"
+                                    {% if ronda_actual.pk == ronda.pk %}selected{% endif %}>
+                                Ronda {{ ronda.numero_ronda }} — {{ ronda.get_estado_display }} ({{ ronda.fecha_apertura|date:"d/m/Y" }})
+                            </option>
+                        {% endfor %}
+                    </select>
+                </form>
+                {% if ronda_actual %}
+                    <div class="export-actions">
+                        <a href="{% url 'encuestas_resultados_exportar' encuesta.pk ronda_actual.pk %}?formato=csv"
+                           class="btn-cancel">
+                            <i class="fas fa-file-csv me-1"></i> CSV
+                        </a>
+                        <a href="{% url 'encuestas_resultados_exportar' encuesta.pk ronda_actual.pk %}?formato=xlsx"
+                           class="btn-cancel">
+                            <i class="fas fa-file-excel me-1"></i> Excel
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+
+            {% if ronda_actual %}
+                <div class="stat-cards">
+                    <div class="stat-card stat-accent-respuestas">
+                        <div class="stat-card-icon">
+                            <i class="fas fa-poll"></i>
+                        </div>
+                        <div>
+                            <div class="stat-card-value">{{ ronda_actual.respuestas.count }}</div>
+                            <div class="stat-card-label">Respuestas recibidas</div>
+                        </div>
+                    </div>
+                    <div class="stat-card stat-accent-estado {% if ronda_actual.estado == "abierta" %}is-abierta{% endif %}">
+                        <div class="stat-card-icon">
+                            <i class="fas {% if ronda_actual.estado == "abierta" %}fa-lock-open{% else %}fa-lock{% endif %}"></i>
+                        </div>
+                        <div>
+                            <div class="stat-card-value">{{ ronda_actual.get_estado_display }}</div>
+                            <div class="stat-card-label">Estado de la ronda</div>
+                        </div>
+                    </div>
+                    <div class="stat-card stat-accent-cierre">
+                        <div class="stat-card-icon">
+                            <i class="fas fa-calendar-check"></i>
+                        </div>
+                        <div>
+                            <div class="stat-card-value">{{ ronda_actual.fecha_cierre_programada|date:"d/m/Y" }}</div>
+                            <div class="stat-card-label">Cierre programado</div>
+                        </div>
+                    </div>
+                </div>
+
+                {% for resultado in resultados %}
+                    <div class="editor-panel">
+                        <div class="panel-body">
+                            <div class="resultado-head">
+                                <div>
+                                    <p class="resultado-titulo">{{ resultado.texto }}</p>
+                                    <span class="resultado-meta">
+                                        {{ resultado.total_respuestas }} respuesta{{ resultado.total_respuestas|pluralize }}
+                                    </span>
+                                </div>
+                                <span class="tipo-chip">
+                                    {% if resultado.tipo == "opcion_unica" %}
+                                        <i class="fas fa-dot-circle"></i> Opción única
+                                    {% elif resultado.tipo == "opcion_multiple" %}
+                                        <i class="fas fa-check-square"></i> Opción múltiple
+                                    {% elif resultado.tipo == "si_no" %}
+                                        <i class="fas fa-check-double"></i> Sí / No
+                                    {% elif resultado.tipo == "escala" %}
+                                        <i class="fas fa-sliders-h"></i> Escala
+                                    {% elif resultado.tipo == "numerico" %}
+                                        <i class="fas fa-hashtag"></i> Numérico
+                                    {% elif resultado.tipo == "fecha" %}
+                                        <i class="fas fa-calendar-alt"></i> Fecha
+                                    {% else %}
+                                        <i class="fas fa-align-left"></i> Texto libre
+                                    {% endif %}
+                                </span>
+                            </div>
+
+                            {% if resultado.opciones %}
+                                <div class="result-bars">
+                                    {% for opcion in resultado.opciones %}
+                                        <div class="result-bar-row {% if opcion.texto == resultado.opcion_lider_texto %}is-leading{% endif %}">
+                                            <div class="result-bar-labels">
+                                                <span class="result-bar-opcion">{{ opcion.texto }}</span>
+                                                <span class="result-bar-valor"><b>{{ opcion.cantidad }}</b> ({{ opcion.porcentaje }}%)</span>
+                                            </div>
+                                            <div class="result-bar-track">
+                                                <div class="result-bar-fill" style="width: {{ opcion.porcentaje }}%"></div>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% elif resultado.promedio is not None %}
+                                <div class="numeric-range">
+                                    <div class="numeric-range-track">
+                                        <div class="numeric-range-marker"
+                                             style="left: {{ resultado.posicion_promedio }}%">
+                                            <span class="numeric-range-marker-label">{{ resultado.promedio|floatformat:1 }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="numeric-range-endpoints">
+                                        <span>{{ resultado.minimo|floatformat:0 }}</span>
+                                        <span>{{ resultado.maximo|floatformat:0 }}</span>
+                                    </div>
+                                </div>
+                                <div class="numeric-range-stats">
+                                    <div class="numeric-stat">
+                                        <div class="numeric-stat-value">{{ resultado.minimo|floatformat:0 }}</div>
+                                        <div class="numeric-stat-label">Mínimo</div>
+                                    </div>
+                                    <div class="numeric-stat">
+                                        <div class="numeric-stat-value">{{ resultado.promedio|floatformat:1 }}</div>
+                                        <div class="numeric-stat-label">Promedio</div>
+                                    </div>
+                                    <div class="numeric-stat">
+                                        <div class="numeric-stat-value">{{ resultado.maximo|floatformat:0 }}</div>
+                                        <div class="numeric-stat-label">Máximo</div>
+                                    </div>
+                                </div>
+                            {% elif resultado.respuestas_texto %}
+                                <div class="texto-respuestas-list">
+                                    {% for texto in resultado.respuestas_texto %}
+                                        <div class="texto-respuesta-item">
+                                            <i class="fas fa-quote-left"></i>
+                                            <span>{{ texto }}</span>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <p class="resultado-vacio mb-0">Sin respuestas todavía.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endif %}
+    </div>
+{% endblock %}
