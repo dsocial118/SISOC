@@ -1,0 +1,95 @@
+{% extends "includes/main.html" %}
+{% load static %}
+{% block title %}Informes PAS{% endblock %}
+{% block breadcrumb %}
+    {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
+{% endblock %}
+{% block content %}
+    <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
+    <div class="comedor-list-container">
+        <div class="search-section">
+            <form method="get" class="search-form">
+                <div class="search-header">
+                    <div>
+                        <h2 class="search-title">Informes PAS</h2>
+                        <p class="search-help">Buscar por numero de informe o usuario generador.</p>
+                    </div>
+                    <a href="{% url 'pas_informe_generar' %}" class="btn btn-primary">
+                        <i class="fas fa-plus me-1"></i> Nuevo informe
+                    </a>
+                </div>
+                <div class="search-input-group">
+                    <input type="text"
+                           name="q"
+                           value="{{ query }}"
+                           class="form-control search-input"
+                           placeholder="PAS-INF-000001, usuario, nombre o apellido" />
+                    <button class="btn btn-search" type="submit">
+                        <i class="fas fa-search"></i> Buscar
+                    </button>
+                    <a href="{% url 'pas_informe_listar' %}" class="btn btn-reset">Limpiar</a>
+                </div>
+            </form>
+        </div>
+        <div class="row mt-5 max-width-100">
+            <div class="col-12">
+                <div class="card comedor-table-card">
+                    <div class="card-body">
+                        <div class="table-responsive-lg">
+                            <table class="table table-comedor-moderno">
+                                <thead>
+                                    <tr>
+                                        <th>Numero</th>
+                                        <th>Fecha</th>
+                                        <th>Usuario</th>
+                                        <th>Personas</th>
+                                        <th>Cambios</th>
+                                        <th class="notexport">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for informe in informes %}
+                                        <tr>
+                                            <td>
+                                                <a href="{% url 'pas_informe_detalle' informe.id %}"
+                                                   class="link-handler">{{ informe.numero }}</a>
+                                            </td>
+                                            <td>{{ informe.creado|date:"d/m/Y H:i" }}</td>
+                                            <td>{{ informe.usuario.get_full_name|default:informe.usuario.username|default:"-" }}</td>
+                                            <td>{{ informe.total_personas }}</td>
+                                            <td>{{ informe.total_cambios }}</td>
+                                            <td>
+                                                <div class="comedor-actions">
+                                                    <a href="{% url 'pas_informe_detalle' informe.id %}"
+                                                       class="btn btn-ver link-handler"
+                                                       title="Ver informe">
+                                                        <i class="fas fa-eye"></i> Ver
+                                                    </a>
+                                                    <a href="{% url 'pas_informe_descargar' informe.id %}"
+                                                       class="btn btn-editar"
+                                                       title="Descargar CSV">
+                                                        <i class="fas fa-download"></i> Descargar
+                                                    </a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% empty %}
+                                        <tr>
+                                            <td colspan="6">
+                                                <div class="no-comedores-message">
+                                                    <h3>No se encontraron informes PAS</h3>
+                                                    <p>Genere un informe o modifique la busqueda.</p>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% include 'components/pagination.html' with is_paginated=is_paginated page_obj=page_obj prev_text='Volver' next_text='Continuar' %}
+    </div>
+{% endblock %}
