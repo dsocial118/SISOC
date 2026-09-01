@@ -6,9 +6,10 @@ La descarga provincial de nómina está disponible para superadministradores y
 usuarios del grupo `SIMEPI - EGP`. No es una descarga libre para cualquier rol
 CDI ni para alcances territoriales parciales.
 
-- Un `SIMEPI - EGP` debe tener exactamente un alcance completo de provincia;
-  la provincia se toma del alcance efectivo del usuario y se ignora cualquier
-  provincia enviada por el cliente.
+- Un `SIMEPI - EGP` puede tener uno o más alcances completos de provincia. La
+  interfaz le ofrece únicamente esas provincias y debe seleccionar una para
+  descargar; el servidor rechaza una provincia ausente o fuera de ese conjunto.
+  No puede usar una provincia arbitraria enviada por el cliente.
 - Un superadministrador debe elegir una provincia válida en el modal; una
   selección ausente o inválida responde `400` antes de consultar datos.
 - Los demás roles, los alcances parciales y los perfiles EGP ambiguos reciben
@@ -49,10 +50,31 @@ territorial u operativo. EGP queda limitado a sus provincias y los roles
 locales a sus CDI vinculados. El enlace de Grupos solo se muestra con
 `auth.view_group`; la protección del endpoint permanece vigente.
 
+## Reglas complementarias de CDI
+
+- Los días de funcionamiento son obligatorios tanto en el formulario principal
+  del CDI como en el formulario de relevamiento. Los horarios, latitud y
+  longitud permanecen opcionales.
+- Para niños y niñas mayores de 48 meses, el estado de nómina debe ser
+  `Pendiente`, salvo que opere un superusuario o `SIMEPI - Administrador`.
+- Las opciones históricas `ns_nc` se muestran como «No sabe». Las listas de
+  nacionalidad combinan el catálogo central usado por RENAPER y los valores
+  históricos de CDI para no volver inválidos los registros existentes.
+- Al guardar un CDI, si el email de su referente identifica exactamente una
+  cuenta existente, se le asigna/reactiva el acceso de referente para ese CDI
+  sin regenerar credenciales ni enviar correo. Si el email es ambiguo, no se
+  vincula ninguna cuenta y se informa el caso para revisión.
+- El ítem de navegación Comunicados se oculta solo a usuarios con un rol CDI
+  local y sin un rol SIMEPI adicional. No cambia la autorización de la ruta ni
+  la visibilidad para EGP, otros roles SIMEPI o superusuarios.
+
 ## Implementación y validación
 
 - Endpoint y autorización: `centrodeinfancia/views_export.py` y
   `centrodeinfancia/access.py`.
+- Alta EGP y referente: `centrodeinfancia/forms_usuario_egp.py`,
+  `centrodeinfancia/views_usuario_egp.py` y
+  `centrodeinfancia/services_user_provisioning.py`.
 - Servicio PDF: `centrodeinfancia/services_nomina_ninos_pdf.py`.
 - Formulario y datos CDI: `centrodeinfancia/forms.py` y `centrodeinfancia/models.py`.
 - Regresiones: `centrodeinfancia/tests/test_nomina_ninos_pdf.py`,
@@ -70,3 +92,4 @@ privacidad y la estructura final del PDF.
 - `docs/registro/cambios/2026-08-18-issue-2304-nomina-domicilio-sala.md`
 - `docs/registro/cambios/2026-08-18-simepi-descarga-nomina-ninos.md`
 - `docs/implementaciones/centrodeinfancia_nomina_renaper.md`
+- `docs/registro/2026-08-28-issue-2369-correcciones-cdi.md`
