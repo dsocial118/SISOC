@@ -1723,6 +1723,14 @@ class NominaCentroInfancia(SoftDeleteModelMixin, models.Model):
             )
         )
 
+    @property
+    def apoyo_desarrollo_unificado_display(self):
+        if self.recibe_apoyo_desarrollo:
+            return self.get_recibe_apoyo_desarrollo_display()
+        if self.recibe_apoyo_discapacidad is None:
+            return "-"
+        return "Sí" if self.recibe_apoyo_discapacidad else "No"
+
     @staticmethod
     def _validar_multiselect(field_name, value, choices):
         allowed = {item[0] for item in choices}
@@ -1758,6 +1766,11 @@ class NominaCentroInfancia(SoftDeleteModelMixin, models.Model):
             self.recibe_apoyo_discapacidad = None
             self.tipo_discapacidad = []
             self.numero_cud = None
+        else:
+            self.recibe_apoyo_discapacidad = {
+                "si": True,
+                "no": False,
+            }.get(self.recibe_apoyo_desarrollo)
         if not self.posee_cud:
             self.numero_cud = None
 

@@ -364,7 +364,9 @@
                                 </a>
                             {% endif %}
                         </div>
-                        <small class="text-muted">Credenciales visibles solo para el referente del centro y administradores. La contraseña temporal se oculta automáticamente cuando el usuario la cambia.</small>
+                        {% if puede_ver_credenciales_cdi %}
+                            <small class="text-muted">Credenciales visibles solo para el referente del centro y administradores. La contraseña temporal se oculta automáticamente cuando el usuario la cambia.</small>
+                        {% endif %}
                         <hr class="cdi-divider" />
                         <div class="cdf-tbl-scroll">
                             <table class="cdf-table">
@@ -374,7 +376,7 @@
                                         <th>Nombre</th>
                                         <th>Email</th>
                                         <th>Estado</th>
-                                        <th>Contraseña temporal</th>
+                                        {% if puede_ver_credenciales_cdi %}<th>Contraseña temporal</th>{% endif %}
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -392,17 +394,24 @@
                                                     <span class="cdf-pill cdf-pill--muted">Baja</span>
                                                 {% endif %}
                                             </td>
-                                            <td>
-                                                {% if acceso.user.profile.temporary_password_plaintext %}
-                                                    <code>{{ acceso.user.profile.temporary_password_plaintext }}</code>
-                                                {% else %}
-                                                    <span class="cdf-td-muted">Ya cambiada</span>
-                                                {% endif %}
-                                            </td>
+                                            {% if puede_ver_credenciales_cdi %}
+                                                <td>
+                                                    {% if request.user.is_superuser or acceso.user_id == request.user.id %}
+                                                        {% if acceso.user.profile.temporary_password_plaintext %}
+                                                            <code>{{ acceso.user.profile.temporary_password_plaintext }}</code>
+                                                        {% else %}
+                                                            <span class="cdf-td-muted">Ya cambiada</span>
+                                                        {% endif %}
+                                                    {% else %}
+                                                        <span class="cdf-td-muted">No disponible</span>
+                                                    {% endif %}
+                                                </td>
+                                            {% endif %}
                                         </tr>
                                     {% empty %}
                                         <tr>
-                                            <td colspan="5" class="text-center cdf-td-muted py-3">Sin usuarios generados para este centro.</td>
+                                            <td colspan="{{ usuarios_cdi_columnas }}"
+                                                class="text-center cdf-td-muted py-3">Sin usuarios generados para este centro.</td>
                                         </tr>
                                     {% endfor %}
                                 </tbody>
