@@ -6,6 +6,7 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.test import override_settings
 from django.urls import reverse
+from pypdf import PdfReader
 
 from core.models import Municipio, Provincia
 from pas.forms import PasDeclaracionJuradaForm
@@ -89,6 +90,27 @@ def test_presentacion_crea_pdf_inmutable_e_impacta_datos_actuales(
         declaracion.save()
     with pytest.raises(ValidationError):
         declaracion.delete()
+
+
+@pytest.mark.django_db
+def test_presentacion_conserva_literalmente_el_marcado_en_el_pdf(persona_ddjj, tmp_path):
+    invitacion = crear_invitacion(persona_ddjj)
+    domicilio = "Calle <br/> 123 & 456"
+    form = PasDeclaracionJuradaForm(
+        datos_formulario(
+            persona_ddjj.provincia,
+            persona_ddjj.municipio,
+            domicilio=domicilio,
+        ),
+        persona=persona_ddjj,
+    )
+    assert form.is_valid(), form.errors
+
+    with override_settings(MEDIA_ROOT=tmp_path):
+        declaracion = presentar_ddjj(invitacion, form)
+        texto_pdf = PdfReader(declaracion.archivo_pdf).pages[0].extract_text()
+
+    assert domicilio in texto_pdf
 
 
 @pytest.mark.django_db
