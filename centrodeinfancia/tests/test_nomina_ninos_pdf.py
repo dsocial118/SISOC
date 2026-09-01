@@ -510,6 +510,34 @@ def test_export_data_excluye_mayores_de_48_meses_aunque_sigan_activos():
     assert data.centros[0].rows[0].dni == "44000001"
 
 
+@pytest.mark.django_db
+def test_export_data_repara_mojibake_historico_sin_cambiar_fuente_del_snapshot():
+    provincia = Provincia.objects.create(nombre="Buenos Aires")
+    user = _create_egp("egp-encoding", provincia)
+    centro = CentroDeInfancia.objects.create(
+        nombre="CDI Encoding",
+        provincia=provincia,
+    )
+    ciudadano = _create_child(45000001)
+    ciudadano.apellido = "Apellido del ciudadano"
+    ciudadano.nombre = "Nombre del ciudadano"
+    ciudadano.save(update_fields=["apellido", "nombre"])
+    NominaCentroInfancia.objects.create(
+        centro=centro,
+        ciudadano=ciudadano,
+        estado=NominaCentroInfancia.ESTADO_ACTIVO,
+        apellido="Dell \u00c3\u201clio",
+        nombre="Joaqu\u00c3\u00adn",
+        fecha_nacimiento=date(2024, 1, 15),
+        edad_unidad="anios",
+    )
+
+    data = build_export_data(user=user, provincia=provincia)
+
+    assert data.centros[0].rows[0].apellido == "Dell Ólio"
+    assert data.centros[0].rows[0].nombre == "Joaquín"
+
+
 def _sample_export_data():
     row = NinoRow(
         centro_id=1,
