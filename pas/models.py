@@ -22,6 +22,7 @@ class PasEstado(models.Model):
     def __str__(self):
         return self.nombre
 
+
 class PasAviso(models.Model):
     codigo = models.PositiveIntegerField(unique=True)
     descripcion = models.CharField(max_length=255)
@@ -254,3 +255,37 @@ class PasHistorialEstado(models.Model):
 
     def __str__(self):
         return f"{self.persona_id} - {self.estado_nuevo} - {self.fecha_cambio:%d/%m/%Y}"
+
+
+class PasInforme(models.Model):
+    creado = models.DateTimeField(auto_now_add=True)
+    usuario = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="informes_pas",
+    )
+    filtros = models.JSONField(default=dict, blank=True)
+    modo = models.CharField(max_length=20, default="registros")
+    resultado = models.JSONField(default=list, blank=True)
+    total_personas = models.PositiveIntegerField(default=0)
+    total_cambios = models.PositiveIntegerField(default=0)
+    personas = models.ManyToManyField(PasPersona, blank=True, related_name="informes")
+    cambios = models.ManyToManyField(
+        PasHistorialEstado, blank=True, related_name="informes"
+    )
+
+    class Meta:
+        ordering = ["-creado", "-id"]
+        verbose_name = "Informe PAS"
+        verbose_name_plural = "Informes PAS"
+
+    def __str__(self):
+        return self.numero
+
+    @property
+    def numero(self):
+        if not self.pk:
+            return "PAS-INF"
+        return f"PAS-INF-{self.pk:06d}"
