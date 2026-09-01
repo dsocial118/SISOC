@@ -289,3 +289,114 @@ class PasInforme(models.Model):
         if not self.pk:
             return "PAS-INF"
         return f"PAS-INF-{self.pk:06d}"
+
+
+def archivo_circuito_pas_upload_to(instance, filename):
+    extension = filename.rsplit(".", 1)[-1].lower() if "." in filename else "bin"
+    return (
+        f"pas/circuitos/{instance.periodo:%Y-%m}/"
+        f"{timezone.now():%Y%m%d%H%M%S}_{instance.pk or 'nuevo'}.{extension}"
+    )
+
+
+class PasCircuitoMensual(models.Model):
+    periodo = models.DateField(unique=True)
+    fecha_exportacion_sintys = models.DateTimeField(null=True, blank=True)
+    archivo_exportacion_sintys = models.FileField(
+        upload_to=archivo_circuito_pas_upload_to, null=True, blank=True
+    )
+    exportado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="circuitos_pas_exportados",
+    )
+    fecha_importacion_sintys = models.DateTimeField(null=True, blank=True)
+    archivo_retorno_sintys = models.FileField(
+        upload_to=archivo_circuito_pas_upload_to, null=True, blank=True
+    )
+    importado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="circuitos_pas_importados",
+    )
+    fecha_cruce_justicia = models.DateTimeField(null=True, blank=True)
+    fecha_cruce_migraciones = models.DateTimeField(null=True, blank=True)
+    fecha_procesamiento_alertas = models.DateTimeField(null=True, blank=True)
+    fecha_cierre = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-periodo"]
+        verbose_name = "Circuito mensual PAS"
+        verbose_name_plural = "Circuitos mensuales PAS"
+
+    def __str__(self):
+        return f"Circuito PAS {self.periodo:%m/%Y}"
+
+
+class PasControlRenaper(models.Model):
+    class Resultado(models.TextChoices):
+        VIGENTE = "vigente", "Persona viva"
+        FALLECIDA = "fallecida", "Persona fallecida"
+        NO_ENCONTRADA = "no_encontrada", "Sin coincidencia"
+        ERROR = "error", "Error de consulta"
+
+    persona = models.ForeignKey(
+        PasPersona, on_delete=models.CASCADE, related_name="controles_renaper"
+    )
+    fecha_consulta = models.DateField()
+    consultado = models.DateTimeField(auto_now_add=True)
+    resultado = models.CharField(max_length=20, choices=Resultado.choices)
+    sexo_consulta = models.CharField(max_length=1, blank=True)
+    error_tipo = models.CharField(max_length=40, blank=True)
+
+    class Meta:
+        ordering = ["-fecha_consulta", "persona_id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["persona", "fecha_consulta"],
+                name="pas_renaper_persona_fecha_uniq",
+            )
+        ]
+        verbose_name = "Control RENAPER PAS"
+        verbose_name_plural = "Controles RENAPER PAS"
+
+    def __str__(self):
+        return f"{self.persona_id} - {self.fecha_consulta} - {self.resultado}"
+
+
+class PasIncompatibilidad(models.Model):
+    class Categoria(models.TextChoices):
+        SUPERVIVENCIA = "supervivencia", "Supervivencia"
+
+    class Estado(models.TextChoices):
+        PENDIENTE = "pendiente", "Pendiente"
+        GESTIONADA = "gestionada", "Gestionada"
+
+    persona = models.ForeignKey(
+        PasPersona, on_delete=models.CASCADE, related_name="incompatibilidades"
+    )
+    categoria = models.CharField(max_length=30, choices=Categoria.choices)
+    periodo_impacto = models.DateField()
+    fecha_deteccion = models.DateTimeField(auto_now_add=True)
+    detalle = models.CharField(max_length=255)
+    estado = models.CharField(
+        max_length=20, choices=Estado.choices, default=Estado.PENDIENTE
+    )
+
+    class Meta:
+        ordering = ["-fecha_deteccion", "persona_id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["persona", "categoria", "periodo_impacto"],
+                name="pas_incompat_persona_categoria_periodo_uniq",
+            )
+        ]
+        verbose_name = "Incompatibilidad PAS"
+        verbose_name_plural = "Incompatibilidades PAS"
+
+    def __str__(self):
+        return f"{self.persona_id} - {self.get_categoria_display()} - {self.periodo_impacto:%m/%Y}"

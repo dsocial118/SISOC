@@ -71,6 +71,8 @@
 - `docs/registro/README.md`: reglas para registrar cambios y decisiones importantes en `docs/`.
 - `docs/registro/cambios/`: historial de cambios importantes.
 - `docs/registro/decisiones/`: decisiones relevantes (ADR livianas).
+- `docs/registro/decisiones/2026-07-28-pas-circuito-cruces.md`: alcance y límites del circuito mensual SINTyS de PAS.
+- `docs/registro/decisiones/2026-07-29-pas-supervivencia-renaper.md`: control diario RENAPER e incompatibilidades de supervivencia PAS.
 - `docs/registro/prs/`: documentación automática por pull request.
 - `docs/registro/releases/pending/`: release notes preliminares usadas para reconstruir `CHANGELOG.md` en PRs a `main`.
 

@@ -2,6 +2,10 @@ from django.urls import path
 
 from core.decorators import permissions_any_required
 from pas.views import (
+    PasCrucesActualizarRenaperView,
+    PasCrucesExportarSintysView,
+    PasCrucesImportarSintysView,
+    PasCrucesView,
     PasDDJJConfirmacionView,
     PasDDJJDownloadView,
     PasDDJJFormularioView,
@@ -18,6 +22,32 @@ from pas.views import (
 
 
 urlpatterns = [
+    path(
+        "pas/cruces",
+        permissions_any_required(["pas.view_paspersona"])(PasCrucesView.as_view()),
+        name="pas_cruces",
+    ),
+    path(
+        "pas/cruces/exportar-sintys",
+        permissions_any_required(["pas.change_paspersona"])(
+            PasCrucesExportarSintysView.as_view()
+        ),
+        name="pas_cruces_exportar_sintys",
+    ),
+    path(
+        "pas/cruces/importar-sintys",
+        permissions_any_required(["pas.change_paspersona"])(
+            PasCrucesImportarSintysView.as_view()
+        ),
+        name="pas_cruces_importar_sintys",
+    ),
+    path(
+        "pas/cruces/actualizar-renaper",
+        permissions_any_required(["pas.change_paspersona"])(
+            PasCrucesActualizarRenaperView.as_view()
+        ),
+        name="pas_cruces_actualizar_renaper",
+    ),
     path(
         "pas/informes",
         permissions_any_required(["pas.view_paspersona", "pas.view_pasinforme"])(
