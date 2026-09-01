@@ -28,7 +28,9 @@ y clases de Bootstrap 5 que el componente para que se vea y comporte igual.
                 {% endif %}
             </div>
             <div class="modal-body">
-                {% if ronda_pendiente.encuesta.descripcion %}<p class="text-muted">{{ ronda_pendiente.encuesta.descripcion }}</p>{% endif %}
+                {% if ronda_pendiente.encuesta.descripcion %}
+                    <p class="text-muted">{{ ronda_pendiente.encuesta.descripcion }}</p>
+                {% endif %}
                 <form method="post"
                       action="{% url 'encuestas_responder' ronda_pendiente.pk %}"
                       id="form-responder-encuesta">
