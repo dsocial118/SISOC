@@ -58,7 +58,10 @@ from celiaquia.services.importacion_service import (
     _resolver_nacionalidad_payload_importacion,
     validar_y_normalizar_payloads_importacion,
 )
-from celiaquia.comentarios_tecnicos import TipoDocumentoComentario
+from celiaquia.comentarios_tecnicos import (
+    TipoDocumentoComentario,
+    catalogo_serializable as catalogo_comentarios_tecnicos,
+)
 from celiaquia.permissions import can_delete_legajo
 from celiaquia.services.comentarios_tecnicos_service import ComentariosTecnicosService
 from celiaquia.services.cruce_service import CruceService
@@ -1612,6 +1615,11 @@ class ExpedienteDetailView(DetailView):
                 "total_hijos_sin_responsable": len(
                     estructura_familiar.get("hijos_sin_responsable", [])
                 ),
+                # Catálogo de observaciones del formulario de comentarios
+                # técnicos: el desplegable se filtra por tipo de documento en
+                # el cliente, sin ida y vuelta al servidor.
+                "catalogo_comentarios_tecnicos": catalogo_comentarios_tecnicos(),
+                "tipos_documento_comentario": TipoDocumentoComentario.choices,
             }
         )
         return ctx

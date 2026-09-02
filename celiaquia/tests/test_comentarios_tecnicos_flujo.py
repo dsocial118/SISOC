@@ -260,6 +260,26 @@ def test_preview_denegado_para_provincia(client, provincial, legajo):
     assert client.get(_url_preview(legajo)).status_code == 403
 
 
+# --- Detalle del expediente: catálogo para el formulario ------------------
+
+
+def test_detalle_embebe_el_catalogo_de_observaciones(client, coordinador, legajo):
+    """El desplegable de observaciones se filtra en el cliente: el catálogo
+    tiene que viajar embebido en la página."""
+    client.force_login(coordinador)
+
+    response = client.get(reverse("expediente_detail", args=[legajo.expediente_id]))
+    html = response.content.decode()
+
+    assert response.status_code == 200
+    assert 'id="catalogo-comentarios-tecnicos"' in html
+    catalogo = response.context["catalogo_comentarios_tecnicos"]
+    assert set(catalogo) == {"RENAPER", "ANSES", "CONDICION_DIAGNOSTICA"}
+    assert catalogo["RENAPER"][-1]["libre"] is True
+    # Los tres tipos alimentan el primer desplegable del formulario.
+    assert len(response.context["tipos_documento_comentario"]) == 3
+
+
 # --- Fase 4: Subsanar y Rechazar -----------------------------------------
 
 
