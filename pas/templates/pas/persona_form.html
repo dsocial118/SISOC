@@ -1,0 +1,83 @@
+{% extends "includes/main.html" %}
+{% load static crispy_forms_tags %}
+{% block title %}PAS{% endblock %}
+{% block breadcrumb %}
+    {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
+{% endblock %}
+{% block content %}
+    <link rel="stylesheet"
+          href="{% static 'custom/css/comedorFormModerno.css' %}" />
+    <link rel="stylesheet" href="{% static 'custom/css/pas.css' %}" />
+    <div class="d-flex justify-content-between mb-3">
+        <a href="{{ volver_url }}" class="btn btn-secondary">Volver</a>
+        <a href="#" data-history-back="true" class="btn btn-secondary">Cancelar</a>
+    </div>
+    <div class="row comedor-form">
+        <div class="col-12">
+            <form method="post" id="pasForm" class="w-100">
+                {% csrf_token %}
+                <div class="section-card" data-section="persona">
+                    <div class="section-header">
+                        <div class="section-header-left">
+                            <div class="section-icon">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <div class="section-title-group">
+                                <h3 class="section-title">{{ titulo_formulario }}</h3>
+                                <p class="section-subtitle">Datos principales de la persona titular</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section-body collapse show">
+                        {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+                        <div class="form-group row">
+                            <div class="col-md-3">{{ form.id_persona|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.apellidos|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.nombres|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.dni|as_crispy_field }}</div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-4">{{ form.cuit|as_crispy_field }}</div>
+                            <div class="col-md-4">{{ form.provincia|as_crispy_field }}</div>
+                            <div class="col-md-4">{{ form.municipio|as_crispy_field }}</div>
+                        </div>
+                    </div>
+                </div>
+                {% if mostrar_estado %}
+                    <div class="section-card" data-section="estado">
+                        <div class="section-header">
+                            <div class="section-header-left">
+                                <div class="section-icon">
+                                    <i class="fas fa-tasks"></i>
+                                </div>
+                                <div class="section-title-group">
+                                    <h3 class="section-title">Estado del titular</h3>
+                                    <p class="section-subtitle">Estado vigente y motivos asociados</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="section-body collapse show">
+                            <div class="form-group row">
+                                <div class="col-md-4">{{ form.estado|as_crispy_field }}</div>
+                                <div class="col-md-8">{{ form.avisos|as_crispy_field }}</div>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+                <div class="sticky-actions">
+                    <a href="{{ volver_url }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left mr-1"></i> Volver
+                    </a>
+                    <button class="btn btn-success" type="submit">
+                        <i class="fas fa-save mr-1"></i> Guardar registro
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    {{ avisos_por_estado|json_script:"pas-avisos-por-estado" }}
+{% endblock %}
+{% block customJS %}
+    <script nonce="{{ request.csp_nonce }}">window.ajaxLoadMunicipiosUrl = "{% url 'ajax_load_municipios' %}";</script>
+    <script src="{% static 'custom/js/pas.js' %}"></script>
+{% endblock %}

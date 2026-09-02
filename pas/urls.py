@@ -2,26 +2,80 @@ from django.urls import path
 
 from core.decorators import permissions_any_required
 from pas.views import (
-    PasCrucesActualizarRenaperView,
-    PasCrucesExportarSintysView,
-    PasCrucesImportarSintysView,
-    PasCrucesView,
-    PasDDJJConfirmacionView,
-    PasDDJJDownloadView,
-    PasDDJJFormularioView,
-    PasDDJJMunicipiosView,
-    PasDDJJPrivateMediaView,
     PasInformeDetailView,
     PasInformeDownloadView,
     PasInformeGenerateView,
     PasInformeListView,
     PasInformePreviewView,
+    PasAreaView,
+    PasDDJJConfirmacionView,
+    PasDDJJDownloadView,
+    PasDDJJFormularioView,
+    PasDDJJMunicipiosView,
+    PasDDJJPrivateMediaView,
+    PasCrucesExportarSintysView,
+    PasCrucesImportarSintysView,
+    PasCrucesActualizarRenaperView,
+    PasCrucesView,
+    PasPersonaCambiarEstadoView,
+    PasPersonaCreateView,
+    PasPersonaDeleteView,
+    PasPersonaDetailView,
+    PasPersonaListView,
+    PasPersonaUpdateView,
     PasTitularesImportView,
     PasTokensExportView,
 )
 
-
 urlpatterns = [
+    path(
+        "media/pas/ddjj/<path:path>",
+        PasDDJJPrivateMediaView.as_view(),
+        name="pas_ddjj_media_privado",
+    ),
+    path(
+        "pas/ddjj/formulario/<uuid:token>",
+        PasDDJJFormularioView.as_view(),
+        name="pas_ddjj_formulario",
+    ),
+    path(
+        "pas/ddjj/formulario/<uuid:token>/municipios",
+        PasDDJJMunicipiosView.as_view(),
+        name="pas_ddjj_municipios",
+    ),
+    path(
+        "pas/ddjj/confirmacion",
+        PasDDJJConfirmacionView.as_view(),
+        name="pas_ddjj_confirmacion",
+    ),
+    path(
+        "pas/ddjj/<int:pk>/descargar",
+        permissions_any_required(["pas.view_paspersona"])(
+            PasDDJJDownloadView.as_view()
+        ),
+        name="pas_ddjj_descargar",
+    ),
+    path(
+        "pas/panel-control",
+        permissions_any_required(["pas.view_paspersona"])(
+            PasPersonaDetailView.as_view()
+        ),
+        name="pas_panel_control",
+    ),
+    path(
+        "pas/panel-control/<int:pk>",
+        permissions_any_required(["pas.view_paspersona"])(
+            PasPersonaDetailView.as_view()
+        ),
+        name="pas_panel_control_persona",
+    ),
+    path(
+        "pas/formacion",
+        permissions_any_required(["pas.view_paspersona"])(
+            PasAreaView.as_view(area_key="formacion")
+        ),
+        name="pas_formacion",
+    ),
     path(
         "pas/cruces",
         permissions_any_required(["pas.view_paspersona"])(PasCrucesView.as_view()),
@@ -84,31 +138,9 @@ urlpatterns = [
         name="pas_informe_detalle",
     ),
     path(
-        "media/pas/ddjj/<path:path>",
-        PasDDJJPrivateMediaView.as_view(),
-        name="pas_ddjj_media_privado",
-    ),
-    path(
-        "pas/ddjj/formulario/<uuid:token>",
-        PasDDJJFormularioView.as_view(),
-        name="pas_ddjj_formulario",
-    ),
-    path(
-        "pas/ddjj/formulario/<uuid:token>/municipios",
-        PasDDJJMunicipiosView.as_view(),
-        name="pas_ddjj_municipios",
-    ),
-    path(
-        "pas/ddjj/confirmacion",
-        PasDDJJConfirmacionView.as_view(),
-        name="pas_ddjj_confirmacion",
-    ),
-    path(
-        "pas/ddjj/<int:pk>/descargar",
-        permissions_any_required(["pas.view_paspersona"])(
-            PasDDJJDownloadView.as_view()
-        ),
-        name="pas_ddjj_descargar",
+        "pas/listar",
+        permissions_any_required(["pas.view_paspersona"])(PasPersonaListView.as_view()),
+        name="pas_persona_listar",
     ),
     path(
         "pas/titulares/importar",
@@ -123,5 +155,40 @@ urlpatterns = [
             PasTokensExportView.as_view()
         ),
         name="pas_tokens_exportar",
+    ),
+    path(
+        "pas/crear",
+        permissions_any_required(["pas.add_paspersona"])(
+            PasPersonaCreateView.as_view()
+        ),
+        name="pas_persona_crear",
+    ),
+    path(
+        "pas/<int:pk>",
+        permissions_any_required(["pas.view_paspersona"])(
+            PasPersonaDetailView.as_view()
+        ),
+        name="pas_persona_detalle",
+    ),
+    path(
+        "pas/<int:pk>/editar",
+        permissions_any_required(["pas.change_paspersona"])(
+            PasPersonaUpdateView.as_view()
+        ),
+        name="pas_persona_editar",
+    ),
+    path(
+        "pas/<int:pk>/cambiar-estado",
+        permissions_any_required(["pas.change_paspersona"])(
+            PasPersonaCambiarEstadoView.as_view()
+        ),
+        name="pas_persona_cambiar_estado",
+    ),
+    path(
+        "pas/<int:pk>/eliminar",
+        permissions_any_required(["pas.delete_paspersona"])(
+            PasPersonaDeleteView.as_view()
+        ),
+        name="pas_persona_eliminar",
     ),
 ]

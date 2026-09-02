@@ -221,6 +221,23 @@ def test_exportacion_excel_contiene_cuil_y_token_vigente(client, catalogo_import
 
 
 @pytest.mark.django_db
+def test_buscador_reemplaza_nuevo_titular_por_importar_y_exportar(
+    client, catalogo_importacion
+):
+    usuario = get_user_model().objects.create_superuser(
+        username="admin-padron-pas", email="padron@example.test", password="test"
+    )
+    client.force_login(usuario)
+
+    respuesta = client.get(reverse("pas_persona_listar"))
+
+    assert respuesta.status_code == 200
+    assert b"Importar titulares" in respuesta.content
+    assert b"Exportar tokens" in respuesta.content
+    assert b"Nuevo titular" not in respuesta.content
+
+
+@pytest.mark.django_db
 def test_importacion_y_exportacion_requieren_permisos(client):
     usuario = get_user_model().objects.create_user(
         username="sin-permisos-padron", password="test"
@@ -243,6 +260,10 @@ def test_exportacion_rechaza_permiso_generico_de_consulta_pas(client):
 
     assert respuesta.status_code == 403
     assert PasExportacionTokens.objects.count() == 0
+
+    listado = client.get(reverse("pas_persona_listar"))
+    assert listado.status_code == 200
+    assert b"Exportar tokens" not in listado.content
 
 
 @pytest.mark.django_db

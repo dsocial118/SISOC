@@ -1,0 +1,490 @@
+{% extends "includes/main.html" %}
+{% load static %}
+{% block title %}{{ area.title }} · PAS{% endblock %}
+{% block breadcrumb %}{% endblock %}
+{% block head %}
+    <link rel="stylesheet" href="{% static 'custom/css/pas.css' %}" />
+{% endblock %}
+{% block app-header %}
+    <div class="pas-top-actions">
+        <a href="{% url 'pas_persona_listar' %}" class="btn btn-light">
+            <i class="bi bi-arrow-left" aria-hidden="true"></i>
+            Buscador PAS
+        </a>
+    </div>
+{% endblock %}
+{% block content %}
+    <main class="pas-workspace">
+        <header class="pas-module-header">
+            <div>
+                <span class="pas-eyebrow">Programa de Acompañamiento Social</span>
+                <h1>{{ area.title }}</h1>
+            </div>
+            {% if area_key == "formacion" %}
+                <span class="pas-source-chip is-pending">
+                    <i class="bi bi-cloud-slash" aria-hidden="true"></i>
+                    Fuente de formación pendiente
+                </span>
+            {% elif area_key == "cruces" %}
+                <span class="pas-source-chip">
+                    <i class="bi bi-arrow-repeat" aria-hidden="true"></i>
+                    RENAPER · control diario
+                </span>
+            {% else %}
+                <span class="pas-source-chip is-pending">
+                    <i class="bi bi-cloud-slash" aria-hidden="true"></i>
+                    Integración pendiente
+                </span>
+            {% endif %}
+        </header>
+
+        {% include "pas/includes/workflow_nav.html" %}
+
+        {% if area_key == "formacion" %}
+            <section class="pas-formation-layout">
+                <aside class="pas-formation-sidebar">
+                    <form method="get" class="pas-formation-search">
+                        <label class="visually-hidden" for="pas-formacion-query">Buscar titular</label>
+                        <div class="pas-search-input-wrap">
+                            <i class="bi bi-search" aria-hidden="true"></i>
+                            <input id="pas-formacion-query"
+                                   name="q"
+                                   type="search"
+                                   value="{{ query }}"
+                                   placeholder="Buscar por CUIT, DNI o nombre" />
+                        </div>
+                        <div class="pas-formation-filters" aria-label="Estado de formación">
+                            <button type="submit"
+                                    name="estado_formacion"
+                                    value="todos"
+                                    class="{% if estado_formacion == 'todos' %}is-active{% endif %}">Todos</button>
+                            <button type="submit"
+                                    name="estado_formacion"
+                                    value="cumplido"
+                                    class="{% if estado_formacion == 'cumplido' %}is-active{% endif %}">
+                                Cumplido
+                            </button>
+                            <button type="submit"
+                                    name="estado_formacion"
+                                    value="en-curso"
+                                    class="{% if estado_formacion == 'en-curso' %}is-active{% endif %}">
+                                En curso
+                            </button>
+                            <button type="submit"
+                                    name="estado_formacion"
+                                    value="sin-formacion"
+                                    class="{% if estado_formacion == 'sin-formacion' %}is-active{% endif %}">
+                                Sin formación
+                            </button>
+                        </div>
+                    </form>
+                    <div class="pas-formation-sidebar-title">Seleccionar titular</div>
+                    <div class="pas-formation-people">
+                        {% for persona in personas %}
+                            <a href="?persona={{ persona.id }}&q={{ query|urlencode }}&estado_formacion={{ estado_formacion }}"
+                               class="{% if persona_seleccionada.id == persona.id %}is-active{% endif %} pas-formation-person-link">
+                                <strong>{{ persona.apellidos }}, {{ persona.nombres }}</strong>
+                                <span class="pas-points-badge is-{{ persona.estado_formacion }}">{{ persona.puntos_formacion }} pts</span>
+                            </a>
+                        {% empty %}
+                            <div class="pas-empty-state">
+                                <strong>Sin titulares para los filtros elegidos</strong>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </aside>
+
+                <div class="pas-formation-content">
+                    {% if persona_seleccionada %}
+                        <section class="pas-validation-card is-{{ resumen_formacion.estado }}">
+                            <div class="pas-score-ring">
+                                <strong>{{ resumen_formacion.puntos }}</strong>
+                                <span>pts</span>
+                            </div>
+                            <div>
+                                <span class="pas-eyebrow">Semáforo de validación de formación</span>
+                                <h2>{{ resumen_formacion.titulo }}</h2>
+                                <p>{{ resumen_formacion.detalle }}</p>
+                            </div>
+                        </section>
+
+                        <div class="pas-period-definition">
+                            <i class="bi bi-calendar3" aria-hidden="true"></i>
+                            <span>
+                                Períodos de {{ resumen_formacion.duracion_dias }} días corridos desde
+                                <strong>{{ resumen_formacion.inicio_base|date:"d/m/Y" }}</strong>
+                            </span>
+                        </div>
+                        <section class="pas-formation-metrics">
+                            <div>
+                                <span>Puntos acumulados</span>
+                                <strong>{{ resumen_formacion.puntos }}</strong>
+                                <small>/ {{ resumen_formacion.objetivo }} requeridos</small>
+                            </div>
+                            <div>
+                                <span>Día del período</span>
+                                <strong>{{ resumen_formacion.dia_actual }}</strong>
+                                <small>
+                                    / {{ resumen_formacion.duracion_dias }} · inició
+                                    {{ resumen_formacion.inicio_actual|date:"d/m/Y" }}
+                                </small>
+                            </div>
+                            <div>
+                                <span>Crédito excedente</span>
+                                <strong>+{{ resumen_formacion.excedente }}</strong>
+                                <small>para próximo período</small>
+                            </div>
+                        </section>
+
+                        <section class="pas-panel pas-formation-courses">
+                            <div class="pas-formation-table-heading">
+                                <div>
+                                    <h2>Cursos registrados</h2>
+                                    <span>{{ persona_seleccionada.apellidos }}, {{ persona_seleccionada.nombres }} · DNI {{ persona_seleccionada.dni }}</span>
+                                </div>
+                                <span class="pas-source-chip is-pending">
+                                    <i class="bi bi-cloud-slash" aria-hidden="true"></i>
+                                    Fuente pendiente
+                                </span>
+                            </div>
+                            <div class="pas-table-wrap">
+                                <table class="pas-table pas-formation-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Curso</th>
+                                            <th>Inicio</th>
+                                            <th>Fin</th>
+                                            <th>Progreso</th>
+                                            <th>Puntos</th>
+                                            <th>Estado</th>
+                                            <th>Certificado</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for formacion in formaciones_pas %}
+                                            <tr>
+                                                <td>
+                                                    <strong>{{ formacion.curso }}</strong>
+                                                    <span class="pas-cell-secondary">{{ formacion.fuente }}</span>
+                                                </td>
+                                                <td>{{ formacion.inicio|date:"d/m/Y"|default:"-" }}</td>
+                                                <td>{{ formacion.fin|date:"d/m/Y"|default:"-" }}</td>
+                                                <td>
+                                                    <div class="pas-progress-cell">
+                                                        <span class="pas-progress-track">
+                                                            <span style="width: {{ formacion.progreso }}%"></span>
+                                                        </span>
+                                                        <strong>{{ formacion.progreso }}%</strong>
+                                                    </div>
+                                                </td>
+                                                <td class="pas-monospace">{{ formacion.puntos }} pts</td>
+                                                <td>
+                                                    <span class="pas-training-status is-{{ formacion.estado_codigo }}">{{ formacion.estado }}</span>
+                                                </td>
+                                                <td>
+                                                    {% if formacion.certificado_url %}
+                                                        <a href="{{ formacion.certificado_url }}">Descargar</a>
+                                                    {% else %}
+                                                        <span class="pas-cell-secondary">Sin dato</span>
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                        {% empty %}
+                                            <tr>
+                                                <td colspan="7">
+                                                    <div class="pas-empty-state">
+                                                        <i class="bi bi-mortarboard" aria-hidden="true"></i>
+                                                        <strong>La fuente de formación todavía no está integrada</strong>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </section>
+                    {% else %}
+                        <section class="pas-panel">
+                            <div class="pas-empty-state pas-empty-state-large">
+                                <i class="bi bi-person-x" aria-hidden="true"></i>
+                                <strong>No hay un titular seleccionado</strong>
+                                <span>Ajustá los filtros para consultar su formación.</span>
+                            </div>
+                        </section>
+                    {% endif %}
+                </div>
+            </section>
+        {% elif area_key == "cruces" %}
+            <section class="pas-circuit-card">
+                <div class="pas-circuit-heading">
+                    <div>
+                        <h2>Circuito administrativo mensual</h2>
+                        <span>Período {{ circuito.periodo|date:"m/Y" }} · {{ total_padron }} titulares incluidos</span>
+                    </div>
+                    {% if perms.pas.change_paspersona %}
+                        <div class="pas-circuit-actions">
+                            <form method="post"
+                                  action="{% url 'pas_cruces_exportar_sintys' %}"
+                                  id="pas-export-sintys-form">
+                                {% csrf_token %}
+                                <button type="submit" class="btn pas-primary-action">
+                                    <i class="bi bi-arrow-up" aria-hidden="true"></i>
+                                    Exportar a SINTyS (VIAS)
+                                </button>
+                            </form>
+                            <form method="post"
+                                  enctype="multipart/form-data"
+                                  action="{% url 'pas_cruces_importar_sintys' %}"
+                                  class="pas-import-form"
+                                  id="pas-import-sintys-form">
+                                {% csrf_token %}
+                                <label class="btn pas-secondary-action" for="id_archivo">
+                                    <i class="bi bi-arrow-down" aria-hidden="true"></i>
+                                    Importar retorno
+                                </label>
+                                {{ retorno_sintys_form.archivo }}
+                                <button type="submit" class="visually-hidden">Confirmar importación</button>
+                            </form>
+                        </div>
+                    {% endif %}
+                </div>
+                <ol class="pas-circuit-steps">
+                    {% for etapa in etapas_circuito %}
+                        <li class="{% if etapa.completada %}is-complete{% else %}is-pending{% endif %}">
+                            <span class="pas-stage-marker">
+                                {% if etapa.completada %}
+                                    <i class="bi bi-check-lg" aria-hidden="true"></i>
+                                {% else %}
+                                    {{ etapa.numero }}
+                                {% endif %}
+                            </span>
+                            <strong>{{ etapa.nombre }}</strong>
+                            {% if etapa.completada %}
+                                <time datetime="{{ etapa.fecha|date:'c' }}">{{ etapa.fecha|date:"d/m/Y H:i" }}</time>
+                            {% else %}
+                                <span class="pas-stage-status">Pendiente</span>
+                                {% if etapa.integracion_pendiente %}<small>Integración no disponible</small>{% endif %}
+                            {% endif %}
+                        </li>
+                    {% endfor %}
+                </ol>
+            </section>
+
+            <section class="pas-cross-source-grid" aria-label="Estado de fuentes externas">
+                <div class="pas-source-renaper">
+                    <span>Supervivencia (RENAPER)</span>
+                    <div class="pas-renaper-actions">
+                        {% if resumen_renaper.fecha %}
+                            <strong class="{% if resumen_renaper.errores %}has-errors{% else %}is-synced{% endif %}">
+                                Actualizado {{ resumen_renaper.fecha|date:"d/m/Y" }}
+                                · {{ resumen_renaper.total }} control{{ resumen_renaper.total|pluralize:"es" }}
+                            </strong>
+                        {% else %}
+                            <strong>Sin ejecución registrada</strong>
+                        {% endif %}
+                        {% if perms.pas.change_paspersona %}
+                            <form method="post"
+                                  action="{% url 'pas_cruces_actualizar_renaper' %}"
+                                  id="pas-renaper-update-form">
+                                {% csrf_token %}
+                                <button type="submit" class="pas-renaper-update-button">
+                                    <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>
+                                    Actualizar
+                                </button>
+                            </form>
+                        {% endif %}
+                    </div>
+                </div>
+                <div>
+                    <span>Ingresos (AFIP / Empleo)</span><strong>Pendiente de API</strong>
+                </div>
+                <div>
+                    <span>Patrimonio (DNRPA / CNPB)</span><strong>Pendiente de API</strong>
+                </div>
+                <div>
+                    <span>Situación penal (M. Justicia)</span><strong>Pendiente de FTP</strong>
+                </div>
+                <div>
+                    <span>Cuentas BNA sin movimiento</span><strong>Pendiente de API</strong>
+                </div>
+                <div>
+                    <span>Migraciones — traslados ext.</span><strong>Pendiente de API</strong>
+                </div>
+            </section>
+
+            <section class="pas-panel pas-alerts-panel">
+                <div class="pas-section-heading">
+                    <div>
+                        <span class="pas-eyebrow">Incompatibilidades detectadas</span>
+                        <h2>Bandeja de alertas</h2>
+                    </div>
+                    <span class="pas-source-chip is-pending">
+                        {{ incompatibilidades|length }} pendiente{{ incompatibilidades|length|pluralize:"s" }}
+                    </span>
+                </div>
+                {% if incompatibilidades %}
+                    <div class="pas-table-wrap">
+                        <table class="pas-table pas-incompatibility-table">
+                            <thead>
+                                <tr>
+                                    <th>Titular</th>
+                                    <th>DNI</th>
+                                    <th>Categoría</th>
+                                    <th>Detalle</th>
+                                    <th>Detección</th>
+                                    <th>Impacta en</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for incompatibilidad in incompatibilidades %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ incompatibilidad.persona.apellidos }}, {{ incompatibilidad.persona.nombres }}</strong>
+                                        </td>
+                                        <td class="pas-monospace">{{ incompatibilidad.persona.dni }}</td>
+                                        <td>
+                                            <span class="pas-training-status is-suspendida">{{ incompatibilidad.get_categoria_display }}</span>
+                                        </td>
+                                        <td>{{ incompatibilidad.detalle }}</td>
+                                        <td>{{ incompatibilidad.fecha_deteccion|date:"d/m/Y H:i" }}</td>
+                                        <td>{{ incompatibilidad.periodo_impacto|date:"m/Y" }}</td>
+                                        <td>
+                                            <span class="pas-stage-status">{{ incompatibilidad.get_estado_display }}</span>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="pas-empty-state pas-empty-state-large">
+                        <i class="bi bi-shield-check" aria-hidden="true"></i>
+                        <strong>Sin incompatibilidades de supervivencia</strong>
+                        <span>Los resultados RENAPER fallecidos impactarán aquí para el período siguiente.</span>
+                    </div>
+                {% endif %}
+            </section>
+        {% elif area_key == "mesa-ayuda" %}
+            <section class="pas-panel">
+                <div class="pas-section-heading">
+                    <div>
+                        <span class="pas-eyebrow">Reclamos y atención</span>
+                        <h2>Bandeja de tickets</h2>
+                    </div>
+                </div>
+                <div class="pas-empty-state pas-empty-state-large">
+                    <i class="bi bi-chat-square-text" aria-hidden="true"></i>
+                    <strong>Sin tickets vinculados</strong>
+                    <span>La identificación, conversación, adjuntos y estados dependerán de la API de Mesa de Ayuda.</span>
+                </div>
+            </section>
+        {% else %}
+            <section class="pas-metrics">
+                <div>
+                    <span>Padrón PAS</span><strong>{{ total_padron }}</strong>
+                </div>
+                <div>
+                    <span>Preliquidación</span><strong>No iniciada</strong>
+                </div>
+                <div>
+                    <span>Nómina disponible</span><strong>No</strong>
+                </div>
+            </section>
+            <section class="pas-panel">
+                <div class="pas-section-heading">
+                    <div>
+                        <span class="pas-eyebrow">Validaciones previas</span>
+                        <h2>Motor de liquidación</h2>
+                    </div>
+                </div>
+                <div class="pas-empty-state pas-empty-state-large">
+                    <i class="bi bi-cash-stack" aria-hidden="true"></i>
+                    <strong>Liquidación bloqueada</strong>
+                    <span>Faltan reglas confirmadas de FCH, DDJJ, incompatibilidades y el formato definitivo de nómina.</span>
+                </div>
+            </section>
+        {% endif %}
+    </main>
+{% endblock %}
+{% block customJS %}
+    {{ block.super }}
+    {% if area_key == "formacion" %}
+        <script nonce="{{ request.csp_nonce }}">
+            document.addEventListener("DOMContentLoaded", function () {
+                const ahora = new Date();
+                const proximoDia = new Date(
+                    ahora.getFullYear(),
+                    ahora.getMonth(),
+                    ahora.getDate() + 1,
+                    0,
+                    0,
+                    5,
+                );
+                window.setTimeout(function () {
+                    window.location.reload();
+                }, proximoDia.getTime() - ahora.getTime());
+            });
+        </script>
+    {% elif area_key == "cruces" %}
+        <script nonce="{{ request.csp_nonce }}">
+            document.addEventListener("DOMContentLoaded", function () {
+                const exportForm = document.getElementById("pas-export-sintys-form");
+                const importForm = document.getElementById("pas-import-sintys-form");
+
+                if (exportForm) {
+                    exportForm.addEventListener("submit", async function (event) {
+                        event.preventDefault();
+                        const button = exportForm.querySelector("button[type='submit']");
+                        button.disabled = true;
+                        try {
+                            const response = await fetch(exportForm.action, {
+                                method: "POST",
+                                body: new FormData(exportForm),
+                                credentials: "same-origin",
+                            });
+                            if (!response.ok) throw new Error("No se pudo generar la nómina.");
+                            const blob = await response.blob();
+                            const disposition = response.headers.get("Content-Disposition") || "";
+                            const match = disposition.match(/filename="([^"]+)"/);
+                            const link = document.createElement("a");
+                            link.href = URL.createObjectURL(blob);
+                            link.download = match ? match[1] : "nomina_pas_sintys.xlsx";
+                            document.body.appendChild(link);
+                            link.click();
+                            link.remove();
+                            URL.revokeObjectURL(link.href);
+                            window.location.reload();
+                        } catch (error) {
+                            button.disabled = false;
+                            window.alert(error.message);
+                        }
+                    });
+                }
+
+                if (importForm) {
+                    const input = importForm.querySelector("input[type='file']");
+                    input.addEventListener("change", function () {
+                        if (input.files.length) importForm.submit();
+                    });
+                }
+
+                const renaperForm = document.getElementById("pas-renaper-update-form");
+                if (renaperForm) {
+                    renaperForm.addEventListener("submit", function (event) {
+                        const confirmed = window.confirm(
+                            "Se consultará todo el padrón PAS contra RENAPER. ¿Continuar?",
+                        );
+                        if (!confirmed) {
+                            event.preventDefault();
+                            return;
+                        }
+                        const button = renaperForm.querySelector("button[type='submit']");
+                        button.disabled = true;
+                        button.innerHTML = '<span class="spinner-border spinner-border-sm" aria-hidden="true"></span> Actualizando';
+                    });
+                }
+            });
+        </script>
+    {% endif %}
+{% endblock %}
