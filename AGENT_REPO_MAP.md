@@ -571,6 +571,11 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
   ventana y autorización operativa.
 - Diseño y runbook: `docs/plans/2026-09-01-reparacion-mojibake-datos-design.md`
   y `docs/registro/cambios/2026-09-01-reparacion-mojibake-datos.md`.
+- La variante capitalizada (`ã` más una continuación que reconstruye una letra
+  mayúscula) usa el mismo comando y requiere un nuevo dry-run después de
+  desplegar el correctivo; ver
+  `docs/plans/2026-09-01-reparacion-mojibake-capitalizado-design.md` y
+  `docs/registro/cambios/2026-09-01-reparacion-mojibake-capitalizado.md`.
 
 ### Si necesitas cambiar OCR / procesamiento documental
 
