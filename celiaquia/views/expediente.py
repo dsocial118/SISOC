@@ -1166,8 +1166,12 @@ class ExpedienteDetailView(DetailView):
                 filter=Q(revision_tecnico="APROBADO", resultado_sintys="NO_MATCH"),
             ),
             c_subsanar=Count("id", filter=Q(revision_tecnico=RevisionTecnico.SUBSANAR)),
+            c_total=Count("id"),
         )
         ctx["hay_subsanar"] = counts["c_subsanar"] > 0
+        # Total de legajos del expediente. Sale del mismo aggregate que los
+        # conteos por estado, así que no agrega consultas.
+        ctx["legajos_total"] = counts["c_total"]
         ctx["legajos_aceptados"] = q.filter(
             revision_tecnico="APROBADO", resultado_sintys="MATCH"
         )

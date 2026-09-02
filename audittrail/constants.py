@@ -110,6 +110,15 @@ def get_tracked_model_definitions():
             excluded_fields=("password",),
             optional_excluded_fields=("last_login",),
         ),
+        TrackedModelDefinition(
+            label="Encuesta",
+            model_getter=_model_getter("encuestas.models.Encuesta"),
+            excluded_fields=("fecha_creacion", "fecha_ultima_modificacion"),
+        ),
+        TrackedModelDefinition(
+            label="Ronda de encuesta",
+            model_getter=_model_getter("encuestas.models.RondaEncuesta"),
+        ),
     )
 
 

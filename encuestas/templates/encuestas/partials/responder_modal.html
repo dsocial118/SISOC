@@ -1,0 +1,63 @@
+{% comment %}
+Modal de encuesta pendiente, incluido globalmente desde
+templates/includes/base.html cuando el context processor
+encuestas.context_processors.ronda_pendiente resuelve una ronda para el
+usuario logueado.
+
+No usa components/modal.html: ese componente renderiza `content`/`form` como
+un bloque ya armado, y acá necesitamos iterar las preguntas de la encuesta
+con lógica condicional propia (data-condicion-*, ver
+static/custom/js/encuestaPendienteModal.js). Se mantiene la misma estructura
+y clases de Bootstrap 5 que el componente para que se vea y comporte igual.
+{% endcomment %}
+<div class="modal fade"
+     id="modal-encuesta-pendiente"
+     tabindex="-1"
+     aria-labelledby="modal-encuesta-pendiente-label"
+     aria-hidden="true"
+     {% if ronda_pendiente.encuesta.es_obligatoria %}data-bs-backdrop="static" data-bs-keyboard="false"{% endif %}>
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modal-encuesta-pendiente-label">{{ ronda_pendiente.encuesta.titulo }}</h5>
+                {% if not ronda_pendiente.encuesta.es_obligatoria %}
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Cerrar"></button>
+                {% endif %}
+            </div>
+            <div class="modal-body">
+                {% if ronda_pendiente.encuesta.descripcion %}<p class="text-muted">{{ ronda_pendiente.encuesta.descripcion }}</p>{% endif %}
+                <form method="post"
+                      action="{% url 'encuestas_responder' ronda_pendiente.pk %}"
+                      id="form-responder-encuesta">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ request.path }}" />
+                    {% for pregunta in ronda_pendiente.encuesta.preguntas.all %}
+                        <div class="mb-3 pregunta-respuesta"
+                             data-orden="{{ pregunta.orden }}"
+                             {% if pregunta.pregunta_condicion_id %} data-condicion-orden="{{ pregunta.pregunta_condicion.orden }}" data-condicion-operador="{{ pregunta.operador_condicion }}" data-condicion-valor="{{ pregunta.valor_condicion }}" {% endif %}>
+                            <label class="form-label">
+                                {{ pregunta.texto }}
+                                {% if pregunta.obligatoria %}<span class="text-danger">*</span>{% endif %}
+                            </label>
+                            {% include "encuestas/partials/campo_pregunta.html" with pregunta=pregunta %}
+                        </div>
+                    {% endfor %}
+                </form>
+            </div>
+            <div class="modal-footer">
+                {% if not ronda_pendiente.encuesta.es_obligatoria %}
+                    <form method="post"
+                          action="{% url 'encuestas_responder_mas_tarde' ronda_pendiente.pk %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="next" value="{{ request.path }}" />
+                        <button type="submit" class="btn btn-outline-secondary">Responder más tarde</button>
+                    </form>
+                {% endif %}
+                <button type="submit" form="form-responder-encuesta" class="btn btn-primary">Responder</button>
+            </div>
+        </div>
+    </div>
+</div>

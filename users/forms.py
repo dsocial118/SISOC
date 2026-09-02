@@ -164,16 +164,18 @@ class TerritorialScopeFormMixin:
             return cleaned
 
         scopes = cleaned.get("territorial_scopes_data", [])
-        has_single_full_province = (
+        has_only_full_provinces = (
             cleaned.get("es_usuario_provincial")
-            and len(scopes) == 1
-            and scopes[0].get("municipio_id") is None
-            and scopes[0].get("localidad_id") is None
+            and bool(scopes)
+            and all(
+                scope.get("municipio_id") is None and scope.get("localidad_id") is None
+                for scope in scopes
+            )
         )
-        if not has_single_full_province:
+        if not has_only_full_provinces:
             self.add_error(
                 "territorial_scopes",
-                "El grupo SIMEPI - EGP requiere exactamente una provincia completa.",
+                "El grupo SIMEPI - EGP requiere al menos una provincia completa.",
             )
         return cleaned
 
