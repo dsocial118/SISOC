@@ -3,6 +3,12 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 
+from celiaquia.comentarios_tecnicos import (
+    CODIGO_OTROS,
+    MAX_LEN_CODIGO_OBSERVACION,
+    MAX_LEN_TIPO_DOCUMENTO,
+    TipoDocumentoComentario,
+)
 from ciudadanos.models import Ciudadano
 from core.models import Provincia
 from core.soft_delete import SoftDeleteModelMixin
@@ -1110,6 +1116,7 @@ class HistorialComentarios(models.Model):
     TIPO_OBSERVACION_GENERAL = "OBSERVACION_GENERAL"
     TIPO_CRUCE_SINTYS = "CRUCE_SINTYS"
     TIPO_PAGO_OBSERVACION = "PAGO_OBSERVACION"
+    TIPO_COMENTARIO_TECNICO = "COMENTARIO_TECNICO"
 
     TIPO_COMENTARIO_CHOICES = [
         (TIPO_VALIDACION_TECNICA, "Validación Técnica"),
@@ -1119,6 +1126,7 @@ class HistorialComentarios(models.Model):
         (TIPO_OBSERVACION_GENERAL, "Observación General"),
         (TIPO_CRUCE_SINTYS, "Cruce SINTYS"),
         (TIPO_PAGO_OBSERVACION, "Observación de Pago"),
+        (TIPO_COMENTARIO_TECNICO, "Comentario Técnico"),
     ]
 
     legajo = models.ForeignKey(
@@ -1153,6 +1161,44 @@ class HistorialComentarios(models.Model):
         help_text="Comentario interno: visible solo para usuarios de Nación",
     )
 
+    # Campos del comentario técnico estructurado (tipo COMENTARIO_TECNICO).
+    # Nulos en el resto de los tipos de comentario y en las filas previas.
+    tipo_documento = models.CharField(
+        max_length=MAX_LEN_TIPO_DOCUMENTO,
+        choices=TipoDocumentoComentario.choices,
+        null=True,
+        blank=True,
+        help_text="Tipo de documento revisado (solo en comentarios técnicos)",
+    )
+    tiene_observaciones = models.BooleanField(
+        null=True,
+        blank=True,
+        help_text="Sí/No de la revisión. Solo las que son Sí se publican a Provincia",
+    )
+    # Sin `choices`: la validez del código depende del tipo de documento, cosa
+    # que un choices plano no puede expresar. La valida
+    # `ComentariosTecnicosService` contra `comentarios_tecnicos.py`, y así los
+    # retoques de redacción del catálogo no generan migraciones.
+    observacion_codigo = models.CharField(
+        max_length=MAX_LEN_CODIGO_OBSERVACION,
+        null=True,
+        blank=True,
+        help_text="Código de la observación del catálogo ('OTROS' = texto libre)",
+    )
+    publicado_en = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Fecha en que el comentario dejó de ser interno y se publicó",
+    )
+    publicado_por = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="comentarios_publicados",
+        help_text="Usuario que publicó el comentario a la Provincia",
+    )
+
     class Meta:
         verbose_name = "Historial de Comentarios"
         verbose_name_plural = "Historial de Comentarios"
@@ -1161,7 +1207,20 @@ class HistorialComentarios(models.Model):
             models.Index(fields=["legajo", "-fecha_creacion"]),
             models.Index(fields=["tipo_comentario", "-fecha_creacion"]),
             models.Index(fields=["usuario", "-fecha_creacion"]),
+            models.Index(
+                fields=["legajo", "tipo_comentario", "tiene_observaciones"],
+                name="hist_com_leg_tipo_obs_idx",
+            ),
         ]
 
     def __str__(self):
         return f"{self.legajo} - {self.get_tipo_comentario_display()} ({self.fecha_creacion:%Y-%m-%d %H:%M})"
+
+    @property
+    def es_comentario_tecnico(self) -> bool:
+        return self.tipo_comentario == self.TIPO_COMENTARIO_TECNICO
+
+    @property
+    def observacion_es_libre(self) -> bool:
+        """True si la observación se redactó a mano en lugar de elegirse del catálogo."""
+        return self.observacion_codigo == CODIGO_OTROS
