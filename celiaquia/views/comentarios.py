@@ -4,9 +4,10 @@ from django.http import JsonResponse, HttpResponseNotAllowed
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_protect
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
 
 from celiaquia.models import ExpedienteCiudadano, HistorialComentarios
+from celiaquia.services.comentarios_tecnicos_service import ComentariosTecnicosService
 from iam.services import user_has_permission_code
 from users.territorial_scope import is_territorial_user, user_can_access_territory
 
@@ -38,6 +39,13 @@ def _user_has_permission_cached(user, permission_code):
 ALLOWED_UPLOAD_TYPES = {"application/pdf", "image/jpeg", "image/png"}
 MAX_UPLOAD_MB = 5
 
+#: Tipos de comentario que se listan en el panel del legajo.
+TIPOS_LISTABLES = [
+    HistorialComentarios.TIPO_OBSERVACION_GENERAL,
+    HistorialComentarios.TIPO_VALIDACION_TECNICA,
+    HistorialComentarios.TIPO_COMENTARIO_TECNICO,
+]
+
 
 def _provincia_can_access_comment_legajo(user, legajo) -> bool:
     if not is_territorial_user(user):
@@ -64,46 +72,127 @@ def _provincia_can_access_comment_legajo(user, legajo) -> bool:
     )
 
 
+def _resolver_legajo_para_nacion(request, expediente_id, legajo_id):
+    """Valida que el usuario sea Nación con acceso al legajo.
+
+    Devuelve ``(legajo, None)`` cuando puede operar, o ``(None, JsonResponse)``
+    con el error a devolver. Centraliza el chequeo que comparten las tres vistas
+    de comentarios técnicos.
+    """
+    user = request.user
+
+    if not user.is_authenticated:
+        return None, JsonResponse(
+            {"success": False, "message": "Autenticación requerida."}, status=403
+        )
+
+    is_admin = user.is_superuser
+    is_coord = _has_permission(user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION)
+    is_tec = _has_permission(user, ROLE_TECNICO_CELIAQUIA_PERMISSION)
+
+    if not (is_admin or is_coord or is_tec):
+        return None, JsonResponse(
+            {"success": False, "message": "Permiso denegado."}, status=403
+        )
+
+    legajo = get_object_or_404(
+        ExpedienteCiudadano, pk=legajo_id, expediente__pk=expediente_id
+    )
+
+    # Validar que el técnico esté asignado
+    if is_tec and not (is_admin or is_coord):
+        if not legajo.expediente.asignaciones_tecnicos.filter(tecnico=user).exists():
+            return None, JsonResponse(
+                {
+                    "success": False,
+                    "message": "No sos el técnico asignado a este expediente.",
+                },
+                status=403,
+            )
+
+    return legajo, None
+
+
+def _serializar_comentario(comentario, es_provincia=None):
+    """Representación JSON de un comentario del panel del legajo."""
+    if es_provincia is None:
+        es_provincia = _user_has_permission_cached(
+            comentario.usuario, ROLE_PROVINCIA_CELIAQUIA_PERMISSION
+        )
+    return {
+        "id": comentario.pk,
+        "texto": comentario.comentario,
+        "usuario": (
+            comentario.usuario.get_full_name() or comentario.usuario.username
+            if comentario.usuario
+            else "Sistema"
+        ),
+        "fecha": comentario.fecha_creacion.strftime("%d/%m/%Y %H:%M"),
+        "tiene_archivo": bool(comentario.archivo_adjunto),
+        "archivo_url": (
+            comentario.archivo_adjunto.url if comentario.archivo_adjunto else None
+        ),
+        "es_provincia": es_provincia,
+        "es_interno": comentario.es_interno,
+        # Campos del comentario técnico estructurado (nulos en el resto).
+        "es_comentario_tecnico": comentario.es_comentario_tecnico,
+        "tipo_documento": comentario.tipo_documento,
+        "tipo_documento_display": comentario.get_tipo_documento_display(),
+        "tiene_observaciones": comentario.tiene_observaciones,
+        "observacion_codigo": comentario.observacion_codigo,
+        "publicado_en": (
+            comentario.publicado_en.strftime("%d/%m/%Y %H:%M")
+            if comentario.publicado_en
+            else None
+        ),
+    }
+
+
 class LegajoComentarioCreateView(View):
-    """Agregar comentario técnico a un legajo"""
+    """Agregar comentario técnico a un legajo.
+
+    Acepta dos formatos: el comentario técnico estructurado del issue #2318
+    (cuando llega `tipo_documento`) y el comentario libre previo, que se
+    conserva para no romper a los consumidores existentes del endpoint.
+    """
 
     @method_decorator(csrf_protect)
     def post(self, request, expediente_id, legajo_id):
-        user = request.user
+        legajo, error = _resolver_legajo_para_nacion(request, expediente_id, legajo_id)
+        if error:
+            return error
 
-        if not user.is_authenticated:
+        if (request.POST.get("tipo_documento") or "").strip():
+            return self._crear_comentario_tecnico(request, legajo)
+        return self._crear_comentario_libre(request, legajo)
+
+    def _crear_comentario_tecnico(self, request, legajo):
+        """Alta estructurada: tipo de documento + Sí/No + observación."""
+        try:
+            comentario = ComentariosTecnicosService.registrar(
+                legajo,
+                tipo_documento=request.POST.get("tipo_documento"),
+                tiene_observaciones=request.POST.get("tiene_observaciones"),
+                observacion_codigo=request.POST.get("observacion_codigo"),
+                observacion_libre=request.POST.get("observacion_libre", ""),
+                usuario=request.user,
+            )
+        except ValidationError as exc:
             return JsonResponse(
-                {"success": False, "message": "Autenticación requerida."},
-                status=403,
+                {"success": False, "message": "; ".join(exc.messages)}, status=400
             )
 
-        is_admin = user.is_superuser
-        is_coord = _has_permission(user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION)
-        is_tec = _has_permission(user, ROLE_TECNICO_CELIAQUIA_PERMISSION)
-
-        if not (is_admin or is_coord or is_tec):
-            return JsonResponse(
-                {"success": False, "message": "Permiso denegado."},
-                status=403,
-            )
-
-        legajo = get_object_or_404(
-            ExpedienteCiudadano, pk=legajo_id, expediente__pk=expediente_id
+        return JsonResponse(
+            {
+                "success": True,
+                "message": "Comentario técnico guardado correctamente.",
+                "comentario": _serializar_comentario(comentario, es_provincia=False),
+            }
         )
 
-        # Validar que el técnico esté asignado
-        if is_tec and not (is_admin or is_coord):
-            if not legajo.expediente.asignaciones_tecnicos.filter(
-                tecnico=user
-            ).exists():
-                return JsonResponse(
-                    {
-                        "success": False,
-                        "message": "No sos el técnico asignado a este expediente.",
-                    },
-                    status=403,
-                )
-
+    def _crear_comentario_libre(self, request, legajo):
+        """Alta previa al issue #2318: texto libre con archivo opcional."""
+        user = request.user
         comentario_texto = request.POST.get("comentario", "").strip()
         if not comentario_texto:
             return JsonResponse(
@@ -133,7 +222,6 @@ class LegajoComentarioCreateView(View):
                     status=400,
                 )
 
-        # Crear comentario
         comentario = HistorialComentarios.objects.create(
             legajo=legajo,
             tipo_comentario=HistorialComentarios.TIPO_OBSERVACION_GENERAL,
@@ -154,22 +242,12 @@ class LegajoComentarioCreateView(View):
             {
                 "success": True,
                 "message": "Comentario agregado correctamente.",
-                "comentario": {
-                    "id": comentario.pk,
-                    "texto": comentario.comentario,
-                    "usuario": user.get_full_name() or user.username,
-                    "fecha": comentario.fecha_creacion.strftime("%d/%m/%Y %H:%M"),
-                    "tiene_archivo": bool(comentario.archivo_adjunto),
-                    "archivo_url": (
-                        comentario.archivo_adjunto.url
-                        if comentario.archivo_adjunto
-                        else None
-                    ),
-                    "es_provincia": _has_permission(
+                "comentario": _serializar_comentario(
+                    comentario,
+                    es_provincia=_has_permission(
                         user, ROLE_PROVINCIA_CELIAQUIA_PERMISSION
                     ),
-                    "es_interno": comentario.es_interno,
-                },
+                ),
             }
         )
 
@@ -229,10 +307,7 @@ class LegajoComentarioListView(View):
                 )
 
         comentarios_qs = legajo.historial_comentarios.filter(
-            tipo_comentario__in=[
-                HistorialComentarios.TIPO_OBSERVACION_GENERAL,
-                HistorialComentarios.TIPO_VALIDACION_TECNICA,
-            ]
+            tipo_comentario__in=TIPOS_LISTABLES
         )
 
         # Los comentarios internos solo son visibles para Nación. Un usuario
@@ -242,27 +317,48 @@ class LegajoComentarioListView(View):
         if not es_nacion:
             comentarios_qs = comentarios_qs.filter(es_interno=False)
 
-        comentarios = (
+        comentarios = list(
             comentarios_qs.select_related("usuario")
             .prefetch_related("usuario__groups")
             .order_by("-fecha_creacion")
         )
 
-        data = [
-            {
-                "id": c.pk,
-                "texto": c.comentario,
-                "usuario": c.usuario.get_full_name() if c.usuario else "Sistema",
-                "fecha": c.fecha_creacion.strftime("%d/%m/%Y %H:%M"),
-                "tiene_archivo": bool(c.archivo_adjunto),
-                "archivo_url": c.archivo_adjunto.url if c.archivo_adjunto else None,
-                "es_provincia": _user_has_permission_cached(
-                    c.usuario,
-                    ROLE_PROVINCIA_CELIAQUIA_PERMISSION,
-                ),
-                "es_interno": c.es_interno,
-            }
-            for c in comentarios
-        ]
+        # Nación ve el historial completo, incluidas las observaciones repetidas.
+        # A la Provincia se le muestra una sola vez cada observación publicada.
+        if not es_nacion:
+            tecnicos = [c for c in comentarios if c.es_comentario_tecnico]
+            resto = [c for c in comentarios if not c.es_comentario_tecnico]
+            comentarios = sorted(
+                resto + ComentariosTecnicosService.deduplicar(tecnicos),
+                key=lambda c: c.fecha_creacion,
+                reverse=True,
+            )
+
+        data = [_serializar_comentario(c) for c in comentarios]
 
         return JsonResponse({"success": True, "comentarios": data})
+
+
+class LegajoMotivoPreviewView(View):
+    """Previsualización del motivo de Subsanar/Rechazar.
+
+    Devuelve la concatenación de las observaciones técnicas del legajo para que
+    los modales la muestren. Es solo una vista previa: al confirmar, el motivo
+    se vuelve a calcular en el backend (`RevisarLegajoView`), que es la fuente
+    de verdad.
+    """
+
+    def get(self, request, expediente_id, legajo_id):
+        legajo, error = _resolver_legajo_para_nacion(request, expediente_id, legajo_id)
+        if error:
+            return error
+
+        lineas = ComentariosTecnicosService.lineas_concatenadas(legajo)
+        return JsonResponse(
+            {
+                "success": True,
+                "lineas": lineas,
+                "motivo": ComentariosTecnicosService.texto_concatenado(legajo),
+                "tiene_observaciones": bool(lineas),
+            }
+        )
