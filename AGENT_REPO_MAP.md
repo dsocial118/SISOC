@@ -559,6 +559,24 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - Los productores CSV nuevos deben reutilizar la política central; el guard
   vive en `tests/test_csv_export_architecture.py`.
 
+### Si necesitas auditar o reparar mojibake en datos
+
+- Reparación conservadora compartida: `core/services/text_encoding.py`.
+- Prevención en RENAPER: `core/integrations/renaper.py`; el JSON se decodifica
+  desde bytes UTF-8 y el payload se normaliza antes de persistirse.
+- Auditoría read-only de campos explícitos: `python manage.py
+  audit_utf8_mojibake --field app.Model.campo`.
+- Reparación focalizada de nombres y apellidos: `python manage.py
+  repair_utf8_mojibake`; es dry-run por defecto y `--apply` requiere backup,
+  ventana y autorización operativa.
+- Diseño y runbook: `docs/plans/2026-09-01-reparacion-mojibake-datos-design.md`
+  y `docs/registro/cambios/2026-09-01-reparacion-mojibake-datos.md`.
+- La variante capitalizada (`ã` más una continuación que reconstruye una letra
+  mayúscula) usa el mismo comando y requiere un nuevo dry-run después de
+  desplegar el correctivo; ver
+  `docs/plans/2026-09-01-reparacion-mojibake-capitalizado-design.md` y
+  `docs/registro/cambios/2026-09-01-reparacion-mojibake-capitalizado.md`.
+
 ### Si necesitas cambiar OCR / procesamiento documental
 
 - `ocr/`
