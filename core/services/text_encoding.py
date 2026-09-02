@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import unicodedata
 from typing import Any
 
 
 MOJIBAKE_MARKERS = ("Ã", "Â", "â", "ð", "ï", "�")
 DEFAULT_MAX_REPAIR_PASSES = 3
+TITLE_CASED_UTF8_LEAD_BYTES = {"ã": 0xC3}
 
 
 def _single_legacy_byte(character: str) -> int | None:
@@ -69,6 +71,37 @@ def _repair_once(text: str) -> tuple[str, bool]:
     return "".join(repaired), changed
 
 
+def _repair_title_cased_once(text: str) -> tuple[str, bool]:
+    """Invierte mojibake capitalizado sólo cuando reconstruye una letra mayúscula."""
+
+    repaired: list[str] = []
+    changed = False
+    index = 0
+
+    while index < len(text):
+        first_byte = TITLE_CASED_UTF8_LEAD_BYTES.get(text[index])
+        if first_byte is not None and index + 1 < len(text):
+            continuation_byte = _single_legacy_byte(text[index + 1])
+            if continuation_byte is not None and 0x80 <= continuation_byte <= 0xBF:
+                try:
+                    decoded = bytes((first_byte, continuation_byte)).decode(
+                        "utf-8", errors="strict"
+                    )
+                except UnicodeDecodeError:
+                    decoded = ""
+                if decoded and unicodedata.category(decoded) == "Lu":
+                    repaired.append(decoded)
+                    index += 2
+                    changed = True
+                    continue
+
+        repaired.append(text[index])
+        index += 1
+
+    result = "".join(repaired)
+    return (result.title() if changed else result), changed
+
+
 def repair_utf8_mojibake(
     text: str, *, max_passes: int = DEFAULT_MAX_REPAIR_PASSES
 ) -> str:
@@ -81,8 +114,9 @@ def repair_utf8_mojibake(
 
     current = text
     for _ in range(max(0, max_passes)):
+        current, title_cased_changed = _repair_title_cased_once(current)
         current, changed = _repair_once(current)
-        if not changed:
+        if not title_cased_changed and not changed:
             break
     return current
 

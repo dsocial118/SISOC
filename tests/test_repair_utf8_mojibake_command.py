@@ -68,6 +68,79 @@ def test_command_apply_repara_por_lotes_y_es_idempotente():
 
 
 @pytest.mark.django_db
+def test_command_repara_mojibake_capitalizado_en_ciudadano_y_nomina():
+    raw_name = "Dariel Lu\u00e3\u0081N"
+    provincia = Provincia.objects.create(nombre="Buenos Aires")
+    centro = CentroDeInfancia.objects.create(
+        nombre="CDI Encoding capitalizado",
+        provincia=provincia,
+    )
+    ciudadano = Ciudadano.objects.create(
+        apellido="Apellido",
+        nombre=raw_name,
+        documento=45000005,
+    )
+    nomina = NominaCentroInfancia.objects.create(
+        centro=centro,
+        ciudadano=ciudadano,
+        apellido="Apellido",
+        nombre=raw_name,
+    )
+
+    dry_run = StringIO()
+    call_command(
+        "repair_utf8_mojibake",
+        "--target",
+        "ciudadano",
+        "--target",
+        "nomina_cdi",
+        stdout=dry_run,
+    )
+
+    ciudadano.refresh_from_db()
+    nomina.refresh_from_db()
+    assert ciudadano.nombre == raw_name
+    assert nomina.nombre == raw_name
+    assert "ciudadano: 1 filas revisadas; 1 filas con cambios reversibles." in (
+        dry_run.getvalue()
+    )
+    assert "nomina_cdi: 1 filas revisadas; 1 filas con cambios reversibles." in (
+        dry_run.getvalue()
+    )
+    assert "Total: 2 filas revisadas, 2 filas con cambios reversibles." in (
+        dry_run.getvalue()
+    )
+
+    call_command(
+        "repair_utf8_mojibake",
+        "--apply",
+        "--target",
+        "ciudadano",
+        "--target",
+        "nomina_cdi",
+        stdout=StringIO(),
+    )
+
+    ciudadano.refresh_from_db()
+    nomina.refresh_from_db()
+    assert ciudadano.nombre == "Dariel Luán"
+    assert nomina.nombre == "Dariel Luán"
+
+    second_run = StringIO()
+    call_command(
+        "repair_utf8_mojibake",
+        "--target",
+        "ciudadano",
+        "--target",
+        "nomina_cdi",
+        stdout=second_run,
+    )
+    assert "Total: 2 filas revisadas, 0 filas con cambios reversibles." in (
+        second_run.getvalue()
+    )
+
+
+@pytest.mark.django_db
 def test_command_puede_limitarse_a_nomina_y_campo():
     provincia = Provincia.objects.create(nombre="Buenos Aires")
     centro = CentroDeInfancia.objects.create(nombre="CDI Encoding", provincia=provincia)

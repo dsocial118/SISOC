@@ -18,6 +18,7 @@ from core.services.text_encoding import (
         ("\u00f0\u0178\u02dc\u20ac", "😀"),
         ("Ángel Jos\u00c3\u00a9", "Ángel José"),
         ("Jos\u00c3\u0192\u00c2\u00a9", "José"),
+        ("Dariel Lu\u00e3\u0081N", "Dariel Luán"),
     ],
 )
 def test_repair_utf8_mojibake_repara_secuencias_validas(raw, expected):
@@ -29,6 +30,8 @@ def test_repair_utf8_mojibake_repara_secuencias_validas(raw, expected):
     [
         "José Muñoz",
         "São Tomé",
+        "João",
+        "Donatto Simón",
         "Nombre \u00c3",
         "Texto con reemplazo \ufffd",
         "Texto ASCII",
