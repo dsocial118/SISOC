@@ -322,7 +322,7 @@
             <div class="row g-3">
                 {% include "centrodeinfancia/_nomina_campo.html" with label="Cobertura de salud" value=nomina.get_cobertura_salud_display %}
                 {% include "centrodeinfancia/_nomina_campo.html" with label="Controles sanitarios" value=nomina.get_controles_sanitarios_ultimo_anio_display %}
-                {% include "centrodeinfancia/_nomina_campo.html" with label="Cal. vacunación al día" value=nomina.calendario_vacunacion_al_dia|yesno:"Sí,No,—" %}
+                {% include "centrodeinfancia/_nomina_campo.html" with label="Cal. vacunación al día" value=nomina.get_calendario_vacunacion_al_dia_display %}
                 {% include "centrodeinfancia/_nomina_campo.html" with label="Posee obra social" value=nomina.posee_obra_social|yesno:"Sí,No,—" %}
                 {% include "centrodeinfancia/_nomina_campo.html" with label="Talla (cm)" value=nomina.talla %}
                 {% include "centrodeinfancia/_nomina_campo.html" with label="Peso (kg)" value=nomina.peso %}
