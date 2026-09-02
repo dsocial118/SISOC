@@ -29,7 +29,7 @@ class UserExportView(AdminRequiredMixin, CSVExportMixin, View):
     def get_queryset(self):
         # Sorting handled by service? Or manually? Service applies standard order.
         # Let's use service for base filtering
-        queryset = UsuariosService.get_filtered_usuarios(self.request)
+        queryset = UsuariosService.get_filtered_usuarios_en_alcance(self.request)
 
         # Apply sorting from request if present
         sort_col = self.request.GET.get("sort")
