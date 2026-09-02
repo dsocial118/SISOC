@@ -106,10 +106,16 @@ def crear_referente_cdi_automaticamente(request, centro):
             "El CDI se guardó, pero no se pudo crear el referente automáticamente.",
         )
     else:
-        messages.success(
-            request,
-            f"Referente «{resultado['user'].username}» creado automáticamente.",
-        )
+        if resultado["email_enviado"]:
+            messages.success(
+                request,
+                f"Referente «{resultado['user'].username}» creado automáticamente y credenciales enviadas.",
+            )
+        else:
+            messages.warning(
+                request,
+                f"Referente «{resultado['user'].username}» creado automáticamente, pero no se pudieron enviar las credenciales por email.",
+            )
 
 
 def _vincular_usuario_trabajador(trabajador, user):
@@ -160,10 +166,17 @@ def crear_usuario_trabajador_automaticamente(request, trabajador):
         )
     else:
         trabajador.usuario = resultado["user"]
-        messages.success(
-            request,
-            f"Usuario de trabajador «{resultado['user'].username}» creado automáticamente.",
-        )
+        if resultado["email_enviado"]:
+            messages.success(
+                request,
+                f"Usuario de trabajador «{resultado['user'].username}» creado automáticamente y credenciales enviadas.",
+            )
+        else:
+            messages.warning(
+                request,
+                f"Usuario de trabajador «{resultado['user'].username}» creado "
+                "automáticamente, pero no se pudieron enviar las credenciales por email.",
+            )
 
 
 def _sincronizar_email_si_cuenta_temporal(request, user, email, tipo_usuario):

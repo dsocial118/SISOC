@@ -375,6 +375,11 @@ server {
         expires 7d;
     }
 
+    # Las DDJJ contienen PII y sólo se descargan por la vista autenticada PAS.
+    location ^~ /media/pas/ddjj/ {
+        return 404;
+    }
+
     location /media/ {
         alias $APP_ROOT/media/;
         try_files \\$uri =404;
@@ -801,6 +806,11 @@ server {
         try_files $uri =404;
         access_log off;
         expires 7d;
+    }
+
+    # Las DDJJ contienen PII y sólo se descargan por la vista autenticada PAS.
+    location ^~ /media/pas/ddjj/ {
+        return 404;
     }
 
     location /media/ {

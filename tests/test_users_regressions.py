@@ -15,6 +15,7 @@ from users.forms import CustomUserChangeForm, UserCreationForm
 from users.models import ProfileTerritorialScope
 from users.services import UsuariosService
 from users.territorial_scope import apply_territorial_scope
+from users.views_export import UserExportView
 
 
 def _create_role_permission(codename: str, name: str) -> Permission:
@@ -435,6 +436,40 @@ def test_user_creation_form_accepts_egp_with_single_province_scope():
 
 
 @pytest.mark.django_db
+def test_user_creation_form_accepts_egp_with_multiple_full_province_scopes():
+    provincias = [
+        Provincia.objects.create(nombre="Provincia EGP A"),
+        Provincia.objects.create(nombre="Provincia EGP B"),
+    ]
+    actor = User.objects.create_user(
+        username="equipo-nacional-multiscope", password="secret"
+    )
+    equipo = Group.objects.create(name=UserGroups.SIMEPI_EQUIPO_NACIONAL)
+    egp = Group.objects.create(name=UserGroups.SIMEPI_EGP)
+    actor.groups.add(equipo)
+    data = _user_form_data(
+        "egp-con-multiscope",
+        [
+            {
+                "provincia_id": provincia.pk,
+                "municipio_id": None,
+                "localidad_id": None,
+            }
+            for provincia in provincias
+        ],
+    )
+    data["groups"] = [egp.pk]
+
+    form = UserCreationForm(actor=actor, data=data)
+
+    assert form.is_valid(), form.errors
+    user = form.save()
+    assert set(
+        user.profile.territorial_scopes.values_list("provincia_id", flat=True)
+    ) == {provincia.pk for provincia in provincias}
+
+
+@pytest.mark.django_db
 def test_user_change_form_no_permite_quitar_scope_a_egp():
     provincia = Provincia.objects.create(nombre="Provincia EGP edición")
     actor = User.objects.create_user(
@@ -542,6 +577,112 @@ def test_user_list_is_scoped_by_actor_delegation_scope():
     assert "visible" in usernames
     assert "hidden_group" not in usernames
     assert "hidden_role" not in usernames
+
+
+@pytest.mark.django_db
+def test_user_list_paginas_de_25_registros(client):
+    actor = User.objects.create_superuser(
+        username="admin-listado-paginado",
+        email="admin-listado-paginado@example.com",
+        password="secret",
+    )
+    User.objects.bulk_create(
+        [User(username=f"usuario-paginado-{numero:02d}") for numero in range(30)]
+    )
+    client.force_login(actor)
+
+    primera_pagina = client.get(reverse("usuarios"))
+    segunda_pagina = client.get(reverse("usuarios"), {"page": "2"})
+
+    assert primera_pagina.status_code == 200
+    assert primera_pagina.context["is_paginated"] is True
+    assert len(primera_pagina.context["users"]) == 25
+    assert segunda_pagina.status_code == 200
+    assert len(segunda_pagina.context["users"]) == 6
+    assert b"page=2" in primera_pagina.content
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "grupo_nacional",
+    [
+        UserGroups.SIMEPI_ADMINISTRADOR,
+        UserGroups.SIMEPI_EQUIPO_NACIONAL,
+    ],
+)
+def test_user_list_nacional_puede_buscar_y_visualizar_todos_los_usuarios(
+    grupo_nacional,
+):
+    request_factory = RequestFactory()
+    grupo = Group.objects.create(name=grupo_nacional)
+    actor = User.objects.create_user(
+        username=f"nacional-{grupo_nacional}", password="secret"
+    )
+    actor.groups.add(grupo)
+    visible = User.objects.create_user(username="usuario-visible-nacional")
+    visible.groups.add(Group.objects.create(name="Grupo fuera de delegación"))
+
+    request = request_factory.get("/usuarios/", {"username": "visible-nacional"})
+    request.user = actor
+    usernames = set(
+        UsuariosService.get_filtered_usuarios(request).values_list(
+            "username", flat=True
+        )
+    )
+
+    assert visible.username in usernames
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "grupo_nacional",
+    [
+        UserGroups.SIMEPI_ADMINISTRADOR,
+        UserGroups.SIMEPI_EQUIPO_NACIONAL,
+    ],
+)
+def test_visibilidad_nacional_no_amplia_el_alcance_de_edicion(
+    client,
+    grupo_nacional,
+):
+    grupo = Group.objects.create(name=grupo_nacional)
+    actor = User.objects.create_user(
+        username=f"editor-nacional-{grupo_nacional}", password="secret"
+    )
+    actor.groups.add(grupo)
+    actor.user_permissions.add(
+        Permission.objects.get(
+            content_type__app_label="auth",
+            codename="change_user",
+        )
+    )
+    fuera_de_alcance = User.objects.create_user(
+        username="usuario-visible-no-editable",
+        password="secret",
+    )
+    client.force_login(actor)
+
+    response = client.get(reverse("usuario_editar", kwargs={"pk": fuera_de_alcance.pk}))
+
+    assert response.status_code == 404
+
+
+@pytest.mark.django_db
+def test_visibilidad_nacional_no_amplia_la_exportacion_de_usuarios():
+    request_factory = RequestFactory()
+    grupo = Group.objects.create(name=UserGroups.SIMEPI_EQUIPO_NACIONAL)
+    actor = User.objects.create_user(username="exportador-nacional", password="secret")
+    actor.groups.add(grupo)
+    fuera_de_alcance = User.objects.create_user(username="usuario-no-exportable")
+    request = request_factory.get("/usuarios/exportar/")
+    request.user = actor
+    view = UserExportView()
+    view.request = request
+
+    usernames = set(view.get_queryset().values_list("username", flat=True))
+
+    assert actor.username in usernames
+    assert fuera_de_alcance.username not in usernames
 
 
 @pytest.mark.django_db
@@ -1137,6 +1278,37 @@ def test_import_egp_existente_sincroniza_scope_provincial():
     assert list(
         existente.profile.territorial_scopes.values_list("provincia_id", flat=True)
     ) == [provincia.pk]
+
+
+@pytest.mark.django_db
+def test_import_egp_sincroniza_multiples_scopes_provinciales():
+    from users.models import UserImportJob
+    from users.services_user_import import process_single_user_import_row
+
+    provincias = [
+        Provincia.objects.create(nombre="Provincia EGP import A"),
+        Provincia.objects.create(nombre="Provincia EGP import B"),
+    ]
+    actor = User.objects.create_user(username="import_equipo_multi", password="x")
+    equipo = Group.objects.create(name=UserGroups.SIMEPI_EQUIPO_NACIONAL)
+    egp = Group.objects.create(name=UserGroups.SIMEPI_EGP)
+    actor.groups.add(equipo)
+    job = UserImportJob(
+        requested_by=actor,
+        original_filename="usuarios.xlsx",
+        send_credentials=False,
+        is_pwa_import=False,
+    )
+    row_data = _import_row_data("egp.multi.import@example.com")
+    row_data["permisos"] = egp.name
+    row_data["provincias"] = ";".join(provincia.nombre for provincia in provincias)
+
+    process_single_user_import_row(row_data=row_data, job=job)
+
+    user = User.objects.get(email="egp.multi.import@example.com")
+    assert set(
+        user.profile.territorial_scopes.values_list("provincia_id", flat=True)
+    ) == {provincia.pk for provincia in provincias}
 
 
 @pytest.mark.django_db

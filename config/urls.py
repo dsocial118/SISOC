@@ -52,6 +52,7 @@ urlpatterns = [
     path("", include("healthcheck.urls")),
     path("", include("centrodeinfancia.urls")),
     path("", include("ver_para_ser_libre.urls")),
+    path("", include("pas.urls")),
     path("acompanamientos/", include("acompanamientos.urls")),
     path("expedientespagos/", include("expedientespagos.urls")),
     path("", include("rendicioncuentasfinal.urls")),

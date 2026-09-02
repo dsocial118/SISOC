@@ -203,7 +203,7 @@ SISOC/
 | Seguridad/CSP | `ENABLE_CSP`, `CSP_REPORT_ONLY`, `CSP_ALLOW_UNSAFE_INLINE_SCRIPTS`, `CSP_ALLOW_UNSAFE_EVAL` |
 | Async | `DISABLE_ASYNC_THREADS` |
 | Testing | `USE_SQLITE_FOR_TESTS`, `PYTEST_RUNNING` |
-| Integracion GESTIONAR | `GESTIONAR_API_KEY`, endpoints `GESTIONAR_API_*`, workers `GESTIONAR_*`, `DOMINIO` |
+| Integracion GESTIONAR | `GESTIONAR_INTEGRATION_ENABLED` (corte total de envíos, pulls y comandos), `GESTIONAR_API_KEY`, endpoints `GESTIONAR_API_*`, workers `GESTIONAR_*`, `DOMINIO` |
 | Ticketera | `TICKETERA_ENABLED` |
 | RENAPER | `RENAPER_API_USERNAME`, `RENAPER_API_PASSWORD`, `RENAPER_REQUEST_TIMEOUT_SECONDS`, retries/backoff; sin cache ni TTL de token |
 | Google Maps | `GOOGLE_MAPS_API_KEY` |
@@ -294,6 +294,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 | `importarexpediente/` | flujo de importacion de expedientes | `views.py`, `models.py`, urls, tests | Medio |
 | `ocr/` | OCR y procesamiento asociado | `models.py`, `views.py`, urls, tests | Medio |
 | `ver_para_ser_libre/` | modulo de negocio independiente dentro del monolito | `models.py`, `views.py`, `services/workflow.py` | Medio |
+| `pas/` | núcleo del Programa de Acompañamiento Social: titulares, estados, avisos e historial; circuito DDJJ con tokens, formulario público, PDF e importación CSV | `models.py`, `api.py`, `services/resumen_publico_service.py`, `services/ddjj_service.py`, `services/titulares_import_service.py`, `urls.py`, `migrations/` | Alto |
 | `audittrail/` | auditoria interna | `models.py`, `views.py`, `services/query_service` | Alto |
 | `historial/` | historial de dominio | `models.py`, `services/` | Bajo |
 | `intervenciones/` | intervenciones sobre casos | tests + archivos del modulo | Bajo; exploracion parcial |
@@ -373,6 +374,9 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 
 - `users/services_user_import.py`: parsing, alta/actualizacion, mail de
   credenciales y exportacion CSV.
+- El alta canónica de `SIMEPI - EGP` es `users.UserCreationForm` en
+  `/usuarios/crear/`; admite uno o más scopes provinciales completos. La URL
+  histórica `/simepi/egp/generar-usuario/` sólo redirige por compatibilidad.
 - `users/services_user_import_jobs.py`: procesamiento y reanudacion del lote.
 - `users/views_user_import.py`, `users/urls.py` y
   `users/templates/user/user_import_job_detail.html`: detalle y descargas.
@@ -437,9 +441,10 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 ### Si necesitas cambiar Relevamientos
 
 - `relevamientos/models.py`
+- `relevamientos/service.py` (asignación territorial local/legacy)
 - `relevamientos/tasks.py`
 - `relevamientos/views.py`
-- `tests/test_relevamientos*`
+- `tests/test_relevamientos*` y `tests/test_territorial_api.py`
 - docs: `docs/flujos/relevamiento_sync.md`
 
 ### Si necesitas cambiar importacion de expedientes de pago
@@ -524,7 +529,8 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
   `centrodeinfancia_nomina_ninos_pdf`, servicio
   `centrodeinfancia/services_nomina_ninos_pdf.py` y pruebas
   `centrodeinfancia/tests/test_nomina_ninos_pdf.py`; exige grupo `SIMEPI - EGP`
-  y un único alcance provincial completo, y entrega un JPEG por página
+  y selección explícita de una provincia dentro de uno o más alcances completos,
+  excluye fichas mayores de 48 meses y entrega un JPEG por página
 - contrato canónico de esa descarga, privacidad y formularios CDI:
   `docs/implementaciones/centrodeinfancia_nomina_ninos_simepi.md`
 - conversión e incrustación de Office en rendiciones: `rendicioncuentasmensual/service_helpers.py`
@@ -578,7 +584,11 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 
 ### Si necesitas cambiar syncs externos
 
-- GESTIONAR: `comedores/tasks.py`, `relevamientos/tasks.py`, management commands relacionados, `.env.example`
+- GESTIONAR: `config/settings.py`, `comedores/tasks.py`,
+  `comedores/services/territorial_service/impl.py`, `relevamientos/tasks.py`,
+  management commands relacionados, `.env.example`. El flag
+  `GESTIONAR_INTEGRATION_ENABLED` corta todo el tráfico AppSheet/GESTIONAR; no
+  usarlo como interruptor parcial.
 - RENAPER: `core/integrations/renaper.py`, `core/services/renaper.py`, docs `docs/flujos/consulta_renaper.md`
 - Ticketera: `ticketera/`, `docs/integraciones/ticketera_api.md`
 
