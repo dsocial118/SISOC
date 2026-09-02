@@ -5,13 +5,15 @@
 
 ## Estado: implementado
 Las 8 fases del roadmap (más abajo) están implementadas y verificadas en la rama
-`feature/modulo-encuestas`: 145 tests propios de `encuestas/` en verde, más una
-corrida completa del proyecto (`pytest -n auto`, ~4360 tests) sin regresiones
-nuevas — los únicos fallos de esa corrida (16, en `centrodeinfancia/`) son
-preexistentes y no relacionados, confirmado corriéndolos contra `development`
-con los cambios de este módulo revertidos vía `git stash`. Ver
-"Estado final de la implementación" al pie de este documento para el resumen
-de desvíos respecto de lo planeado acá y hallazgos del desarrollo.
+`feature/modulo-encuestas`: 168 tests propios de `encuestas/` en verde (145 del
+MVP original + 23 del sistema de puntaje agregado el 2026-08-31, ver regla de
+negocio 18), más una corrida completa del proyecto (`pytest -n auto`, ~4360
+tests) sin regresiones nuevas — los únicos fallos de esa corrida (16, en
+`centrodeinfancia/`) son preexistentes y no relacionados, confirmado
+corriéndolos contra `development` con los cambios de este módulo revertidos
+vía `git stash`. Ver "Estado final de la implementación" al pie de este
+documento para el resumen de desvíos respecto de lo planeado acá y hallazgos
+del desarrollo.
 
 ## Objetivo
 Crear un nuevo módulo (app `encuestas/`) que permita a un rol específico ("Gestor de Encuestas") generar encuestas dirigidas a usuarios logueados de SISOC, con preguntas de distinto tipo, lógica condicional simple, segmentación de destinatarios y programación recurrente, para relevar feedback periódico. Los usuarios responden dentro del sistema mediante un modal que aparece al iniciar sesión.
@@ -44,8 +46,9 @@ Además, hoy conviven dos modelos "Programa" no unificados (`core.Programa`, vin
   - `tipo` (`TipoPregunta`: texto_corto / texto_largo / opcion_unica / opcion_multiple / escala / si_no / numerico / fecha)
   - `obligatoria` (bool, independiente del flag general de la encuesta)
   - Condición de visibilidad implementada como **tres campos planos**, no un objeto anidado: `pregunta_condicion` (FK a sí misma, nullable, `SET_NULL`) + `operador_condicion` (`OperadorCondicion`: igual/distinto) + `valor_condicion` (texto libre) — muestra/oculta la pregunta según la respuesta de otra pregunta anterior. `Pregunta.clean()` valida que la referencia sea de la misma encuesta y que los tres campos vayan juntos.
+  - `pondera` (bool, default `False`) + `puntaje_si` / `puntaje_no` (enteros, nullable, solo para `tipo=si_no`) — ver "Puntaje por pregunta" en Reglas de negocio. `Pregunta.clean()` rechaza `pondera=True` en tipos sin un conjunto fijo de valores (texto/numérico/fecha) y rechaza `puntaje_si`/`puntaje_no` fuera de `si_no`.
 - `OpcionPregunta`
-  - `pregunta` (FK, `CASCADE`), `texto`, `valor`, `orden`
+  - `pregunta` (FK, `CASCADE`), `texto`, `valor`, `orden`, `puntaje` (entero, default `0`; solo se usa si `pregunta.pondera=True`)
 - `SegmentacionEncuesta`
   - `encuesta` (`OneToOneField`, `CASCADE`), `tipo` (`TipoSegmentacion`: `todos_los_usuarios` / `listado_documentos`; segmentación por "Programa" quedó pospuesta, ver Fuera de alcance)
   - `archivo_listado` (FileField, opcional, para carga por Excel/CSV, con validadores de extensión/tamaño)
@@ -116,12 +119,20 @@ Además, hoy conviven dos modelos "Programa" no unificados (`core.Programa`, vin
 15. No se conserva historial de respuestas navegable por el propio usuario que respondió, ni existe funcionalidad de duplicar una encuesta como plantilla en el MVP.
 16. No hay política de borrado ni archivado automático: encuestas y respuestas se conservan indefinidamente.
 17. No se puede editar una encuesta (generar nueva versión) mientras tenga una ronda abierta: el Gestor debe cerrarla (manual o automáticamente) antes de poder crear la siguiente versión.
+18. **Puntaje por pregunta** (agregado 2026-08-31, ver `encuestas/services_resultados.py`): el Gestor puede marcar una pregunta como que "pondera" para un puntaje total, únicamente si es de un tipo con un conjunto fijo de valores posibles (`Sí/No`, `Opción única`, `Opción múltiple`, `Escala`) — texto libre, numérico y fecha no participan del puntaje.
+    - El puntaje se define **por opción de respuesta**, no por pregunta completa: cada opción (o cada una de "Sí"/"No") tiene su propio valor en puntos, asignado por el Gestor. En preguntas de escala no hay valor configurable: el número que responde la persona (1 a 10) es directamente su puntaje en esa pregunta.
+    - Puntaje obtenido por pregunta: opción única → puntos de la opción elegida; opción múltiple → suma de puntos de todas las opciones marcadas; Sí/No → puntos de la opción respondida; escala → el valor numérico ingresado.
+    - Puntaje máximo posible por pregunta (para calcular el total): opción única y Sí/No → el mayor puntaje entre sus opciones (se elige una sola); opción múltiple → suma de puntos de **todas** sus opciones; escala → 10 fijo.
+    - El **total posible de una encuesta es fijo**: suma los puntos máximos de todas las preguntas que ponderan, aunque a una persona en particular no le hayan aparecido algunas por la lógica condicional (regla 3) — no se ajusta por persona.
+    - El puntaje de cada respuesta se muestra **solo en el dashboard de Resultados** (sección "Puntaje por respuesta", ordenada de mayor a menor) y en la exportación CSV/Excel (columnas "Puntaje obtenido"/"Puntaje total") — nunca se le muestra a quien respondió. Igual que el resto de Resultados, respeta la regla 1: en encuestas anónimas no se expone qué usuario obtuvo qué puntaje, solo el valor.
+    - Si ninguna pregunta de la encuesta pondera, no se calcula ni se muestra nada de puntaje (sin sección vacía ni columnas en 0).
 
 ## Dependencias y servicios
 - **Scheduler**: se reutiliza el patrón existente de *management command* + servicio propio en `docker-compose.yml` (como `ocr_worker` o el worker de `process_mailing_jobs.py`), agregando un chequeo periódico de fechas de rondas (apertura, cierre y evaluación de `intervalo_recurrencia_dias`). No se introduce Celery Beat.
 - **Carga de listados de segmentación**: reutilizar el patrón de archivo ya usado en `comunicados.MailingJob` (upload + validación de filas) para la carga por Excel/CSV. Los cambios al listado deben poder aplicarse en caliente sobre una ronda abierta (alta/baja de destinatario sin esperar al próximo ciclo).
 - **Auditoría**: instrumentar altas/ediciones/publicaciones/cierres de `Encuesta` y `RondaEncuesta` contra el módulo `audittrail` existente, siguiendo el mismo mecanismo que usan otras entidades ya auditadas del repo.
 - **Servicio** `encuestas/services.py` (según convención del repo, lógica de negocio fuera de views/models): `crear_encuesta`, `nueva_version`, `publicar`, `abrir_ronda`, `cerrar_ronda`, `registrar_respuesta`, `get_rondas_pendientes(usuario)`, `snooze_ronda(usuario, ronda)`, `actualizar_segmentacion(encuesta, listado)`.
+- **Puntaje**: `encuestas/services_resultados.py` agrega `encuesta_pondera(encuesta)`, `puntaje_total_posible(encuesta)` y `get_puntajes_ronda(ronda)` — cálculo puro a partir de `Pregunta.pondera`/`puntaje_si`/`puntaje_no` y `OpcionPregunta.puntaje`, sin persistir el puntaje en ningún lado (se recalcula siempre en el momento).
 
 ## Criterios de aceptación
 1. Un usuario con el rol `Gestor de Encuestas` puede crear una encuesta desde "Generar encuesta", agregar preguntas de todos los tipos soportados, configurar condiciones de visibilidad, anonimato, obligatoriedad, recurrencia y segmentación.
@@ -138,6 +149,7 @@ Además, hoy conviven dos modelos "Programa" no unificados (`core.Programa`, vin
 12. Si un usuario tiene más de una ronda pendiente, el modal las presenta en cola ordenadas por fecha de vencimiento más próxima.
 13. Un usuario con el permiso `encuestas.ver_resultados` (sin ser Gestor) puede acceder al listado de encuestas y a los resultados de cada una, sin ver ni poder usar acciones de alta/edición/publicación/cierre.
 14. El botón de editar una encuesta permanece deshabilitado (o la acción es rechazada) mientras tenga una ronda abierta; solo vuelve a estar disponible tras cerrarla.
+15. Si el Gestor marca al menos una pregunta como "pondera", el dashboard de Resultados muestra el puntaje obtenido por cada respuesta sobre un total fijo, ordenado de mayor a menor; si ninguna pregunta pondera, esa sección no aparece.
 
 ## Casos de uso
 ### Caso 1: encuesta obligatoria segmentada por listado

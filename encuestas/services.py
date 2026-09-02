@@ -66,6 +66,9 @@ def _clonar_preguntas(encuesta_origen: Encuesta, encuesta_destino: Encuesta) -> 
             tipo=pregunta.tipo,
             obligatoria=pregunta.obligatoria,
             orden=pregunta.orden,
+            pondera=pregunta.pondera,
+            puntaje_si=pregunta.puntaje_si,
+            puntaje_no=pregunta.puntaje_no,
         )
         mapa_preguntas[pregunta.pk] = nueva_pregunta
         OpcionPregunta.objects.bulk_create(
@@ -74,6 +77,7 @@ def _clonar_preguntas(encuesta_origen: Encuesta, encuesta_destino: Encuesta) -> 
                 texto=opcion.texto,
                 valor=opcion.valor,
                 orden=opcion.orden,
+                puntaje=opcion.puntaje,
             )
             for opcion in pregunta.opciones.order_by("orden")
         )
@@ -235,15 +239,22 @@ def reemplazar_preguntas(encuesta: Encuesta, preguntas_raw_json: str) -> None:
             tipo=parsed.tipo,
             obligatoria=parsed.obligatoria,
             orden=parsed.orden,
+            pondera=parsed.pondera,
+            puntaje_si=parsed.puntaje_si,
+            puntaje_no=parsed.puntaje_no,
         )
         pregunta.full_clean()
         pregunta.save()
         mapa_orden_a_pregunta[parsed.orden] = pregunta
         OpcionPregunta.objects.bulk_create(
             OpcionPregunta(
-                pregunta=pregunta, texto=texto_opcion, valor=texto_opcion, orden=indice
+                pregunta=pregunta,
+                texto=opcion.texto,
+                valor=opcion.texto,
+                orden=indice,
+                puntaje=opcion.puntaje,
             )
-            for indice, texto_opcion in enumerate(parsed.opciones, start=1)
+            for indice, opcion in enumerate(parsed.opciones, start=1)
         )
 
     for parsed in preguntas:
@@ -278,7 +289,13 @@ def serializar_preguntas(encuesta: Encuesta) -> list[dict]:
             "texto": pregunta.texto,
             "tipo": pregunta.tipo,
             "obligatoria": pregunta.obligatoria,
-            "opciones": [opcion.texto for opcion in pregunta.opciones.all()],
+            "opciones": [
+                {"texto": opcion.texto, "puntaje": opcion.puntaje}
+                for opcion in pregunta.opciones.all()
+            ],
+            "pondera": pregunta.pondera,
+            "puntaje_si": pregunta.puntaje_si,
+            "puntaje_no": pregunta.puntaje_no,
             "condicion": None,
         }
         if pregunta.pregunta_condicion_id:

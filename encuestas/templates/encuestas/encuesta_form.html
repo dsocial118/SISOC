@@ -9,7 +9,9 @@
 {% endblock %}
 {% block content %}
     <link rel="stylesheet" href="{% static 'custom/css/encuestaForm.css' %}" />
-    <div class="encuesta-editor" data-tipos-con-opciones="{{ tipos_pregunta_con_opciones }}">
+    <div class="encuesta-editor"
+         data-tipos-con-opciones="{{ tipos_pregunta_con_opciones }}"
+         data-tipos-ponderables="{{ tipos_pregunta_ponderables }}">
         <div class="d-flex justify-content-between align-items-start mb-3">
             <h2 class="mb-0">
                 {% if form.instance.pk %}
@@ -155,6 +157,31 @@
                 <div class="pregunta-opciones-wrap d-none">
                     <label>Opciones (una por línea, mínimo dos)</label>
                     <textarea class="form-control pregunta-opciones" rows="3"></textarea>
+                </div>
+                <div class="pregunta-pondera-wrap d-none">
+                    <div class="form-check form-switch">
+                        <input type="checkbox" class="form-check-input pregunta-pondera">
+                        <label class="form-check-label">¿Pondera para el puntaje total?</label>
+                    </div>
+                    <div class="pregunta-puntaje-detalle d-none">
+                        <div class="pregunta-puntaje-si-no d-none pregunta-grid">
+                            <div>
+                                <label>Puntaje si responde "Sí"</label>
+                                <input type="number" min="0" class="form-control pregunta-puntaje-si" value="0">
+                            </div>
+                            <div>
+                                <label>Puntaje si responde "No"</label>
+                                <input type="number" min="0" class="form-control pregunta-puntaje-no" value="0">
+                            </div>
+                        </div>
+                        <div class="pregunta-puntaje-opciones-wrap d-none">
+                            <label>Puntaje por opción</label>
+                            <div class="pregunta-puntaje-opciones-list"></div>
+                        </div>
+                        <small class="pregunta-puntaje-escala-nota switch-help d-none">
+                            El puntaje de esta pregunta es directamente el número (1 a 10) que responda la persona.
+                        </small>
+                    </div>
                 </div>
                 <div class="pregunta-condicion-wrap d-none">
                     <div class="cond-label">

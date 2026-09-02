@@ -74,6 +74,35 @@
                     </div>
                 </div>
 
+                {% if puntajes %}
+                    <div class="editor-panel">
+                        <div class="panel-label">
+                            <span class="panel-label-title"><i class="fas fa-medal"></i> Puntaje por respuesta</span>
+                            <span class="count-badge">Total posible: <b>{{ puntajes.0.total_posible }}</b> pts</span>
+                        </div>
+                        <div class="panel-body">
+                            <div class="result-bars">
+                                {% for puntaje in puntajes %}
+                                    <div class="result-bar-row {% if forloop.first %}is-leading{% endif %}">
+                                        <div class="result-bar-labels">
+                                            <span class="result-bar-opcion">
+                                                <span class="puntaje-rank">#{{ forloop.counter }}</span>
+                                                {{ puntaje.usuario|default:"Respuesta anónima" }}
+                                            </span>
+                                            <span class="result-bar-valor">
+                                                <b>{{ puntaje.obtenido }}</b> / {{ puntaje.total_posible }} ({{ puntaje.porcentaje }}%)
+                                            </span>
+                                        </div>
+                                        <div class="result-bar-track">
+                                            <div class="result-bar-fill" style="width: {{ puntaje.porcentaje }}%"></div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+
                 {% for resultado in resultados %}
                     <div class="editor-panel">
                         <div class="panel-body">

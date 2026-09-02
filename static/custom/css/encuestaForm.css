@@ -251,12 +251,44 @@
   padding-top: 22px;
 }
 
-/* Bloque de opciones y de condición: separados con línea punteada */
+/* Bloque de opciones, puntaje y condición: separados con línea punteada */
 .encuesta-editor .pregunta-opciones-wrap,
+.encuesta-editor .pregunta-pondera-wrap,
 .encuesta-editor .pregunta-condicion-wrap {
   margin-top: 14px;
   padding-top: 14px;
   border-top: 1px dashed #374151;
+}
+
+.encuesta-editor .pregunta-puntaje-detalle {
+  margin-top: 12px;
+}
+
+.encuesta-editor .pregunta-puntaje-opciones-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.encuesta-editor .puntaje-opcion-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.encuesta-editor .puntaje-opcion-row .puntaje-opcion-texto {
+  flex: 1;
+  color: #d1d5db;
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.encuesta-editor .puntaje-opcion-row input {
+  width: 90px;
+  flex-shrink: 0;
 }
 
 .encuesta-editor .cond-label {
