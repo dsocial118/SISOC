@@ -1,7 +1,8 @@
-"""Endpoints de comentarios técnicos del legajo (issue #2318).
+"""Flujo de comentarios técnicos: endpoints y publicación en Subsanar/Rechazar.
 
-Cubre el alta estructurada, el listado según quién consulta y la
-previsualización del motivo que arma el backend.
+Cubre las fases 3 y 4 del issue #2318: el alta estructurada por endpoint, la
+previsualización del motivo, y cómo Subsanar/Rechazar arman el motivo en backend
+y publican a la Provincia las observaciones con ``Sí``.
 """
 
 from datetime import date
@@ -20,7 +21,10 @@ from celiaquia.models import (
     Expediente,
     ExpedienteCiudadano,
     HistorialComentarios,
+    HistorialValidacionTecnica,
     RevisionTecnico,
+    Subsanacion,
+    TipoSubsanacion,
 )
 from celiaquia.services.comentarios_tecnicos_service import ComentariosTecnicosService
 
@@ -97,6 +101,10 @@ def _url_listar(legajo):
 
 def _url_preview(legajo):
     return reverse("legajo_motivo_preview", args=[legajo.expediente_id, legajo.pk])
+
+
+def _url_revisar(legajo):
+    return reverse("legajo_revisar", args=[legajo.expediente_id, legajo.pk])
 
 
 def _sembrar(legajo, usuario, con_si=True, con_no=True):
@@ -250,3 +258,167 @@ def test_preview_denegado_para_provincia(client, provincial, legajo):
     client.force_login(provincial)
 
     assert client.get(_url_preview(legajo)).status_code == 403
+
+
+# --- Fase 4: Subsanar y Rechazar -----------------------------------------
+
+
+def test_subsanar_arma_el_motivo_y_publica(client, coordinador, legajo):
+    _sembrar(legajo, coordinador)
+    client.force_login(coordinador)
+
+    response = client.post(
+        _url_revisar(legajo),
+        data={"accion": "SUBSANAR", "texto_libre": "Se adjunta nota."},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["comentarios_publicados"] == 2
+
+    legajo.refresh_from_db()
+    assert legajo.revision_tecnico == RevisionTecnico.SUBSANAR
+    # Motivo armado en backend: las dos observaciones con Sí + el texto libre.
+    assert legajo.subsanacion_motivo.startswith("RENAPER: ")
+    assert "Condición diagnóstica: " in legajo.subsanacion_motivo
+    assert legajo.subsanacion_motivo.endswith("Se adjunta nota.")
+    assert "Sin observaciones." not in legajo.subsanacion_motivo
+
+    # Los comentarios con Sí quedan publicados; el No sigue interno.
+    tecnicos = ComentariosTecnicosService.historial(legajo)
+    assert tecnicos.filter(tiene_observaciones=True, es_interno=False).count() == 2
+    assert tecnicos.filter(tiene_observaciones=False, es_interno=True).count() == 1
+
+
+def test_subsanar_deriva_las_observaciones_del_legajo(client, coordinador, legajo):
+    _sembrar(legajo, coordinador)
+    client.force_login(coordinador)
+
+    client.post(_url_revisar(legajo), data={"accion": "SUBSANAR"})
+
+    subsanacion = Subsanacion.objects.get(legajo=legajo)
+    tipos = sorted(o.tipo for o in subsanacion.observaciones.all())
+    # RENAPER mapea a RENAPER; condición diagnóstica, a DOCUMENTACION.
+    assert tipos == [TipoSubsanacion.DOCUMENTACION, TipoSubsanacion.RENAPER]
+    assert legajo.subsanaciones.count() == 1
+
+
+def test_subsanar_sin_observaciones_ni_texto_libre_falla(client, coordinador, legajo):
+    _sembrar(legajo, coordinador, con_si=False)
+    client.force_login(coordinador)
+
+    response = client.post(_url_revisar(legajo), data={"accion": "SUBSANAR"})
+
+    assert response.status_code == 400
+    legajo.refresh_from_db()
+    # El legajo queda intacto: no cambia de estado ni se crea la subsanación.
+    assert legajo.revision_tecnico == RevisionTecnico.PENDIENTE
+    assert not legajo.subsanaciones.exists()
+    assert (
+        ComentariosTecnicosService.historial(legajo).filter(es_interno=False).count()
+        == 0
+    )
+
+
+def test_subsanar_sin_observaciones_acepta_solo_texto_libre(
+    client, coordinador, legajo
+):
+    _sembrar(legajo, coordinador, con_si=False)
+    client.force_login(coordinador)
+
+    response = client.post(
+        _url_revisar(legajo),
+        data={"accion": "SUBSANAR", "texto_libre": "Motivo puntual."},
+    )
+
+    assert response.status_code == 200
+    legajo.refresh_from_db()
+    assert legajo.subsanacion_motivo == "Motivo puntual."
+
+
+def test_subsanar_con_ui_previa_sigue_funcionando(client, coordinador, legajo):
+    """Sin comentarios técnicos, el POST anterior (motivo + motivos) sigue vivo."""
+    client.force_login(coordinador)
+
+    response = client.post(
+        _url_revisar(legajo),
+        data={
+            "accion": "SUBSANAR",
+            "motivo": "Revisar documentación",
+            "motivos": ["DOCUMENTACION"],
+        },
+    )
+
+    assert response.status_code == 200
+    legajo.refresh_from_db()
+    assert legajo.subsanacion_motivo == "Revisar documentación"
+    subsanacion = Subsanacion.objects.get(legajo=legajo)
+    assert [o.tipo for o in subsanacion.observaciones.all()] == [
+        TipoSubsanacion.DOCUMENTACION
+    ]
+
+
+def test_motivo_largo_no_se_trunca(client, coordinador, legajo):
+    """La concatenación supera los 500 caracteres que truncaba el flujo previo."""
+    for indice in range(4):
+        ComentariosTecnicosService.registrar(
+            legajo,
+            tipo_documento="CONDICION_DIAGNOSTICA",
+            tiene_observaciones=True,
+            observacion_codigo="OTROS",
+            observacion_libre=f"Observación {indice}: " + "x" * 200,
+            usuario=coordinador,
+        )
+    client.force_login(coordinador)
+
+    client.post(_url_revisar(legajo), data={"accion": "SUBSANAR"})
+
+    legajo.refresh_from_db()
+    assert len(legajo.subsanacion_motivo) > 500
+    historial = HistorialValidacionTecnica.objects.get(legajo=legajo)
+    assert len(historial.motivo) > 500
+
+
+def test_rechazar_arma_el_motivo_y_publica(client, coordinador, legajo):
+    _sembrar(legajo, coordinador)
+    client.force_login(coordinador)
+
+    response = client.post(
+        _url_revisar(legajo),
+        data={"accion": "RECHAZAR", "texto_libre": "No cumple requisitos."},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["comentarios_publicados"] == 2
+
+    legajo.refresh_from_db()
+    assert legajo.revision_tecnico == "RECHAZADO"
+
+    historial = HistorialValidacionTecnica.objects.get(legajo=legajo)
+    assert historial.motivo.startswith("RENAPER: ")
+    assert historial.motivo.endswith("No cumple requisitos.")
+
+
+def test_rechazar_sin_observaciones_ni_texto_libre_falla(client, coordinador, legajo):
+    client.force_login(coordinador)
+
+    response = client.post(_url_revisar(legajo), data={"accion": "RECHAZAR"})
+
+    assert response.status_code == 400
+    legajo.refresh_from_db()
+    assert legajo.revision_tecnico == RevisionTecnico.PENDIENTE
+
+
+def test_aprobar_no_publica_comentarios(client, coordinador, legajo):
+    """Validar no cambia: no exige comentarios ni los publica."""
+    _sembrar(legajo, coordinador)
+    client.force_login(coordinador)
+
+    response = client.post(_url_revisar(legajo), data={"accion": "APROBAR"})
+
+    assert response.status_code == 200
+    legajo.refresh_from_db()
+    assert legajo.revision_tecnico == "APROBADO"
+    assert (
+        ComentariosTecnicosService.historial(legajo).filter(es_interno=False).count()
+        == 0
+    )

@@ -58,7 +58,9 @@ from celiaquia.services.importacion_service import (
     _resolver_nacionalidad_payload_importacion,
     validar_y_normalizar_payloads_importacion,
 )
+from celiaquia.comentarios_tecnicos import TipoDocumentoComentario
 from celiaquia.permissions import can_delete_legajo
+from celiaquia.services.comentarios_tecnicos_service import ComentariosTecnicosService
 from celiaquia.services.cruce_service import CruceService
 from celiaquia.services.cupo_service import CupoService, CupoNoConfigurado
 from celiaquia.services.expediente_filter_config import (  # pylint: disable=no-name-in-module
@@ -1955,6 +1957,33 @@ class SubirCruceExcelView(View):
         return HttpResponseNotAllowed(["POST"])
 
 
+#: Los comentarios técnicos se registran por tipo de documento; las
+#: observaciones de la Fase 2 usan las categorías previas. ANSES y condición
+#: diagnóstica son ambas cuestiones de documentación respaldatoria.
+MAPA_TIPO_DOCUMENTO_A_SUBSANACION = {
+    TipoDocumentoComentario.RENAPER.value: TipoSubsanacion.RENAPER,
+    TipoDocumentoComentario.ANSES.value: TipoSubsanacion.DOCUMENTACION,
+    TipoDocumentoComentario.CONDICION_DIAGNOSTICA.value: TipoSubsanacion.DOCUMENTACION,
+}
+
+
+def _observaciones_desde_comentarios_tecnicos(legajo):
+    """Observaciones (tipo, detalle) derivadas de los comentarios técnicos.
+
+    Traduce las observaciones publicables del legajo al formato que consumen
+    `Subsanacion`/`SubsanacionObservacion`. Lista vacía si el legajo todavía no
+    tiene comentarios técnicos con observaciones."""
+    return [
+        (
+            MAPA_TIPO_DOCUMENTO_A_SUBSANACION.get(
+                comentario.tipo_documento, TipoSubsanacion.OTROS
+            ),
+            comentario.comentario,
+        )
+        for comentario in ComentariosTecnicosService.observaciones_publicables(legajo)
+    ]
+
+
 def _parse_observaciones_subsanacion(request, motivo_general):
     """Construye la lista de (tipo, detalle) de una solicitud de subsanación.
 
@@ -1996,6 +2025,140 @@ def _parse_observaciones_subsanacion(request, motivo_general):
 
 @method_decorator(csrf_protect, name="dispatch")
 class RevisarLegajoView(View):
+    def _componer_motivo(self, request, leg):
+        """Motivo de Subsanar/Rechazar armado en backend.
+
+        Concatena las observaciones técnicas del legajo (las que tienen
+        observaciones = Sí) y le suma el texto libre complementario. Lo que
+        llega del cliente es solo ese texto libre: la previsualización que
+        muestra el modal no es la fuente de verdad. Devuelve
+        ``(motivo, None)`` o ``("", JsonResponse)`` cuando no hay nada que
+        comunicar."""
+        texto_libre = request.POST.get("texto_libre")
+        if texto_libre is None:
+            # La UI previa al issue #2318 manda el motivo en `motivo`.
+            texto_libre = request.POST.get("motivo") or ""
+        try:
+            return ComentariosTecnicosService.componer_motivo(leg, texto_libre), None
+        except ValidationError as exc:
+            return "", JsonResponse(
+                {"success": False, "error": "; ".join(exc.messages)}, status=400
+            )
+
+    def _rechazar(self, user, leg, motivo):
+        """Rechaza el legajo, registra la auditoría y publica las observaciones."""
+        estado_anterior = leg.revision_tecnico
+        leg.revision_tecnico = "RECHAZADO"
+        # Marcar RENAPER como rechazado también
+        if getattr(leg, "estado_validacion_renaper", 0) == 0:
+            leg.estado_validacion_renaper = 2
+
+        with transaction.atomic():
+            leg.save(
+                update_fields=[
+                    "revision_tecnico",
+                    "estado_validacion_renaper",
+                    "modificado_en",
+                    "estado_cupo",
+                    "es_titular_activo",
+                ]
+            )
+
+            HistorialValidacionTecnica.objects.create(
+                legajo=leg,
+                estado_anterior=estado_anterior,
+                estado_nuevo="RECHAZADO",
+                usuario=user,
+                motivo=motivo,
+            )
+
+            publicados = ComentariosTecnicosService.publicar(leg, usuario=user)
+
+        return JsonResponse(
+            {
+                "success": True,
+                "estado": leg.revision_tecnico,
+                "cupo_liberado": True,
+                "comentarios_publicados": publicados,
+            }
+        )
+
+    def _subsanar(self, request, user, leg, motivo):
+        """Solicita la subsanación: estado, observaciones y publicación."""
+        tipo_subsanacion = (request.POST.get("tipo_subsanacion") or "").strip()
+
+        # Las observaciones salen de los comentarios técnicos del legajo. Si
+        # todavía no tiene ninguno (legajos previos al issue #2318), se cae al
+        # parseo del POST para no romper el flujo anterior.
+        observaciones = _observaciones_desde_comentarios_tecnicos(
+            leg
+        ) or _parse_observaciones_subsanacion(request, motivo)
+
+        estado_anterior = leg.revision_tecnico
+        leg.revision_tecnico = RevisionTecnico.SUBSANAR
+        # Campos legacy: se preserva el primer tipo y el motivo general para
+        # compatibilidad con la UI y los datos previos a la Fase 1.
+        leg.subsanacion_tipo = (
+            observaciones[0][0] if observaciones else (tipo_subsanacion or None)
+        )
+        leg.subsanacion_motivo = motivo
+        leg.subsanacion_solicitada_en = timezone.now()
+        leg.subsanacion_usuario = user
+        # Nota: la subsanación técnica ya no marca estado_validacion_renaper=3.
+        # Ese estado queda reservado para la validación RENAPER real
+        # (ValidacionRenaperView). Así la respuesta se gestiona por el flujo
+        # unificado de subsanación (multi-archivo) en lugar del modal RENAPER.
+
+        with transaction.atomic():
+            leg.save(
+                update_fields=[
+                    "revision_tecnico",
+                    "subsanacion_tipo",
+                    "subsanacion_motivo",
+                    "subsanacion_solicitada_en",
+                    "subsanacion_usuario",
+                    "modificado_en",
+                    "estado_cupo",
+                    "es_titular_activo",
+                ]
+            )
+
+            HistorialValidacionTecnica.objects.create(
+                legajo=leg,
+                estado_anterior=estado_anterior,
+                estado_nuevo=RevisionTecnico.SUBSANAR,
+                usuario=user,
+                motivo=motivo,
+            )
+
+            subsanacion = Subsanacion.objects.create(
+                legajo=leg,
+                estado=SubsanacionEstado.PENDIENTE,
+                motivo_general=motivo,
+                solicitada_por=user,
+            )
+            SubsanacionObservacion.objects.bulk_create(
+                [
+                    SubsanacionObservacion(
+                        subsanacion=subsanacion, tipo=tipo, detalle=detalle
+                    )
+                    for tipo, detalle in observaciones
+                ]
+            )
+
+            publicados = ComentariosTecnicosService.publicar(leg, usuario=user)
+
+        return JsonResponse(
+            {
+                "success": True,
+                "estado": str(RevisionTecnico.SUBSANAR),
+                "cupo_liberado": True,
+                "subsanacion_id": subsanacion.pk,
+                "observaciones": len(observaciones),
+                "comentarios_publicados": publicados,
+            }
+        )
+
     def _eliminar_legajo(self, request, user, leg):
         """Elimina un legajo (baja lógica en cascada) liberando el cupo si estaba
         ocupado. Soporta el modo `preview` para confirmar antes de eliminar y
@@ -2151,6 +2314,14 @@ class RevisarLegajoView(View):
                     status=400,
                 )
 
+        # El motivo se compone antes de tocar el cupo y el estado: si no hay
+        # nada que comunicar, el legajo tiene que quedar intacto.
+        motivo = ""
+        if accion in ("RECHAZAR", "SUBSANAR"):
+            motivo, error = self._componer_motivo(request, leg)
+            if error:
+                return error
+
         # Si RECHAZAR / SUBSANAR y estaba dentro de cupo -> liberar
         if accion in ("RECHAZAR", "SUBSANAR") and leg.estado_cupo == "DENTRO":
             try:
@@ -2198,41 +2369,8 @@ class RevisarLegajoView(View):
                 }
             )
 
-        motivo = (request.POST.get("motivo") or "").strip()
-
         if accion == "RECHAZAR":
-            if not motivo:
-                return JsonResponse(
-                    {"success": False, "error": "Debe indicar un motivo de rechazo."},
-                    status=400,
-                )
-
-            estado_anterior = leg.revision_tecnico
-            leg.revision_tecnico = "RECHAZADO"
-            # Marcar RENAPER como rechazado también
-            if getattr(leg, "estado_validacion_renaper", 0) == 0:
-                leg.estado_validacion_renaper = 2
-            leg.save(
-                update_fields=[
-                    "revision_tecnico",
-                    "estado_validacion_renaper",
-                    "modificado_en",
-                    "estado_cupo",
-                    "es_titular_activo",
-                ]
-            )
-
-            HistorialValidacionTecnica.objects.create(
-                legajo=leg,
-                estado_anterior=estado_anterior,
-                estado_nuevo="RECHAZADO",
-                usuario=user,
-                motivo=motivo[:500],
-            )
-
-            return JsonResponse(
-                {"success": True, "estado": leg.revision_tecnico, "cupo_liberado": True}
-            )
+            return self._rechazar(user, leg, motivo)
 
         # ELIMINAR - Solo coordinadores y admin (técnicos no eliminan)
         if accion == "ELIMINAR":
@@ -2250,76 +2388,7 @@ class RevisarLegajoView(View):
             return self._eliminar_legajo(request, user, leg)
 
         # SUBSANAR
-        tipo_subsanacion = (request.POST.get("tipo_subsanacion") or "").strip()
-        if not motivo:
-            return JsonResponse(
-                {"success": False, "error": "Debe indicar un motivo de subsanación."},
-                status=400,
-            )
-
-        observaciones = _parse_observaciones_subsanacion(request, motivo)
-
-        estado_anterior = leg.revision_tecnico
-        leg.revision_tecnico = RevisionTecnico.SUBSANAR
-        # Campos legacy: se preserva el primer tipo y el motivo general para
-        # compatibilidad con la UI y los datos previos a la Fase 1.
-        leg.subsanacion_tipo = (
-            observaciones[0][0] if observaciones else (tipo_subsanacion or None)
-        )
-        leg.subsanacion_motivo = motivo[:500]
-        leg.subsanacion_solicitada_en = timezone.now()
-        leg.subsanacion_usuario = user
-        # Nota: la subsanación técnica ya no marca estado_validacion_renaper=3.
-        # Ese estado queda reservado para la validación RENAPER real
-        # (ValidacionRenaperView). Así la respuesta se gestiona por el flujo
-        # unificado de subsanación (multi-archivo) en lugar del modal RENAPER.
-
-        with transaction.atomic():
-            leg.save(
-                update_fields=[
-                    "revision_tecnico",
-                    "subsanacion_tipo",
-                    "subsanacion_motivo",
-                    "subsanacion_solicitada_en",
-                    "subsanacion_usuario",
-                    "modificado_en",
-                    "estado_cupo",
-                    "es_titular_activo",
-                ]
-            )
-
-            HistorialValidacionTecnica.objects.create(
-                legajo=leg,
-                estado_anterior=estado_anterior,
-                estado_nuevo=RevisionTecnico.SUBSANAR,
-                usuario=user,
-                motivo=motivo[:500],
-            )
-
-            subsanacion = Subsanacion.objects.create(
-                legajo=leg,
-                estado=SubsanacionEstado.PENDIENTE,
-                motivo_general=motivo[:500],
-                solicitada_por=user,
-            )
-            SubsanacionObservacion.objects.bulk_create(
-                [
-                    SubsanacionObservacion(
-                        subsanacion=subsanacion, tipo=tipo, detalle=detalle
-                    )
-                    for tipo, detalle in observaciones
-                ]
-            )
-
-        return JsonResponse(
-            {
-                "success": True,
-                "estado": str(RevisionTecnico.SUBSANAR),
-                "cupo_liberado": True,
-                "subsanacion_id": subsanacion.pk,
-                "observaciones": len(observaciones),
-            }
-        )
+        return self._subsanar(request, user, leg, motivo)
 
 
 ESTADOS_EVALUACION_FINAL = {"APROBADO", "RECHAZADO", "SUBSANADO"}
