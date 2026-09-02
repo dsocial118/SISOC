@@ -30,6 +30,8 @@ from core.services.text_encoding import (
         ("Geovanni Le\u00e3\u00b3N Daniel", "Geovanni León Daniel"),
         ("ÁNabelle", "Ánabelle"),
         ("McDonald Isa\u00e3\u00adAs", "McDonald Isaías"),
+        ("McDonald-Isa\u00e3\u00adAs", "McDonald-Isaías"),
+        ("Ana-ÁNabelle", "Ana-Ánabelle"),
     ],
 )
 def test_repair_utf8_mojibake_repara_secuencias_validas(raw, expected):
@@ -45,6 +47,8 @@ def test_repair_utf8_mojibake_repara_secuencias_validas(raw, expected):
         "Donatto Simón",
         "Álvarez",
         "ÁNGEL",
+        "ÆGon",
+        "ØYstein",
         "Nombre \u00c3",
         "Texto con reemplazo \ufffd",
         "Texto ASCII",

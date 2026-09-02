@@ -75,11 +75,11 @@ def _title_affected_tokens(text: str, positions: list[int]) -> str:
     result = text
     for position in positions:
         start = position
-        while start > 0 and not result[start - 1].isspace():
+        while start > 0 and result[start - 1].isalpha():
             start -= 1
 
         end = position
-        while end < len(result) and not result[end].isspace():
+        while end < len(result) and result[end].isalpha():
             end += 1
 
         result = f"{result[:start]}{result[start:end].title()}{result[end:]}"
@@ -133,10 +133,12 @@ def _repair_stranded_title_boundary_once(text: str) -> tuple[str, bool]:
 
     affected_positions = []
     for index, character in enumerate(text[:-2]):
-        is_token_start = index == 0 or text[index - 1].isspace()
+        is_token_start = index == 0 or not text[index - 1].isalpha()
+        decomposition = unicodedata.normalize("NFD", character)
         is_latin1_uppercase = (
             0x00C0 <= ord(character) <= 0x00DE
             and unicodedata.category(character) == "Lu"
+            and any(unicodedata.category(part) == "Mn" for part in decomposition[1:])
         )
         if (
             is_token_start
