@@ -11,6 +11,21 @@ from core.constants import UserGroups
 pytestmark = pytest.mark.django_db
 
 
+def test_sidebar_oculta_alta_de_referente_egp_incluso_a_superusuario(client):
+    user_model = get_user_model()
+    user = user_model.objects.create_superuser(
+        username="sidebar_sin_alta_egp",
+        email="sidebar_sin_alta_egp@example.com",
+        password="testpass123",
+    )
+    client.force_login(user)
+
+    response = client.get(reverse("inicio"))
+
+    assert response.status_code == 200
+    assert "Alta de referente EGP" not in response.content.decode()
+
+
 def test_sidebar_separa_administracion_de_configuracion_comedores(client):
     user_model = get_user_model()
     user = user_model.objects.create_superuser(
