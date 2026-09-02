@@ -106,6 +106,7 @@ class UserListView(AdminRequiredMixin, ListView):
     model = User
     template_name = "user/user_list.html"
     context_object_name = "users"
+    paginate_by = 25
     required_permissions = ("auth.view_user",)
 
     def get_queryset(self):

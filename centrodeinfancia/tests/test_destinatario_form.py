@@ -126,7 +126,7 @@ def datos_validos(centro, **overrides):
         # Salud
         "cobertura_salud": "publica_exclusiva",
         "controles_sanitarios_ultimo_anio": "1",
-        "calendario_vacunacion_al_dia": "true",
+        "calendario_vacunacion_al_dia": "si",
         # Antropometría
         "peso": "14.2",
         "longitud_acostado": "80.0",
@@ -694,6 +694,39 @@ class TestValidacionesQA:
         form = self._form(centro, grupo_pertenencia=["ninguno", "africano"])
         assert not form.is_valid()
         assert "grupo_pertenencia" in form.errors
+
+    def test_acepta_no_sabe_en_preguntas_obligatorias_de_categorias_solicitadas(
+        self, centro
+    ):
+        form = self._form(
+            centro,
+            grupo_pertenencia=["no_sabe"],
+            lenguajes=["no_sabe"],
+            necesito_interprete="no_sabe",
+            tiene_discapacidad="ns_nc",
+            cobertura_salud="no_sabe",
+            controles_sanitarios_ultimo_anio="no_sabe",
+            calendario_vacunacion_al_dia="no_sabe",
+            lactancia="no_sabe",
+            alergias_alimentarias=["no_sabe"],
+            recibe_apoyo_desarrollo="no_sabe",
+        )
+
+        assert form.is_valid(), form.errors
+
+    @pytest.mark.parametrize(
+        ("campo", "valor"),
+        [
+            ("grupo_pertenencia", ["no_sabe", "indigena"]),
+            ("lenguajes", ["no_sabe", "espanol_castellano"]),
+            ("alergias_alimentarias", ["no_sabe", "leche_vaca"]),
+        ],
+    )
+    def test_no_sabe_es_excluyente_en_multiselects_de_ninos(self, centro, campo, valor):
+        form = self._form(centro, **{campo: valor})
+
+        assert not form.is_valid()
+        assert campo in form.errors
 
     # TC_034/048: teléfono de 6 a 15 dígitos (criterio único del sistema)
     @pytest.mark.parametrize("valor", ["12345", "1234567890123456"])
