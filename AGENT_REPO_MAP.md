@@ -576,6 +576,11 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
   desplegar el correctivo; ver
   `docs/plans/2026-09-01-reparacion-mojibake-capitalizado-design.md` y
   `docs/registro/cambios/2026-09-01-reparacion-mojibake-capitalizado.md`.
+- Las variantes restantes que reconstruyen minúsculas requieren además una
+  mayúscula artificial posterior y normalizan sólo el token afectado. El mismo
+  flujo corrige fronteras persistidas como `ÁNabelle`; ver
+  `docs/plans/2026-09-01-reparacion-mojibake-capitalizado-minusculas-design.md`
+  y `docs/registro/cambios/2026-09-01-reparacion-mojibake-capitalizado-minusculas.md`.
 
 ### Si necesitas cambiar OCR / procesamiento documental
 
