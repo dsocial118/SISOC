@@ -39,23 +39,35 @@
 - `core/management/commands/repair_utf8_mojibake.py`
 - `core/services/text_encoding.py`
 - `docs/contexto/features/pr-2415-fix-reparar-mojibake-en-datos-y-renaper.md`
+- `docs/contexto/features/pr-2418-chore-sync-integrar-main-en-homologacion.md`
+- `docs/contexto/features/pr-2421-fix-encoding-reparar-mojibake-capitalizado-historico.md`
+- `docs/plans/2026-09-01-reparacion-mojibake-capitalizado-design.md`
 - `docs/plans/2026-09-01-reparacion-mojibake-datos-design.md`
+- `docs/registro/cambios/2026-09-01-reparacion-mojibake-capitalizado.md`
 - `docs/registro/cambios/2026-09-01-reparacion-mojibake-datos.md`
 - `docs/registro/prs/PR-2415.md`
+- `docs/registro/prs/PR-2418.md`
+- `docs/registro/prs/PR-2421.md`
 - `docs/registro/releases/pending/2026-09-02-pr-2415.md`
-- `tests/test_consulta_renaper_unit.py`
-- `tests/test_repair_utf8_mojibake_command.py`
-- `tests/test_text_encoding.py`
+- `docs/registro/releases/pending/2026-09-02-pr-2421.md`
+- ... y 3 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`
 - `docs/contexto/features/pr-2415-fix-reparar-mojibake-en-datos-y-renaper.md`
+- `docs/contexto/features/pr-2418-chore-sync-integrar-main-en-homologacion.md`
+- `docs/contexto/features/pr-2421-fix-encoding-reparar-mojibake-capitalizado-historico.md`
+- `docs/plans/2026-09-01-reparacion-mojibake-capitalizado-design.md`
 - `docs/plans/2026-09-01-reparacion-mojibake-datos-design.md`
+- `docs/registro/cambios/2026-09-01-reparacion-mojibake-capitalizado.md`
 - `docs/registro/cambios/2026-09-01-reparacion-mojibake-datos.md`
 - `docs/registro/prs/PR-2415.md`
+- `docs/registro/prs/PR-2418.md`
+- `docs/registro/prs/PR-2421.md`
 - `docs/registro/releases/pending/2026-09-02-pr-2415.md`
+- `docs/registro/releases/pending/2026-09-02-pr-2421.md`
 
 ## Trazabilidad
 
