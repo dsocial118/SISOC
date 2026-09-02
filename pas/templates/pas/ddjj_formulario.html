@@ -1,0 +1,212 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width,initial-scale=1" />
+        <title>Declaración Jurada PAS</title>
+        <link rel="stylesheet"
+              href="{% static 'custom/css/pas_ddjj.css' %}?v=20260831" />
+    </head>
+    <body class="pas-ddjj-public">
+        <header class="pas-ddjj-public-brand">
+            <div class="pas-ddjj-logo">
+                <span class="pas-ddjj-logo-mark" aria-hidden="true"></span>
+                <span>FORMANDO <strong>CAPITAL HUMANO</strong></span>
+            </div>
+            <span>Mesa de ayuda</span>
+        </header>
+        <main class="pas-ddjj-shell">
+            <h1>Declaración Jurada</h1>
+            <div class="pas-ddjj-card">
+                <header class="pas-ddjj-header">
+                    <div class="pas-ddjj-progress-copy">
+                        <strong id="ddjj-progress-text">Paso 1 de 7</strong><strong id="ddjj-progress-percent">14%</strong>
+                    </div>
+                    <div class="pas-ddjj-progress">
+                        <span id="ddjj-progress-bar"></span>
+                    </div>
+                </header>
+                <form method="post"
+                      id="pas-ddjj-form"
+                      data-data-step
+                      data-municipios-url="{% url 'pas_ddjj_municipios' invitacion.token %}"
+                      novalidate>
+                    {% csrf_token %}
+                    <input type="hidden" name="datos_mi_argentina_confirmados" value="no" />
+                    {% if form.non_field_errors %}<div class="pas-ddjj-errors">{{ form.non_field_errors }}</div>{% endif %}
+                    <section class="pas-ddjj-step" data-step-index="1">
+                        <h2>Actualizá tus datos</h2>
+                        <p class="pas-ddjj-help">Revisá que esta información esté al día</p>
+                        <div class="pas-ddjj-fields-grid">
+                            <div class="pas-ddjj-field">
+                                <label for="{{ form.domicilio.id_for_label }}">{{ form.domicilio.label }}</label>
+                                <div class="pas-ddjj-control">{{ form.domicilio }}</div>
+                                {{ form.domicilio.errors }}
+                            </div>
+                            <div class="pas-ddjj-field">
+                                <label for="{{ form.provincia.id_for_label }}">{{ form.provincia.label }}</label>
+                                <div class="pas-ddjj-control">{{ form.provincia }}</div>
+                                {{ form.provincia.errors }}
+                            </div>
+                            <div class="pas-ddjj-field">
+                                <label for="{{ form.municipio.id_for_label }}">{{ form.municipio.label }}</label>
+                                <div class="pas-ddjj-control">{{ form.municipio }}</div>
+                                {{ form.municipio.errors }}
+                            </div>
+                            <div class="pas-ddjj-field">
+                                <label for="{{ form.correo_electronico.id_for_label }}">{{ form.correo_electronico.label }}</label>
+                                <div class="pas-ddjj-control">{{ form.correo_electronico }}</div>
+                                {{ form.correo_electronico.errors }}
+                            </div>
+                            <div class="pas-ddjj-field">
+                                <label for="{{ form.telefono_celular.id_for_label }}">{{ form.telefono_celular.label }}</label>
+                                <div class="pas-ddjj-control">{{ form.telefono_celular }}</div>
+                                {{ form.telefono_celular.errors }}
+                            </div>
+                        </div>
+                    </section>
+                    <section class="pas-ddjj-step" data-step-index="2">
+                        <p class="pas-ddjj-eyebrow">Antes de continuar</p>
+                        <h2>Contanos tu situación</h2>
+                        <p class="pas-ddjj-help">
+                            Con estas preguntas adaptamos el formulario: sólo se te va a solicitar la información que corresponda.
+                        </p>
+                        <div class="pas-ddjj-question">
+                            <h3>{{ form.embarazada.label }}</h3>
+                            <div class="pas-ddjj-options">{{ form.embarazada }}</div>
+                            {{ form.embarazada.errors }}
+                        </div>
+                        <div class="pas-ddjj-question">
+                            <h3>¿Tenés niños, niñas o adolescentes a cargo?</h3>
+                            <div class="pas-ddjj-options">{{ form.hijos_menores_a_cargo }}</div>
+                            {{ form.hijos_menores_a_cargo.errors }}
+                        </div>
+                    </section>
+                    <section class="pas-ddjj-step" data-step-index="3" data-condition="embarazada">
+                        <p class="pas-ddjj-eyebrow">Controles de salud</p>
+                        <h2>Controles durante el embarazo</h2>
+                        <div class="pas-ddjj-question">
+                            <h3>¿Diste cumplimiento a los controles de salud correspondientes a tu embarazo?</h3>
+                            <div class="pas-ddjj-options">{{ form.controles_embarazo_cumplidos }}</div>
+                            {{ form.controles_embarazo_cumplidos.errors }}
+                        </div>
+                    </section>
+                    <section class="pas-ddjj-step"
+                             data-step-index="4"
+                             data-condition="hijos_menores_a_cargo">
+                        <p class="pas-ddjj-eyebrow">Controles de salud y escolaridad</p>
+                        <h2>Menores a cargo</h2>
+                        <div class="pas-ddjj-question">
+                            <h3>¿Diste cumplimiento al Plan Nacional de Vacunación respecto de los menores a cargo?</h3>
+                            <div class="pas-ddjj-options">{{ form.vacunacion_cumplida }}</div>
+                            {{ form.vacunacion_cumplida.errors }}
+                        </div>
+                        <div class="pas-ddjj-question">
+                            <h3>¿Acreditaste la regularidad escolar de los menores a cargo?</h3>
+                            <div class="pas-ddjj-options">{{ form.regularidad_escolar_acreditada }}</div>
+                            {{ form.regularidad_escolar_acreditada.errors }}
+                        </div>
+                    </section>
+                    <section class="pas-ddjj-step" data-step-index="5">
+                        <p class="pas-ddjj-eyebrow">Gastos y consumos</p>
+                        <h2>Tarjetas y billeteras virtuales</h2>
+                        <div class="pas-ddjj-question">
+                            <h3>
+                                En los últimos 6 meses, ¿tus gastos con tarjeta de crédito, débito o billetera virtual superaron en promedio mensual un Salario Mínimo Vital y Móvil?
+                            </h3>
+                            <aside class="pas-ddjj-notice">
+                                El Salario Mínimo Vital y Móvil (SMVM) es un monto que fija el Estado y se actualiza periódicamente. Consultá el valor vigente.
+                            </aside>
+                            <div class="pas-ddjj-options pas-ddjj-options-inverted">{{ form.gastos_bajo_limite_smvm }}</div>
+                            {{ form.gastos_bajo_limite_smvm.errors }}
+                        </div>
+                        <div class="pas-ddjj-question pas-ddjj-market-question">
+                            <h3>¿Accediste al Mercado de Cambios para la compra de dólares con fines de ahorro?</h3>
+                            <div class="pas-ddjj-options pas-ddjj-options-inverted">{{ form.no_accedio_mercado_cambios }}</div>
+                            {{ form.no_accedio_mercado_cambios.errors }}
+                        </div>
+                    </section>
+                    <section class="pas-ddjj-step" data-step-index="6">
+                        <p class="pas-ddjj-eyebrow">Antes de firmar</p>
+                        <h2>Confirmá tus datos de contacto</h2>
+                        <p class="pas-ddjj-help">Vamos a usar estos medios para avisarte sobre tu participación en el Programa.</p>
+                        <div class="pas-ddjj-contact-data">
+                            <div>
+                                <label for="ddjj-contact-email">Correo electrónico</label>
+                                <input id="ddjj-contact-email"
+                                       data-summary-field="correo_electronico"
+                                       readonly />
+                            </div>
+                            <div>
+                                <label for="ddjj-contact-phone">Teléfono celular</label>
+                                <input id="ddjj-contact-phone"
+                                       data-summary-field="telefono_celular"
+                                       readonly />
+                            </div>
+                        </div>
+                        <label class="pas-ddjj-accept pas-ddjj-contact-accept">
+                            {{ form.acepto_declaracion }} <span>{{ form.acepto_declaracion.label }}</span>
+                        </label>
+                        {{ form.acepto_declaracion.errors }}
+                        <button type="button" class="pas-ddjj-legal-link" id="ddjj-legal-open">Ver términos legales</button>
+                    </section>
+                    <section class="pas-ddjj-step" data-step-index="7">
+                        <p class="pas-ddjj-eyebrow">Último paso</p>
+                        <h2>Revisá y firmá</h2>
+                        <p class="pas-ddjj-help">Esto es lo que vas a declarar bajo juramento.</p>
+                        <div id="ddjj-summary" class="pas-ddjj-summary"></div>
+                        <div class="pas-ddjj-signature">
+                            <label for="{{ form.firma_nombre_completo.id_for_label }}">Firma con tu nombre completo</label>
+                            {{ form.firma_nombre_completo }}
+                        </div>
+                        {{ form.firma_nombre_completo.errors }}
+                    </section>
+                    <footer class="pas-ddjj-actions">
+                        <button type="button" class="pas-ddjj-button is-secondary" id="ddjj-back">Volver</button>
+                        <button type="button" class="pas-ddjj-button" id="ddjj-next">Continuar</button>
+                        <button type="button" class="pas-ddjj-button" id="ddjj-submit">Confirmar y firmar</button>
+                    </footer>
+                </form>
+            </div>
+        </main>
+        <footer class="pas-ddjj-footer">
+            SiSoc Conecta - Mesa de ayuda de Formando Capital Humano
+        </footer>
+        <div class="pas-ddjj-modal"
+             id="ddjj-legal-modal"
+             hidden
+             role="dialog"
+             aria-modal="true">
+            <div class="pas-ddjj-modal-card is-legal">
+                <button type="button"
+                        class="pas-ddjj-modal-close"
+                        data-modal-close
+                        aria-label="Cerrar">×</button>
+                <h2>Términos Legales</h2>
+                <p>
+                    El suscripto declara conocer que la falsedad u omisión de la información consignada precedentemente podrá dar lugar a la suspensión y/o egreso, sin perjuicio de las acciones administrativas y/o judiciales que pudieran corresponder. Asimismo, declara que los datos de contacto consignados en la presente Declaración Jurada son veraces y se encuentran vigentes, y presta expresa conformidad para que todas las notificaciones, comunicaciones, requerimientos, intimaciones y demás actos vinculados con mi participación en el Programa sean cursados a través de dichos medios, considerándose válidas y plenamente eficaces desde su remisión. La presente DECLARACIÓN JURADA tendrá tal carácter y se formula en cumplimiento de las corresponsabilidades e incompatibilidades exigidas por la normativa vigente, aplicable al Programa de Acompañamiento Social (PAS).
+                </p>
+            </div>
+        </div>
+        <div class="pas-ddjj-modal"
+             id="ddjj-confirm-modal"
+             hidden
+             role="dialog"
+             aria-modal="true">
+            <div class="pas-ddjj-modal-card is-warning">
+                <span class="pas-ddjj-info-icon">i</span>
+                <h2>¡Atención!</h2>
+                <strong>¿Confirmás la firma y envío de la declaración jurada?</strong>
+                <p>
+                    Al confirmar, estás declarando bajo juramento que los datos ingresados son verídicos, exactos y completos. Una vez enviada, la información no podrá ser modificada de forma directa.
+                </p>
+                <div class="pas-ddjj-modal-actions">
+                    <button type="button" class="pas-ddjj-button is-secondary" data-modal-close>Volver</button>
+                    <button type="button" class="pas-ddjj-button" id="ddjj-confirm-send">Confirmar y enviar</button>
+                </div>
+            </div>
+        </div>
+        <script src="{% static 'custom/js/pas_ddjj.js' %}?v=20260831"></script>
+    </body>
+</html>

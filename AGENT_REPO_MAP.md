@@ -91,7 +91,7 @@ Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrollador
 
 ### Hechos observados
 
-- `docker-compose.yml` levanta `mysql`, `django` y `ocr_worker`.
+- `docker-compose.yml` levanta `mysql`, `django`, `ocr_worker` y `encuestas_worker`.
 - El contenedor `django` monta el repo completo en `/sisoc/`.
 - `docker/django/entrypoint.py` espera MySQL, puede correr `makemigrations`, siempre corre `migrate`, `load_fixtures`, `create_test_users`, `create_groups`, y luego levanta `runserver` o `gunicorn` segun `ENVIRONMENT`.
 
@@ -181,6 +181,7 @@ SISOC/
 - `mailing_worker`
 - `user_import_worker`
 - `ocr_worker`
+- `encuestas_worker`: abre/cierra rondas de encuestas por fecha (ver `encuestas/services.py:run_encuestas_scheduler`, sin Celery).
 
 ## Configuracion y variables de entorno relevantes
 
@@ -202,7 +203,7 @@ SISOC/
 | Seguridad/CSP | `ENABLE_CSP`, `CSP_REPORT_ONLY`, `CSP_ALLOW_UNSAFE_INLINE_SCRIPTS`, `CSP_ALLOW_UNSAFE_EVAL` |
 | Async | `DISABLE_ASYNC_THREADS` |
 | Testing | `USE_SQLITE_FOR_TESTS`, `PYTEST_RUNNING` |
-| Integracion GESTIONAR | `GESTIONAR_API_KEY`, endpoints `GESTIONAR_API_*`, workers `GESTIONAR_*`, `DOMINIO` |
+| Integracion GESTIONAR | `GESTIONAR_INTEGRATION_ENABLED` (corte total de envíos, pulls y comandos), `GESTIONAR_API_KEY`, endpoints `GESTIONAR_API_*`, workers `GESTIONAR_*`, `DOMINIO` |
 | Ticketera | `TICKETERA_ENABLED` |
 | RENAPER | `RENAPER_API_USERNAME`, `RENAPER_API_PASSWORD`, `RENAPER_REQUEST_TIMEOUT_SECONDS`, retries/backoff; sin cache ni TTL de token |
 | Google Maps | `GOOGLE_MAPS_API_KEY` |
@@ -293,10 +294,12 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 | `importarexpediente/` | flujo de importacion de expedientes | `views.py`, `models.py`, urls, tests | Medio |
 | `ocr/` | OCR y procesamiento asociado | `models.py`, `views.py`, urls, tests | Medio |
 | `ver_para_ser_libre/` | modulo de negocio independiente dentro del monolito | `models.py`, `views.py`, `services/workflow.py` | Medio |
+| `pas/` | núcleo del Programa de Acompañamiento Social: titulares, estados, avisos e historial; circuito DDJJ con tokens, formulario público, PDF e importación CSV | `models.py`, `api.py`, `services/resumen_publico_service.py`, `services/ddjj_service.py`, `services/titulares_import_service.py`, `urls.py`, `migrations/` | Alto |
 | `audittrail/` | auditoria interna | `models.py`, `views.py`, `services/query_service` | Alto |
 | `historial/` | historial de dominio | `models.py`, `services/` | Bajo |
 | `intervenciones/` | intervenciones sobre casos | tests + archivos del modulo | Bajo; exploracion parcial |
 | `sentry/` | soporte/integracion local de sentry | codigo del modulo si toca observabilidad | Bajo |
+| `encuestas/` | encuestas periodicas a usuarios logueados: preguntas con logica condicional, segmentacion, rondas recurrentes, bloqueo global si son obligatorias, resultados y export | `models.py`, `services.py`, `services_resultados.py`, `middleware.py`, `context_processors.py`, `management/commands/process_encuestas_rondas.py`, `tests/` | Alto (modulo propio, doc completa en `docs/registro/analisis/2026-08-28-modulo-encuestas.md`) |
 
 ## Patrones arquitectonicos y de codigo
 
@@ -438,9 +441,10 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 ### Si necesitas cambiar Relevamientos
 
 - `relevamientos/models.py`
+- `relevamientos/service.py` (asignación territorial local/legacy)
 - `relevamientos/tasks.py`
 - `relevamientos/views.py`
-- `tests/test_relevamientos*`
+- `tests/test_relevamientos*` y `tests/test_territorial_api.py`
 - docs: `docs/flujos/relevamiento_sync.md`
 
 ### Si necesitas cambiar importacion de expedientes de pago
@@ -559,6 +563,19 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - Los productores CSV nuevos deben reutilizar la política central; el guard
   vive en `tests/test_csv_export_architecture.py`.
 
+### Si necesitas cambiar Encuestas
+
+- `encuestas/models.py`: `Encuesta` (versionado por edicion, ver `version`/`version_de`), `Pregunta` (condicion de visibilidad via `pregunta_condicion`/`operador_condicion`/`valor_condicion`), `OpcionPregunta`, `SegmentacionEncuesta`/`SegmentacionDestinatario`, `RondaEncuesta`, `RespuestaRonda`/`RespuestaPregunta`, `RecordatorioUsuario`.
+- `encuestas/services.py`: ciclo de vida (crear/editar-nueva version/publicar/abrir-cerrar ronda), respuestas (`registrar_respuesta`, respeta anonimato), segmentacion (`actualizar_segmentacion`, `agregar_destinatario`/`quitar_destinatario`, aplican en caliente con ronda abierta), cola de pendientes (`get_rondas_pendientes_para_request`, cacheada por request) y el scheduler (`procesar_rondas_pendientes`, `run_encuestas_scheduler`).
+- `encuestas/services_resultados.py`: agregacion de resultados por pregunta y export CSV/Excel (nunca vincula contenido a identidad si la encuesta es anonima).
+- `encuestas/validators.py`: parseo del listado de segmentacion (Excel/CSV) y del payload JSON del editor de preguntas (no usa formsets de Django a proposito).
+- `encuestas/middleware.py` (`EncuestaObligatoriaMiddleware`): bloquea la navegacion de cualquier usuario con una encuesta obligatoria pendiente; registrado en `config/settings.py` despues de `ProfileConfirmationMiddleware`. Mismo patron que `users/middleware.py`.
+- `encuestas/context_processors.py`: expone la ronda pendiente al modal global (`templates/includes/base.html` + `encuestas/templates/encuestas/partials/responder_modal.html`); comparte cache de request con el middleware para no duplicar la consulta.
+- `encuestas/management/commands/process_encuestas_rondas.py` + servicio `encuestas_worker` en `docker-compose.yml`: abre/cierra rondas por fecha, sin Celery.
+- `users/bootstrap/groups_seed.py`: grupos `Gestor de Encuestas` y `Encuestas Resultados`.
+- Doc funcional completa (modelo, reglas de negocio, permisos, decisiones y desvios respecto del plan original): `docs/registro/analisis/2026-08-28-modulo-encuestas.md`.
+- Limite conocido: la segmentacion por CUIT nunca matchea a un usuario individual (`users.Profile` no tiene CUIT propio, solo DNI/CUIL).
+
 ### Si necesitas cambiar OCR / procesamiento documental
 
 - `ocr/`
@@ -567,7 +584,11 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 
 ### Si necesitas cambiar syncs externos
 
-- GESTIONAR: `comedores/tasks.py`, `relevamientos/tasks.py`, management commands relacionados, `.env.example`
+- GESTIONAR: `config/settings.py`, `comedores/tasks.py`,
+  `comedores/services/territorial_service/impl.py`, `relevamientos/tasks.py`,
+  management commands relacionados, `.env.example`. El flag
+  `GESTIONAR_INTEGRATION_ENABLED` corta todo el tráfico AppSheet/GESTIONAR; no
+  usarlo como interruptor parcial.
 - RENAPER: `core/integrations/renaper.py`, `core/services/renaper.py`, docs `docs/flujos/consulta_renaper.md`
 - Ticketera: `ticketera/`, `docs/integraciones/ticketera_api.md`
 
@@ -701,6 +722,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - `config/urls.py`: cualquier ajuste impacta routing global.
 - `docker/django/entrypoint.py`: side effects de arranque, migraciones, workers.
 - `users/bootstrap/groups_seed.py` y comandos de grupos: permisos globales.
+- `encuestas/middleware.py`: middleware global nuevo (registrado en `config/settings.py`), puede bloquear la navegacion de cualquier usuario autenticado en cualquier vista del sistema si tiene una encuesta obligatoria pendiente.
 - `comedores/tasks.py` y `relevamientos/tasks.py`: syncs externos, threads y side effects.
 - `signals.py` de varias apps: pueden disparar efectos colaterales no obvios.
 - `templates/includes/` y `templates/components/`: impacto transversal de UI.
@@ -800,6 +822,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 | docx/pdf | `admisiones/services/`, `comedores/services/certificacion_prestaciones_service.py`, `pwa/services/nomina_destinatarios_pdf_service.py`, `pwa/files/varios/` |
 | PWA | `pwa/api_views.py`, `pwa/services/`, tests `test_pwa_*` |
 | OCR | `ocr/`, `docker/django/entrypoint.py` |
+| encuestas | `encuestas/services.py`, `encuestas/middleware.py`, `docs/registro/analisis/2026-08-28-modulo-encuestas.md` |
 | auditoria | `audittrail/`, docs `audittrail_*` |
 | release/deploy | `docs/operacion/*.md`, workflows, compose deploy |
 | CI rota por estilo | `.github/workflows/lint.yml`, `scripts/ci/pr_lint_tools.py` |
