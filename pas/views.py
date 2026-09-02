@@ -120,6 +120,22 @@ PAS_AREAS = (
         "title": "Cruces y Novedades",
         "subtitle": "Incompatibilidades",
         "url_name": "pas_cruces",
+        "source_status": "disponible",
+    },
+    {
+        "key": "mesa-ayuda",
+        "number": "04",
+        "title": "Mesa de Ayuda",
+        "subtitle": "Reclamos y atención",
+        "url_name": "pas_mesa_ayuda",
+        "source_status": "pendiente",
+    },
+    {
+        "key": "liquidacion",
+        "number": "05",
+        "title": "Liquidación",
+        "subtitle": "Nómina de pago",
+        "url_name": "pas_liquidacion",
         "source_status": "pendiente",
     },
 )
@@ -445,7 +461,7 @@ class PasDDJJDownloadView(LoginRequiredMixin, View):
 
 
 class PasCrucesView(LoginRequiredMixin, TemplateView):
-    template_name = "pas/cruces.html"
+    template_name = "pas/area.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -456,6 +472,9 @@ class PasCrucesView(LoginRequiredMixin, TemplateView):
                     {"text": "PAS"},
                     {"text": "Cruces y novedades", "active": True},
                 ],
+                "area": next(area for area in PAS_AREAS if area["key"] == "cruces"),
+                "area_key": "cruces",
+                "pas_areas": _pas_areas("cruces"),
                 "total_padron": PasPersona.objects.count(),
                 "circuito": circuito,
                 "etapas_circuito": construir_etapas(circuito),

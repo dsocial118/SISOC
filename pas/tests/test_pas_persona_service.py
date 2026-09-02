@@ -374,6 +374,30 @@ def test_panel_y_formacion_conservan_la_persona_al_cambiar_de_area(client, titul
 
 
 @pytest.mark.django_db
+@pytest.mark.parametrize(
+    ("url_name", "titulo"),
+    [
+        ("pas_mesa_ayuda", b"Mesa de Ayuda"),
+        ("pas_liquidacion", b"Liquidaci\xc3\xb3n"),
+    ],
+)
+def test_areas_pendientes_permanecen_visibles(client, url_name, titulo):
+    usuario = get_user_model().objects.create_superuser(
+        username=f"pas-{url_name}-test",
+        email=f"{url_name}@example.test",
+        password="test-pass",
+    )
+    client.force_login(usuario)
+
+    respuesta = client.get(reverse(url_name))
+
+    assert respuesta.status_code == 200
+    assert len(respuesta.context["pas_areas"]) == 5
+    assert titulo in respuesta.content
+    assert b"Integraci\xc3\xb3n pendiente" in respuesta.content
+
+
+@pytest.mark.django_db
 def test_panel_muestra_solo_condiciones_y_colorea_aviso_por_estado(client, titular_pas):
     usuario = get_user_model().objects.create_superuser(
         username="pas-indicadores-test",

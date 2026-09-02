@@ -103,6 +103,20 @@ urlpatterns = [
         name="pas_cruces_actualizar_renaper",
     ),
     path(
+        "pas/mesa-ayuda",
+        permissions_any_required(["pas.view_paspersona"])(
+            PasAreaView.as_view(area_key="mesa-ayuda")
+        ),
+        name="pas_mesa_ayuda",
+    ),
+    path(
+        "pas/liquidacion",
+        permissions_any_required(["pas.view_paspersona"])(
+            PasAreaView.as_view(area_key="liquidacion")
+        ),
+        name="pas_liquidacion",
+    ),
+    path(
         "pas/informes",
         permissions_any_required(["pas.view_paspersona", "pas.view_pasinforme"])(
             PasInformeListView.as_view()

@@ -58,6 +58,13 @@ def test_cruces_muestra_circuito_pendiente(client, usuario_pas):
     assert "Circuito administrativo mensual" in response.content.decode()
     assert "Exportación a SINTyS (VIAS)" in response.content.decode()
     assert "Integración no disponible" in response.content.decode()
+    assert response.context["pas_areas"][2]["active"] is True
+    assert len(response.context["pas_areas"]) == 5
+    assert "custom/css/pas.css" in response.content.decode()
+    assert "pas-primary-action" in response.content.decode()
+    assert "pas-secondary-action" in response.content.decode()
+    assert "pas-renaper-update-button" in response.content.decode()
+    assert "custom/css/pas_cruces.css" not in response.content.decode()
     assert not PasCircuitoMensual.objects.exists()
 
 
