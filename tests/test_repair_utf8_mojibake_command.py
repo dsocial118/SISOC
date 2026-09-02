@@ -87,6 +87,30 @@ def test_command_repara_mojibake_capitalizado_en_ciudadano_y_nomina():
         nombre=raw_name,
     )
 
+    dry_run = StringIO()
+    call_command(
+        "repair_utf8_mojibake",
+        "--target",
+        "ciudadano",
+        "--target",
+        "nomina_cdi",
+        stdout=dry_run,
+    )
+
+    ciudadano.refresh_from_db()
+    nomina.refresh_from_db()
+    assert ciudadano.nombre == raw_name
+    assert nomina.nombre == raw_name
+    assert "ciudadano: 1 filas revisadas; 1 filas con cambios reversibles." in (
+        dry_run.getvalue()
+    )
+    assert "nomina_cdi: 1 filas revisadas; 1 filas con cambios reversibles." in (
+        dry_run.getvalue()
+    )
+    assert "Total: 2 filas revisadas, 2 filas con cambios reversibles." in (
+        dry_run.getvalue()
+    )
+
     call_command(
         "repair_utf8_mojibake",
         "--apply",
