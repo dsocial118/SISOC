@@ -185,6 +185,21 @@ def test_get_resultados_ronda_sin_respuestas_no_rompe(usuario_creador):
 
 
 @pytest.mark.django_db
+def test_get_resultados_ronda_evita_consultas_por_pregunta(
+    django_assert_num_queries, usuario_creador, respondientes
+):
+    _, ronda, unica, si_no, _, _ = _encuesta_con_preguntas(usuario_creador)
+    registrar_respuesta(
+        ronda,
+        respondientes[0],
+        {f"respuesta-{unica.pk}": "Bueno", f"respuesta-{si_no.pk}": "si"},
+    )
+
+    with django_assert_num_queries(4):
+        get_resultados_ronda(ronda)
+
+
+@pytest.mark.django_db
 def test_opcion_multiple_cuenta_cada_seleccion(usuario_creador, respondientes):
     encuesta = crear_encuesta(
         usuario=usuario_creador,
@@ -264,6 +279,33 @@ def test_export_no_incluye_usuario_si_es_anonima(usuario_creador, respondientes)
 
     assert "Usuario" not in headers
     assert respondientes[0].username not in filas[0]
+
+
+@pytest.mark.django_db
+def test_exportaciones_neutralizan_formulas(usuario_creador, respondientes):
+    encuesta, ronda, unica, si_no, _, comentario = _encuesta_con_preguntas(
+        usuario_creador, anonima=True
+    )
+    comentario.texto = "=HIPERVINCULO()"
+    comentario.save(update_fields=["texto"])
+    registrar_respuesta(
+        ronda,
+        respondientes[0],
+        {
+            f"respuesta-{unica.pk}": "Bueno",
+            f"respuesta-{si_no.pk}": "si",
+            f"respuesta-{comentario.pk}": "=1+1",
+        },
+    )
+
+    headers, filas = build_resultados_csv_rows(ronda)
+    indice = headers.index("'=HIPERVINCULO()")
+    assert filas[0][indice] == "'=1+1"
+
+    workbook = openpyxl.load_workbook(io.BytesIO(build_resultados_excel(ronda)))
+    celda = workbook.active.cell(row=2, column=indice + 1)
+    assert celda.data_type == "s"
+    assert celda.value == "'=1+1"
 
 
 @pytest.mark.django_db

@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from io import BytesIO
 
+from django.db.models import Prefetch
 from django.utils import timezone
 from django.utils.text import slugify
 from openpyxl import Workbook
@@ -17,6 +18,14 @@ TIPOS_CON_DISTRIBUCION = (
 )
 TIPOS_NUMERICOS = (TipoPregunta.NUMERICO, TipoPregunta.ESCALA)
 ETIQUETAS_SI_NO = {"si": "Sí", "no": "No"}
+FORMULA_PREFIXES = ("=", "+", "-", "@")
+
+
+def _escape_spreadsheet_formula(value: str) -> str:
+    """Evita que Excel interprete texto controlado por usuarios como fórmula."""
+    if value.lstrip().startswith(FORMULA_PREFIXES):
+        return f"'{value}"
+    return value
 
 
 @dataclass
@@ -85,7 +94,7 @@ def _distribucion_opciones(pregunta, respuestas_pregunta) -> list[OpcionResultad
                 else 0.0
             ),
         )
-        for opcion in pregunta.opciones.order_by("orden")
+        for opcion in pregunta.opciones.all()
     ]
 
 
@@ -115,14 +124,21 @@ def get_resultados_ronda(ronda: RondaEncuesta) -> list[ResultadoPregunta]:
     y agrupa valores, incluso para encuestas identificadas — el detalle por
     usuario solo existe en la exportación (build_export_rows).
     """
-    preguntas = ronda.encuesta.preguntas.order_by("orden").prefetch_related("opciones")
+    preguntas = list(
+        ronda.encuesta.preguntas.order_by("orden").prefetch_related(
+            "opciones",
+            Prefetch(
+                "respuestas",
+                queryset=RespuestaPregunta.objects.filter(
+                    respuesta_ronda__ronda=ronda
+                ).prefetch_related("opciones_seleccionadas"),
+                to_attr="respuestas_ronda",
+            ),
+        )
+    )
     resultados = []
     for pregunta in preguntas:
-        respuestas_pregunta = list(
-            RespuestaPregunta.objects.filter(
-                respuesta_ronda__ronda=ronda, pregunta=pregunta
-            ).prefetch_related("opciones_seleccionadas")
-        )
+        respuestas_pregunta = pregunta.respuestas_ronda
         resultado = ResultadoPregunta(
             pregunta_id=pregunta.pk,
             texto=pregunta.texto,
@@ -271,7 +287,9 @@ def build_export_headers(encuesta, preguntas) -> list[str]:
         headers.append("Usuario")
     if encuesta_pondera(encuesta):
         headers.extend(["Puntaje obtenido", "Puntaje total"])
-    headers.extend(pregunta.texto for pregunta in preguntas)
+    headers.extend(
+        _escape_spreadsheet_formula(pregunta.texto) for pregunta in preguntas
+    )
     return headers
 
 
@@ -304,7 +322,9 @@ def build_export_rows(ronda: RondaEncuesta) -> tuple[list, list[list[str]]]:
         ]
         if not ronda.encuesta.es_anonima:
             usuario = respuesta_ronda.usuario
-            fila.append(usuario.get_full_name() or usuario.username)
+            fila.append(
+                _escape_spreadsheet_formula(usuario.get_full_name() or usuario.username)
+            )
         if pondera:
             obtenido = sum(
                 _puntaje_obtenido_pregunta(
@@ -314,7 +334,11 @@ def build_export_rows(ronda: RondaEncuesta) -> tuple[list, list[list[str]]]:
             )
             fila.extend([obtenido, total_posible])
         fila.extend(
-            _formatear_valor_respuesta(pregunta, detalle_por_pregunta.get(pregunta.pk))
+            _escape_spreadsheet_formula(
+                _formatear_valor_respuesta(
+                    pregunta, detalle_por_pregunta.get(pregunta.pk)
+                )
+            )
             for pregunta in preguntas
         )
         filas.append(fila)

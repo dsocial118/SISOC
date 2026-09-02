@@ -6,6 +6,7 @@ from django.utils import timezone
 from django.utils.datastructures import MultiValueDict
 
 from encuestas.models import (
+    CumplimientoRonda,
     Encuesta,
     EstadoRonda,
     OperadorCondicion,
@@ -75,11 +76,9 @@ def test_usuario_esta_segmentado_todos_los_usuarios(usuario_creador, respondient
 
 
 @pytest.mark.django_db
-def test_creador_nunca_esta_segmentado_por_su_propia_encuesta(usuario_creador):
-    """Evita que el Gestor se autobloquee al publicar una obligatoria
-    'todos los usuarios' (ver EncuestaObligatoriaMiddleware)."""
+def test_creador_esta_segmentado_por_su_propia_encuesta(usuario_creador):
     encuesta, _ = _publicar_con_pregunta_si_no(usuario_creador)
-    assert not usuario_esta_segmentado(encuesta, usuario_creador)
+    assert usuario_esta_segmentado(encuesta, usuario_creador)
 
 
 @pytest.mark.django_db
@@ -107,18 +106,28 @@ def test_usuario_no_segmentado_por_dni_ajeno(usuario_creador, respondiente):
 
 
 @pytest.mark.django_db
-def test_listado_por_cuit_nunca_matchea_un_usuario_individual(
+def test_usuario_esta_segmentado_por_cuit_equivalente_a_su_cuil(
     usuario_creador, respondiente
 ):
-    """Límite documentado: el perfil de un usuario no tiene CUIT propio."""
     encuesta, _ = _publicar_con_pregunta_si_no(
         usuario_creador,
         tipo_segmentacion=TipoSegmentacion.LISTADO_DOCUMENTOS,
         destinatarios=[
-            {"tipo_documento": TipoDocumento.CUIT, "numero_documento": "30301112223"}
+            {"tipo_documento": TipoDocumento.CUIT, "numero_documento": "20301112223"}
         ],
     )
-    assert not usuario_esta_segmentado(encuesta, respondiente)
+    assert usuario_esta_segmentado(encuesta, respondiente)
+
+
+@pytest.mark.django_db
+def test_get_rondas_pendientes_excluye_ronda_vencida_aun_sin_worker(
+    usuario_creador, respondiente
+):
+    _, ronda = _publicar_con_pregunta_si_no(usuario_creador)
+    ronda.fecha_cierre_programada = timezone.now() - timedelta(seconds=1)
+    ronda.save(update_fields=["fecha_cierre_programada"])
+
+    assert get_rondas_pendientes(respondiente) == []
 
 
 @pytest.mark.django_db
@@ -141,7 +150,7 @@ def test_get_rondas_pendientes_ordena_por_fecha_de_cierre_mas_proxima(
 @pytest.mark.django_db
 def test_get_rondas_pendientes_excluye_ya_respondida(usuario_creador, respondiente):
     _, ronda = _publicar_con_pregunta_si_no(usuario_creador)
-    RespuestaRonda.objects.create(ronda=ronda, usuario=respondiente, completa=True)
+    CumplimientoRonda.objects.create(ronda=ronda, usuario=respondiente)
 
     assert get_rondas_pendientes(respondiente) == []
 
@@ -237,7 +246,10 @@ def test_registrar_respuesta_pregunta_obligatoria_faltante_no_deja_residuo(
     with pytest.raises(ValidationError):
         registrar_respuesta(ronda, respondiente, {})
 
-    assert not RespuestaRonda.objects.filter(ronda=ronda, usuario=respondiente).exists()
+    assert not RespuestaRonda.objects.filter(ronda=ronda).exists()
+    assert not CumplimientoRonda.objects.filter(
+        ronda=ronda, usuario=respondiente
+    ).exists()
     assert not RespuestaPregunta.objects.exists()
 
 
@@ -289,6 +301,88 @@ def test_registrar_respuesta_duplicada_falla(usuario_creador, respondiente):
 
 
 @pytest.mark.django_db
+def test_respuesta_anonima_no_enlaza_el_contenido_con_el_usuario(
+    usuario_creador, respondiente
+):
+    encuesta, ronda = _publicar_con_pregunta_si_no(usuario_creador)
+    encuesta.es_anonima = True
+    encuesta.save(update_fields=["es_anonima"])
+    pregunta = encuesta.preguntas.get()
+
+    respuesta = registrar_respuesta(
+        ronda, respondiente, {f"respuesta-{pregunta.pk}": "si"}
+    )
+
+    assert respuesta.usuario is None
+    assert CumplimientoRonda.objects.filter(ronda=ronda, usuario=respondiente).exists()
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "valor",
+    ["inexistente", "", "si-no-valido"],
+)
+def test_respuesta_si_no_invalida_no_se_guarda(usuario_creador, respondiente, valor):
+    _, ronda = _publicar_con_pregunta_si_no(usuario_creador)
+    pregunta = ronda.encuesta.preguntas.get()
+
+    with pytest.raises(ValidationError):
+        registrar_respuesta(ronda, respondiente, {f"respuesta-{pregunta.pk}": valor})
+
+    assert not RespuestaRonda.objects.filter(ronda=ronda).exists()
+    assert not CumplimientoRonda.objects.filter(
+        ronda=ronda, usuario=respondiente
+    ).exists()
+
+
+@pytest.mark.django_db
+def test_opcion_inexistente_no_marca_la_respuesta_como_completa(
+    usuario_creador, respondiente
+):
+    encuesta = crear_encuesta(
+        usuario=usuario_creador,
+        titulo="Opciones válidas",
+        es_obligatoria=True,
+        duracion_ronda_dias=7,
+    )
+    pregunta = Pregunta.objects.create(
+        encuesta=encuesta, texto="Elegí", tipo=TipoPregunta.OPCION_UNICA, orden=1
+    )
+    OpcionPregunta.objects.create(pregunta=pregunta, texto="A", valor="A")
+    OpcionPregunta.objects.create(pregunta=pregunta, texto="B", valor="B")
+    actualizar_segmentacion(encuesta, tipo=TipoSegmentacion.TODOS_LOS_USUARIOS)
+    ronda = publicar(encuesta, usuario=usuario_creador)
+
+    with pytest.raises(ValidationError):
+        registrar_respuesta(ronda, respondiente, {f"respuesta-{pregunta.pk}": "X"})
+
+    assert not RespuestaRonda.objects.filter(ronda=ronda).exists()
+    assert not CumplimientoRonda.objects.filter(
+        ronda=ronda, usuario=respondiente
+    ).exists()
+
+
+@pytest.mark.django_db
+def test_escala_fuera_de_rango_no_se_guarda(usuario_creador, respondiente):
+    encuesta = crear_encuesta(
+        usuario=usuario_creador,
+        titulo="Escala válida",
+        es_obligatoria=True,
+        duracion_ronda_dias=7,
+    )
+    pregunta = Pregunta.objects.create(
+        encuesta=encuesta, texto="Puntuá", tipo=TipoPregunta.ESCALA, orden=1
+    )
+    actualizar_segmentacion(encuesta, tipo=TipoSegmentacion.TODOS_LOS_USUARIOS)
+    ronda = publicar(encuesta, usuario=usuario_creador)
+
+    with pytest.raises(ValidationError):
+        registrar_respuesta(ronda, respondiente, {f"respuesta-{pregunta.pk}": "11"})
+
+    assert not RespuestaRonda.objects.filter(ronda=ronda).exists()
+
+
+@pytest.mark.django_db
 def test_registrar_respuesta_ronda_cerrada_falla(usuario_creador, respondiente):
     _, ronda = _publicar_con_pregunta_si_no(usuario_creador)
     ronda.estado = EstadoRonda.CERRADA
@@ -296,6 +390,21 @@ def test_registrar_respuesta_ronda_cerrada_falla(usuario_creador, respondiente):
 
     with pytest.raises(ValidationError):
         registrar_respuesta(ronda, respondiente, {})
+
+
+@pytest.mark.django_db
+def test_registrar_respuesta_ronda_vencida_falla_aun_sin_worker(
+    usuario_creador, respondiente
+):
+    _, ronda = _publicar_con_pregunta_si_no(usuario_creador)
+    pregunta = ronda.encuesta.preguntas.get()
+    ronda.fecha_cierre_programada = timezone.now() - timedelta(seconds=1)
+    ronda.save(update_fields=["fecha_cierre_programada"])
+
+    with pytest.raises(ValidationError):
+        registrar_respuesta(ronda, respondiente, {f"respuesta-{pregunta.pk}": "si"})
+
+    assert not RespuestaRonda.objects.filter(ronda=ronda).exists()
 
 
 @pytest.mark.django_db

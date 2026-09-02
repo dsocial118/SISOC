@@ -73,7 +73,8 @@
                     </div>
 
                     <div class="subfields">
-                        <div class="field-col" id="recordatorio-field"
+                        <div class="field-col"
+                             id="recordatorio-field"
                              {% if form.es_obligatoria.value %}style="display:none"{% endif %}>
                             <label for="{{ form.intervalo_recordatorio_dias.id_for_label }}">Intervalo de recordatorio (días)</label>
                             {{ form.intervalo_recordatorio_dias }}
@@ -89,7 +90,8 @@
                                 <div class="invalid-feedback d-block">{{ form.duracion_ronda_dias.errors.0 }}</div>
                             {% endif %}
                         </div>
-                        <div class="field-col" id="recurrencia-field"
+                        <div class="field-col"
+                             id="recurrencia-field"
                              {% if not form.es_recurrente.value %}style="display:none"{% endif %}>
                             <label for="{{ form.intervalo_recurrencia_dias.id_for_label }}">Intervalo de recurrencia (días)</label>
                             {{ form.intervalo_recurrencia_dias }}
@@ -118,7 +120,7 @@
                 </div>
             </div>
 
-            <input type="hidden" name="preguntas_json" id="preguntas_json">
+            <input type="hidden" name="preguntas_json" id="preguntas_json" />
 
             <div class="editor-actions">
                 <a href="{% url 'encuestas_listar' %}" class="btn-cancel">Cancelar</a>
@@ -138,7 +140,7 @@
                 </div>
                 <div class="mb-2">
                     <label>Texto de la pregunta</label>
-                    <input type="text" class="form-control pregunta-texto" required>
+                    <input type="text" class="form-control pregunta-texto" required />
                 </div>
                 <div class="pregunta-grid">
                     <div>
@@ -149,7 +151,7 @@
                     </div>
                     <div class="pregunta-obligatoria-wrap">
                         <div class="form-check form-switch">
-                            <input type="checkbox" class="form-check-input pregunta-obligatoria" checked>
+                            <input type="checkbox" class="form-check-input pregunta-obligatoria" checked />
                             <label class="form-check-label">Obligatoria</label>
                         </div>
                     </div>
@@ -195,7 +197,9 @@
                             {% for value, label in operadores_condicion %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
                         </select>
                         <div>
-                            <input type="text" class="form-control pregunta-condicion-valor" placeholder="Valor esperado">
+                            <input type="text"
+                                   class="form-control pregunta-condicion-valor"
+                                   placeholder="Valor esperado" />
                             <select class="form-select pregunta-condicion-valor-select d-none"></select>
                         </div>
                     </div>

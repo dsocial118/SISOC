@@ -3,7 +3,8 @@
 {% block title %}Resultados: {{ encuesta.titulo }}{% endblock %}
 {% block content %}
     <link rel="stylesheet" href="{% static 'custom/css/encuestaForm.css' %}" />
-    <link rel="stylesheet" href="{% static 'custom/css/encuestaResultados.css' %}" />
+    <link rel="stylesheet"
+          href="{% static 'custom/css/encuestaResultados.css' %}" />
     <div class="encuesta-editor">
         <div class="d-flex justify-content-between align-items-start mb-3">
             <div>
@@ -25,9 +26,13 @@
             <div class="resultados-toolbar">
                 <form method="get" class="ronda-select-wrap">
                     <label for="ronda">Ronda</label>
-                    <select name="ronda" id="ronda" class="form-select" onchange="this.form.submit()">
+                    <select name="ronda"
+                            id="ronda"
+                            class="form-select"
+                            onchange="this.form.submit()">
                         {% for ronda in rondas %}
-                            <option value="{{ ronda.pk }}" {% if ronda_actual.pk == ronda.pk %}selected{% endif %}>
+                            <option value="{{ ronda.pk }}"
+                                    {% if ronda_actual.pk == ronda.pk %}selected{% endif %}>
                                 Ronda {{ ronda.numero_ronda }} — {{ ronda.get_estado_display }} ({{ ronda.fecha_apertura|date:"d/m/Y" }})
                             </option>
                         {% endfor %}
@@ -50,7 +55,9 @@
             {% if ronda_actual %}
                 <div class="stat-cards">
                     <div class="stat-card stat-accent-respuestas">
-                        <div class="stat-card-icon"><i class="fas fa-poll"></i></div>
+                        <div class="stat-card-icon">
+                            <i class="fas fa-poll"></i>
+                        </div>
                         <div>
                             <div class="stat-card-value">{{ ronda_actual.respuestas.count }}</div>
                             <div class="stat-card-label">Respuestas recibidas</div>
@@ -66,7 +73,9 @@
                         </div>
                     </div>
                     <div class="stat-card stat-accent-cierre">
-                        <div class="stat-card-icon"><i class="fas fa-calendar-check"></i></div>
+                        <div class="stat-card-icon">
+                            <i class="fas fa-calendar-check"></i>
+                        </div>
                         <div>
                             <div class="stat-card-value">{{ ronda_actual.fecha_cierre_programada|date:"d/m/Y" }}</div>
                             <div class="stat-card-label">Cierre programado</div>
@@ -149,7 +158,8 @@
                             {% elif resultado.promedio is not None %}
                                 <div class="numeric-range">
                                     <div class="numeric-range-track">
-                                        <div class="numeric-range-marker" style="left: {{ resultado.posicion_promedio }}%;">
+                                        <div class="numeric-range-marker"
+                                             style="left: {{ resultado.posicion_promedio }}%">
                                             <span class="numeric-range-marker-label">{{ resultado.promedio|floatformat:1 }}</span>
                                         </div>
                                     </div>

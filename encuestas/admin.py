@@ -1,6 +1,7 @@
 from django.contrib import admin
 
 from .models import (
+    CumplimientoRonda,
     Encuesta,
     OpcionPregunta,
     Pregunta,
@@ -81,6 +82,11 @@ class RondaEncuestaAdmin(admin.ModelAdmin):
 class RespuestaRondaAdmin(admin.ModelAdmin):
     list_display = ("ronda", "usuario", "completa", "fecha_respuesta")
     list_filter = ("completa",)
+
+
+@admin.register(CumplimientoRonda)
+class CumplimientoRondaAdmin(admin.ModelAdmin):
+    list_display = ("ronda", "usuario")
 
 
 @admin.register(RespuestaPregunta)

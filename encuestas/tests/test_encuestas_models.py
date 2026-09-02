@@ -12,6 +12,7 @@ from encuestas.models import (
     OperadorCondicion,
     Pregunta,
     RecordatorioUsuario,
+    CumplimientoRonda,
     RespuestaPregunta,
     RespuestaRonda,
     RondaEncuesta,
@@ -184,7 +185,7 @@ def test_flujo_completo_pregunta_opciones_ronda_y_respuesta(
 
 
 @pytest.mark.django_db
-def test_un_usuario_no_puede_responder_dos_veces_la_misma_ronda(
+def test_un_usuario_no_puede_cumplir_dos_veces_la_misma_ronda(
     usuario_creador, encuesta_obligatoria
 ):
     ahora = timezone.now()
@@ -194,9 +195,9 @@ def test_un_usuario_no_puede_responder_dos_veces_la_misma_ronda(
         fecha_apertura=ahora,
         fecha_cierre_programada=ahora + timedelta(days=7),
     )
-    RespuestaRonda.objects.create(ronda=ronda, usuario=usuario_creador)
+    CumplimientoRonda.objects.create(ronda=ronda, usuario=usuario_creador)
     with pytest.raises(IntegrityError):
-        RespuestaRonda.objects.create(ronda=ronda, usuario=usuario_creador)
+        CumplimientoRonda.objects.create(ronda=ronda, usuario=usuario_creador)
 
 
 @pytest.mark.django_db

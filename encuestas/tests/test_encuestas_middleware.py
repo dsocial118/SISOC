@@ -1,4 +1,5 @@
 import pytest
+from django.contrib.auth.models import Permission
 from django.urls import reverse
 
 from encuestas.models import Pregunta, TipoPregunta, TipoSegmentacion
@@ -66,6 +67,23 @@ def test_no_bloquea_la_pagina_de_inicio_para_evitar_loop(
     client.force_login(usuario)
 
     response = client.get(reverse("inicio"))
+
+    assert response.status_code == 200
+
+
+@pytest.mark.django_db
+def test_gestor_creador_puede_gestionar_su_encuesta_obligatoria_pendiente(
+    client, usuario_creador
+):
+    _publicar_encuesta(usuario_creador, obligatoria=True)
+    permisos = Permission.objects.filter(
+        content_type__app_label="encuestas",
+        codename__in=["change_encuesta", "view_encuesta"],
+    )
+    usuario_creador.user_permissions.add(*permisos)
+    client.force_login(usuario_creador)
+
+    response = client.get(reverse("encuestas_listar"))
 
     assert response.status_code == 200
 
