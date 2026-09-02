@@ -36,16 +36,16 @@
                 </div>
                 <div class="panel-body">
                     <div class="mb-3">
-                        <label for="{{ form.titulo.id_for_label }}">Título <span class="text-danger">*</span></label>
+                        <label for="{{ form.titulo.id_for_label }}">
+                            Título <span class="text-danger">*</span>
+                        </label>
                         {{ form.titulo }}
                         {% if form.titulo.errors %}<div class="invalid-feedback d-block">{{ form.titulo.errors.0 }}</div>{% endif %}
                     </div>
                     <div class="mb-0">
                         <label for="{{ form.descripcion.id_for_label }}">Descripción</label>
                         {{ form.descripcion }}
-                        {% if form.descripcion.errors %}
-                            <div class="invalid-feedback d-block">{{ form.descripcion.errors.0 }}</div>
-                        {% endif %}
+                        {% if form.descripcion.errors %}<div class="invalid-feedback d-block">{{ form.descripcion.errors.0 }}</div>{% endif %}
                     </div>
 
                     <div class="options-row">
@@ -162,18 +162,24 @@
                 </div>
                 <div class="pregunta-pondera-wrap d-none">
                     <div class="form-check form-switch">
-                        <input type="checkbox" class="form-check-input pregunta-pondera">
+                        <input type="checkbox" class="form-check-input pregunta-pondera" />
                         <label class="form-check-label">¿Pondera para el puntaje total?</label>
                     </div>
                     <div class="pregunta-puntaje-detalle d-none">
                         <div class="pregunta-puntaje-si-no d-none pregunta-grid">
                             <div>
                                 <label>Puntaje si responde "Sí"</label>
-                                <input type="number" min="0" class="form-control pregunta-puntaje-si" value="0">
+                                <input type="number"
+                                       min="0"
+                                       class="form-control pregunta-puntaje-si"
+                                       value="0" />
                             </div>
                             <div>
                                 <label>Puntaje si responde "No"</label>
-                                <input type="number" min="0" class="form-control pregunta-puntaje-no" value="0">
+                                <input type="number"
+                                       min="0"
+                                       class="form-control pregunta-puntaje-no"
+                                       value="0" />
                             </div>
                         </div>
                         <div class="pregunta-puntaje-opciones-wrap d-none">
