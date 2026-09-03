@@ -23,11 +23,11 @@ def test_deploy_qa_actualiza_solo_development_antes_del_downtime():
     qa_step = _qa_deploy_step()
     scoped_fetch = (
         'git -C "$APP_ROOT" fetch origin --no-tags '
-        'development:refs/remotes/origin/development'
+        "development:refs/remotes/origin/development"
     )
     fast_forward = 'git -C "$APP_ROOT" merge --ff-only origin/development'
     deploy_versioned = (
-        './scripts/operacion/deploy_refresh.sh --yes --skip-pull '
+        "./scripts/operacion/deploy_refresh.sh --yes --skip-pull "
         '--expected-revision "$EXPECTED_SHA"'
     )
 
