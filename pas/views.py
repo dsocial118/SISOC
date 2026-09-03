@@ -2,13 +2,26 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import ValidationError
 from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
-from django.views.generic import TemplateView, View
+from django.urls import reverse
+from django.views.generic import DetailView, ListView, TemplateView, View
 from django.views.generic.edit import FormView
 
 from core.models import Municipio
-from pas.forms import PasDeclaracionJuradaForm, PasTitularesImportForm
-from pas.models import PasDeclaracionJurada, PasInvitacionDDJJ
+from core.pagination import NoCountPaginator, build_no_count_page_range
+from pas.forms import (
+    PasDeclaracionJuradaForm,
+    PasInformeGenerarForm,
+    PasTitularesImportForm,
+)
+from pas.models import PasDeclaracionJurada, PasInforme, PasInvitacionDDJJ
 from pas.services.ddjj_service import presentar_ddjj
+from pas.services.informe_service import (
+    buscar_informes,
+    csv_response_for_informe,
+    errors_payload,
+    generar_informe_pas,
+    preview_payload,
+)
 from pas.services.titulares_import_service import (
     generar_excel_tokens_vigentes,
     importar_titulares_csv,
@@ -130,3 +143,81 @@ class PasDDJJDownloadView(LoginRequiredMixin, View):
             filename=f"DDJJ_PAS_{declaracion.persona.dni}_v{declaracion.version}.pdf",
             content_type="application/pdf",
         )
+
+
+def _breadcrumb_informes(actual):
+    return [
+        {"text": "PAS"},
+        {"text": "Informes", "url": reverse("pas_informe_listar")},
+        {"text": actual, "active": True},
+    ]
+
+
+class PasInformeListView(LoginRequiredMixin, ListView):
+    model = PasInforme
+    template_name = "pas/informe_list.html"
+    context_object_name = "informes"
+    paginate_by = 10
+
+    def get_queryset(self):
+        return buscar_informes(self.request.GET)
+
+    def paginate_queryset(self, queryset, page_size):
+        paginator = NoCountPaginator(queryset, page_size)
+        page_obj = paginator.get_page(self.request.GET.get(self.page_kwarg))
+        return paginator, page_obj, page_obj.object_list, page_obj.has_other_pages()
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update(
+            {
+                "breadcrumb_items": _breadcrumb_informes("Listar"),
+                "query": self.request.GET.get("q", ""),
+            }
+        )
+        page_obj = context.get("page_obj")
+        if page_obj and getattr(page_obj.paginator, "count", None) is None:
+            context["page_range"] = build_no_count_page_range(page_obj)
+        return context
+
+
+class PasInformeGenerateView(LoginRequiredMixin, FormView):
+    template_name = "pas/informe_form.html"
+    form_class = PasInformeGenerarForm
+
+    def form_valid(self, form):
+        informe = generar_informe_pas(form, usuario=self.request.user)
+        return csv_response_for_informe(informe)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["breadcrumb_items"] = _breadcrumb_informes("Generar")
+        return context
+
+
+class PasInformePreviewView(LoginRequiredMixin, View):
+    def post(self, request, *args, **kwargs):
+        form = PasInformeGenerarForm(request.POST)
+        if not form.is_valid():
+            return JsonResponse(errors_payload(form), status=400)
+        return JsonResponse(preview_payload(form))
+
+
+class PasInformeDetailView(LoginRequiredMixin, DetailView):
+    model = PasInforme
+    template_name = "pas/informe_detail.html"
+    context_object_name = "informe"
+
+    def get_queryset(self):
+        return PasInforme.objects.select_related("usuario").all()
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["breadcrumb_items"] = _breadcrumb_informes(self.object.numero)
+        return context
+
+
+class PasInformeDownloadView(LoginRequiredMixin, View):
+    def get(self, request, *args, **kwargs):
+        informe = get_object_or_404(PasInforme, pk=kwargs["pk"])
+        return csv_response_for_informe(informe)

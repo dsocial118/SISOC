@@ -1,0 +1,135 @@
+{% extends "includes/main.html" %}
+{% load static crispy_forms_tags %}
+{% block title %}Generar informe PAS{% endblock %}
+{% block breadcrumb %}
+    {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
+{% endblock %}
+{% block content %}
+    <link rel="stylesheet"
+          href="{% static 'custom/css/comedorFormModerno.css' %}" />
+    <div class="d-flex justify-content-between mb-3">
+        <a href="{% url 'pas_informe_listar' %}" class="btn btn-secondary">Volver</a>
+        <a href="#" data-history-back="true" class="btn btn-secondary">Cancelar</a>
+    </div>
+    <div class="row comedor-form">
+        <div class="col-12">
+            <form method="post"
+                  id="pasInformeForm"
+                  class="w-100"
+                  data-preview-url="{% url 'pas_informe_previsualizar' %}">
+                {% csrf_token %}
+                {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+                <div class="section-card">
+                    <div class="section-header">
+                        <div class="section-header-left">
+                            <div class="section-icon">
+                                <i class="fas fa-calendar-alt"></i>
+                            </div>
+                            <div class="section-title-group">
+                                <h3 class="section-title">Rangos temporales</h3>
+                                <p class="section-subtitle">Acote por alta del registro o por cambios de estado.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section-body collapse show">
+                        <div class="form-group row">
+                            <div class="col-md-3">{{ form.fecha_creacion_desde|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.fecha_creacion_hasta|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.fecha_cambio_desde|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.fecha_cambio_hasta|as_crispy_field }}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="section-card">
+                    <div class="section-header">
+                        <div class="section-header-left">
+                            <div class="section-icon">
+                                <i class="fas fa-exchange-alt"></i>
+                            </div>
+                            <div class="section-title-group">
+                                <h3 class="section-title">Estado y motivos</h3>
+                                <p class="section-subtitle">Ejemplo: cambios de Baja a Activo dentro de un periodo.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section-body collapse show">
+                        <div class="form-group row">
+                            <div class="col-md-4">{{ form.estado_anterior|as_crispy_field }}</div>
+                            <div class="col-md-4">{{ form.estado_nuevo|as_crispy_field }}</div>
+                            <div class="col-md-4">{{ form.estado_actual|as_crispy_field }}</div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-6">{{ form.aviso_cambio|as_crispy_field }}</div>
+                            <div class="col-md-6">{{ form.aviso_actual|as_crispy_field }}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="section-card">
+                    <div class="section-header">
+                        <div class="section-header-left">
+                            <div class="section-icon">
+                                <i class="fas fa-filter"></i>
+                            </div>
+                            <div class="section-title-group">
+                                <h3 class="section-title">Filtros sugeridos</h3>
+                                <p class="section-subtitle">Ubicacion, identificadores y usuario responsable del cambio.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section-body collapse show">
+                        <div class="form-group row">
+                            <div class="col-md-3">{{ form.provincia|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.municipio|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.dni|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.id_persona|as_crispy_field }}</div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-6">{{ form.usuario_cambio|as_crispy_field }}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="sticky-actions">
+                    <a href="{% url 'pas_informe_listar' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left mr-1"></i> Volver
+                    </a>
+                    <button class="btn btn-primary" type="button" id="pasInformePreviewBtn">
+                        <i class="fas fa-eye mr-1"></i> Previsualizar
+                    </button>
+                    <button class="btn btn-success" type="submit">
+                        <i class="fas fa-download mr-1"></i> Realizar informe
+                    </button>
+                </div>
+            </form>
+            <div class="section-card pas-preview-card mt-4"
+                 id="pasInformePreview"
+                 hidden>
+                <div class="section-header">
+                    <div class="section-header-left">
+                        <div class="section-icon">
+                            <i class="fas fa-table"></i>
+                        </div>
+                        <div class="section-title-group">
+                            <h3 class="section-title">Previsualizacion del CSV</h3>
+                            <p class="section-subtitle" id="pasInformePreviewMeta"></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="section-body collapse show">
+                    <div class="alert alert-danger" id="pasInformePreviewErrors" hidden></div>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered table-striped mb-0 pas-preview-table">
+                            <thead id="pasInformePreviewHead">
+                            </thead>
+                            <tbody id="pasInformePreviewBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+{% block customJS %}
+    <script nonce="{{ request.csp_nonce }}">window.ajaxLoadMunicipiosUrl = "{% url 'ajax_load_municipios' %}";</script>
+    <script src="{% static 'custom/js/pas_informe.js' %}"></script>
+{% endblock %}
