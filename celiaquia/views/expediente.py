@@ -1297,6 +1297,12 @@ class ExpedienteDetailView(DetailView):
                     legajo.archivos_requeridos.items(), start=1
                 )
             ]
+            # La provincia ve el panel de comentarios en los estados en que
+            # puede haber observaciones publicadas: mientras subsana, después
+            # de responder (para releer qué le pidieron) y si se la rechazó.
+            legajo.comentarios_visibles_provincia = (
+                legajo.revision_tecnico in ESTADOS_CON_COMENTARIOS_PUBLICADOS
+            )
             # Subsanación activa (pendiente de respuesta) para que la provincia
             # adjunte archivos correctivos y se listen las evidencias cargadas.
             # Historial completo de subsanaciones (usa el prefetch del queryset).
@@ -1968,6 +1974,18 @@ class SubirCruceExcelView(View):
     def get(self, *_a, **_k):
         return HttpResponseNotAllowed(["POST"])
 
+
+#: Estados del legajo en los que la provincia puede tener observaciones
+#: técnicas publicadas y por lo tanto ve el panel de comentarios. Queda afuera
+#: PENDIENTE, donde todavía no se publicó nada. Se enumeran los estados que
+#: habilitan el panel, y no los que lo niegan, para que un estado nuevo no pase
+#: a mostrar comentarios internos por descuido.
+ESTADOS_CON_COMENTARIOS_PUBLICADOS = {
+    RevisionTecnico.SUBSANAR,
+    RevisionTecnico.SUBSANADO,
+    RevisionTecnico.RECHAZADO,
+    RevisionTecnico.APROBADO,
+}
 
 #: Los comentarios técnicos se registran por tipo de documento; las
 #: observaciones de la Fase 2 usan las categorías previas. ANSES y condición

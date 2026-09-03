@@ -201,6 +201,34 @@ def test_listado_nacion_ve_los_internos(client, coordinador, legajo):
     assert all(c["es_interno"] for c in tecnicos)
 
 
+@pytest.mark.parametrize(
+    "estado,visible",
+    [
+        # Antes de cualquier acción no hay nada publicado.
+        (RevisionTecnico.PENDIENTE, False),
+        (RevisionTecnico.SUBSANAR, True),
+        # Tras responder, la provincia tiene que poder releer qué le pidieron.
+        (RevisionTecnico.SUBSANADO, True),
+        (RevisionTecnico.RECHAZADO, True),
+        # El historial queda consultable aunque el legajo termine aprobado.
+        (RevisionTecnico.APROBADO, True),
+    ],
+)
+def test_panel_visible_para_provincia_segun_estado(
+    client, coordinador, legajo, estado, visible
+):
+    legajo.revision_tecnico = estado
+    legajo.save(update_fields=["revision_tecnico"])
+    client.force_login(coordinador)
+
+    response = client.get(reverse("expediente_detail", args=[legajo.expediente_id]))
+    item = next(
+        i for i in response.context["legajos_enriquecidos"] if i.pk == legajo.pk
+    )
+
+    assert item.comentarios_visibles_provincia is visible
+
+
 def test_superusuario_no_figura_como_provincia(client, legajo):
     """Un superusuario tiene todos los permisos, incluido el rol provincial:
     el autor se etiqueta por alcance territorial, no por permiso."""
