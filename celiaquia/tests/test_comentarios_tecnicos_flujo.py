@@ -16,6 +16,7 @@ from ciudadanos.models import Ciudadano
 from core.models import Provincia
 from users.models import Profile, ProfileTerritorialScope
 from celiaquia.models import (
+    AsignacionTecnico,
     EstadoExpediente,
     EstadoLegajo,
     Expediente,
@@ -171,6 +172,39 @@ def test_alta_estructurada_invalida_devuelve_400(client, coordinador, legajo):
     )
 
     assert response.status_code == 400
+    assert not ComentariosTecnicosService.historial(legajo).exists()
+
+
+@pytest.mark.parametrize(
+    "permission_code, asignar_tecnico",
+    [
+        ("role_tecnicoceliaquia", True),
+        ("role_coordinadorceliaquia", False),
+    ],
+)
+def test_usuario_territorial_con_rol_nacion_no_accede_a_endpoints_internos(
+    client, provincial, legajo, permission_code, asignar_tecnico
+):
+    """El perfil territorial prevalece sobre roles acumulados de Nación."""
+    _grant(provincial, permission_code)
+    if asignar_tecnico:
+        AsignacionTecnico.objects.create(
+            expediente=legajo.expediente, tecnico=provincial
+        )
+    client.force_login(provincial)
+
+    preview = client.get(_url_preview(legajo))
+    crear = client.post(
+        _url_crear(legajo),
+        data={
+            "tipo_documento": "RENAPER",
+            "tiene_observaciones": "si",
+            "observacion_codigo": CODIGO_RENAPER,
+        },
+    )
+
+    assert preview.status_code == 403
+    assert crear.status_code == 403
     assert not ComentariosTecnicosService.historial(legajo).exists()
 
 

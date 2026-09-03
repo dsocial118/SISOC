@@ -80,6 +80,15 @@ def _resolver_legajo_para_nacion(request, expediente_id, legajo_id):
             {"success": False, "message": "Autenticación requerida."}, status=403
         )
 
+    # El perfil territorial define a un usuario de Provincia, aun cuando por
+    # configuración acumule permisos de Nación. Estos endpoints crean o
+    # anticipan comentarios internos, por lo que no deben exponerlos antes de
+    # su publicación durante Subsanar/Rechazar.
+    if is_territorial_user(user):
+        return None, JsonResponse(
+            {"success": False, "message": "Permiso denegado."}, status=403
+        )
+
     is_admin = user.is_superuser
     is_coord = _has_permission(user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION)
     is_tec = _has_permission(user, ROLE_TECNICO_CELIAQUIA_PERMISSION)

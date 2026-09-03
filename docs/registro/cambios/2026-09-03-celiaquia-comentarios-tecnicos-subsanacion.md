@@ -121,6 +121,11 @@ preguntaba por el permiso de rol y un superusuario los tiene todos. Se etiqueta
 por `is_territorial_user`, que es el mismo criterio con el que se decide qué
 comentarios recibe la Provincia.
 
+La misma frontera se aplica al alta y a la previsualización: un perfil
+territorial no puede acceder a endpoints internos aunque acumule permisos de
+técnico o coordinador. Así no puede anticipar ni registrar observaciones antes
+de que Nación las publique al solicitar Subsanar o Rechazar.
+
 ## Evidencia
 
 `celiaquia/tests/test_comentarios_tecnicos_service.py` cubre el catálogo, la
