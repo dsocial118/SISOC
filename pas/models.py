@@ -22,6 +22,17 @@ class PasEstado(models.Model):
     def __str__(self):
         return self.nombre
 
+    @property
+    def css_class(self):
+        nombre = (self.nombre or "").strip().lower()
+        if nombre == "activo":
+            return "pas-status-activo"
+        if nombre == "suspendido":
+            return "pas-status-suspendido"
+        if nombre == "baja":
+            return "pas-status-baja"
+        return "pas-status-neutral"
+
 
 class PasAviso(models.Model):
     codigo = models.PositiveIntegerField(unique=True)
@@ -64,6 +75,9 @@ class PasPersona(models.Model):
 
     def __str__(self):
         return f"{self.apellidos}, {self.nombres} - {self.dni}"
+
+    def get_absolute_url(self):
+        return reverse("pas_panel_control_persona", kwargs={"pk": self.pk})
 
     @property
     def declaracion_jurada_vigente(self):

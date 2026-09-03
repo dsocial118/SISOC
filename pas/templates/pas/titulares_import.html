@@ -1,7 +1,11 @@
 {% extends "includes/main.html" %}
+{% load static %}
 {% block title %}Importar titulares PAS{% endblock %}
 {% block breadcrumb %}
     {% include "components/breadcrumb.html" with items=breadcrumb_items %}
+{% endblock %}
+{% block head %}
+    <link rel="stylesheet" href="{% static 'custom/css/pas.css' %}" />
 {% endblock %}
 {% block content %}
     <main class="pas-workspace">
@@ -10,6 +14,7 @@
                 <span class="pas-eyebrow">Programa de Acompañamiento Social</span>
                 <h1>Importar titulares</h1>
             </div>
+            <a href="{% url 'pas_persona_listar' %}" class="btn btn-outline-light">Volver al buscador</a>
         </header>
 
         <section class="pas-search-panel">

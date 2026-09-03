@@ -73,6 +73,7 @@
 - `docs/registro/decisiones/`: decisiones relevantes (ADR livianas).
 - `docs/registro/decisiones/2026-07-28-pas-circuito-cruces.md`: alcance y límites del circuito mensual SINTyS de PAS.
 - `docs/registro/decisiones/2026-07-29-pas-supervivencia-renaper.md`: control diario RENAPER e incompatibilidades de supervivencia PAS.
+- `docs/registro/decisiones/2026-07-16-pas-formacion-vat.md`: Formación PAS permanece desacoplada hasta definir el contrato de integración.
 - `docs/registro/prs/`: documentación automática por pull request.
 - `docs/registro/releases/pending/`: release notes preliminares usadas para reconstruir `CHANGELOG.md` en PRs a `main`.
 
