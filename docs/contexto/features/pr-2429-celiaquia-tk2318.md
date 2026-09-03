@@ -9,7 +9,7 @@
 
 ## Contexto funcional
 
-- No informado explícitamente; inferir desde el título del PR y el diff.
+- Celiaquía — revisión técnica de legajos. El técnico registra observaciones estructuradas y esas mismas observaciones son las que se le comunican a la Provincia al subsanar o rechazar, sin volver a redactarlas.
 
 ## Arquitectura tocada
 
@@ -19,10 +19,10 @@
 
 ## Decisiones y supuestos detectados
 
-- Tipo de cambio declarado: No informado
-- Área principal declarada: No informada
-- Impacto usuario declarado: No informado
-- Riesgos / rollback: No informado
+- Tipo de cambio declarado: Evolutivo funcional (incluye dos correcciones detectadas durante la implementación).
+- Área principal declarada: celiaquia — detalle de expediente, revisión de legajos.
+- Impacto usuario declarado: Técnico y Coordinador dejan de reescribir motivos y cargan observaciones de un catálogo cerrado. La Provincia recibe un texto uniforme y trazable. El comentario de texto libre y el adjunto se retiran del formulario (el requerimiento enumera cuatro campos y ninguno es texto suelto); el endpoint los sigue aceptando, así que nada externo se rompe.
+- Riesgos / rollback: Riesgo bajo. La migración es aditiva, con todos los campos nulos y sin RunPython: no modifica ni una fila existente y revierte sin pérdida de datos. Se conservan los campos legacy, así que reportes y flujos existentes siguen leyendo lo mismo. Los legajos que ya están en SUBSANAR con motivo libre quedan como están, cubiertos por el fallback. El rollback es revertir los commits y aplicar migrate celiaquia 0006.
 
 ## Design system y UI
 
