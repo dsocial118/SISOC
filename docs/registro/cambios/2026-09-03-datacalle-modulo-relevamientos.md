@@ -56,3 +56,19 @@ y reutilizan la tabla y los botones de acción de `listModerno.css`.
 - El formulario agrupa los campos en secciones con ayuda breve en cada una, en
   lugar de una lista plana.
 - Los estados vacíos explican qué falta hacer en vez de mostrar campos en blanco.
+
+## Localidades múltiples y cascada (2026-09-03)
+
+- Un operativo puede abarcar **varias localidades o comunas** del mismo
+  municipio: `localidad` (FK) pasó a `localidades` (M2M). La migración copia la
+  localidad ya cargada antes de borrar la columna, así que no se pierde nada.
+- Las localidades elegidas deben pertenecer al municipio seleccionado; lo valida
+  el formulario, porque el M2M no existe todavía cuando corre el `clean` del
+  modelo.
+- La búsqueda del listado incluye el nombre de las localidades.
+- **Corrección de la cascada**: no filtraba por dos motivos. Los `change` los
+  emite select2 vía jQuery y no ejecutan listeners nativos (`addEventListener`),
+  así que ahora se bindea por jQuery cuando existe, igual que
+  `centro_create_form.js`; y tras reemplazar las opciones hay que reinicializar
+  select2 con `window.refreshSelect2Element`. Mientras espera la respuesta el
+  combo muestra "Cargando...".

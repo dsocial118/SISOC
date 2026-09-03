@@ -24,7 +24,7 @@ class RelevamientoForm(forms.ModelForm):
             "denominacion",
             "provincia",
             "municipio",
-            "localidad",
+            "localidades",
             "fase",
             "area_operativa",
             "dispositivo",
@@ -37,7 +37,7 @@ class RelevamientoForm(forms.ModelForm):
         widgets = {
             "provincia": forms.Select(attrs={"class": "select2"}),
             "municipio": forms.Select(attrs={"class": "select2"}),
-            "localidad": forms.Select(attrs={"class": "select2"}),
+            "localidades": forms.SelectMultiple(attrs={"class": "select2"}),
             "fase": forms.Select(attrs={"class": "select2"}),
             "dispositivo": forms.Select(attrs={"class": "select2"}),
             "equipo": forms.SelectMultiple(attrs={"class": "select2"}),
@@ -51,7 +51,7 @@ class RelevamientoForm(forms.ModelForm):
         self.actor = actor
         self.fields["provincia"].queryset = get_provincias_para_usuario(actor)
         self.fields["municipio"].required = False
-        self.fields["localidad"].required = False
+        self.fields["localidades"].required = False
 
         # Municipio y localidad se cargan por cascada (endpoints de core). Sin
         # acotar acá, el formulario renderizaría los miles de municipios y las
@@ -63,7 +63,7 @@ class RelevamientoForm(forms.ModelForm):
             if provincia_id
             else Municipio.objects.none()
         )
-        self.fields["localidad"].queryset = (
+        self.fields["localidades"].queryset = (
             Localidad.objects.filter(municipio_id=municipio_id).order_by("nombre")
             if municipio_id
             else Localidad.objects.none()
@@ -112,6 +112,24 @@ class RelevamientoForm(forms.ModelForm):
                     + ", ".join(sorted(u.username for u in fuera))
                     + ".",
                 )
+
+        municipio = cleaned.get("municipio")
+        localidades = cleaned.get("localidades")
+        if localidades:
+            if not municipio:
+                self.add_error(
+                    "localidades",
+                    "Para elegir localidades primero elegí el municipio.",
+                )
+            else:
+                fuera = [loc for loc in localidades if loc.municipio_id != municipio.id]
+                if fuera:
+                    self.add_error(
+                        "localidades",
+                        "Hay localidades que no pertenecen al municipio elegido: "
+                        + ", ".join(sorted(loc.nombre for loc in fuera))
+                        + ".",
+                    )
 
         # La fase decide qué campo de lugar corresponde; limpiamos el otro.
         if cleaned.get("fase") == Relevamiento.Fase.ESPACIO_PUBLICO:

@@ -45,12 +45,12 @@ class Relevamiento(SoftDeleteModelMixin, models.Model):
         blank=True,
         related_name="+",
     )
-    localidad = models.ForeignKey(
+    localidades = models.ManyToManyField(
         Localidad,
-        on_delete=models.PROTECT,
-        null=True,
         blank=True,
-        related_name="+",
+        related_name="relevamientos_datacalle",
+        verbose_name="Localidades / comunas",
+        help_text="Un operativo puede abarcar varias zonas del mismo municipio.",
     )
     fase = models.CharField(max_length=32, choices=Fase.choices)
     area_operativa = models.CharField(
@@ -136,6 +136,14 @@ class Relevamiento(SoftDeleteModelMixin, models.Model):
         return (self.fecha_fin - self.fecha_inicio).days + 1
 
     @property
+    def zonas(self) -> str:
+        """Localidades del operativo en una línea, o el municipio si no hay."""
+        nombres = [localidad.nombre for localidad in self.localidades.all()]
+        if nombres:
+            return ", ".join(nombres)
+        return str(self.municipio) if self.municipio_id else ""
+
+    @property
     def lugar(self) -> str:
         if self.fase == self.Fase.DISPOSITIVO_ALOJAMIENTO and self.dispositivo_id:
             return self.dispositivo.nombre_institucion
@@ -154,15 +162,6 @@ class Relevamiento(SoftDeleteModelMixin, models.Model):
             errores["municipio"] = (
                 "El municipio no pertenece a la provincia seleccionada."
             )
-        if self.localidad_id:
-            if not self.municipio_id:
-                errores["localidad"] = (
-                    "Para elegir localidad primero elegí el municipio."
-                )
-            elif self.localidad.municipio_id != self.municipio_id:
-                errores["localidad"] = (
-                    "La localidad no pertenece al municipio seleccionado."
-                )
 
         if self.fase == self.Fase.ESPACIO_PUBLICO:
             if not (self.area_operativa or "").strip():

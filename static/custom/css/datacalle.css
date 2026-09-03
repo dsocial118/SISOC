@@ -138,6 +138,15 @@
   border-color: rgba(243, 156, 18, 0.4);
 }
 
+.dc-chip--zona {
+  background: rgba(148, 163, 184, 0.12);
+  color: #cbd5e1;
+  border-color: rgba(148, 163, 184, 0.3);
+  margin: 0 4px 4px 0;
+}
+
+.dc-chip--zona::before { display: none; }
+
 .dc-chip--finalizado {
   background: rgba(16, 185, 129, 0.14);
   color: #6ee7b7;
