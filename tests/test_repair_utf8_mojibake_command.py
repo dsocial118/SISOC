@@ -141,6 +141,74 @@ def test_command_repara_mojibake_capitalizado_en_ciudadano_y_nomina():
 
 
 @pytest.mark.django_db
+def test_command_repara_variantes_capitalizadas_restantes():
+    raw_ciudadano = "Lautaro Isa\u00e3\u00adAs"
+    raw_nomina = "ÁNabelle"
+    provincia = Provincia.objects.create(nombre="Buenos Aires")
+    centro = CentroDeInfancia.objects.create(
+        nombre="CDI Encoding capitalizado restante",
+        provincia=provincia,
+    )
+    ciudadano = Ciudadano.objects.create(
+        apellido="Apellido",
+        nombre=raw_ciudadano,
+        documento=45000007,
+    )
+    nomina = NominaCentroInfancia.objects.create(
+        centro=centro,
+        ciudadano=ciudadano,
+        apellido="Apellido",
+        nombre=raw_nomina,
+    )
+
+    dry_run = StringIO()
+    call_command(
+        "repair_utf8_mojibake",
+        "--target",
+        "ciudadano",
+        "--target",
+        "nomina_cdi",
+        stdout=dry_run,
+    )
+
+    ciudadano.refresh_from_db()
+    nomina.refresh_from_db()
+    assert ciudadano.nombre == raw_ciudadano
+    assert nomina.nombre == raw_nomina
+    assert "Total: 2 filas revisadas, 2 filas con cambios reversibles." in (
+        dry_run.getvalue()
+    )
+
+    call_command(
+        "repair_utf8_mojibake",
+        "--apply",
+        "--target",
+        "ciudadano",
+        "--target",
+        "nomina_cdi",
+        stdout=StringIO(),
+    )
+
+    ciudadano.refresh_from_db()
+    nomina.refresh_from_db()
+    assert ciudadano.nombre == "Lautaro Isaías"
+    assert nomina.nombre == "Ánabelle"
+
+    second_run = StringIO()
+    call_command(
+        "repair_utf8_mojibake",
+        "--target",
+        "ciudadano",
+        "--target",
+        "nomina_cdi",
+        stdout=second_run,
+    )
+    assert "Total: 2 filas revisadas, 0 filas con cambios reversibles." in (
+        second_run.getvalue()
+    )
+
+
+@pytest.mark.django_db
 def test_command_puede_limitarse_a_nomina_y_campo():
     provincia = Provincia.objects.create(nombre="Buenos Aires")
     centro = CentroDeInfancia.objects.create(nombre="CDI Encoding", provincia=provincia)

@@ -538,8 +538,19 @@ def test_export_data_repara_mojibake_historico_sin_cambiar_fuente_del_snapshot()
     assert data.centros[0].rows[0].nombre == "Joaquín"
 
 
+@pytest.mark.parametrize(
+    ("raw_name", "expected_name"),
+    [
+        ("Dariel Lu\u00e3\u0081N", "Dariel Luán"),
+        ("Lautaro Isa\u00e3\u00adAs", "Lautaro Isaías"),
+        ("ÁNabelle", "Ánabelle"),
+    ],
+)
 @pytest.mark.django_db
-def test_export_data_repara_mojibake_capitalizado_del_snapshot():
+def test_export_data_repara_mojibake_capitalizado_del_snapshot(
+    raw_name,
+    expected_name,
+):
     provincia = Provincia.objects.create(nombre="Buenos Aires")
     user = _create_egp("egp-encoding-capitalizado", provincia)
     centro = CentroDeInfancia.objects.create(
@@ -554,14 +565,14 @@ def test_export_data_repara_mojibake_capitalizado_del_snapshot():
         ciudadano=ciudadano,
         estado=NominaCentroInfancia.ESTADO_ACTIVO,
         apellido="Apellido",
-        nombre="Dariel Lu\u00e3\u0081N",
+        nombre=raw_name,
         fecha_nacimiento=date(2024, 1, 15),
         edad_unidad="anios",
     )
 
     data = build_export_data(user=user, provincia=provincia)
 
-    assert data.centros[0].rows[0].nombre == "Dariel Luán"
+    assert data.centros[0].rows[0].nombre == expected_name
 
 
 def _sample_export_data():
