@@ -204,6 +204,18 @@ def _puntaje_obtenido_pregunta(pregunta, respuesta_pregunta) -> int:
     return 0
 
 
+def _puntaje_obtenido_respuesta(preguntas, respuesta_ronda) -> int:
+    """Calcula el puntaje de una respuesta para dashboard y exportación."""
+    detalle_por_pregunta = {
+        detalle.pregunta_id: detalle
+        for detalle in respuesta_ronda.respuestas_pregunta.all()
+    }
+    return sum(
+        _puntaje_obtenido_pregunta(pregunta, detalle_por_pregunta.get(pregunta.pk))
+        for pregunta in preguntas
+    )
+
+
 def get_puntajes_ronda(ronda: RondaEncuesta) -> list[PuntajeRespuesta]:
     """Puntaje obtenido por cada respuesta de la ronda, del más alto al más
     bajo. Devuelve lista vacía si la encuesta no tiene ninguna pregunta que
@@ -224,14 +236,7 @@ def get_puntajes_ronda(ronda: RondaEncuesta) -> list[PuntajeRespuesta]:
 
     resultado = []
     for respuesta_ronda in respuestas_ronda:
-        detalle_por_pregunta = {
-            detalle.pregunta_id: detalle
-            for detalle in respuesta_ronda.respuestas_pregunta.all()
-        }
-        obtenido = sum(
-            _puntaje_obtenido_pregunta(pregunta, detalle_por_pregunta.get(pregunta.pk))
-            for pregunta in preguntas
-        )
+        obtenido = _puntaje_obtenido_respuesta(preguntas, respuesta_ronda)
         usuario = respuesta_ronda.usuario
         resultado.append(
             PuntajeRespuesta(
@@ -310,10 +315,6 @@ def build_export_rows(ronda: RondaEncuesta) -> tuple[list, list[list[str]]]:
         "respuestas_pregunta__opciones_seleccionadas"
     )
     for respuesta_ronda in respuestas_ronda:
-        detalle_por_pregunta = {
-            detalle.pregunta_id: detalle
-            for detalle in respuesta_ronda.respuestas_pregunta.all()
-        }
         fecha_local = timezone.localtime(respuesta_ronda.fecha_respuesta)
         fila = [
             ronda.numero_ronda,
@@ -326,12 +327,7 @@ def build_export_rows(ronda: RondaEncuesta) -> tuple[list, list[list[str]]]:
                 _escape_spreadsheet_formula(usuario.get_full_name() or usuario.username)
             )
         if pondera:
-            obtenido = sum(
-                _puntaje_obtenido_pregunta(
-                    pregunta, detalle_por_pregunta.get(pregunta.pk)
-                )
-                for pregunta in preguntas
-            )
+            obtenido = _puntaje_obtenido_respuesta(preguntas, respuesta_ronda)
             fila.extend([obtenido, total_posible])
         fila.extend(
             _escape_spreadsheet_formula(

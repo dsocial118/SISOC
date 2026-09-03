@@ -560,6 +560,14 @@ def _asignar_valor_numerico(
         raise ValidationError(
             f"La respuesta a '{pregunta.texto}' debe estar entre 1 y 10."
         )
+    if pregunta.tipo == TipoPregunta.ESCALA and (
+        respuesta_pregunta.valor_numero
+        != respuesta_pregunta.valor_numero.to_integral_value()
+    ):
+        raise ValidationError(
+            f"La respuesta a '{pregunta.texto}' debe ser un número entero entre "
+            "1 y 10."
+        )
 
 
 def _asignar_valor_respuesta(
