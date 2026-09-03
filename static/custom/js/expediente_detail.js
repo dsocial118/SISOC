@@ -485,71 +485,76 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  /* ===== PREVISUALIZACIÓN DEL MOTIVO (subsanar / rechazar) =====
+     El motivo definitivo lo arma el backend a partir de los comentarios
+     técnicos del legajo; esto es sólo lo que se muestra en pantalla. */
+  async function cargarPreviewMotivo(legajoId, contenedor) {
+    if (!contenedor) return;
+    contenedor.innerHTML = '<span class="text-muted small">Cargando…</span>';
+
+    if (!window.MOTIVO_PREVIEW_URL_TEMPLATE) {
+      contenedor.innerHTML = '<span class="text-muted small">No se pudo cargar la previsualización.</span>';
+      return;
+    }
+
+    try {
+      const resp = await fetch(window.MOTIVO_PREVIEW_URL_TEMPLATE.replace('{id}', legajoId), {
+        credentials: 'same-origin',
+        headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+      });
+      const data = await resp.json();
+
+      if (!resp.ok || data.success === false) {
+        throw new Error(data.message || `HTTP ${resp.status}`);
+      }
+
+      if (!data.tiene_observaciones) {
+        contenedor.innerHTML =
+          '<span class="text-muted small">El legajo no tiene comentarios técnicos con observaciones. ' +
+          'Para continuar, completá la información complementaria.</span>';
+        return;
+      }
+
+      contenedor.innerHTML =
+        '<ul class="mb-0 ps-3 small">' +
+        data.lineas.map((linea) => `<li>${escapeHtmlPreview(linea)}</li>`).join('') +
+        '</ul>';
+    } catch (err) {
+      console.error('Previsualización del motivo:', err);
+      contenedor.innerHTML = '<span class="text-danger small">No se pudo cargar la previsualización.</span>';
+    }
+  }
+
+  function escapeHtmlPreview(value) {
+    return String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
   /* ===== MODAL SUBSANAR (técnico) ===== */
   const modalSubsanar = document.getElementById('modalSubsanar');
   if (modalSubsanar) {
-    const observacionesBox = modalSubsanar.querySelector('#subsanar-observaciones');
+    const previewSubsanar = modalSubsanar.querySelector('#subsanar-preview');
 
-    const buildObservacionRow = () => {
-      const row = document.createElement('div');
-      row.className = 'row g-2 mb-2 subsanar-obs-row';
-      row.innerHTML =
-        '<div class="col-5">' +
-        '  <select class="form-select form-select-sm" name="observacion_tipo">' +
-        '    <option value="DOCUMENTACION">Documentación</option>' +
-        '    <option value="DATOS_PERSONALES">Datos personales</option>' +
-        '    <option value="RENAPER">RENAPER</option>' +
-        '    <option value="OTROS">Otros</option>' +
-        '  </select>' +
-        '</div>' +
-        '<div class="col-6">' +
-        '  <input type="text" class="form-control form-control-sm" name="observacion_detalle" placeholder="Detalle del requerimiento" maxlength="500" />' +
-        '</div>' +
-        '<div class="col-1 d-flex align-items-center">' +
-        '  <button type="button" class="btn btn-sm btn-outline-danger btn-remove-obs" title="Quitar"><i class="fa fa-times"></i></button>' +
-        '</div>';
-      return row;
-    };
-
-    const resetSubsanarForm = () => {
-      const ta = modalSubsanar.querySelector('#subsanar-motivo');
-      if (ta) ta.value = '';
-      modalSubsanar.querySelectorAll('input[name="motivos"]').forEach((cb) => {
-        cb.checked = false;
-      });
-      if (observacionesBox) observacionesBox.innerHTML = '';
-    };
-
-    // Pre-cargar el id del legajo en el hidden cuando se abre el modal
+    // Pre-cargar el id del legajo y traer la previsualización al abrir.
     modalSubsanar.addEventListener('show.bs.modal', function (event) {
       const trigger = event.relatedTarget;
       const legajoId = trigger?.getAttribute('data-legajo-id') || '';
       modalSubsanar.querySelector('#subsanar-legajo-id').value = legajoId;
-      resetSubsanarForm();
+      const ta = modalSubsanar.querySelector('#subsanar-motivo');
+      if (ta) ta.value = '';
+      cargarPreviewMotivo(legajoId, previewSubsanar);
     });
-
-    const btnAddObs = modalSubsanar.querySelector('#btn-add-observacion');
-    if (btnAddObs && observacionesBox) {
-      btnAddObs.addEventListener('click', () => {
-        observacionesBox.appendChild(buildObservacionRow());
-      });
-      observacionesBox.addEventListener('click', (ev) => {
-        const removeBtn = ev.target.closest('.btn-remove-obs');
-        if (removeBtn) {
-          removeBtn.closest('.subsanar-obs-row')?.remove();
-        }
-      });
-    }
 
     const formSubsanar = document.getElementById('form-subsanar');
     formSubsanar.addEventListener('submit', async (e) => {
       e.preventDefault();
 
       const legajoId = modalSubsanar.querySelector('#subsanar-legajo-id').value;
-      const motivo = (modalSubsanar.querySelector('#subsanar-motivo').value || '').trim();
-      const motivosSeleccionados = Array.from(
-        modalSubsanar.querySelectorAll('input[name="motivos"]:checked')
-      ).map((cb) => cb.value);
+      const textoLibre = (modalSubsanar.querySelector('#subsanar-motivo').value || '').trim();
       const btn = document.getElementById('btn-confirm-subsanar');
       const original = btn.innerHTML;
 
@@ -557,16 +562,7 @@ document.addEventListener('DOMContentLoaded', () => {
         showAlert('danger', 'No se pudo identificar el legajo.');
         return;
       }
-      if (motivosSeleccionados.length === 0) {
-        showAlert('warning', 'Seleccioná al menos un motivo de subsanación.');
-        return;
-      }
-      if (!motivo) {
-        showAlert('warning', 'Indicá el detalle general de la subsanación.');
-        return;
-      }
 
-      // Opción 1: SIEMPRE usar RevisarLegajo (legajo_revisar)
       if (!window.REVISAR_URL_TEMPLATE) {
         showAlert('danger', 'No se configuró la URL de subsanación.');
         return;
@@ -577,21 +573,11 @@ document.addEventListener('DOMContentLoaded', () => {
       btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Guardando…';
 
       try {
-        // Enviar exactamente lo que espera RevisarLegajoView
+        // El motivo lo arma el backend con los comentarios técnicos del
+        // legajo; desde acá sólo viaja el texto libre complementario.
         const fd = new FormData();
         fd.append('accion', 'SUBSANAR');
-        motivosSeleccionados.forEach((m) => fd.append('motivos', m));
-        // Compatibilidad: primer motivo como tipo_subsanacion legacy.
-        fd.append('tipo_subsanacion', motivosSeleccionados[0]);
-        modalSubsanar.querySelectorAll('.subsanar-obs-row').forEach((row) => {
-          const tipo = row.querySelector('select[name="observacion_tipo"]')?.value || '';
-          const detalle = (row.querySelector('input[name="observacion_detalle"]')?.value || '').trim();
-          if (detalle) {
-            fd.append('observacion_tipo', tipo);
-            fd.append('observacion_detalle', detalle);
-          }
-        });
-        fd.append('motivo', motivo);
+        fd.append('texto_libre', textoLibre);
 
         const resp = await fetch(url, {
           method: 'POST',
@@ -835,12 +821,15 @@ document.addEventListener('DOMContentLoaded', () => {
   /* ===== MODAL RECHAZAR (técnico) ===== */
   const modalRechazar = document.getElementById('modalRechazar');
   if (modalRechazar) {
+    const previewRechazar = modalRechazar.querySelector('#rechazar-preview');
+
     modalRechazar.addEventListener('show.bs.modal', function (event) {
       const trigger = event.relatedTarget;
       const legajoId = trigger?.getAttribute('data-legajo-id') || '';
       modalRechazar.querySelector('#rechazar-legajo-id').value = legajoId;
       const ta = modalRechazar.querySelector('#rechazar-motivo');
       if (ta) ta.value = '';
+      cargarPreviewMotivo(legajoId, previewRechazar);
     });
 
     const formRechazar = document.getElementById('form-rechazar');
@@ -848,16 +837,12 @@ document.addEventListener('DOMContentLoaded', () => {
       e.preventDefault();
 
       const legajoId = modalRechazar.querySelector('#rechazar-legajo-id').value;
-      const motivo = (modalRechazar.querySelector('#rechazar-motivo').value || '').trim();
+      const textoLibre = (modalRechazar.querySelector('#rechazar-motivo').value || '').trim();
       const btn = document.getElementById('btn-confirm-rechazar');
       const original = btn.innerHTML;
 
       if (!legajoId) {
         showAlert('danger', 'No se pudo identificar el legajo.');
-        return;
-      }
-      if (!motivo) {
-        showAlert('warning', 'Indicá el motivo del rechazo.');
         return;
       }
 
@@ -871,9 +856,11 @@ document.addEventListener('DOMContentLoaded', () => {
       btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Guardando…';
 
       try {
+        // El motivo lo arma el backend con los comentarios técnicos del
+        // legajo; desde acá sólo viaja el texto libre complementario.
         const fd = new FormData();
         fd.append('accion', 'RECHAZAR');
-        fd.append('motivo', motivo);
+        fd.append('texto_libre', textoLibre);
 
         const resp = await fetch(url, {
           method: 'POST',

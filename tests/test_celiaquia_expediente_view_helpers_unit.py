@@ -10,6 +10,30 @@ from django.http import JsonResponse, QueryDict
 from celiaquia.views import expediente as module
 
 
+class _EmptyRelatedManager:
+    """Manager relacionado vacío y encadenable, para stubs de legajo sin DB.
+
+    `RevisarLegajoView` consulta los comentarios técnicos del legajo para armar
+    el motivo de Subsanar/Rechazar; estos tests trabajan con `SimpleNamespace`,
+    así que necesitan algo que responda al encadenamiento del ORM.
+    """
+
+    def filter(self, *args, **kwargs):
+        return self
+
+    def select_related(self, *args, **kwargs):
+        return self
+
+    def order_by(self, *args, **kwargs):
+        return self
+
+    def update(self, *args, **kwargs):
+        return 0
+
+    def __iter__(self):
+        return iter(())
+
+
 def _user_stub(*, user_id=1, is_admin=False, tec=False, coord=False):
     perms = set()
     if tec:
@@ -472,6 +496,7 @@ def test_subir_cruce_excel_and_revisar_legajo_branches(mocker):
         estado_validacion_renaper=0,
         expediente=expediente,
         expediente_id=1,
+        historial_comentarios=_EmptyRelatedManager(),
         save=mocker.Mock(),
         delete=mocker.Mock(),
     )
@@ -709,6 +734,7 @@ def test_revisar_legajo_invalid_and_eliminar_paths(mocker):
         es_titular_activo=True,
         expediente=expediente,
         expediente_id=1,
+        historial_comentarios=_EmptyRelatedManager(),
         save=mocker.Mock(),
         delete=mocker.Mock(),
     )

@@ -550,7 +550,7 @@
                                                                     <div class="p-2 rounded"
                                                                          style="background:rgba(255,255,255,.04);
                                                                                 border:1px solid rgba(255,255,255,.08)">
-                                                                        <span class="d-block text-break">{{ leg.observacion_tecnica_texto }}</span>
+                                                                        <span class="d-block text-break motivo-multilinea">{{ leg.observacion_tecnica_texto }}</span>
                                                                     </div>
                                                                 </div>
                                                             {% else %}
@@ -559,7 +559,7 @@
                                                         <div class="mt-1">
                                                             {% if leg.subsanacion_motivo %}
                                                                 <div class="p-2 rounded" style="background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08)">
-                                                                    <span class="d-block text-break">{{ leg.subsanacion_motivo }}</span>
+                                                                    <span class="d-block text-break motivo-multilinea">{{ leg.subsanacion_motivo }}</span>
                                                                 </div>
                                                             {% else %}
                                                                 <span class="muted">-</span>
@@ -584,7 +584,7 @@
                                                                     <div class="p-2 rounded"
                                                                          style="background:rgba(255,255,255,.04);
                                                                                 border:1px solid rgba(255,255,255,.08)">
-                                                                        <span class="d-block text-break">{{ leg.observacion_tecnica_texto }}</span>
+                                                                        <span class="d-block text-break motivo-multilinea">{{ leg.observacion_tecnica_texto }}</span>
                                                                     </div>
                                                                 </div>
                                                             {% else %}
@@ -594,7 +594,7 @@
                                                                         <div class="p-2 rounded"
                                                                              style="background:rgba(255,255,255,.04);
                                                                                     border:1px solid rgba(255,255,255,.08)">
-                                                                            <span class="d-block text-break">{{ leg.subsanacion_motivo }}</span>
+                                                                            <span class="d-block text-break motivo-multilinea">{{ leg.subsanacion_motivo }}</span>
                                                                         </div>
                                                                     {% else %}
                                                                         <span class="muted">-</span>
@@ -618,7 +618,7 @@
                                                         {% include 'components/legajo_archivos_requeridos.html' with legajo=leg is_prov=is_prov expediente=expediente %}
 
                                                         <!-- Comentarios Técnicos -->
-                                                        {% if is_tec or is_coord or is_prov and leg.revision_tecnico == 'SUBSANAR' %}
+                                                        {% if is_tec or is_coord or is_prov and leg.comentarios_visibles_provincia %}
                                                             {% include 'components/legajo_comentarios.html' with legajo=leg is_tec=is_tec is_coord=is_coord %}
                                                         {% endif %}
                                                         <!-- Botón confirmar subsanación individual (solo para subsanación técnica, no Renaper) -->
@@ -791,7 +791,7 @@
                                                     <div class="p-2 rounded"
                                                          style="background:rgba(255,255,255,.04);
                                                                 border:1px solid rgba(255,255,255,.08)">
-                                                        <span class="d-block text-break">{{ leg.observacion_tecnica_texto }}</span>
+                                                        <span class="d-block text-break motivo-multilinea">{{ leg.observacion_tecnica_texto }}</span>
                                                     </div>
                                                 </div>
                                             {% else %}
@@ -801,7 +801,7 @@
                                                         <div class="p-2 rounded"
                                                              style="background:rgba(255,255,255,.04);
                                                                     border:1px solid rgba(255,255,255,.08)">
-                                                            <span class="d-block text-break">{{ leg.subsanacion_motivo }}</span>
+                                                            <span class="d-block text-break motivo-multilinea">{{ leg.subsanacion_motivo }}</span>
                                                         </div>
                                                     {% else %}
                                                         <span class="muted">-</span>
@@ -825,7 +825,7 @@
                                                     <div class="p-2 rounded"
                                                          style="background:rgba(255,255,255,.04);
                                                                 border:1px solid rgba(255,255,255,.08)">
-                                                        <span class="d-block text-break">{{ leg.observacion_tecnica_texto }}</span>
+                                                        <span class="d-block text-break motivo-multilinea">{{ leg.observacion_tecnica_texto }}</span>
                                                     </div>
                                                 </div>
                                             {% endif %}
@@ -1013,17 +1013,26 @@
                     <div class="modal-body">
                         <input type="hidden" name="accion" value="RECHAZAR" />
                         <input type="hidden" id="rechazar-legajo-id" name="legajo_id" value="" />
+                        <div class="mb-3">
+                            <span class="form-label d-block">Observaciones técnicas registradas</span>
+                            <div id="rechazar-preview" class="motivo-preview p-2 rounded">
+                                <span class="text-muted small">Cargando…</span>
+                            </div>
+                            <small class="text-muted d-block mt-1">
+                                Son las observaciones cargadas en Comentarios Técnicos. El texto
+                                definitivo lo arma el sistema al confirmar.
+                            </small>
+                        </div>
                         <div class="mb-2">
-                            <label for="rechazar-motivo" class="form-label">Motivo del Rechazo *</label>
+                            <label for="rechazar-motivo" class="form-label">Información complementaria (opcional)</label>
                             <textarea id="rechazar-motivo"
-                                      name="motivo"
+                                      name="texto_libre"
                                       class="form-control"
                                       rows="3"
-                                      required
-                                      maxlength="500"></textarea>
+                                      placeholder="Agregá algo puntual que no esté en las observaciones…"></textarea>
                         </div>
                         <small class="text-muted d-block">
-                            El legajo quedará en estado <strong>RECHAZADO</strong> y la provincia verá esta observación.
+                            El legajo quedará en estado <strong>RECHAZADO</strong> y la provincia verá estas observaciones.
                         </small>
                     </div>
                     <div class="modal-footer">
@@ -1446,63 +1455,22 @@
                         <input type="hidden" name="accion" value="SUBSANAR" />
                         <input type="hidden" id="subsanar-legajo-id" name="legajo_id" value="" />
                         <div class="mb-3">
-                            <label class="form-label d-block">Motivos de subsanación *</label>
-                            <div id="subsanar-motivos" class="d-flex flex-wrap gap-3">
-                                <div class="form-check">
-                                    <input class="form-check-input"
-                                           type="checkbox"
-                                           name="motivos"
-                                           value="DOCUMENTACION"
-                                           id="motivo-documentacion" />
-                                    <label class="form-check-label" for="motivo-documentacion">Documentación</label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input"
-                                           type="checkbox"
-                                           name="motivos"
-                                           value="DATOS_PERSONALES"
-                                           id="motivo-datos-personales" />
-                                    <label class="form-check-label" for="motivo-datos-personales">Datos personales</label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input"
-                                           type="checkbox"
-                                           name="motivos"
-                                           value="RENAPER"
-                                           id="motivo-renaper" />
-                                    <label class="form-check-label" for="motivo-renaper">RENAPER</label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input"
-                                           type="checkbox"
-                                           name="motivos"
-                                           value="OTROS"
-                                           id="motivo-otros" />
-                                    <label class="form-check-label" for="motivo-otros">Otros</label>
-                                </div>
+                            <span class="form-label d-block">Observaciones técnicas registradas</span>
+                            <div id="subsanar-preview" class="motivo-preview p-2 rounded">
+                                <span class="text-muted small">Cargando…</span>
                             </div>
-                            <small class="text-muted d-block mt-1">Podés seleccionar más de un motivo.</small>
+                            <small class="text-muted d-block mt-1">
+                                Son las observaciones cargadas en Comentarios Técnicos. El texto
+                                definitivo lo arma el sistema al confirmar.
+                            </small>
                         </div>
                         <div class="mb-3">
-                            <label for="subsanar-motivo" class="form-label">Detalle general *</label>
+                            <label for="subsanar-motivo" class="form-label">Información complementaria (opcional)</label>
                             <textarea id="subsanar-motivo"
-                                      name="motivo"
+                                      name="texto_libre"
                                       class="form-control"
                                       rows="3"
-                                      required
-                                      maxlength="500"></textarea>
-                        </div>
-                        <div class="mb-2">
-                            <label class="form-label d-block">Observaciones específicas (opcional)</label>
-                            <div id="subsanar-observaciones"></div>
-                            <button type="button"
-                                    class="btn btn-sm btn-outline-secondary"
-                                    id="btn-add-observacion">
-                                <i class="fa fa-plus"></i> Agregar observación
-                            </button>
-                            <small class="text-muted d-block mt-1">
-                                Cada observación registra un requerimiento puntual (ej: "Adjuntar nuevamente DNI frente").
-                            </small>
+                                      placeholder="Agregá algo puntual que no esté en las observaciones…"></textarea>
                         </div>
                         <small class="text-muted d-block">
                             El legajo quedará en estado <strong>SUBSANAR</strong> y la provincia podrá actualizar los archivos.
@@ -2125,34 +2093,48 @@
                         </div>
                         <div class="modal-body">
                             <div class="mb-3">
-                                <label for="comentario-texto" class="form-label">Comentario *</label>
-                                <textarea id="comentario-texto"
-                                          name="comentario"
-                                          class="form-control"
-                                          rows="4"
-                                          required
-                                          placeholder="Escriba su observación técnica..."></textarea>
+                                <label for="comentario-tipo-documento" class="form-label">Tipo de documento *</label>
+                                <select id="comentario-tipo-documento"
+                                        name="tipo_documento"
+                                        class="form-select"
+                                        required>
+                                    <option value="">Seleccioná un tipo…</option>
+                                    {% for valor, etiqueta in tipos_documento_comentario %}
+                                        <option value="{{ valor }}">{{ etiqueta }}</option>
+                                    {% endfor %}
+                                </select>
                             </div>
                             <div class="mb-3">
-                                <label for="comentario-archivo" class="form-label">Archivo adjunto (opcional)</label>
-                                <input type="file"
-                                       name="archivo"
-                                       id="comentario-archivo"
-                                       class="form-control"
-                                       accept=".pdf,.jpg,.jpeg,.png" />
-                                <small class="text-muted">PDF o imagen</small>
+                                <label for="comentario-tiene-observaciones" class="form-label">¿Tiene observaciones? *</label>
+                                <select id="comentario-tiene-observaciones"
+                                        name="tiene_observaciones"
+                                        class="form-select"
+                                        required>
+                                    <option value="">Seleccioná…</option>
+                                    <option value="si">Sí</option>
+                                    <option value="no">No</option>
+                                </select>
                             </div>
-                            {% if is_tec or is_coord or is_admin %}
-                                <div class="mb-3 form-check">
-                                    <input type="checkbox"
-                                           class="form-check-input"
-                                           id="comentario-interno"
-                                           name="es_interno"
-                                           value="1" />
-                                    <label class="form-check-label" for="comentario-interno">Comentario interno (visible solo para Nación)</label>
-                                    <small class="text-muted d-block">No será visible para los usuarios provinciales.</small>
-                                </div>
-                            {% endif %}
+                            <div class="mb-3 d-none" id="comentario-observacion-wrapper">
+                                <label for="comentario-observacion" class="form-label">Observaciones *</label>
+                                <select id="comentario-observacion"
+                                        name="observacion_codigo"
+                                        class="form-select">
+                                    <option value="">Seleccioná una observación…</option>
+                                </select>
+                            </div>
+                            <div class="mb-3 d-none" id="comentario-libre-wrapper">
+                                <label for="comentario-observacion-libre" class="form-label">Redactá la observación *</label>
+                                <textarea id="comentario-observacion-libre"
+                                          name="observacion_libre"
+                                          class="form-control"
+                                          rows="3"
+                                          placeholder="Escribí la observación que se le va a comunicar a la provincia…"></textarea>
+                            </div>
+                            <small class="text-muted d-block">
+                                El comentario queda <strong>interno</strong>. La provincia sólo recibe los que
+                                tienen observaciones, y recién al solicitar una subsanación o rechazar el legajo.
+                            </small>
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -2248,11 +2230,14 @@
     <meta name="editar-legajo-url-template"
           content="{% url 'legajo_editar' expediente.pk 0 %}" />
     <meta name="expediente-id" content="{{ expediente.pk }}" />
-    <script src="{% static 'custom/js/expediente_detail_config.js' %}?v=20260623-corregir-evaluacion"></script>
+    <meta name="motivo-preview-url-template"
+          content="{% url 'legajo_motivo_preview' expediente.pk 0 %}" />
+    {{ catalogo_comentarios_tecnicos|json_script:"catalogo-comentarios-tecnicos" }}
+    <script src="{% static 'custom/js/expediente_detail_config.js' %}?v=20260902-comentarios-tecnicos"></script>
     <script src="{% static 'custom/js/registros_erroneos.js' %}?v=20260326-guardado-parcial-siempre"></script>
     <script src="{% static 'custom/js/utils.js' %}"></script>
-    <script src="{% static 'custom/js/expediente_detail.js' %}?v=20260623-corregir-evaluacion"></script>
+    <script src="{% static 'custom/js/expediente_detail.js' %}?v=20260902-comentarios-tecnicos"></script>
     <script src="{% static 'custom/js/global_pagination.js' %}"></script>
     <script src="{% static 'custom/js/pagination_fix.js' %}"></script>
-    <script src="{% static 'custom/js/legajo_comentarios.js' %}?v=20260623-comentarios-internos"></script>
+    <script src="{% static 'custom/js/legajo_comentarios.js' %}?v=20260902-comentarios-tecnicos"></script>
 {% endblock %}
