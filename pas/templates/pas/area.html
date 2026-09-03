@@ -79,18 +79,22 @@
                         </div>
                     </form>
                     <div class="pas-formation-sidebar-title">Seleccionar titular</div>
-                    <div class="pas-formation-people">
-                        {% for persona in personas %}
-                            <a href="?persona={{ persona.id }}&q={{ query|urlencode }}&estado_formacion={{ estado_formacion }}"
-                               class="{% if persona_seleccionada.id == persona.id %}is-active{% endif %} pas-formation-person-link">
-                                <strong>{{ persona.apellidos }}, {{ persona.nombres }}</strong>
-                                <span class="pas-points-badge is-{{ persona.estado_formacion }}">{{ persona.puntos_formacion }} pts</span>
-                            </a>
-                        {% empty %}
-                            <div class="pas-empty-state">
-                                <strong>Sin titulares para los filtros elegidos</strong>
-                            </div>
-                        {% endfor %}
+                    <div class="pas-formation-people"
+                         id="pas-formacion-personas"
+                         data-page-url="{{ formacion_personas_url }}"
+                         data-next-page="{% if pagina_formacion.has_next %}{{ pagina_formacion.next_page_number }}{% endif %}"
+                         data-query="{{ query }}"
+                         data-estado-formacion="{{ estado_formacion }}"
+                         data-persona-id="{{ persona_solicitada_id }}">
+                        <div id="pas-formacion-personas-items">
+                            {% include "pas/includes/formacion_personas.html" with persona_seleccionada_id=persona_seleccionada.id %}
+                        </div>
+                        <div class="pas-infinite-scroll-status"
+                             id="pas-formacion-scroll-status"
+                             aria-live="polite">
+                            {% if pagina_formacion.has_next %}Desplazate para cargar más titulares{% endif %}
+                        </div>
+                        <div id="pas-formacion-scroll-sentinel" aria-hidden="true"></div>
                     </div>
                 </aside>
 
@@ -410,6 +414,7 @@
 {% block customJS %}
     {{ block.super }}
     {% if area_key == "formacion" %}
+        <script src="{% static 'custom/js/pas_formacion.js' %}"></script>
         <script nonce="{{ request.csp_nonce }}">
             document.addEventListener("DOMContentLoaded", function () {
                 const ahora = new Date();

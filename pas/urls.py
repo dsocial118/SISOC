@@ -17,6 +17,7 @@ from pas.views import (
     PasCrucesImportarSintysView,
     PasCrucesActualizarRenaperView,
     PasCrucesView,
+    PasFormacionPersonasView,
     PasPersonaCambiarEstadoView,
     PasPersonaCreateView,
     PasPersonaDeleteView,
@@ -75,6 +76,13 @@ urlpatterns = [
             PasAreaView.as_view(area_key="formacion")
         ),
         name="pas_formacion",
+    ),
+    path(
+        "pas/formacion/personas",
+        permissions_any_required(["pas.view_paspersona"])(
+            PasFormacionPersonasView.as_view()
+        ),
+        name="pas_formacion_personas",
     ),
     path(
         "pas/cruces",

@@ -14,6 +14,7 @@ from pas.models import (
     PasDeclaracionJurada,
     PasEstado,
     PasHistorialEstado,
+    PasPersona,
 )
 from pas.services.persona_service import (
     cambiar_estado,
@@ -224,6 +225,137 @@ def test_buscador_pas_filtra_por_id_persona(ubicacion, catalogo_pas):
     assert resultados.get().id_persona == 9876
 
 
+@pytest.mark.django_db
+def test_edicion_http_conserva_y_muestra_datos_de_contacto(client, titular_pas):
+    titular_pas.domicilio = "Calle 10 123"
+    titular_pas.correo_electronico = "titular@example.test"
+    titular_pas.telefono_celular = "1122334455"
+    titular_pas.save()
+    usuario = get_user_model().objects.create_superuser(
+        username="pas-edicion-contacto-test",
+        email="edicion-contacto@example.test",
+        password="test-pass",
+    )
+    client.force_login(usuario)
+    url = reverse("pas_persona_editar", args=[titular_pas.pk])
+
+    respuesta_get = client.get(url)
+
+    assert respuesta_get.status_code == 200
+    assert b"Calle 10 123" in respuesta_get.content
+    assert b"titular@example.test" in respuesta_get.content
+    assert b"1122334455" in respuesta_get.content
+
+    respuesta_post = client.post(
+        url,
+        {
+            "id_persona": titular_pas.id_persona,
+            "apellidos": "Apellido actualizado",
+            "nombres": titular_pas.nombres,
+            "dni": titular_pas.dni,
+            "cuit": titular_pas.cuit,
+            "provincia": titular_pas.provincia_id,
+            "municipio": titular_pas.municipio_id,
+            "domicilio": titular_pas.domicilio,
+            "correo_electronico": titular_pas.correo_electronico,
+            "telefono_celular": titular_pas.telefono_celular,
+        },
+    )
+
+    assert respuesta_post.status_code == 302
+    titular_pas.refresh_from_db()
+    assert titular_pas.apellidos == "Apellido actualizado"
+    assert titular_pas.domicilio == "Calle 10 123"
+    assert titular_pas.correo_electronico == "titular@example.test"
+    assert titular_pas.telefono_celular == "1122334455"
+
+
+@pytest.mark.django_db
+def test_formacion_busca_titular_despues_de_los_primeros_cien(
+    client, ubicacion, catalogo_pas
+):
+    provincia, municipio = ubicacion
+    personas = [
+        PasPersona(
+            id_persona=20000 + indice,
+            apellidos=f"Apellido {indice:03d}",
+            nombres="Persona",
+            dni=40000000 + indice,
+            cuit=f"2040000{indice:04d}",
+            provincia=provincia,
+            municipio=municipio,
+            estado=catalogo_pas["activo"],
+        )
+        for indice in range(105)
+    ]
+    personas.append(
+        PasPersona(
+            id_persona=29999,
+            apellidos="ZZZ Busqueda",
+            nombres="Objetivo",
+            dni=49999999,
+            cuit="20499999991",
+            provincia=provincia,
+            municipio=municipio,
+            estado=catalogo_pas["activo"],
+        )
+    )
+    PasPersona.objects.bulk_create(personas)
+    usuario = get_user_model().objects.create_superuser(
+        username="pas-formacion-padron-completo-test",
+        email="formacion-padron@example.test",
+        password="test-pass",
+    )
+    client.force_login(usuario)
+
+    respuesta = client.get(reverse("pas_formacion"), {"q": "20499999991"})
+
+    assert respuesta.status_code == 200
+    assert b"ZZZ Busqueda" in respuesta.content
+
+
+@pytest.mark.django_db
+def test_formacion_scroll_infinito_entrega_paginas_sin_duplicados(
+    client, ubicacion, catalogo_pas
+):
+    provincia, municipio = ubicacion
+    PasPersona.objects.bulk_create(
+        [
+            PasPersona(
+                id_persona=30000 + indice,
+                apellidos=f"Scroll {indice:03d}",
+                nombres="Persona",
+                dni=50000000 + indice,
+                cuit=f"2050000{indice:04d}",
+                provincia=provincia,
+                municipio=municipio,
+                estado=catalogo_pas["activo"],
+            )
+            for indice in range(35)
+        ]
+    )
+    usuario = get_user_model().objects.create_superuser(
+        username="pas-formacion-scroll-test",
+        email="formacion-scroll@example.test",
+        password="test-pass",
+    )
+    client.force_login(usuario)
+
+    primera = client.get(reverse("pas_formacion"), {"q": "Scroll"})
+    segunda = client.get(
+        reverse("pas_formacion_personas"),
+        {"q": "Scroll", "page": 2},
+    )
+
+    assert primera.status_code == 200
+    assert len(primera.context["personas"]) == 30
+    assert primera.context["pagina_formacion"].has_next()
+    assert segunda.status_code == 200
+    payload = segunda.json()
+    assert payload["has_next"] is False
+    assert payload["html"].count("pas-formation-person-link") == 5
+
+
 def test_formacion_pas_permanece_sin_datos_hasta_definir_una_fuente():
     assert obtener_formacion_persona(object()) == []
 
@@ -277,7 +409,7 @@ def test_formacion_pas_muestra_semaforo_metricas_y_curso(client, titular_pas):
 
     with (
         patch(
-            "pas.views.obtener_puntos_por_dni",
+            "pas.services.formacion_service.obtener_puntos_por_dni",
             return_value={
                 titular_pas.dni: {"puntos": 100, "total_cursos": 1},
             },
@@ -335,7 +467,7 @@ def test_panel_filtra_padron_por_cuit_y_estado_actual(client, titular_pas):
     url_panel = reverse("pas_panel_control_persona", args=[titular_pas.id])
 
     with patch(
-        "pas.views.obtener_puntos_por_dni",
+        "pas.services.formacion_service.obtener_puntos_por_dni",
         return_value={titular_pas.dni: {"puntos": 0, "total_cursos": 0}},
     ):
         respuesta = client.get(
@@ -362,7 +494,7 @@ def test_panel_y_formacion_conservan_la_persona_al_cambiar_de_area(client, titul
     url_formacion = f'{reverse("pas_formacion")}?persona={titular_pas.id}'
 
     with patch(
-        "pas.views.obtener_puntos_por_dni",
+        "pas.services.formacion_service.obtener_puntos_por_dni",
         return_value={titular_pas.dni: {"puntos": 0, "total_cursos": 0}},
     ):
         respuesta_panel = client.get(url_panel)
@@ -408,7 +540,7 @@ def test_panel_muestra_solo_condiciones_y_colorea_aviso_por_estado(client, titul
     url_panel = reverse("pas_panel_control_persona", args=[titular_pas.id])
 
     with patch(
-        "pas.views.obtener_puntos_por_dni",
+        "pas.services.formacion_service.obtener_puntos_por_dni",
         return_value={titular_pas.dni: {"puntos": 0, "total_cursos": 0}},
     ):
         pendiente = client.get(url_panel)
@@ -444,7 +576,7 @@ def test_panel_muestra_solo_condiciones_y_colorea_aviso_por_estado(client, titul
         finalizada=timezone.now(),
     )
     with patch(
-        "pas.views.obtener_puntos_por_dni",
+        "pas.services.formacion_service.obtener_puntos_por_dni",
         return_value={titular_pas.dni: {"puntos": 100, "total_cursos": 1}},
     ):
         cumplido = client.get(url_panel)

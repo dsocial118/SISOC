@@ -4,6 +4,7 @@ from django.core.exceptions import ValidationError
 from django.db.models import Exists, OuterRef, Q
 from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
+from django.template.loader import render_to_string
 from django.urls import reverse, reverse_lazy
 from django.views.generic import (
     CreateView,
@@ -40,8 +41,9 @@ from pas.models import (
 from pas.services.ddjj_service import presentar_ddjj
 from pas.services.filter_config import get_filters_ui_config
 from pas.services.formacion_service import (
+    paginar_personas_formacion,
+    preparar_personas_formacion,
     obtener_formacion_persona,
-    obtener_puntos_por_dni,
     resumir_formacion,
 )
 from pas.services.cruces_service import (
@@ -499,61 +501,37 @@ class PasAreaView(LoginRequiredMixin, TemplateView):
         # pylint: disable=too-many-locals
         context = super().get_context_data(**kwargs)
         area = next(item for item in PAS_AREAS if item["key"] == self.area_key)
-        personas = PasPersona.objects.select_related("estado").order_by(
-            "apellidos", "nombres"
-        )
         persona_seleccionada = None
         formaciones_pas = []
         resumen_formacion = None
         personas_formacion = []
+        pagina_formacion = None
+        persona_solicitada = None
         if self.area_key == "formacion":
             persona_id = self.request.GET.get("persona")
-            persona_solicitada = None
             if persona_id and persona_id.isdigit():
                 persona_solicitada = (
                     PasPersona.objects.select_related("estado")
                     .filter(pk=int(persona_id))
                     .first()
                 )
-            personas = list(personas[:100])
-            if persona_solicitada and all(
-                persona.pk != persona_solicitada.pk for persona in personas
-            ):
-                personas.append(persona_solicitada)
-            puntos_por_dni = obtener_puntos_por_dni(personas)
-            query = (self.request.GET.get("q") or "").strip().lower()
+            query = (self.request.GET.get("q") or "").strip()
             estado_formacion = self.request.GET.get("estado_formacion") or "todos"
-            for persona in personas:
-                datos = puntos_por_dni[persona.dni]
-                if datos["puntos"] >= 100:
-                    estado = "cumplido"
-                elif datos["total_cursos"]:
-                    estado = "en-curso"
-                else:
-                    estado = "sin-formacion"
-                persona.puntos_formacion = datos["puntos"]
-                persona.estado_formacion = estado
-                coincide_query = (
-                    not query
-                    or query
-                    in (
-                        f"{persona.apellidos} {persona.nombres} "
-                        f"{persona.cuit} {persona.dni}"
-                    ).lower()
-                )
-                coincide_estado = estado_formacion in ("todos", estado)
-                if coincide_query and coincide_estado:
-                    personas_formacion.append(persona)
-
-            if persona_id and persona_id.isdigit():
-                persona_seleccionada = next(
-                    (
-                        persona
-                        for persona in personas_formacion
-                        if persona.pk == int(persona_id)
-                    ),
-                    None,
-                )
+            excluir_id = persona_solicitada.pk if persona_solicitada else None
+            pagina_formacion = paginar_personas_formacion(
+                query=query,
+                estado_formacion=estado_formacion,
+                pagina=1,
+                excluir_id=excluir_id,
+            )
+            personas_formacion = preparar_personas_formacion(
+                pagina_formacion.object_list
+            )
+            if persona_solicitada:
+                persona_seleccionada = preparar_personas_formacion(
+                    [persona_solicitada]
+                )[0]
+                personas_formacion.insert(0, persona_seleccionada)
             persona_seleccionada = persona_seleccionada or next(
                 iter(personas_formacion),
                 None,
@@ -571,10 +549,49 @@ class PasAreaView(LoginRequiredMixin, TemplateView):
                 "resumen_formacion": resumen_formacion,
                 "query": self.request.GET.get("q", ""),
                 "estado_formacion": self.request.GET.get("estado_formacion", "todos"),
+                "pagina_formacion": pagina_formacion,
+                "formacion_personas_url": reverse("pas_formacion_personas"),
+                "persona_solicitada_id": (
+                    persona_solicitada.pk if persona_solicitada else ""
+                ),
                 "total_padron": PasPersona.objects.count(),
             }
         )
         return context
+
+
+class PasFormacionPersonasView(LoginRequiredMixin, View):
+    """Entrega páginas HTML para el scroll incremental de titulares."""
+
+    def get(self, request):
+        query = (request.GET.get("q") or "").strip()
+        estado_formacion = request.GET.get("estado_formacion") or "todos"
+        persona_id = request.GET.get("persona")
+        excluir_id = int(persona_id) if persona_id and persona_id.isdigit() else None
+        pagina = paginar_personas_formacion(
+            query=query,
+            estado_formacion=estado_formacion,
+            pagina=request.GET.get("page", 1),
+            excluir_id=excluir_id,
+        )
+        personas = preparar_personas_formacion(pagina.object_list)
+        html = render_to_string(
+            "pas/includes/formacion_personas.html",
+            {
+                "personas": personas,
+                "persona_seleccionada_id": excluir_id,
+                "query": query,
+                "estado_formacion": estado_formacion,
+            },
+            request=request,
+        )
+        return JsonResponse(
+            {
+                "html": html,
+                "has_next": pagina.has_next(),
+                "next_page": pagina.next_page_number() if pagina.has_next() else None,
+            }
+        )
 
 
 class PasCrucesExportarSintysView(LoginRequiredMixin, View):
