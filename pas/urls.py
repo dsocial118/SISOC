@@ -20,7 +20,7 @@ from pas.views import (
 urlpatterns = [
     path(
         "pas/informes",
-        permissions_any_required(["pas.view_paspersona", "pas.view_pasinforme"])(
+        permissions_all_required(["pas.view_paspersona", "pas.view_pasinforme"])(
             PasInformeListView.as_view()
         ),
         name="pas_informe_listar",
@@ -52,7 +52,7 @@ urlpatterns = [
     ),
     path(
         "pas/informes/<int:pk>",
-        permissions_any_required(["pas.view_paspersona", "pas.view_pasinforme"])(
+        permissions_all_required(["pas.view_paspersona", "pas.view_pasinforme"])(
             PasInformeDetailView.as_view()
         ),
         name="pas_informe_detalle",

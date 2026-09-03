@@ -239,3 +239,38 @@ def test_descarga_acepta_todos_los_permisos_requeridos(client):
 
     assert response.status_code == 200
     assert response["Content-Type"] == CSV_CONTENT_TYPE
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    ("url_name", "requires_pk", "missing_permission"),
+    [
+        ("pas_informe_listar", False, ("pas", "view_paspersona")),
+        ("pas_informe_listar", False, ("pas", "view_pasinforme")),
+        ("pas_informe_detalle", True, ("pas", "view_paspersona")),
+        ("pas_informe_detalle", True, ("pas", "view_pasinforme")),
+    ],
+)
+def test_listado_y_detalle_requieren_lectura_de_padron_e_informe(
+    client, url_name, requires_pk, missing_permission
+):
+    informe = PasInforme.objects.create(
+        resultado=[{"dni": "30000000", "cuit": "20300000001"}]
+    )
+    permisos = [("pas", "view_paspersona"), ("pas", "view_pasinforme")]
+    usuario = get_user_model().objects.create_user(
+        username=f"sin-{missing_permission[1]}-{url_name}"
+    )
+    usuario.user_permissions.add(
+        *[
+            _permission(app_label, codename)
+            for app_label, codename in permisos
+            if (app_label, codename) != missing_permission
+        ]
+    )
+    client.force_login(usuario)
+
+    args = [informe.pk] if requires_pk else []
+    response = client.get(reverse(url_name, args=args))
+
+    assert response.status_code == 403

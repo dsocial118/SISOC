@@ -22,8 +22,9 @@ Fecha: 2026-09-01
 - La exportación reutiliza la política CSV central, incluida la codificación con
   BOM para compatibilidad con planillas de cálculo.
 - Generar y previsualizar exige simultáneamente lectura del padrón y creación de
-  informes. Descargar exige además lectura del informe y el permiso transversal
-  `auth.role_exportar_a_csv`.
+  informes. Listar y ver el detalle exige lectura simultánea del padrón y del
+  informe, porque el detalle contiene la fotografía con datos personales.
+  Descargar exige además el permiso transversal `auth.role_exportar_a_csv`.
 - La previsualización cuenta el universo completo pero consulta y serializa sólo
   las primeras 50 filas. La fecha del último cambio se resuelve mediante una
   subconsulta para evitar consultas por cada persona o cambio.
