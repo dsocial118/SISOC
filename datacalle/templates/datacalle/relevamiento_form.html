@@ -120,6 +120,8 @@
 
   (() => {
     // Cascada provincia -> municipio -> localidad con los endpoints de core.
+    // Los selects son select2: después de tocar las <option> hay que
+    // reinicializarlo con el helper de SISOC o el desplegable sigue vacío.
     const provincia = document.getElementById('id_provincia');
     const municipio = document.getElementById('id_municipio');
     const localidad = document.getElementById('id_localidad');
@@ -129,31 +131,48 @@
     const urlMunicipios = '{% url "ajax_load_municipios" %}';
     const urlLocalidades = '{% url "ajax_load_localidades" %}';
 
-    const poblar = (select, filas) => {
-      select.innerHTML = '<option value="">---------</option>';
-      filas.forEach((fila) => {
-        const option = document.createElement('option');
-        option.value = fila.id;
-        option.textContent = fila.nombre;
-        select.appendChild(option);
-      });
-    };
-
-    const cargar = async (url, params, select) => {
-      try {
-        const res = await fetch(url + '?' + new URLSearchParams(params));
-        poblar(select, await res.json());
-      } catch (e) {
-        poblar(select, []);
+    const refrescar = (select) => {
+      if (window.refreshSelect2Element) {
+        window.refreshSelect2Element(select);
       }
     };
 
+    const vaciar = (select, etiqueta) => {
+      select.innerHTML = '';
+      const vacia = document.createElement('option');
+      vacia.value = '';
+      vacia.textContent = etiqueta;
+      select.appendChild(vacia);
+      refrescar(select);
+    };
+
+    const cargar = async (url, params, select, etiqueta) => {
+      vaciar(select, etiqueta);
+      const valor = Object.values(params)[0];
+      if (!valor) {
+        return;
+      }
+      try {
+        const res = await fetch(url + '?' + new URLSearchParams(params));
+        (await res.json()).forEach((fila) => {
+          const option = document.createElement('option');
+          option.value = fila.id;
+          option.textContent = fila.nombre;
+          select.appendChild(option);
+        });
+      } catch (e) {
+        // Sin red se queda con la opción vacía; el alta no depende de esto.
+      }
+      refrescar(select);
+    };
+
     provincia.addEventListener('change', () => {
-      cargar(urlMunicipios, { provincia_id: provincia.value }, municipio);
-      poblar(localidad, []);
+      cargar(urlMunicipios, { provincia_id: provincia.value }, municipio, 'Seleccionar municipio...');
+      vaciar(localidad, 'Seleccionar localidad...');
     });
+
     municipio.addEventListener('change', () => {
-      cargar(urlLocalidades, { municipio_id: municipio.value }, localidad);
+      cargar(urlLocalidades, { municipio_id: municipio.value }, localidad, 'Seleccionar localidad...');
     });
   })();
     </script>
