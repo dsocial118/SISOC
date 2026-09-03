@@ -1,0 +1,132 @@
+{% extends "includes/main.html" %}
+{% load static %}
+{% block title %}Cruces y RENAPER PAS{% endblock %}
+{% block breadcrumb %}
+    {% include "components/breadcrumb.html" with items=breadcrumb_items %}
+{% endblock %}
+{% block head %}
+    <link rel="stylesheet" href="{% static 'custom/css/pas_cruces.css' %}" />
+{% endblock %}
+{% block content %}
+    <main class="container-fluid pas-cruces-page">
+        <header class="pas-cruces-header">
+            <div>
+                <span>Programa de Acompañamiento Social</span>
+                <h1>Cruces y novedades</h1>
+            </div>
+            <strong>Período {{ circuito.periodo|date:"m/Y" }}</strong>
+        </header>
+
+        <section class="pas-cruces-card">
+            <div class="pas-cruces-heading">
+                <div>
+                    <h2>Circuito administrativo mensual</h2>
+                    <p>{{ total_padron }} titulares incluidos</p>
+                </div>
+                {% if perms.pas.change_paspersona %}
+                    <div class="pas-cruces-actions">
+                        <form method="post" action="{% url 'pas_cruces_exportar_sintys' %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-primary">Exportar a SINTyS (VIAS)</button>
+                        </form>
+                        <form method="post"
+                              enctype="multipart/form-data"
+                              action="{% url 'pas_cruces_importar_sintys' %}">
+                            {% csrf_token %}
+                            {{ retorno_sintys_form.archivo }}
+                            <button type="submit" class="btn btn-outline-primary">Importar retorno</button>
+                        </form>
+                    </div>
+                {% endif %}
+            </div>
+            <ol class="pas-cruces-steps">
+                {% for etapa in etapas_circuito %}
+                    <li class="{% if etapa.completada %}is-complete{% endif %}">
+                        <span>{{ etapa.numero }}</span>
+                        <div>
+                            <strong>{{ etapa.nombre }}</strong>
+                            {% if etapa.completada %}
+                                <time>{{ etapa.fecha|date:"d/m/Y H:i" }}</time>
+                            {% else %}
+                                <small>
+                                    {% if etapa.integracion_pendiente %}
+                                        Integración no disponible
+                                    {% else %}
+                                        Pendiente
+                                    {% endif %}
+                                </small>
+                            {% endif %}
+                        </div>
+                    </li>
+                {% endfor %}
+            </ol>
+        </section>
+
+        <section class="pas-cruces-card">
+            <div class="pas-cruces-heading">
+                <div>
+                    <h2>Supervivencia RENAPER</h2>
+                    {% if resumen_renaper.fecha %}
+                        <p>
+                            Actualizado {{ resumen_renaper.fecha|date:"d/m/Y" }} · {{ resumen_renaper.total }} controles · {{ resumen_renaper.errores }} errores
+                        </p>
+                    {% else %}
+                        <p>Sin ejecución registrada.</p>
+                    {% endif %}
+                </div>
+                {% if perms.pas.change_paspersona %}
+                    <form method="post"
+                          action="{% url 'pas_cruces_actualizar_renaper' %}"
+                          id="pas-renaper-update-form">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline-primary">Actualizar RENAPER</button>
+                    </form>
+                {% endif %}
+            </div>
+        </section>
+
+        <section class="pas-cruces-card">
+            <div class="pas-cruces-heading">
+                <div>
+                    <h2>Incompatibilidades detectadas</h2>
+                    <p>{{ incompatibilidades|length }} pendientes</p>
+                </div>
+            </div>
+            {% if incompatibilidades %}
+                <div class="table-responsive">
+                    <table class="table table-striped align-middle">
+                        <thead>
+                            <tr>
+                                <th>Titular</th>
+                                <th>DNI</th>
+                                <th>Categoría</th>
+                                <th>Detalle</th>
+                                <th>Detección</th>
+                                <th>Impacta en</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for incompatibilidad in incompatibilidades %}
+                                <tr>
+                                    <td>{{ incompatibilidad.persona.apellidos }}, {{ incompatibilidad.persona.nombres }}</td>
+                                    <td>{{ incompatibilidad.persona.dni }}</td>
+                                    <td>{{ incompatibilidad.get_categoria_display }}</td>
+                                    <td>{{ incompatibilidad.detalle }}</td>
+                                    <td>{{ incompatibilidad.fecha_deteccion|date:"d/m/Y H:i" }}</td>
+                                    <td>{{ incompatibilidad.periodo_impacto|date:"m/Y" }}</td>
+                                    <td>{{ incompatibilidad.get_estado_display }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-success mb-0">Sin incompatibilidades de supervivencia pendientes.</div>
+            {% endif %}
+        </section>
+    </main>
+{% endblock %}
+{% block customJS %}
+    <script src="{% static 'custom/js/pas_cruces.js' %}"></script>
+{% endblock %}

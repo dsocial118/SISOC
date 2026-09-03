@@ -1,3 +1,4 @@
+from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import ValidationError
 from django.http import FileResponse, Http404, HttpResponse, JsonResponse
@@ -11,6 +12,22 @@ from core.pagination import NoCountPaginator, build_no_count_page_range
 from pas.forms import (
     PasDeclaracionJuradaForm,
     PasInformeGenerarForm,
+    PasRetornoSintysForm,
+    PasTitularesImportForm,
+)
+from pas.models import (
+    PasDeclaracionJurada,
+    PasIncompatibilidad,
+    PasInforme,
+    PasInvitacionDDJJ,
+    PasPersona,
+)
+from pas.services.cruces_service import (
+    construir_etapas,
+    obtener_circuito_actual,
+    registrar_exportacion_sintys,
+    registrar_importacion_sintys,
+)
     PasTitularesImportForm,
 )
 from pas.models import PasDeclaracionJurada, PasInforme, PasInvitacionDDJJ
@@ -21,6 +38,10 @@ from pas.services.informe_service import (
     errors_payload,
     generar_informe_pas,
     preview_payload,
+)
+from pas.services.supervivencia_service import (
+    resumen_supervivencia,
+    sincronizar_supervivencia_pas,
 )
 from pas.services.titulares_import_service import (
     generar_excel_tokens_vigentes,
@@ -221,3 +242,75 @@ class PasInformeDownloadView(LoginRequiredMixin, View):
     def get(self, request, *args, **kwargs):
         informe = get_object_or_404(PasInforme, pk=kwargs["pk"])
         return csv_response_for_informe(informe)
+
+
+class PasCrucesView(LoginRequiredMixin, TemplateView):
+    template_name = "pas/cruces.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        circuito = obtener_circuito_actual()
+        context.update(
+            {
+                "breadcrumb_items": [
+                    {"text": "PAS"},
+                    {"text": "Cruces y novedades", "active": True},
+                ],
+                "total_padron": PasPersona.objects.count(),
+                "circuito": circuito,
+                "etapas_circuito": construir_etapas(circuito),
+                "retorno_sintys_form": PasRetornoSintysForm(),
+                "resumen_renaper": resumen_supervivencia(),
+                "incompatibilidades": list(
+                    PasIncompatibilidad.objects.select_related("persona")
+                    .filter(estado=PasIncompatibilidad.Estado.PENDIENTE)
+                    .order_by("-fecha_deteccion")[:100]
+                ),
+            }
+        )
+        return context
+
+
+class PasCrucesExportarSintysView(LoginRequiredMixin, View):
+    def post(self, request):
+        circuito = obtener_circuito_actual(crear=True)
+        contenido, nombre = registrar_exportacion_sintys(circuito, request.user)
+        response = HttpResponse(
+            contenido,
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+        response["Content-Disposition"] = f'attachment; filename="{nombre}"'
+        return response
+
+
+class PasCrucesImportarSintysView(LoginRequiredMixin, View):
+    def post(self, request):
+        form = PasRetornoSintysForm(request.POST, request.FILES)
+        if not form.is_valid():
+            errores = " ".join(
+                error for items in form.errors.values() for error in items
+            )
+            messages.error(request, f"No se pudo importar el retorno: {errores}")
+            return redirect("pas_cruces")
+        registrar_importacion_sintys(
+            obtener_circuito_actual(crear=True),
+            form.cleaned_data["archivo"],
+            request.user,
+        )
+        messages.success(request, "Retorno SINTyS importado correctamente.")
+        return redirect("pas_cruces")
+
+
+class PasCrucesActualizarRenaperView(LoginRequiredMixin, View):
+    def post(self, request):
+        resumen = sincronizar_supervivencia_pas(forzar=True)
+        nivel = messages.warning if resumen["errores"] else messages.success
+        nivel(
+            request,
+            "Control RENAPER actualizado: "
+            f"{resumen['vigentes']} personas vivas, "
+            f"{resumen['fallecidas']} fallecidas, "
+            f"{resumen['no_encontradas']} sin coincidencia y "
+            f"{resumen['errores']} errores.",
+        )
+        return redirect("pas_cruces")
