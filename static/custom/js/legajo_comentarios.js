@@ -158,13 +158,17 @@ function mostrarComentarios(legajoId, comentarios) {
             internoBadge = ` <span class="badge bg-light text-dark" title="Publicado a la provincia el ${escapeHtml(c.publicado_en)}"><i class="fas fa-share"></i> Publicado</span>`;
         }
 
+        // En un comentario técnico sin observaciones el cuerpo repetiría lo
+        // que ya dice el badge, así que se omite.
+        const sinObservaciones = c.es_comentario_tecnico && c.tiene_observaciones === false;
+
         return `
         <div class="comentario-item mb-2 p-2 rounded" style="background:${bgColor}; border:1px solid ${borderColor}">
             <div class="d-flex justify-content-between align-items-start mb-1">
                 <small class="text-muted"><i class="fas fa-user"></i> ${usuario} ${badge}${internoBadge}${encabezadoTecnico(c)}</small>
                 <small class="text-muted">${fecha}</small>
             </div>
-            <p class="mb-1 small">${texto}</p>
+            ${sinObservaciones ? '' : `<p class="mb-1 small">${texto}</p>`}
             ${c.tiene_archivo ? `<a href="${archivoUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary"><i class="fas fa-paperclip"></i> Ver archivo</a>` : ''}
         </div>
     `;

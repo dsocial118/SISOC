@@ -201,6 +201,24 @@ def test_listado_nacion_ve_los_internos(client, coordinador, legajo):
     assert all(c["es_interno"] for c in tecnicos)
 
 
+def test_superusuario_no_figura_como_provincia(client, legajo):
+    """Un superusuario tiene todos los permisos, incluido el rol provincial:
+    el autor se etiqueta por alcance territorial, no por permiso."""
+    admin = User.objects.create_superuser(username="admin-ct", password="pass")
+    ComentariosTecnicosService.registrar(
+        legajo,
+        tipo_documento="RENAPER",
+        tiene_observaciones=True,
+        observacion_codigo=CODIGO_RENAPER,
+        usuario=admin,
+    )
+    client.force_login(admin)
+
+    comentarios = client.get(_url_listar(legajo)).json()["comentarios"]
+
+    assert [c["es_provincia"] for c in comentarios] == [False]
+
+
 def test_listado_provincia_no_ve_comentarios_sin_publicar(
     client, coordinador, provincial, legajo
 ):

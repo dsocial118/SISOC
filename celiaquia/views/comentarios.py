@@ -30,12 +30,6 @@ def _safe_profile(user):
         return None
 
 
-def _user_has_permission_cached(user, permission_code):
-    if not user:
-        return False
-    return user_has_permission_code(user, permission_code)
-
-
 ALLOWED_UPLOAD_TYPES = {"application/pdf", "image/jpeg", "image/png"}
 MAX_UPLOAD_MB = 5
 
@@ -113,12 +107,36 @@ def _resolver_legajo_para_nacion(request, expediente_id, legajo_id):
     return legajo, None
 
 
+def _es_autor_provincial(usuario) -> bool:
+    """True si el comentario lo escribió un usuario provincial.
+
+    No alcanza con mirar el permiso de rol: un superusuario los tiene todos y
+    quedaría etiquetado como Provincia. El alcance territorial es lo que
+    distingue de verdad a un usuario provincial, y es el mismo criterio con el
+    que se decide qué comentarios recibe.
+    """
+    return bool(usuario) and is_territorial_user(usuario)
+
+
+def _deduplicar_para_provincia(comentarios):
+    """Quita las observaciones técnicas repetidas, conservando el resto.
+
+    El técnico puede registrar la misma observación más de una vez y el
+    historial interno las conserva todas, pero a la Provincia se le muestra una
+    sola vez cada una. La lista vuelve ordenada de más nueva a más vieja."""
+    tecnicos = [c for c in comentarios if c.es_comentario_tecnico]
+    resto = [c for c in comentarios if not c.es_comentario_tecnico]
+    return sorted(
+        resto + ComentariosTecnicosService.deduplicar(tecnicos),
+        key=lambda c: c.fecha_creacion,
+        reverse=True,
+    )
+
+
 def _serializar_comentario(comentario, es_provincia=None):
     """Representación JSON de un comentario del panel del legajo."""
     if es_provincia is None:
-        es_provincia = _user_has_permission_cached(
-            comentario.usuario, ROLE_PROVINCIA_CELIAQUIA_PERMISSION
-        )
+        es_provincia = _es_autor_provincial(comentario.usuario)
     return {
         "id": comentario.pk,
         "texto": comentario.comentario,
@@ -243,10 +261,7 @@ class LegajoComentarioCreateView(View):
                 "success": True,
                 "message": "Comentario agregado correctamente.",
                 "comentario": _serializar_comentario(
-                    comentario,
-                    es_provincia=_has_permission(
-                        user, ROLE_PROVINCIA_CELIAQUIA_PERMISSION
-                    ),
+                    comentario, es_provincia=_es_autor_provincial(user)
                 ),
             }
         )
@@ -326,13 +341,7 @@ class LegajoComentarioListView(View):
         # Nación ve el historial completo, incluidas las observaciones repetidas.
         # A la Provincia se le muestra una sola vez cada observación publicada.
         if not es_nacion:
-            tecnicos = [c for c in comentarios if c.es_comentario_tecnico]
-            resto = [c for c in comentarios if not c.es_comentario_tecnico]
-            comentarios = sorted(
-                resto + ComentariosTecnicosService.deduplicar(tecnicos),
-                key=lambda c: c.fecha_creacion,
-                reverse=True,
-            )
+            comentarios = _deduplicar_para_provincia(comentarios)
 
         data = [_serializar_comentario(c) for c in comentarios]
 
