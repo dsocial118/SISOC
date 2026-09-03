@@ -17,7 +17,11 @@ from pwa.models import LecturaMensajePWA
 from pwa.services.auditoria_operacion_service import registrar_evento_operacion
 from rendicioncuentasmensual.models import RendicionCuentaMensual
 from users.models import AccesoComedorPWA
-from users.services_pwa import get_access_rows, get_accessible_comedor_ids
+from users.services_pwa import (
+    get_access_rows,
+    get_accessible_comedor_ids,
+    is_coordinador_equipo_tecnico_pwa,
+)
 
 MOBILE_RENDICION_PERMISSION_CODE = "rendicioncuentasmensual.manage_mobile_rendicion"
 RENDICION_MESSAGE_ACTION_MARKER = "[SISOC_ACCION]rendicion_detalle:"
@@ -126,7 +130,10 @@ def list_mensajes_for_espacio(*, comedor_id: int, user):
     _assert_user_has_comedor_access(user=user, comedor_id=comedor_id)
     accessible_comedor_ids = get_accessible_comedor_ids(user)
     queryset = _visible_messages_queryset(comedor_id=comedor_id, user=user)
-    if not user_has_permission_code(user, MOBILE_RENDICION_PERMISSION_CODE):
+    if not (
+        is_coordinador_equipo_tecnico_pwa(user)
+        or user_has_permission_code(user, MOBILE_RENDICION_PERMISSION_CODE)
+    ):
         queryset = queryset.exclude(cuerpo__contains=RENDICION_MESSAGE_ACTION_MARKER)
     lecturas_qs = LecturaMensajePWA.objects.filter(
         user=user,
