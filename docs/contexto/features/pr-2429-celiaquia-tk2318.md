@@ -44,7 +44,9 @@
 - `celiaquia/urls.py`
 - `celiaquia/views/comentarios.py`
 - `celiaquia/views/expediente.py`
+- `docs/contexto/features/pr-2429-celiaquia-tk2318.md`
 - `docs/registro/cambios/2026-09-03-celiaquia-comentarios-tecnicos-subsanacion.md`
+- `docs/registro/prs/PR-2429.md`
 - `static/custom/css/listModerno.css`
 - `static/custom/js/expediente_detail.js`
 - `static/custom/js/expediente_detail_config.js`
@@ -55,7 +57,9 @@
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`
+- `docs/contexto/features/pr-2429-celiaquia-tk2318.md`
 - `docs/registro/cambios/2026-09-03-celiaquia-comentarios-tecnicos-subsanacion.md`
+- `docs/registro/prs/PR-2429.md`
 
 ## Trazabilidad
 
