@@ -208,6 +208,7 @@ INSTALLED_APPS = [
     "centrodeinfancia",
     "ver_para_ser_libre",
     "dispositivos",
+    "datacalle",
     "insumos",
     "pwa",
     "ticketera",
