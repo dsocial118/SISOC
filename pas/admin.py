@@ -7,6 +7,7 @@ from pas.models import (
     PasEstado,
     PasExportacionTokens,
     PasHistorialEstado,
+    PasInforme,
     PasInvitacionDDJJ,
     PasPersona,
 )
@@ -54,6 +55,19 @@ class PasHistorialEstadoAdmin(admin.ModelAdmin):
     list_filter = ("estado_nuevo", "fecha_cambio")
     search_fields = ("persona__apellidos", "persona__nombres", "persona__dni")
     filter_horizontal = ("avisos_anteriores", "avisos_nuevos")
+
+
+@admin.register(PasInforme)
+class PasInformeAdmin(admin.ModelAdmin):
+    list_display = ("numero", "usuario", "creado", "total_personas", "total_cambios")
+    list_filter = ("creado", "usuario")
+    search_fields = (
+        "id",
+        "usuario__username",
+        "usuario__first_name",
+        "usuario__last_name",
+    )
+    filter_horizontal = ("personas", "cambios")
 
 
 @admin.register(PasInvitacionDDJJ)

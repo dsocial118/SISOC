@@ -294,7 +294,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 | `importarexpediente/` | flujo de importacion de expedientes | `views.py`, `models.py`, urls, tests | Medio |
 | `ocr/` | OCR y procesamiento asociado | `models.py`, `views.py`, urls, tests | Medio |
 | `ver_para_ser_libre/` | modulo de negocio independiente dentro del monolito | `models.py`, `views.py`, `services/workflow.py` | Medio |
-| `pas/` | núcleo del Programa de Acompañamiento Social: titulares, estados, avisos e historial; circuito DDJJ con tokens, formulario público, PDF e importación CSV | `models.py`, `api.py`, `services/resumen_publico_service.py`, `services/ddjj_service.py`, `services/titulares_import_service.py`, `urls.py`, `migrations/` | Alto |
+| `pas/` | núcleo del Programa de Acompañamiento Social, circuito DDJJ —padrón, tokens, formulario público, PDF e importación CSV— e Informes PAS versionados | `models.py`, `api.py`, `services/ddjj_service.py`, `services/titulares_import_service.py`, `services/informe_service.py`, `urls.py`, `migrations/` | Alto |
 | `audittrail/` | auditoria interna | `models.py`, `views.py`, `services/query_service` | Alto |
 | `historial/` | historial de dominio | `models.py`, `services/` | Bajo |
 | `intervenciones/` | intervenciones sobre casos | tests + archivos del modulo | Bajo; exploracion parcial |
