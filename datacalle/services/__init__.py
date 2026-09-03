@@ -6,5 +6,6 @@ from datacalle.services.relevamientos import (  # noqa: F401
     get_provincias_para_usuario,
     get_relevamientos_queryset,
     marcar_en_curso,
+    resumen_por_estado,
     save_relevamiento_from_form,
 )

@@ -40,3 +40,19 @@ consume la app y la carga de casos son pasos siguientes.
 - Municipio y localidad usan los endpoints de cascada que ya expone `core`.
 - El alcance se resuelve con `users.territorial_scope`, el mismo mecanismo del
   resto del backoffice, en lugar de una estructura propia.
+
+## Diseño
+
+Las pantallas usan la paleta de SISOC (superficies azul marino, acento dorado
+`#e7ba61`, texto claro) con una hoja propia, `static/custom/css/datacalle.css`,
+y reutilizan la tabla y los botones de acción de `listModerno.css`.
+
+- El listado abre con un encabezado de sección y un resumen de operativos por
+  estado, y muestra cada fila con el lugar y la duración como dato secundario.
+- El estado se lee como chip de color: azul planificado, ámbar en curso, verde
+  finalizado.
+- El detalle se ordena en tarjetas por tema (dónde, cuándo, equipo,
+  observaciones y cierre), con el equipo como fichas con iniciales.
+- El formulario agrupa los campos en secciones con ayuda breve en cada una, en
+  lugar de una lista plana.
+- Los estados vacíos explican qué falta hacer en vez de mostrar campos en blanco.

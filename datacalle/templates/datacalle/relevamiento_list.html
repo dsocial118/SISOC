@@ -3,105 +3,139 @@
 {% block title %}Relevamientos DataCalle{% endblock %}
 {% block content %}
     <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
+    <link rel="stylesheet" href="{% static 'custom/css/datacalle.css' %}" />
 
     <div class="list-container">
-        <div class="row mb-3">
-            <div class="col-12 d-flex justify-content-between align-items-center flex-wrap gap-2">
-                <h4 class="mb-0">Relevamientos DataCalle</h4>
-                {% if add_url %}
-                    <a href="{{ add_url }}" class="btn btn-primary">
-                        <i class="fas fa-plus"></i> Planificar relevamiento
-                    </a>
-                {% endif %}
+        <div class="dc-header">
+            <div>
+                <h1 class="dc-header__title">Relevamientos DataCalle</h1>
+                <div class="dc-header__meta">
+                    <span><i class="fas fa-street-view"></i>Operativos de situación de calle</span>
+                    <span>&middot;</span>
+                    <span>Le llegan como tarea al equipo en SISOC - Mobile</span>
+                </div>
             </div>
+            {% if add_url %}
+                <div class="dc-header__actions">
+                    <a href="{{ add_url }}" class="btn btn-primary">
+                        <i class="fas fa-plus mr-1"></i> Planificar relevamiento
+                    </a>
+                </div>
+            {% endif %}
         </div>
 
-        <form method="get" class="row g-2 mb-3">
-            <div class="col-md-6">
-                <input type="text"
-                       name="busqueda"
-                       value="{{ busqueda_actual }}"
-                       class="form-control"
-                       placeholder="Buscar por denominación, área, provincia o localidad" />
+        <div class="dc-stats">
+            <div class="dc-stat dc-stat--total">
+                <span class="dc-stat__valor">{{ resumen.total }}</span>
+                <span class="dc-stat__label">Total</span>
             </div>
-            <div class="col-md-4">
-                <select name="estado" class="form-select">
-                    <option value="">Todos los estados</option>
-                    {% for valor, etiqueta in estados %}
-                        <option value="{{ valor }}"
-                                {% if valor == estado_actual %}selected{% endif %}>{{ etiqueta }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-md-2 d-grid">
-                <button type="submit" class="btn btn-outline-primary">Filtrar</button>
+            {% for item in resumen.por_estado %}
+                <div class="dc-stat dc-stat--{{ item.valor }}">
+                    <span class="dc-stat__valor">{{ item.total }}</span>
+                    <span class="dc-stat__label">{{ item.etiqueta }}</span>
+                </div>
+            {% endfor %}
+        </div>
+
+        <form method="get" class="dc-filtros">
+            <div class="row g-2">
+                <div class="col-md-6">
+                    <input type="text"
+                           name="busqueda"
+                           value="{{ busqueda_actual }}"
+                           class="form-control"
+                           placeholder="Buscar por denominación, área, provincia o localidad" />
+                </div>
+                <div class="col-md-4">
+                    <select name="estado" class="form-select">
+                        <option value="">Todos los estados</option>
+                        {% for valor, etiqueta in estados %}
+                            <option value="{{ valor }}"
+                                    {% if valor == estado_actual %}selected{% endif %}>{{ etiqueta }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2 d-grid">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-filter mr-1"></i> Filtrar
+                    </button>
+                </div>
             </div>
         </form>
 
-        <div class="row">
-            <div class="col-12">
-                <div class="card comedor-table-card">
-                    <div class="card-body">
-                        <div class="table-responsive-lg">
-                            <table class="table table-comedor-moderno">
-                                <thead>
-                                    <tr>
-                                        <th>Denominación</th>
-                                        <th>Provincia</th>
-                                        <th>Lugar</th>
-                                        <th>Fechas</th>
-                                        <th>Equipo</th>
-                                        <th>Estado</th>
-                                        <th>Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for relevamiento in relevamientos %}
-                                        <tr>
-                                            <td>{{ relevamiento.denominacion }}</td>
-                                            <td>{{ relevamiento.provincia }}</td>
-                                            <td>{{ relevamiento.lugar|default:"-" }}</td>
-                                            <td>{{ relevamiento.fecha_inicio|date:"d/m/Y" }} — {{ relevamiento.fecha_fin|date:"d/m/Y" }}</td>
-                                            <td>{{ relevamiento.equipo.count }}</td>
-                                            <td>{{ relevamiento.get_estado_display }}</td>
-                                            <td>
-                                                <div class="comedor-actions">
-                                                    <a href="{% url 'datacalle_relevamientos_detalle' relevamiento.pk %}"
-                                                       class="btn btn-ver"
-                                                       title="Ver detalles">
-                                                        <i class="fas fa-eye"></i> Ver
-                                                    </a>
-                                                    {% if perms.datacalle.change_relevamiento %}
-                                                        <a href="{% url 'datacalle_relevamientos_editar' relevamiento.pk %}"
-                                                           class="btn btn-editar"
-                                                           title="Editar">
-                                                            <i class="fas fa-edit"></i> Editar
-                                                        </a>
-                                                    {% endif %}
-                                                    {% if perms.datacalle.delete_relevamiento %}
-                                                        <a href="{% url 'datacalle_relevamientos_eliminar' relevamiento.pk %}"
-                                                           class="btn btn-eliminar"
-                                                           title="Eliminar">
-                                                            <i class="fas fa-trash-alt"></i> Eliminar
-                                                        </a>
-                                                    {% endif %}
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    {% empty %}
-                                        <tr>
-                                            <td colspan="7">
-                                                <div class="no-data-message">
-                                                    <h3>No se encontraron relevamientos</h3>
-                                                    <p>Planificá un operativo para que le aparezca como tarea al equipo en la app.</p>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+        <div class="card comedor-table-card">
+            <div class="card-body">
+                <div class="table-responsive-lg">
+                    <table class="table table-comedor-moderno">
+                        <thead>
+                            <tr>
+                                <th>Operativo</th>
+                                <th>Jurisdicción</th>
+                                <th>Fechas</th>
+                                <th>Equipo</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for relevamiento in relevamientos %}
+                                <tr>
+                                    <td>
+                                        <div class="dc-celda-principal">
+                                            <span class="dc-celda-principal__titulo">{{ relevamiento.denominacion }}</span>
+                                            <span class="dc-celda-principal__sub">
+                                                {{ relevamiento.get_fase_display }}
+                                                {% if relevamiento.lugar %}&middot; {{ relevamiento.lugar }}{% endif %}
+                                                {% if relevamiento.modalidad_papel %}&middot; papel{% endif %}
+                                            </span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="dc-celda-principal">
+                                            <span class="dc-celda-principal__titulo">{{ relevamiento.provincia }}</span>
+                                            <span class="dc-celda-principal__sub">{{ relevamiento.localidad|default:relevamiento.municipio|default:"—" }}</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="dc-fechas">{{ relevamiento.fecha_inicio|date:"d/m/y" }} → {{ relevamiento.fecha_fin|date:"d/m/y" }}</div>
+                                        <div class="dc-fechas__dias">{{ relevamiento.dias }} día{{ relevamiento.dias|pluralize }}</div>
+                                    </td>
+                                    <td>
+                                        <span class="dc-equipo-contador"><i class="fas fa-users"></i> {{ relevamiento.equipo.count }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="dc-chip dc-chip--{{ relevamiento.estado }}">{{ relevamiento.get_estado_display }}</span>
+                                    </td>
+                                    <td>
+                                        <div class="comedor-actions">
+                                            <a href="{% url 'datacalle_relevamientos_detalle' relevamiento.pk %}"
+                                               class="btn btn-ver"
+                                               title="Ver detalles">
+                                                <i class="fas fa-eye"></i> Ver
+                                            </a>
+                                            {% if perms.datacalle.change_relevamiento %}
+                                                <a href="{% url 'datacalle_relevamientos_editar' relevamiento.pk %}"
+                                                   class="btn btn-editar"
+                                                   title="Editar">
+                                                    <i class="fas fa-edit"></i> Editar
+                                                </a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="6">
+                                        <div class="dc-vacio">
+                                            <i class="fas fa-map-marked-alt"></i>
+                                            <h3>Todavía no hay operativos</h3>
+                                            <p>Planificá uno para que le aparezca como tarea al equipo en la app.</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>

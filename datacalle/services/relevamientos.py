@@ -6,6 +6,7 @@ backoffice (``users.territorial_scope``).
 """
 
 from django.contrib.auth.models import User
+from django.db.models import Count
 
 from core.models import Provincia
 from datacalle.models import Relevamiento
@@ -116,3 +117,18 @@ def marcar_en_curso(relevamiento):
     relevamiento.estado = Relevamiento.Estado.EN_CURSO
     relevamiento.save(update_fields=["estado", "updated_at"])
     return relevamiento
+
+
+def resumen_por_estado(user):
+    """Conteo de operativos por estado dentro del alcance del usuario."""
+    queryset = apply_relevamientos_scope(Relevamiento.objects.all(), user)
+    conteos = dict(
+        queryset.values_list("estado").annotate(total=Count("id")).order_by()
+    )
+    return {
+        "total": sum(conteos.values()),
+        "por_estado": [
+            {"valor": valor, "etiqueta": etiqueta, "total": conteos.get(valor, 0)}
+            for valor, etiqueta in Relevamiento.Estado.choices
+        ],
+    }
