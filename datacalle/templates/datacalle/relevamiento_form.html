@@ -1,0 +1,104 @@
+{% extends "includes/main.html" %}
+{% load crispy_forms_tags %}
+{% block title %}{{ titulo }}{% endblock %}
+{% block content %}
+    <div class="container mt-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">{{ titulo }}</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">
+                    El operativo le llega como tarea a los entrevistadores del equipo en
+                    SISOC - Mobile DataCalle. Ellos cargan los casos y lo cierran desde la app.
+                </p>
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    {{ form.non_field_errors }}
+                    <div class="row">
+                        <div class="col-md-12">{{ form.denominacion|as_crispy_field }}</div>
+                        <div class="col-md-4">{{ form.provincia|as_crispy_field }}</div>
+                        <div class="col-md-4">{{ form.municipio|as_crispy_field }}</div>
+                        <div class="col-md-4">{{ form.localidad|as_crispy_field }}</div>
+                        <div class="col-md-4">{{ form.fase|as_crispy_field }}</div>
+                        <div class="col-md-8" id="campo-area-operativa">{{ form.area_operativa|as_crispy_field }}</div>
+                        <div class="col-md-8" id="campo-dispositivo">{{ form.dispositivo|as_crispy_field }}</div>
+                        <div class="col-md-4">{{ form.fecha_inicio|as_crispy_field }}</div>
+                        <div class="col-md-4">{{ form.fecha_fin|as_crispy_field }}</div>
+                        <div class="col-md-4 d-flex align-items-center">{{ form.modalidad_papel|as_crispy_field }}</div>
+                        <div class="col-md-12">{{ form.equipo|as_crispy_field }}</div>
+                        <div class="col-md-12">{{ form.observaciones|as_crispy_field }}</div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                    <a href="{% url 'datacalle_relevamientos_listar' %}"
+                       class="btn btn-secondary">Cancelar</a>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+{% block customJS %}
+    <script nonce="{{ request.csp_nonce }}">
+  (() => {
+    const fase = document.getElementById('id_fase');
+    const campoArea = document.getElementById('campo-area-operativa');
+    const campoDispositivo = document.getElementById('campo-dispositivo');
+    if (!fase) {
+      return;
+    }
+    const sincronizarFase = () => {
+      const esEspacioPublico = fase.value === 'espacio_publico';
+      if (campoArea) {
+        campoArea.style.display = esEspacioPublico ? '' : 'none';
+      }
+      if (campoDispositivo) {
+        campoDispositivo.style.display = esEspacioPublico ? 'none' : '';
+      }
+    };
+    fase.addEventListener('change', sincronizarFase);
+    sincronizarFase();
+  })();
+
+  (() => {
+    // Cascada provincia -> municipio -> localidad con los endpoints de core.
+    const provincia = document.getElementById('id_provincia');
+    const municipio = document.getElementById('id_municipio');
+    const localidad = document.getElementById('id_localidad');
+    if (!provincia || !municipio || !localidad) {
+      return;
+    }
+    const urlMunicipios = '{% url "ajax_load_municipios" %}';
+    const urlLocalidades = '{% url "ajax_load_localidades" %}';
+
+    const poblar = (select, filas, seleccionado) => {
+      select.innerHTML = '<option value="">---------</option>';
+      filas.forEach((fila) => {
+        const option = document.createElement('option');
+        option.value = fila.id;
+        option.textContent = fila.nombre;
+        if (String(fila.id) === String(seleccionado)) {
+          option.selected = true;
+        }
+        select.appendChild(option);
+      });
+    };
+
+    const cargar = async (url, params, select, seleccionado) => {
+      try {
+        const res = await fetch(url + '?' + new URLSearchParams(params));
+        poblar(select, await res.json(), seleccionado);
+      } catch (e) {
+        poblar(select, [], null);
+      }
+    };
+
+    provincia.addEventListener('change', () => {
+      cargar(urlMunicipios, { provincia_id: provincia.value }, municipio, null);
+      poblar(localidad, [], null);
+    });
+    municipio.addEventListener('change', () => {
+      cargar(urlLocalidades, { municipio_id: municipio.value }, localidad, null);
+    });
+  })();
+    </script>
+{% endblock %}

@@ -1,0 +1,111 @@
+{% extends "includes/main.html" %}
+{% load static %}
+{% block title %}Relevamientos DataCalle{% endblock %}
+{% block content %}
+    <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
+
+    <div class="list-container">
+        <div class="row mb-3">
+            <div class="col-12 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <h4 class="mb-0">Relevamientos DataCalle</h4>
+                {% if add_url %}
+                    <a href="{{ add_url }}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Planificar relevamiento
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+
+        <form method="get" class="row g-2 mb-3">
+            <div class="col-md-6">
+                <input type="text"
+                       name="busqueda"
+                       value="{{ busqueda_actual }}"
+                       class="form-control"
+                       placeholder="Buscar por denominación, área, provincia o localidad" />
+            </div>
+            <div class="col-md-4">
+                <select name="estado" class="form-select">
+                    <option value="">Todos los estados</option>
+                    {% for valor, etiqueta in estados %}
+                        <option value="{{ valor }}"
+                                {% if valor == estado_actual %}selected{% endif %}>{{ etiqueta }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2 d-grid">
+                <button type="submit" class="btn btn-outline-primary">Filtrar</button>
+            </div>
+        </form>
+
+        <div class="row">
+            <div class="col-12">
+                <div class="card comedor-table-card">
+                    <div class="card-body">
+                        <div class="table-responsive-lg">
+                            <table class="table table-comedor-moderno">
+                                <thead>
+                                    <tr>
+                                        <th>Denominación</th>
+                                        <th>Provincia</th>
+                                        <th>Lugar</th>
+                                        <th>Fechas</th>
+                                        <th>Equipo</th>
+                                        <th>Estado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for relevamiento in relevamientos %}
+                                        <tr>
+                                            <td>{{ relevamiento.denominacion }}</td>
+                                            <td>{{ relevamiento.provincia }}</td>
+                                            <td>{{ relevamiento.lugar|default:"-" }}</td>
+                                            <td>{{ relevamiento.fecha_inicio|date:"d/m/Y" }} — {{ relevamiento.fecha_fin|date:"d/m/Y" }}</td>
+                                            <td>{{ relevamiento.equipo.count }}</td>
+                                            <td>{{ relevamiento.get_estado_display }}</td>
+                                            <td>
+                                                <div class="comedor-actions">
+                                                    <a href="{% url 'datacalle_relevamientos_detalle' relevamiento.pk %}"
+                                                       class="btn btn-ver"
+                                                       title="Ver detalles">
+                                                        <i class="fas fa-eye"></i> Ver
+                                                    </a>
+                                                    {% if perms.datacalle.change_relevamiento %}
+                                                        <a href="{% url 'datacalle_relevamientos_editar' relevamiento.pk %}"
+                                                           class="btn btn-editar"
+                                                           title="Editar">
+                                                            <i class="fas fa-edit"></i> Editar
+                                                        </a>
+                                                    {% endif %}
+                                                    {% if perms.datacalle.delete_relevamiento %}
+                                                        <a href="{% url 'datacalle_relevamientos_eliminar' relevamiento.pk %}"
+                                                           class="btn btn-eliminar"
+                                                           title="Eliminar">
+                                                            <i class="fas fa-trash-alt"></i> Eliminar
+                                                        </a>
+                                                    {% endif %}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% empty %}
+                                        <tr>
+                                            <td colspan="7">
+                                                <div class="no-data-message">
+                                                    <h3>No se encontraron relevamientos</h3>
+                                                    <p>Planificá un operativo para que le aparezca como tarea al equipo en la app.</p>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% include 'components/pagination.html' with is_paginated=is_paginated page_obj=page_obj prev_text='Volver' next_text='Continuar' %}
+    </div>
+{% endblock %}

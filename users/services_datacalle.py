@@ -6,6 +6,8 @@ calle, de lo que ``services_pwa`` resuelve para comedores: habilita el login
 mobile y expone el alcance provincial que la app usa para filtrar operativos.
 """
 
+from django.contrib.auth.models import User
+
 from core.models import Provincia
 from users.profile_utils import get_profile_or_none
 
@@ -53,3 +55,22 @@ def get_relevador_calle_provincias(user) -> list[dict]:
             "nombre"
         )
     ]
+
+
+def get_relevador_calle_users_for_provincia(provincia_id):
+    """Entrevistadores de DataCalle con alcance en una provincia.
+
+    Es la lista con la que el coordinador arma el equipo de un relevamiento.
+    """
+    if not provincia_id:
+        return User.objects.none()
+    return (
+        User.objects.filter(
+            is_active=True,
+            profile__es_relevador_calle=True,
+            profile__relevador_calle_provincias__provincia_id=provincia_id,
+        )
+        .select_related("profile")
+        .distinct()
+        .order_by("first_name", "last_name", "username")
+    )
