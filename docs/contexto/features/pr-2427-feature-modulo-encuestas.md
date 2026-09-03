@@ -33,7 +33,9 @@
 
 - Empezar por `docs/registro/prs/PR-2427.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
+- `docs/contexto/features/pr-2427-feature-modulo-encuestas.md`
 - `docs/registro/analisis/2026-08-28-modulo-encuestas.md`
+- `docs/registro/prs/PR-2427.md`
 - `encuestas/migrations/0002_opcionpregunta_puntaje_pregunta_pondera_and_more.py`
 - `encuestas/models.py`
 - `encuestas/services.py`
@@ -53,7 +55,9 @@
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`
+- `docs/contexto/features/pr-2427-feature-modulo-encuestas.md`
 - `docs/registro/analisis/2026-08-28-modulo-encuestas.md`
+- `docs/registro/prs/PR-2427.md`
 
 ## Trazabilidad
 
