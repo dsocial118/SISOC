@@ -159,6 +159,19 @@
   font-weight: 500;
 }
 
+.encuesta-editor .puntaje-rank {
+  display: inline-block;
+  min-width: 24px;
+  color: #6b7280;
+  font-variant-numeric: tabular-nums;
+  margin-right: 4px;
+}
+
+.encuesta-editor .result-bar-row.is-leading .puntaje-rank {
+  color: #f39c12;
+  font-weight: 700;
+}
+
 .encuesta-editor .result-bar-valor {
   color: #9ca3af;
   font-size: 12px;
