@@ -43,7 +43,7 @@ jobs:
                   fi
 
                   cd "$APP_ROOT"
-                  git -C "$APP_ROOT" fetch origin --prune
+                  git -C "$APP_ROOT" fetch origin --no-tags development:refs/remotes/origin/development
                   remote_sha="$(git -C "$APP_ROOT" rev-parse origin/development)"
                   if [[ "$remote_sha" != "$EXPECTED_SHA" ]]; then
                       {
@@ -53,8 +53,9 @@ jobs:
                       } >> "$GITHUB_STEP_SUMMARY"
                       exit 0
                   fi
+                  git -C "$APP_ROOT" merge --ff-only origin/development
                   echo "Commit previo al deploy para rollback: $(git rev-parse HEAD)"
-                  ./scripts/operacion/deploy_refresh.sh --yes --expected-revision "$EXPECTED_SHA"
+                  ./scripts/operacion/deploy_refresh.sh --yes --skip-pull --expected-revision "$EXPECTED_SHA"
                   wait_for() {
                       local description="$1"
                       local attempts="$2"

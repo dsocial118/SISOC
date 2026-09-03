@@ -190,11 +190,10 @@ def _puntaje_obtenido_pregunta(pregunta, respuesta_pregunta) -> int:
     if not pregunta.pondera or respuesta_pregunta is None:
         return 0
     if pregunta.tipo == TipoPregunta.SI_NO:
-        if respuesta_pregunta.valor_texto == "si":
-            return pregunta.puntaje_si or 0
-        if respuesta_pregunta.valor_texto == "no":
-            return pregunta.puntaje_no or 0
-        return 0
+        return {
+            "si": pregunta.puntaje_si or 0,
+            "no": pregunta.puntaje_no or 0,
+        }.get(respuesta_pregunta.valor_texto, 0)
     if pregunta.tipo in (TipoPregunta.OPCION_UNICA, TipoPregunta.OPCION_MULTIPLE):
         return sum(
             opcion.puntaje for opcion in respuesta_pregunta.opciones_seleccionadas.all()
@@ -315,6 +314,10 @@ def build_export_rows(ronda: RondaEncuesta) -> tuple[list, list[list[str]]]:
         "respuestas_pregunta__opciones_seleccionadas"
     )
     for respuesta_ronda in respuestas_ronda:
+        detalle_por_pregunta = {
+            detalle.pregunta_id: detalle
+            for detalle in respuesta_ronda.respuestas_pregunta.all()
+        }
         fecha_local = timezone.localtime(respuesta_ronda.fecha_respuesta)
         fila = [
             ronda.numero_ronda,
