@@ -44,6 +44,42 @@ def _scope_relevamientos_for_authenticated_user(
     )
 
 
+def _validado_bloquea_edicion(request, instance):
+    """409 si el coordinador ya validó el registro.
+
+    Solo aplica a solicitudes de usuario (token DRF o sesión): las API keys de
+    integración conservan el acceso de escritura que necesita GESTIONAR.
+    """
+    user = request.user
+    if not user or not user.is_authenticated:
+        return None
+    if not getattr(instance, "esta_validado", False):
+        return None
+    return Response(
+        {
+            "detail": (
+                "El registro está validado por el coordinador y no admite "
+                "modificaciones."
+            ),
+            "estado_validacion": instance.estado_validacion,
+        },
+        status=status.HTTP_409_CONFLICT,
+    )
+
+
+def _reenviar_a_validacion(model, pk, estado_validacion_actual):
+    """Un envío del territorial vuelve a pedir validación del coordinador.
+
+    Se aplica cuando el registro no fue enviado todavía o volvió ``A subsanar``;
+    un registro ya ``Pendiente validación coordinador`` no cambia.
+    """
+    if estado_validacion_actual not in model.ESTADOS_VALIDACION_REENVIABLES:
+        return
+    model.objects.filter(pk=pk).update(
+        estado_validacion=model.ESTADO_VALIDACION_PENDIENTE
+    )
+
+
 class RelevamientoApiView(APIView):
     serializer_class = RelevamientoSerializer
     permission_classes = [HasAPIKeyOrToken]
@@ -63,6 +99,10 @@ class RelevamientoApiView(APIView):
             ).get(
                 id=sisoc_id,
             )
+            bloqueo = _validado_bloquea_edicion(request, relevamiento)
+            if bloqueo is not None:
+                return bloqueo
+            estado_validacion_previo = relevamiento.estado_validacion
             try:
                 relevamiento_serializer = RelevamientoSerializer(
                     relevamiento, data=request.data, partial=True
@@ -85,6 +125,9 @@ class RelevamientoApiView(APIView):
                     relevamiento = relevamiento_serializer.instance
                     Relevamiento.objects.filter(pk=relevamiento.pk).update(
                         sincronizado_gestionar=True
+                    )
+                    _reenviar_a_validacion(
+                        Relevamiento, relevamiento.pk, estado_validacion_previo
                     )
             except ValidationError as exc:
                 error_message_str = format_error_detail(getattr(exc, "detail", exc))
@@ -202,6 +245,11 @@ class PrimerSeguimientoApiView(APIView):
         if error_response is not None:
             return error_response
 
+        bloqueo = _validado_bloquea_edicion(request, seguimiento)
+        if bloqueo is not None:
+            return bloqueo
+        estado_validacion_previo = seguimiento.estado_validacion
+
         seguimiento_serializer = PrimerSeguimientoSerializer(
             seguimiento,
             data=request.data,
@@ -230,6 +278,11 @@ class PrimerSeguimientoApiView(APIView):
                     PrimerSeguimiento.objects.filter(
                         pk=seguimiento_serializer.instance.pk
                     ).update(sincronizado_gestionar=True)
+                    _reenviar_a_validacion(
+                        PrimerSeguimiento,
+                        seguimiento_serializer.instance.pk,
+                        estado_validacion_previo,
+                    )
             except ValidationError as exc:
                 error_message_str = format_error_detail(getattr(exc, "detail", exc))
                 return Response(

@@ -35,6 +35,57 @@ def _scale_field(max_value):
     )
 
 
+class ValidacionCoordinadorMixin(models.Model):
+    """Ciclo de validación del coordinador sobre lo que envía el territorial.
+
+    El territorial completa y envía; el coordinador aprueba (``Validado``) o lo
+    devuelve (``A subsanar``) con observaciones para que se corrija y reenvíe.
+    ``estado_validacion`` en ``None`` significa que todavía no se envió a
+    validación. Un registro ``Validado`` no admite más modificaciones del
+    territorial.
+    """
+
+    ESTADO_VALIDACION_PENDIENTE = "Pendiente validación coordinador"
+    ESTADO_VALIDACION_A_SUBSANAR = "A subsanar"
+    ESTADO_VALIDACION_VALIDADO = "Validado"
+    ESTADO_VALIDACION_CHOICES = [
+        (ESTADO_VALIDACION_PENDIENTE, ESTADO_VALIDACION_PENDIENTE),
+        (ESTADO_VALIDACION_A_SUBSANAR, ESTADO_VALIDACION_A_SUBSANAR),
+        (ESTADO_VALIDACION_VALIDADO, ESTADO_VALIDACION_VALIDADO),
+    ]
+    # Estados desde los que un envío del territorial vuelve a pedir validación.
+    ESTADOS_VALIDACION_REENVIABLES = (None, "", ESTADO_VALIDACION_A_SUBSANAR)
+
+    estado_validacion = models.CharField(
+        max_length=64,
+        choices=ESTADO_VALIDACION_CHOICES,
+        blank=True,
+        null=True,
+        help_text="Vacío = todavía no se envió a validación del coordinador.",
+    )
+    observaciones_coordinador = models.TextField(
+        blank=True,
+        null=True,
+        help_text="Qué debe corregir el territorial cuando queda 'A subsanar'.",
+    )
+    coordinador = models.ForeignKey(
+        to=settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="%(class)ss_revisados",
+        help_text="Coordinador que hizo la última revisión.",
+    )
+    fecha_revision_coordinador = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        abstract = True
+
+    @property
+    def esta_validado(self):
+        return self.estado_validacion == self.ESTADO_VALIDACION_VALIDADO
+
+
 class TipoInsumos(models.Model):
     """
     Opciones de tipos de insumos recibidos por un Comedor/Merendero
@@ -1021,7 +1072,7 @@ class PuntoEntregas(models.Model):
         return f"Punto de entregas ({tipo})"
 
 
-class Relevamiento(SoftDeleteModelMixin, models.Model):
+class Relevamiento(SoftDeleteModelMixin, ValidacionCoordinadorMixin, models.Model):
 
     estado = models.CharField(max_length=255, blank=True, null=True)
     comedor = models.ForeignKey(
@@ -1551,7 +1602,7 @@ class CierreSeguimiento(models.Model):
         return f"Cierre seguimiento #{self.pk or 'sin id'}"
 
 
-class PrimerSeguimiento(models.Model):
+class PrimerSeguimiento(ValidacionCoordinadorMixin, models.Model):
     ESTADO_ASIGNADO = "Asignado"
     ESTADO_EN_PROCESO = "En Proceso"
     ESTADO_COMPLETO = "Completo"

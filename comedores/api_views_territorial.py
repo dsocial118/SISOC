@@ -35,6 +35,11 @@ class TerritorialUltimoRelevamientoSerializer(NoSaveSerializer):
     territorial_user = serializers.IntegerField(
         source="territorial_user_id", allow_null=True
     )
+    # Ciclo de validación del coordinador: la app muestra "Corregir y reenviar"
+    # solo con "A subsanar" y lo oculta con "Validado".
+    estado_validacion = serializers.CharField(allow_null=True)
+    observaciones_coordinador = serializers.CharField(allow_null=True)
+    fecha_revision_coordinador = serializers.DateTimeField(allow_null=True)
 
 
 class TerritorialComedorSerializer(NoSaveSerializer):
@@ -104,6 +109,11 @@ class TerritorialComedorSerializer(NoSaveSerializer):
                     "id_relevamiento": relevamiento.id,
                     "gestionar_id": seguimiento.gestionar_id,
                     "fecha": seguimiento.fecha_hora,
+                    "estado_validacion": seguimiento.estado_validacion,
+                    "observaciones_coordinador": seguimiento.observaciones_coordinador,
+                    "fecha_revision_coordinador": (
+                        seguimiento.fecha_revision_coordinador
+                    ),
                 }
             )
         return {"total": len(items), "items": items}
