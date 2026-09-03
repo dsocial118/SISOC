@@ -16,6 +16,7 @@ from datacalle.services import (
     apply_relevamientos_scope,
     delete_relevamiento,
     get_relevamientos_queryset,
+    resumen_por_estado,
     save_relevamiento_from_form,
 )
 
@@ -63,6 +64,7 @@ class RelevamientoListView(RelevamientoScopeMixin, ListView):
         context["estados"] = Relevamiento.Estado.choices
         context["estado_actual"] = self.request.GET.get("estado") or ""
         context["busqueda_actual"] = self.request.GET.get("busqueda") or ""
+        context["resumen"] = resumen_por_estado(self.request.user)
         return context
 
 

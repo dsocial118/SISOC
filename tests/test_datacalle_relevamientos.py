@@ -305,3 +305,51 @@ def test_sin_permiso_no_entra_al_listado(client, provincias):
     respuesta = client.get("/datacalle/relevamientos/")
 
     assert respuesta.status_code in (302, 403)
+
+
+@pytest.mark.django_db
+def test_pantallas_renderizan_con_diseno(client, provincias):
+    cordoba, _ = provincias
+    entrevistador = _crear_entrevistador(cordoba, "entrev_diseno")
+    coordinador = _dar_permisos(
+        _crear_coordinador(cordoba),
+        ["view_relevamiento", "add_relevamiento", "change_relevamiento"],
+    )
+    relevamiento = _crear_relevamiento(cordoba, "Operativo con diseño")
+    relevamiento.equipo.add(entrevistador)
+    client.force_login(coordinador)
+
+    listado = client.get("/datacalle/relevamientos/")
+    assert listado.status_code == 200
+    html = listado.content.decode()
+    # Resumen por estado, chip de estado y hoja de estilos del módulo.
+    assert "dc-stat__valor" in html
+    assert "dc-chip--planificado" in html
+    assert "custom/css/datacalle.css" in html
+    assert "5 días" in html
+
+    detalle = client.get(f"/datacalle/relevamientos/{relevamiento.pk}/")
+    assert detalle.status_code == 200
+    html = detalle.content.decode()
+    assert "dc-seccion__header" in html
+    assert "dc-persona__nombre" in html
+    # Sin cierre todavía: se muestra el estado vacío, no datos en blanco.
+    assert "Todavía sin cerrar" in html
+
+    alta = client.get("/datacalle/relevamientos/crear/")
+    assert alta.status_code == 200
+    html = alta.content.decode()
+    assert "dc-form-seccion__titulo" in html
+    assert "Dónde se releva" in html
+
+
+@pytest.mark.django_db
+def test_listado_vacio_muestra_estado_vacio(client, provincias):
+    cordoba, _ = provincias
+    coordinador = _dar_permisos(_crear_coordinador(cordoba), ["view_relevamiento"])
+    client.force_login(coordinador)
+
+    respuesta = client.get("/datacalle/relevamientos/")
+
+    assert respuesta.status_code == 200
+    assert "Todavía no hay operativos" in respuesta.content.decode()

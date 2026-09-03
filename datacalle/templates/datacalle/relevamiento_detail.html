@@ -1,0 +1,191 @@
+{% extends "includes/main.html" %}
+{% load static %}
+{% block title %}{{ relevamiento.denominacion }}{% endblock %}
+{% block breadcrumb %}
+    {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
+{% endblock %}
+{% block content %}
+    <link rel="stylesheet" href="{% static 'custom/css/datacalle.css' %}" />
+
+    <div class="dc-header">
+        <div>
+            <h1 class="dc-header__title">{{ relevamiento.denominacion }}</h1>
+            <div class="dc-header__meta">
+                <span class="dc-chip dc-chip--{{ relevamiento.estado }}">{{ relevamiento.get_estado_display }}</span>
+                <span>&middot;</span>
+                <span><i class="fas fa-map-marker-alt"></i>{{ relevamiento.provincia }}</span>
+                {% if relevamiento.localidad %}
+                    <span>&middot;</span><span>{{ relevamiento.localidad }}</span>
+                {% endif %}
+                <span>&middot;</span>
+                <span><i class="fas fa-calendar-alt"></i>{{ relevamiento.dias }} día{{ relevamiento.dias|pluralize }}</span>
+            </div>
+        </div>
+        <div class="dc-header__actions">
+            {% if perms.datacalle.change_relevamiento %}
+                <a href="{% url 'datacalle_relevamientos_editar' relevamiento.pk %}"
+                   class="btn btn-primary btn-sm">
+                    <i class="fas fa-pencil-alt mr-1"></i> Editar
+                </a>
+            {% endif %}
+            {% if perms.datacalle.delete_relevamiento %}
+                <a href="{% url 'datacalle_relevamientos_eliminar' relevamiento.pk %}"
+                   class="btn btn-danger btn-sm">
+                    <i class="fas fa-trash-alt mr-1"></i> Eliminar
+                </a>
+            {% endif %}
+            <a href="{% url 'datacalle_relevamientos_listar' %}"
+               class="btn btn-secondary btn-sm">
+                <i class="fas fa-arrow-left mr-1"></i> Volver
+            </a>
+        </div>
+    </div>
+
+    <div class="dc-secciones">
+        <div class="dc-seccion">
+            <div class="dc-seccion__header">
+                <i class="fas fa-map-marked-alt"></i> Dónde se releva
+            </div>
+            <div class="dc-seccion__body">
+                <div class="dc-dato">
+                    <div class="dc-dato__label">Fase</div>
+                    <div class="dc-dato__valor">{{ relevamiento.get_fase_display }}</div>
+                </div>
+                <div class="dc-dato">
+                    <div class="dc-dato__label">
+                        {% if relevamiento.fase == 'dispositivo_alojamiento' %}
+                            Dispositivo
+                        {% else %}
+                            Área operativa
+                        {% endif %}
+                    </div>
+                    <div class="dc-dato__valor {% if not relevamiento.lugar %}dc-dato__valor--vacio{% endif %}">
+                        {{ relevamiento.lugar|default:"—" }}
+                    </div>
+                </div>
+                <div class="dc-dato">
+                    <div class="dc-dato__label">Jurisdicción</div>
+                    <div class="dc-dato__valor">
+                        {{ relevamiento.provincia }}
+                        {% if relevamiento.municipio %}&middot; {{ relevamiento.municipio }}{% endif %}
+                        {% if relevamiento.localidad %}&middot; {{ relevamiento.localidad }}{% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="dc-seccion">
+            <div class="dc-seccion__header">
+                <i class="fas fa-calendar-alt"></i> Cuándo
+            </div>
+            <div class="dc-seccion__body">
+                <div class="dc-dato">
+                    <div class="dc-dato__label">Período planificado</div>
+                    <div class="dc-dato__valor">
+                        {{ relevamiento.fecha_inicio|date:"d/m/Y" }} → {{ relevamiento.fecha_fin|date:"d/m/Y" }}
+                        <span class="dc-fechas__dias">({{ relevamiento.dias }} día{{ relevamiento.dias|pluralize }})</span>
+                    </div>
+                </div>
+                <div class="dc-dato">
+                    <div class="dc-dato__label">Formato en papel</div>
+                    <div class="dc-dato__valor">{{ relevamiento.modalidad_papel|yesno:"Sí,No" }}</div>
+                </div>
+                <div class="dc-dato">
+                    <div class="dc-dato__label">Planificado por</div>
+                    <div class="dc-dato__valor {% if not relevamiento.creado_por %}dc-dato__valor--vacio{% endif %}">
+                        {% if relevamiento.creado_por %}
+                            {{ relevamiento.creado_por.get_full_name|default:relevamiento.creado_por.username }}
+                        {% else %}
+                            —
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="dc-seccion mb-3">
+        <div class="dc-seccion__header">
+            <i class="fas fa-users"></i> Equipo asignado
+            <span class="dc-seccion__ayuda ms-auto text-lowercase">{{ relevamiento.equipo.count }} entrevistador{{ relevamiento.equipo.count|pluralize:"es" }}</span>
+        </div>
+        <div class="dc-seccion__body">
+            <div class="dc-equipo">
+                {% for integrante in relevamiento.equipo.all %}
+                    <div class="dc-persona">
+                        <span class="dc-persona__avatar">
+                            {{ integrante.first_name|first|upper|default:integrante.username|first|upper }}{{ integrante.last_name|first|upper }}
+                        </span>
+                        <span>
+                            <span class="dc-persona__nombre">{{ integrante.get_full_name|default:integrante.username }}</span>
+                            {% if integrante.profile.dni %}
+                                <br />
+                                <span class="dc-persona__dni">DNI {{ integrante.profile.dni }}</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                {% empty %}
+                    <p class="dc-dato__valor dc-dato__valor--vacio mb-0">Sin equipo asignado: nadie va a ver este operativo en la app.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    {% if relevamiento.observaciones %}
+        <div class="dc-seccion mb-3">
+            <div class="dc-seccion__header">
+                <i class="fas fa-sticky-note"></i> Observaciones
+            </div>
+            <div class="dc-seccion__body">
+                <div class="dc-dato__valor">{{ relevamiento.observaciones|linebreaksbr }}</div>
+            </div>
+        </div>
+    {% endif %}
+
+    <div class="dc-seccion mb-4">
+        <div class="dc-seccion__header">
+            <i class="fas fa-flag-checkered"></i> Cierre en campo
+        </div>
+        <div class="dc-seccion__body">
+            {% if relevamiento.fecha_cierre %}
+                <div class="dc-dato">
+                    <div class="dc-dato__label">Cerrado</div>
+                    <div class="dc-dato__valor">
+                        {{ relevamiento.fecha_cierre|date:"d/m/Y H:i" }}
+                        {% if relevamiento.cerrado_por %}
+                            por {{ relevamiento.cerrado_por.get_full_name|default:relevamiento.cerrado_por.username }}
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="dc-dato">
+                    <div class="dc-dato__label">Punto GPS</div>
+                    <div class="dc-dato__valor {% if not relevamiento.lat %}dc-dato__valor--vacio{% endif %}">
+                        {% if relevamiento.lat %}
+                            {{ relevamiento.lat }}, {{ relevamiento.lon }}
+                        {% else %}
+                            —
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="dc-dato">
+                    <div class="dc-dato__label">Observación del asentamiento</div>
+                    <div class="dc-dato__valor {% if not relevamiento.observacion_asentamiento %}dc-dato__valor--vacio{% endif %}">
+                        {{ relevamiento.observacion_asentamiento|join:", "|default:"—" }}
+                    </div>
+                </div>
+                {% if relevamiento.otra_observacion %}
+                    <div class="dc-dato">
+                        <div class="dc-dato__label">Otra observación</div>
+                        <div class="dc-dato__valor">{{ relevamiento.otra_observacion }}</div>
+                    </div>
+                {% endif %}
+            {% else %}
+                <div class="dc-vacio">
+                    <i class="fas fa-hourglass-half"></i>
+                    <h3>Todavía sin cerrar</h3>
+                    <p>El equipo cierra el operativo desde la app y ahí llegan el punto GPS y la observación del asentamiento.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

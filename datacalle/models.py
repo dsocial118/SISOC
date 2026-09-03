@@ -129,6 +129,13 @@ class Relevamiento(SoftDeleteModelMixin, models.Model):
         return self.estado != self.Estado.FINALIZADO
 
     @property
+    def dias(self) -> int:
+        """Duración planificada en días, contando el primero y el último."""
+        if not self.fecha_inicio or not self.fecha_fin:
+            return 0
+        return (self.fecha_fin - self.fecha_inicio).days + 1
+
+    @property
     def lugar(self) -> str:
         if self.fase == self.Fase.DISPOSITIVO_ALOJAMIENTO and self.dispositivo_id:
             return self.dispositivo.nombre_institucion
