@@ -353,3 +353,51 @@ def test_listado_vacio_muestra_estado_vacio(client, provincias):
 
     assert respuesta.status_code == 200
     assert "Todavía no hay operativos" in respuesta.content.decode()
+
+
+@pytest.mark.django_db
+def test_cascada_municipio_localidad_no_carga_todo_el_pais(provincias):
+    cordoba, salta = provincias
+    cba_capital = Municipio.objects.create(nombre="Córdoba Capital", provincia=cordoba)
+    Municipio.objects.create(nombre="Salta Capital", provincia=salta)
+    centro = Localidad.objects.create(nombre="Centro", municipio=cba_capital)
+    coordinador = _crear_coordinador(cordoba)
+
+    # Alta en blanco: los combos dependientes arrancan vacíos.
+    vacio = RelevamientoForm(actor=coordinador)
+    assert vacio.fields["municipio"].queryset.count() == 0
+    assert vacio.fields["localidad"].queryset.count() == 0
+
+    # Con provincia elegida, sólo los municipios de esa provincia.
+    con_provincia = RelevamientoForm(data={"provincia": cordoba.id}, actor=coordinador)
+    assert [m.nombre for m in con_provincia.fields["municipio"].queryset] == [
+        "Córdoba Capital"
+    ]
+
+    # Con municipio elegido, sólo sus localidades.
+    con_municipio = RelevamientoForm(
+        data={"provincia": cordoba.id, "municipio": cba_capital.id},
+        actor=coordinador,
+    )
+    assert [loc.nombre for loc in con_municipio.fields["localidad"].queryset] == [
+        centro.nombre
+    ]
+
+
+@pytest.mark.django_db
+def test_edicion_conserva_la_geografia_guardada(provincias):
+    cordoba, _ = provincias
+    municipio = Municipio.objects.create(nombre="Río Cuarto", provincia=cordoba)
+    localidad = Localidad.objects.create(nombre="Río Cuarto", municipio=municipio)
+    entrevistador = _crear_entrevistador(cordoba, "entrev_edicion")
+    coordinador = _crear_coordinador(cordoba)
+    relevamiento = _crear_relevamiento(cordoba, "Con geografía")
+    relevamiento.municipio = municipio
+    relevamiento.localidad = localidad
+    relevamiento.save()
+    relevamiento.equipo.add(entrevistador)
+
+    form = RelevamientoForm(instance=relevamiento, actor=coordinador)
+
+    assert municipio in form.fields["municipio"].queryset
+    assert localidad in form.fields["localidad"].queryset

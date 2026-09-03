@@ -1,5 +1,6 @@
 from django import forms
 
+from core.models import Localidad, Municipio
 from datacalle.models import Relevamiento
 from datacalle.services import (
     get_dispositivos_para_usuario,
@@ -52,11 +53,36 @@ class RelevamientoForm(forms.ModelForm):
         self.fields["municipio"].required = False
         self.fields["localidad"].required = False
 
+        # Municipio y localidad se cargan por cascada (endpoints de core). Sin
+        # acotar acá, el formulario renderizaría los miles de municipios y las
+        # 4.000 localidades del país en cada alta.
+        provincia_id = self._valor_actual("provincia", "provincia_id")
+        municipio_id = self._valor_actual("municipio", "municipio_id")
+        self.fields["municipio"].queryset = (
+            Municipio.objects.filter(provincia_id=provincia_id).order_by("nombre")
+            if provincia_id
+            else Municipio.objects.none()
+        )
+        self.fields["localidad"].queryset = (
+            Localidad.objects.filter(municipio_id=municipio_id).order_by("nombre")
+            if municipio_id
+            else Localidad.objects.none()
+        )
+
         # Ambos se acotan por el alcance del actor, no por la provincia elegida:
         # para un coordinador ya es el padrón de su provincia y evita una cascada.
         self.fields["dispositivo"].queryset = get_dispositivos_para_usuario(actor)
         self.fields["equipo"].queryset = get_entrevistadores_para_usuario(actor)
         self.fields["equipo"].label_from_instance = self._etiqueta_entrevistador
+
+    def _valor_actual(self, campo, atributo_instancia):
+        """Valor con el que acotar la cascada: lo enviado o lo ya guardado."""
+        if self.data.get(campo):
+            try:
+                return int(self.data.get(campo))
+            except (TypeError, ValueError):
+                return None
+        return getattr(self.instance, atributo_instancia, None)
 
     @staticmethod
     def _etiqueta_entrevistador(user):
