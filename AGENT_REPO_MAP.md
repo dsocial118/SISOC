@@ -511,6 +511,11 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - `pwa/models.py`
 - `pwa/api_urls.py`
 - `pwa/api_views.py`
+- `users/services_pwa.py`: alcance PWA, accesos y coordinador de equipo técnico PWA.
+- `users/api_permissions.py`: permisos de lectura y veto transversal de escritura
+  para roles PWA de solo lectura.
+- Toda mutación PWA debe incluir `IsPWAWriteAllowed`, excepto las acciones
+  personales expresamente permitidas (contraseña y suscripciones push).
 - `pwa/services/`
 - alcance de nómina por admisión vigente o comedor directo:
   `pwa/services/nomina_queryset_service.py`

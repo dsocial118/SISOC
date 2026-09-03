@@ -21,6 +21,7 @@ from users.models import (
     AccesoComedorPWA,
     AccesoOrganizacionPWA,
     AuditAccesoComedorPWA,
+    CoordinadorEquipoTecnicoPWA,
     Profile,
     TerritorialComedorProvincia,
 )
@@ -38,6 +39,7 @@ PWA_ASSIGNABLE_PERMISSION_CODES = {
     "pwa.manage_nomina_pwa",
     "pwa.manage_colaboradores_pwa",
 }
+PWA_COORDINADOR_EQUIPO_TECNICO_ROLE = "coordinador_equipo_tecnico"
 
 
 def _registrar_auditoria_acceso(*, acceso, accion: str, actor=None, metadata=None):
@@ -113,9 +115,42 @@ def get_visible_access_rows(user):
     return filter_pwa_visible_spaces(get_access_rows(user), relation_prefix="comedor")
 
 
+def get_coordinador_pwa_scope(user):
+    """Devuelve la configuración activa del coordinador PWA, si existe."""
+    if not user or not getattr(user, "is_authenticated", False):
+        return None
+    return (
+        CoordinadorEquipoTecnicoPWA.objects.filter(user=user, activo=True)
+        .prefetch_related("duplas", "comedores_adicionales")
+        .first()
+    )
+
+
+def is_coordinador_equipo_tecnico_pwa(user) -> bool:
+    return get_coordinador_pwa_scope(user) is not None
+
+
+def get_coordinador_pwa_comedor_ids(user) -> list[int]:
+    """Resuelve dinámicamente comedores de equipos y adicionales."""
+    scope = get_coordinador_pwa_scope(user)
+    if not scope:
+        return []
+    return list(
+        filter_pwa_visible_spaces(
+            Comedor.objects.filter(
+                Q(dupla__in=scope.duplas.all())
+                | Q(coordinadores_pwa_adicionales=scope)
+            )
+        )
+        .order_by("id")
+        .values_list("id", flat=True)
+        .distinct()
+    )
+
+
 def is_pwa_user(user) -> bool:
     """Indica si el usuario tiene al menos un acceso PWA activo."""
-    return get_access_rows(user).exists()
+    return get_access_rows(user).exists() or is_coordinador_equipo_tecnico_pwa(user)
 
 
 def is_territorial_comedor_user(user) -> bool:
@@ -174,7 +209,8 @@ def get_territorial_comedor_users_for_provincia(provincia_id):
 
 def get_accessible_comedor_ids(user) -> list[int]:
     """IDs de comedores PWA visibles y accesibles por el usuario."""
-    return list(get_visible_access_rows(user).values_list("comedor_id", flat=True))
+    direct_ids = get_visible_access_rows(user).values_list("comedor_id", flat=True)
+    return sorted(set(direct_ids).union(get_coordinador_pwa_comedor_ids(user)))
 
 
 def is_representante(user, comedor_id: int) -> bool:
@@ -195,13 +231,16 @@ def has_pwa_access_to_comedor(user, comedor_id: int) -> bool:
     """Indica si el usuario tiene acceso PWA activo al comedor."""
     if not comedor_id:
         return False
-    return get_visible_access_rows(user).filter(comedor_id=comedor_id).exists()
+    return int(comedor_id) in set(get_accessible_comedor_ids(user))
 
 
 def get_pwa_context(user) -> dict:
     """Contexto resumido de accesos PWA para endpoint /me."""
     rows = get_access_rows(user)
-    roles = sorted(set(rows.values_list("rol", flat=True)))
+    roles = set(rows.values_list("rol", flat=True))
+    is_coordinador_pwa = is_coordinador_equipo_tecnico_pwa(user)
+    if is_coordinador_pwa:
+        roles.add(PWA_COORDINADOR_EQUIPO_TECNICO_ROLE)
     representante_rows = rows.filter(rol=AccesoComedorPWA.ROL_REPRESENTANTE)
     comedores_representados = list(
         representante_rows.values_list("comedor_id", flat=True)
@@ -226,13 +265,50 @@ def get_pwa_context(user) -> dict:
     profile = get_profile_or_none(user)
     return {
         "is_pwa_user": bool(roles),
-        "roles": roles,
+        "roles": sorted(roles),
         "comedores_representados": comedores_representados,
         "comedor_operador_id": comedor_operador_id,
         "tipo_asociacion": tipos_asociacion[0] if len(tipos_asociacion) == 1 else None,
         "organizaciones_ids": organizaciones_ids,
         "must_change_password": bool(getattr(profile, "must_change_password", False)),
+        "read_only": is_coordinador_pwa,
     }
+
+
+@transaction.atomic
+def sync_coordinador_equipo_tecnico_pwa_access(
+    *, user, duplas, comedores_adicionales
+):
+    """Configura el alcance PWA dinámico de un coordinador exclusivo."""
+    if (
+        AccesoComedorPWA.objects.filter(user=user, activo=True).exists()
+        or AccesoOrganizacionPWA.objects.filter(user=user, activo=True).exists()
+    ):
+        raise ValidationError(
+            "Un coordinador PWA no puede tener accesos PWA operativos activos."
+        )
+    profile = get_profile_or_none(user)
+    if getattr(profile, "es_territorial_comedor", False):
+        raise ValidationError(
+            "Un coordinador PWA no puede tener acceso territorial activo."
+        )
+    if not duplas:
+        raise ValidationError("Seleccione al menos un equipo técnico.")
+
+    scope, _ = CoordinadorEquipoTecnicoPWA.objects.get_or_create(user=user)
+    scope.activo = True
+    scope.save(update_fields=["activo", "fecha_actualizacion"])
+    scope.duplas.set(duplas)
+    scope.comedores_adicionales.set(comedores_adicionales)
+    return scope
+
+
+@transaction.atomic
+def deactivate_coordinador_equipo_tecnico_pwa_access(user):
+    CoordinadorEquipoTecnicoPWA.objects.filter(user=user, activo=True).update(
+        activo=False,
+        fecha_actualizacion=timezone.now(),
+    )
 
 
 def _validate_operator_role_invariants(user):
@@ -1005,6 +1081,13 @@ def sync_representante_accesses(
     ):
         raise ValidationError(
             "No se puede asignar rol representante a un usuario con rol operador activo."
+        )
+    if (
+        comedor_ids
+        and CoordinadorEquipoTecnicoPWA.objects.filter(user=user, activo=True).exists()
+    ):
+        raise ValidationError(
+            "No se puede asignar rol representante a un coordinador PWA activo."
         )
 
     _deactivate_representante_accesses_outside(

@@ -81,10 +81,12 @@ from pwa.view_helpers import (
     serialize_ciudadano_local,
     serialize_renaper_data,
 )
+from users.api_permissions import CanViewPwaColaboradoresPermission
 from users.api_permissions import HasPwaColaboradoresPermission
 from users.api_permissions import HasPwaNominaPermission
 from users.api_permissions import IsPWAAuthenticatedToken
 from users.api_permissions import IsPWAUserForComedor
+from users.api_permissions import IsPWAWriteAllowed
 from comedores.models import (
     ActividadColaboradorEspacio,
     ColaboradorEspacio,
@@ -119,6 +121,12 @@ class MensajeEspacioPWAViewSet(viewsets.ViewSet):
 
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated, IsPWAAuthenticatedToken]
+
+    def get_permissions(self):
+        permissions = [IsAuthenticated(), IsPWAAuthenticatedToken()]
+        if getattr(self, "action", None) == "marcar_visto":
+            permissions.append(IsPWAWriteAllowed())
+        return permissions
 
     def list(self, request, comedor_id=None):
         queryset = list_mensajes_for_espacio(comedor_id=comedor_id, user=request.user)
@@ -353,6 +361,7 @@ class ColaboradorEspacioPWAViewSet(viewsets.ViewSet):
     def get_permissions(self):
         permissions = [IsAuthenticated(), IsPWAUserForComedor()]
         if getattr(self, "action", None) in self.write_actions:
+            permissions.append(IsPWAWriteAllowed())
             permissions.append(HasPwaColaboradoresPermission())
         return permissions
 
@@ -553,7 +562,7 @@ class CatalogoActividadPWAViewSet(viewsets.ViewSet):
     permission_classes = [
         IsAuthenticated,
         IsPWAUserForComedor,
-        HasPwaColaboradoresPermission,
+        CanViewPwaColaboradoresPermission,
     ]
 
     def list(self, request, comedor_id=None):
@@ -576,11 +585,19 @@ class ActividadEspacioPWAViewSet(viewsets.ViewSet):
     """CRUD de actividades por espacio para la app PWA."""
 
     authentication_classes = [TokenAuthentication]
-    permission_classes = [
-        IsAuthenticated,
-        IsPWAUserForComedor,
-        HasPwaColaboradoresPermission,
-    ]
+    permission_classes = [IsAuthenticated, IsPWAUserForComedor]
+    write_actions = {"create", "partial_update", "destroy"}
+
+    def get_permissions(self):
+        permissions = [
+            IsAuthenticated(),
+            IsPWAUserForComedor(),
+            CanViewPwaColaboradoresPermission(),
+        ]
+        if getattr(self, "action", None) in self.write_actions:
+            permissions.append(IsPWAWriteAllowed())
+            permissions.append(HasPwaColaboradoresPermission())
+        return permissions
 
     def _get_queryset(self):
         comedor_id = self.kwargs["comedor_id"]
@@ -714,6 +731,7 @@ class NominaEspacioPWAViewSet(viewsets.ViewSet):
     def get_permissions(self):
         permissions = [IsAuthenticated(), IsPWAUserForComedor()]
         if getattr(self, "action", None) in self.write_actions:
+            permissions.append(IsPWAWriteAllowed())
             permissions.append(HasPwaNominaPermission())
         return permissions
 

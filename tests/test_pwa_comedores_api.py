@@ -62,7 +62,11 @@ from rendicioncuentasmensual.services import (
     RendicionCuentaMensualService,
     RendicionProcesoService,
 )
-from users.models import AccesoComedorPWA, AccesoOrganizacionPWA
+from users.models import (
+    AccesoComedorPWA,
+    AccesoOrganizacionPWA,
+    CoordinadorEquipoTecnicoPWA,
+)
 
 
 def _grant_pwa_permission(user, codename):
@@ -158,6 +162,20 @@ def _grant_mobile_rendicion_permission(user):
     user.user_permissions.add(permission)
 
 
+def _create_coordinador_pwa(*, comedor, username="coord_comedores"):
+    user_model = get_user_model()
+    user = user_model.objects.create_user(
+        username=username,
+        email=f"{username}@example.com",
+        password="testpass123",
+    )
+    scope = CoordinadorEquipoTecnicoPWA.objects.create(user=user, activo=True)
+    scope.comedores_adicionales.add(comedor)
+    _grant_pwa_permission(user, "manage_usuarios_pwa")
+    _grant_mobile_rendicion_permission(user)
+    return user
+
+
 def _fake_value_for_field(field):
     if field.choices:
         return field.choices[0][0]
@@ -224,6 +242,25 @@ def test_comedor_api_requires_authentication(comedores):
     client = APIClient()
     response = client.get(f"/api/comedores/{comedor_1.id}/")
     assert response.status_code == 401
+
+
+@pytest.mark.django_db
+def test_coordinador_no_puede_crear_usuarios_ni_rendiciones_aun_con_permisos(
+    comedores,
+):
+    comedor, _ = comedores
+    coordinador = _create_coordinador_pwa(comedor=comedor)
+    client = _token_client(coordinador)
+
+    usuarios_get = client.get(f"/api/comedores/{comedor.id}/usuarios/")
+    usuarios_post = client.post(f"/api/comedores/{comedor.id}/usuarios/", {})
+    rendiciones_get = client.get(f"/api/comedores/{comedor.id}/rendiciones/")
+    rendiciones_post = client.post(f"/api/comedores/{comedor.id}/rendiciones/", {})
+
+    assert usuarios_get.status_code == 200
+    assert usuarios_post.status_code == 403
+    assert rendiciones_get.status_code == 200
+    assert rendiciones_post.status_code == 403
 
 
 @pytest.mark.django_db
