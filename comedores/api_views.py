@@ -74,11 +74,14 @@ from rendicioncuentasmensual.services import RendicionCuentaMensualService
 from organizaciones.models import ProyectoOrganizacion
 from pwa.models import NominaDestinatariosDocumentoPWA
 from users.api_permissions import (
+    CanViewPwaRendicionesPermission,
+    CanViewPwaUsuariosPermission,
     HasMobileRendicionPermission,
     HasPwaPrestacionesMensualesPermission,
     HasPwaUsuariosPermission,
     IsPWAUserForComedor,
     IsPWARepresentativeForComedor,
+    IsPWAWriteAllowed,
 )
 from users.api_serializers import (
     OperadorCreateResponseSerializer,
@@ -96,6 +99,8 @@ from users.services_pwa import (
     get_access_rows,
     get_visible_access_rows,
     filter_pwa_visible_spaces,
+    is_coordinador_equipo_tecnico_pwa,
+    is_representante,
     is_pwa_user,
     list_operadores_for_comedor,
     update_operador_permissions,
@@ -168,7 +173,7 @@ class ComedorDetailViewSet(
                 "comedor__ultimo_estado__estado_general__estado_proceso",
             )
         )
-        comedor_ids = [row.comedor_id for row in access_rows]
+        comedor_ids = get_accessible_comedor_ids(user)
         access_by_comedor_id = {row.comedor_id: row for row in access_rows}
 
         queryset = (
@@ -227,7 +232,13 @@ class ComedorDetailViewSet(
                         estado_proceso
                     ),
                     "tipo_asociacion": (
-                        getattr(access, "tipo_asociacion", None) if access else None
+                        getattr(access, "tipo_asociacion", None)
+                        if access
+                        else (
+                            "coordinador_equipo_tecnico"
+                            if is_coordinador_equipo_tecnico_pwa(user)
+                            else None
+                        )
                     ),
                 }
             )
@@ -673,6 +684,7 @@ class ComedorDetailViewSet(
         methods=["post"],
         url_path="imagenes",
         parser_classes=[MultiPartParser, FormParser],
+        permission_classes=[IsPWAWriteAllowed],
     )
     def upload_imagen(self, request, pk=None):
         comedor = self.get_object()
@@ -705,6 +717,7 @@ class ComedorDetailViewSet(
         detail=True,
         methods=["post"],
         url_path=r"imagenes/(?P<imagen_id>[^/.]+)/eliminar",
+        permission_classes=[IsPWAWriteAllowed],
     )
     def eliminar_imagen(self, request, pk=None, imagen_id=None):
         comedor = self.get_object()
@@ -939,7 +952,12 @@ class ComedorDetailViewSet(
         responses=NominaSerializer(many=True),
         tags=["Nomina"],
     )
-    @action(detail=True, methods=["get", "post"], url_path="nomina")
+    @action(
+        detail=True,
+        methods=["get", "post"],
+        url_path="nomina",
+        permission_classes=[IsPWAUserForComedor],
+    )
     def nomina(self, request, pk=None):
         comedor = self.get_object()
         admision = ComedorService.get_admision_vigente_pwa(comedor.id)
@@ -950,6 +968,11 @@ class ComedorDetailViewSet(
             )
         if request.method.lower() == "get":
             return self._nomina_get(request, admision)
+        if is_coordinador_equipo_tecnico_pwa(request.user):
+            return Response(
+                {"detail": "El coordinador PWA tiene acceso de solo lectura."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
         return self._nomina_post(request, admision)
 
     def _format_validation_error(self, exc: ValidationError):
@@ -995,7 +1018,7 @@ class ComedorDetailViewSet(
         methods=["post"],
         url_path="capacitaciones/subir",
         parser_classes=[MultiPartParser, FormParser],
-        permission_classes=[IsPWAUserForComedor],
+        permission_classes=[IsPWAUserForComedor, IsPWAWriteAllowed],
     )
     def subir_capacitacion(self, request, pk=None):
         comedor = self.get_object()
@@ -1036,6 +1059,7 @@ class ComedorDetailViewSet(
         detail=True,
         methods=["post"],
         url_path="capacitaciones/eliminar",
+        permission_classes=[IsPWARepresentativeForComedor, IsPWAWriteAllowed],
     )
     def eliminar_capacitacion(self, request, pk=None):
         comedor = self.get_object()
@@ -1078,7 +1102,7 @@ class ComedorDetailViewSet(
         detail=True,
         methods=["get", "post"],
         url_path="usuarios",
-        permission_classes=[IsPWARepresentativeForComedor, HasPwaUsuariosPermission],
+        permission_classes=[IsPWAUserForComedor, CanViewPwaUsuariosPermission],
     )
     def usuarios(self, request, pk=None):
         comedor = self.get_object()
@@ -1104,6 +1128,20 @@ class ComedorDetailViewSet(
                     ).data,
                 },
                 status=status.HTTP_200_OK,
+            )
+
+        if is_coordinador_equipo_tecnico_pwa(request.user):
+            return Response(
+                {"detail": "El coordinador PWA tiene acceso de solo lectura."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        if not (
+            is_representante(request.user, comedor.id)
+            and request.user.has_perm("pwa.manage_usuarios_pwa")
+        ):
+            return Response(
+                {"detail": "No tiene permiso para gestionar usuarios en SISOC Mobile."},
+                status=status.HTTP_403_FORBIDDEN,
             )
 
         serializer = OperadorCreateSerializer(data=request.data)
@@ -1144,7 +1182,11 @@ class ComedorDetailViewSet(
         detail=True,
         methods=["patch"],
         url_path=r"usuarios/(?P<user_id>[^/.]+)/permisos",
-        permission_classes=[IsPWARepresentativeForComedor, HasPwaUsuariosPermission],
+        permission_classes=[
+            IsPWARepresentativeForComedor,
+            HasPwaUsuariosPermission,
+            IsPWAWriteAllowed,
+        ],
     )
     def editar_usuario_permisos(self, request, pk=None, user_id=None):
         comedor = self.get_object()
@@ -1187,7 +1229,11 @@ class ComedorDetailViewSet(
         detail=True,
         methods=["patch"],
         url_path=r"usuarios/(?P<user_id>[^/.]+)/desactivar",
-        permission_classes=[IsPWARepresentativeForComedor, HasPwaUsuariosPermission],
+        permission_classes=[
+            IsPWARepresentativeForComedor,
+            HasPwaUsuariosPermission,
+            IsPWAWriteAllowed,
+        ],
     )
     def desactivar_usuario(self, request, pk=None, user_id=None):
         comedor = self.get_object()
@@ -1302,14 +1348,26 @@ class ComedorDetailViewSet(
         detail=True,
         methods=["get", "post"],
         url_path="rendiciones",
-        permission_classes=[
-            IsPWARepresentativeForComedor,
-            HasMobileRendicionPermission,
-        ],
+        permission_classes=[IsPWAUserForComedor, CanViewPwaRendicionesPermission],
     )
     def rendiciones(self, request, pk=None):
         comedor = self.get_object()
         if request.method.lower() == "post":
+            if is_coordinador_equipo_tecnico_pwa(request.user):
+                return Response(
+                    {"detail": "El coordinador PWA tiene acceso de solo lectura."},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+            if not (
+                is_representante(request.user, comedor.id)
+                and request.user.has_perm(
+                    "rendicioncuentasmensual.manage_mobile_rendicion"
+                )
+            ):
+                return Response(
+                    {"detail": "No tiene permiso para gestionar rendiciones en SISOC Mobile."},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
             serializer = RendicionMensualCreateSerializer(data=request.data)
             serializer.is_valid(raise_exception=True)
             try:
@@ -1366,10 +1424,7 @@ class ComedorDetailViewSet(
         detail=True,
         methods=["get"],
         url_path=r"rendiciones/(?P<rendicion_id>[^/.]+)",
-        permission_classes=[
-            IsPWARepresentativeForComedor,
-            HasMobileRendicionPermission,
-        ],
+        permission_classes=[IsPWAUserForComedor, CanViewPwaRendicionesPermission],
     )
     def rendicion_detalle(self, request, pk=None, rendicion_id=None):
         comedor = self.get_object()
@@ -1403,10 +1458,7 @@ class ComedorDetailViewSet(
         detail=True,
         methods=["get"],
         url_path=r"rendiciones/modelos/(?P<linea_programatica>[^/.]+)/(?P<modelo_codigo>[^/.]+)/download",
-        permission_classes=[
-            IsPWARepresentativeForComedor,
-            HasMobileRendicionPermission,
-        ],
+        permission_classes=[IsPWAUserForComedor, CanViewPwaRendicionesPermission],
     )
     def descargar_modelo_rendicion(
         self, request, pk=None, linea_programatica=None, modelo_codigo=None
@@ -1447,6 +1499,7 @@ class ComedorDetailViewSet(
         permission_classes=[
             IsPWARepresentativeForComedor,
             HasMobileRendicionPermission,
+            IsPWAWriteAllowed,
         ],
     )
     def adjuntar_documentacion_rendicion(self, request, pk=None, rendicion_id=None):
@@ -1533,6 +1586,7 @@ class ComedorDetailViewSet(
         permission_classes=[
             IsPWARepresentativeForComedor,
             HasMobileRendicionPermission,
+            IsPWAWriteAllowed,
         ],
     )
     def eliminar_documentacion_rendicion(
@@ -1594,6 +1648,7 @@ class ComedorDetailViewSet(
         permission_classes=[
             IsPWARepresentativeForComedor,
             HasMobileRendicionPermission,
+            IsPWAWriteAllowed,
         ],
     )
     def adjuntar_comprobante_rendicion(self, request, pk=None, rendicion_id=None):
@@ -1632,6 +1687,7 @@ class ComedorDetailViewSet(
         permission_classes=[
             IsPWARepresentativeForComedor,
             HasMobileRendicionPermission,
+            IsPWAWriteAllowed,
         ],
     )
     def presentar_rendicion(self, request, pk=None, rendicion_id=None):
@@ -1679,6 +1735,7 @@ class ComedorDetailViewSet(
         permission_classes=[
             IsPWARepresentativeForComedor,
             HasMobileRendicionPermission,
+            IsPWAWriteAllowed,
         ],
     )
     def eliminar_rendicion(self, request, pk=None, rendicion_id=None):
@@ -1746,6 +1803,7 @@ class ComedorDetailViewSet(
         permission_classes=[
             IsPWAUserForComedor,
             HasPwaPrestacionesMensualesPermission,
+            IsPWAWriteAllowed,
         ],
     )
     def prestacion_alimentaria_conformidad(
@@ -1962,7 +2020,7 @@ class ComedorDetailViewSet(
 class NominaViewSet(mixins.UpdateModelMixin, viewsets.GenericViewSet):
     serializer_class = NominaUpdateSerializer
     authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsPWAWriteAllowed]
     queryset = Nomina.objects.select_related(
         "ciudadano", "ciudadano__sexo", "admision__comedor"
     )

@@ -462,6 +462,39 @@ class AccesoOrganizacionPWA(models.Model):
         return f"{self.user.username} - organización {self.organizacion_id}"
 
 
+class CoordinadorEquipoTecnicoPWA(models.Model):
+    """Alcance PWA de solo lectura derivado de equipos técnicos."""
+
+    user = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        related_name="coordinador_equipo_tecnico_pwa",
+    )
+    duplas = models.ManyToManyField(
+        "duplas.Dupla",
+        related_name="coordinadores_pwa",
+        blank=True,
+        verbose_name="Equipos técnicos",
+    )
+    comedores_adicionales = models.ManyToManyField(
+        "comedores.Comedor",
+        related_name="coordinadores_pwa_adicionales",
+        blank=True,
+        verbose_name="Comedores adicionales",
+    )
+    activo = models.BooleanField(default=True)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_actualizacion = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Coordinador de equipo técnico PWA"
+        verbose_name_plural = "Coordinadores de equipo técnico PWA"
+        indexes = [models.Index(fields=["user", "activo"])]
+
+    def __str__(self):
+        return f"{self.user.username} - Coordinador PWA"
+
+
 class AuditAccesoComedorPWA(models.Model):
     ACCION_CREATE = "create"
     ACCION_REACTIVATE = "reactivate"

@@ -1,10 +1,12 @@
 """Tests for test users pwa forms."""
 
 import pytest
+from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
 
 from comedores.models import Comedor
 from core.models import Provincia
+from duplas.models import Dupla
 from organizaciones.models import Organizacion
 from users.forms import (
     BackofficeAuthenticationForm,
@@ -15,6 +17,7 @@ from users.models import (
     AccesoComedorPWA,
     AccesoOrganizacionPWA,
     AuditAccesoComedorPWA,
+    CoordinadorEquipoTecnicoPWA,
     TerritorialComedorProvincia,
 )
 from users.services_pwa import get_access_rows
@@ -133,6 +136,42 @@ def test_user_creation_form_creates_mobile_user_associated_to_organization(comed
         ).exists()
         is True
     )
+
+
+@pytest.mark.django_db
+def test_user_creation_form_creates_read_only_coordinator_with_dynamic_team_scope(
+    comedor, comedor_extra
+):
+    user_model = get_user_model()
+    abogado = user_model.objects.create_user(username="abogado_form_coord")
+    tecnico = user_model.objects.create_user(username="tecnico_form_coord")
+    dupla = Dupla.objects.create(
+        nombre="Dupla Forms Coordinador",
+        estado="Activo",
+        abogado=abogado,
+    )
+    dupla.tecnico.add(tecnico)
+    comedor.dupla = dupla
+    comedor.save(update_fields=["dupla"])
+
+    form = UserCreationForm(
+        data={
+            "username": "coordinador_forms",
+            "email": "coordinador_forms@example.com",
+            "es_coordinador_equipo_tecnico_pwa": True,
+            "duplas_coordinador_pwa": [dupla.id],
+            "comedores_adicionales_coordinador_pwa": [comedor_extra.id],
+        }
+    )
+
+    assert form.is_valid(), form.errors
+    user = form.save()
+    scope = CoordinadorEquipoTecnicoPWA.objects.get(user=user)
+
+    assert user.is_staff is False
+    assert scope.duplas.get() == dupla
+    assert scope.comedores_adicionales.get() == comedor_extra
+    assert not AccesoComedorPWA.objects.filter(user=user, activo=True).exists()
 
 
 @pytest.mark.django_db
