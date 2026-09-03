@@ -21,9 +21,8 @@ def get_relevamientos_queryset():
     return Relevamiento.objects.select_related(
         "provincia",
         "municipio",
-        "localidad",
         "dispositivo",
-    ).prefetch_related("equipo")
+    ).prefetch_related("equipo", "localidades")
 
 
 def _provincia_ids_del_usuario(user):

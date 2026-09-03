@@ -14,8 +14,8 @@
                 <span class="dc-chip dc-chip--{{ relevamiento.estado }}">{{ relevamiento.get_estado_display }}</span>
                 <span>&middot;</span>
                 <span><i class="fas fa-map-marker-alt"></i>{{ relevamiento.provincia }}</span>
-                {% if relevamiento.localidad %}
-                    <span>&middot;</span><span>{{ relevamiento.localidad }}</span>
+                {% if relevamiento.zonas %}
+                    <span>&middot;</span><span>{{ relevamiento.zonas }}</span>
                 {% endif %}
                 <span>&middot;</span>
                 <span><i class="fas fa-calendar-alt"></i>{{ relevamiento.dias }} día{{ relevamiento.dias|pluralize }}</span>
@@ -68,7 +68,16 @@
                     <div class="dc-dato__valor">
                         {{ relevamiento.provincia }}
                         {% if relevamiento.municipio %}&middot; {{ relevamiento.municipio }}{% endif %}
-                        {% if relevamiento.localidad %}&middot; {{ relevamiento.localidad }}{% endif %}
+                    </div>
+                </div>
+                <div class="dc-dato">
+                    <div class="dc-dato__label">Localidades / comunas</div>
+                    <div class="dc-dato__valor {% if not relevamiento.localidades.exists %}dc-dato__valor--vacio{% endif %}">
+                        {% for localidad in relevamiento.localidades.all %}
+                            <span class="dc-chip dc-chip--zona">{{ localidad.nombre }}</span>
+                        {% empty %}
+                            —
+                        {% endfor %}
                     </div>
                 </div>
             </div>

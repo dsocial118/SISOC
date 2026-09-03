@@ -366,7 +366,7 @@ def test_cascada_municipio_localidad_no_carga_todo_el_pais(provincias):
     # Alta en blanco: los combos dependientes arrancan vacíos.
     vacio = RelevamientoForm(actor=coordinador)
     assert vacio.fields["municipio"].queryset.count() == 0
-    assert vacio.fields["localidad"].queryset.count() == 0
+    assert vacio.fields["localidades"].queryset.count() == 0
 
     # Con provincia elegida, sólo los municipios de esa provincia.
     con_provincia = RelevamientoForm(data={"provincia": cordoba.id}, actor=coordinador)
@@ -379,7 +379,7 @@ def test_cascada_municipio_localidad_no_carga_todo_el_pais(provincias):
         data={"provincia": cordoba.id, "municipio": cba_capital.id},
         actor=coordinador,
     )
-    assert [loc.nombre for loc in con_municipio.fields["localidad"].queryset] == [
+    assert [loc.nombre for loc in con_municipio.fields["localidades"].queryset] == [
         centro.nombre
     ]
 
@@ -393,11 +393,62 @@ def test_edicion_conserva_la_geografia_guardada(provincias):
     coordinador = _crear_coordinador(cordoba)
     relevamiento = _crear_relevamiento(cordoba, "Con geografía")
     relevamiento.municipio = municipio
-    relevamiento.localidad = localidad
     relevamiento.save()
+    relevamiento.localidades.add(localidad)
     relevamiento.equipo.add(entrevistador)
 
     form = RelevamientoForm(instance=relevamiento, actor=coordinador)
 
     assert municipio in form.fields["municipio"].queryset
-    assert localidad in form.fields["localidad"].queryset
+    assert localidad in form.fields["localidades"].queryset
+
+
+@pytest.mark.django_db
+def test_operativo_puede_abarcar_varias_localidades(provincias):
+    cordoba, _ = provincias
+    municipio = Municipio.objects.create(nombre="Córdoba Capital", provincia=cordoba)
+    centro = Localidad.objects.create(nombre="Centro", municipio=municipio)
+    alberdi = Localidad.objects.create(nombre="Alberdi", municipio=municipio)
+    entrevistador = _crear_entrevistador(cordoba, "entrev_zonas")
+    coordinador = _crear_coordinador(cordoba)
+
+    form = RelevamientoForm(
+        data=_datos_form(
+            cordoba,
+            [entrevistador],
+            municipio=municipio.id,
+            localidades=[centro.id, alberdi.id],
+        ),
+        actor=coordinador,
+    )
+    assert form.is_valid(), form.errors
+    relevamiento = save_relevamiento_from_form(form, user=coordinador)
+
+    assert relevamiento.localidades.count() == 2
+    assert (
+        relevamiento.zonas == "Alberdi, Centro"
+        or relevamiento.zonas == "Centro, Alberdi"
+    )
+
+
+@pytest.mark.django_db
+def test_localidad_de_otro_municipio_es_rechazada(provincias):
+    cordoba, _ = provincias
+    capital = Municipio.objects.create(nombre="Córdoba Capital", provincia=cordoba)
+    rio_cuarto = Municipio.objects.create(nombre="Río Cuarto", provincia=cordoba)
+    ajena = Localidad.objects.create(nombre="Banda Norte", municipio=rio_cuarto)
+    entrevistador = _crear_entrevistador(cordoba, "entrev_zona_ajena")
+    coordinador = _crear_coordinador(cordoba)
+
+    form = RelevamientoForm(
+        data=_datos_form(
+            cordoba,
+            [entrevistador],
+            municipio=capital.id,
+            localidades=[ajena.id],
+        ),
+        actor=coordinador,
+    )
+
+    assert form.is_valid() is False
+    assert "localidades" in form.errors

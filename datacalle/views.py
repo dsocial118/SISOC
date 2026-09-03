@@ -48,8 +48,8 @@ class RelevamientoListView(RelevamientoScopeMixin, ListView):
                 Q(denominacion__icontains=busqueda)
                 | Q(area_operativa__icontains=busqueda)
                 | Q(provincia__nombre__icontains=busqueda)
-                | Q(localidad__nombre__icontains=busqueda)
-            )
+                | Q(localidades__nombre__icontains=busqueda)
+            ).distinct()
         return queryset
 
     def get_context_data(self, **kwargs):
