@@ -306,6 +306,7 @@ def _datos_edicion(nomina, estado):
         "apellido": nomina.apellido,
         "nombre": nomina.nombre,
         "fecha_nacimiento": "2021-07-01",
+        "recibe_apoyo_desarrollo": nomina.recibe_apoyo_desarrollo or "no",
     }
 
 

@@ -1,0 +1,33 @@
+{% if column_key == "proyecto" %}
+    <td>{{ rendicion.comedor.codigo_de_proyecto|default:"Sin proyecto" }}</td>
+{% elif column_key == "organizacion" %}
+    <td>{{ rendicion.comedor.organizacion.nombre|default:"Sin organización" }}</td>
+{% elif column_key == "convenio" %}
+    <td>{{ rendicion.convenio|default:"-" }}</td>
+{% elif column_key == "numero_rendicion" %}
+    <td>{{ rendicion.numero_rendicion|default:rendicion.id }}</td>
+{% elif column_key == "periodo" %}
+    <td>
+        {% if rendicion.periodo_inicio and rendicion.periodo_fin %}
+            {{ rendicion.periodo_inicio|date:"d/m/Y" }} - {{ rendicion.periodo_fin|date:"d/m/Y" }}
+        {% else %}
+            {{ rendicion.mes }}/{{ rendicion.anio }}
+        {% endif %}
+    </td>
+{% elif column_key == "etapa" %}
+    <td>
+        <span class="badge etapa-badge {{ rendicion.etapa_badge_class }}">{{ rendicion.get_etapa_proceso_display }}</span>
+    </td>
+{% elif column_key == "estado" %}
+    <td>
+        {% if rendicion.subestado_proceso == "finalizada" %}
+            <span class="badge-validacion validado">{{ rendicion.estado_proceso_display }}</span>
+        {% elif rendicion.subestado_proceso == "pendiente_correcciones" %}
+            <span class="badge-validacion no-validado">{{ rendicion.estado_proceso_display }}</span>
+        {% else %}
+            <span class="badge-validacion pendiente">{{ rendicion.estado_proceso_display }}</span>
+        {% endif %}
+    </td>
+{% elif column_key == "ultima_modificacion" %}
+    <td>{{ rendicion.ultima_modificacion|date:"d/m/Y H:i" }}</td>
+{% endif %}

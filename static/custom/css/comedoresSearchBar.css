@@ -420,6 +420,18 @@
   color: var(--poncho-blanco);
 }
 
+.poncho-btn--descarga {
+  background: var(--poncho-verde-azulado);
+  border-color: var(--poncho-verde-azulado);
+  color: var(--poncho-blanco);
+}
+
+.poncho-btn--descarga:hover,
+.poncho-btn--descarga:focus {
+  filter: brightness(.88);
+  color: var(--poncho-blanco);
+}
+
 .poncho-btn--neutro {
   background: transparent;
   border-color: var(--poncho-blanco);

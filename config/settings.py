@@ -20,7 +20,19 @@ ENVIRONMENT = (
 PRODUCTION_LIKE_ENVIRONMENTS = {"homologacion", "prd"}
 IS_PRODUCTION_LIKE_ENVIRONMENT = ENVIRONMENT in PRODUCTION_LIKE_ENVIRONMENTS
 DEBUG = os.environ.get("DJANGO_DEBUG", "False") == "True"
-GESTIONAR_INTEGRATION_ENABLED = IS_PRODUCTION_LIKE_ENVIRONMENT
+# Sincronización saliente + pull con GESTIONAR/AppSheet. Por defecto activa en
+# entornos prod-like, pero se puede forzar on/off por env var para cortar TODO el
+# flujo hacia AppSheet sin re-deploy (corte total, reversible).
+_gestionar_integration_env = os.environ.get("GESTIONAR_INTEGRATION_ENABLED")
+if _gestionar_integration_env is not None:
+    GESTIONAR_INTEGRATION_ENABLED = _gestionar_integration_env.strip().lower() in (
+        "1",
+        "true",
+        "yes",
+        "on",
+    )
+else:
+    GESTIONAR_INTEGRATION_ENABLED = IS_PRODUCTION_LIKE_ENVIRONMENT
 ENABLE_API_DOCS = True
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -195,11 +207,13 @@ INSTALLED_APPS = [
     "comunicados",
     "centrodeinfancia",
     "ver_para_ser_libre",
+    "pas",
     "dispositivos",
     "insumos",
     "pwa",
     "ticketera",
     "ocr",
+    "encuestas",
 ]
 
 # Middleware (orden CORS correcto)
@@ -212,6 +226,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "users.middleware.FirstLoginPasswordChangeMiddleware",
     "users.middleware.ProfileConfirmationMiddleware",
+    "encuestas.middleware.EncuestaObligatoriaMiddleware",
     "sentry.middleware.SentryUserContextMiddleware",
     "auditlog.middleware.AuditlogMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
@@ -240,6 +255,7 @@ TEMPLATES = [
                 "django.contrib.messages.context_processors.messages",
                 "sentry.context_processors.sentry_frontend",
                 "core.context_processors.footer_version",
+                "encuestas.context_processors.ronda_pendiente",
             ],
         },
     },

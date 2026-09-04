@@ -104,6 +104,19 @@ LISTADO_DEFINED_GROUPS = (
     ),
     BootstrapGroupSeed(UserGroups.VALIDADOR_COMEDORES),
     BootstrapGroupSeed(
+        "Revisor Relevamientos",
+        (
+            "relevamientos.view_relevamiento",
+            "relevamientos.review_relevamiento",
+            "auth.role_comedores",
+            "auth.role_comedores_listar",
+            "auth.role_comedores_ver",
+            "comedores.view_comedor",
+            "auth.role_comedores_relevamiento_ver",
+            "auth.role_comedores_relevamiento_detalle",
+        ),
+    ),
+    BootstrapGroupSeed(
         "Area Legales",
         (
             "acompanamientos.view_informacionrelevante",
@@ -394,6 +407,42 @@ LISTADO_DEFINED_GROUPS = (
         (
             "insumos.view_insumo",
             "insumos.view_insumocategoria",
+        ),
+    ),
+    BootstrapGroupSeed(
+        "Gestor de Encuestas",
+        (
+            "encuestas.view_encuesta",
+            "encuestas.add_encuesta",
+            "encuestas.change_encuesta",
+            "encuestas.delete_encuesta",
+            "encuestas.view_pregunta",
+            "encuestas.add_pregunta",
+            "encuestas.change_pregunta",
+            "encuestas.delete_pregunta",
+            "encuestas.view_opcionpregunta",
+            "encuestas.add_opcionpregunta",
+            "encuestas.change_opcionpregunta",
+            "encuestas.delete_opcionpregunta",
+            "encuestas.view_segmentacionencuesta",
+            "encuestas.add_segmentacionencuesta",
+            "encuestas.change_segmentacionencuesta",
+            "encuestas.delete_segmentacionencuesta",
+            "encuestas.view_segmentaciondestinatario",
+            "encuestas.add_segmentaciondestinatario",
+            "encuestas.change_segmentaciondestinatario",
+            "encuestas.delete_segmentaciondestinatario",
+            "encuestas.view_rondaencuesta",
+            "encuestas.add_rondaencuesta",
+            "encuestas.change_rondaencuesta",
+            "encuestas.delete_rondaencuesta",
+        ),
+    ),
+    BootstrapGroupSeed(
+        "Encuestas Resultados",
+        (
+            "encuestas.view_encuesta",
+            "encuestas.ver_resultados",
         ),
     ),
     BootstrapGroupSeed(

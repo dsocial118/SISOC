@@ -134,7 +134,7 @@
                             <td>
                                 <strong>Calendario de vacunación al día</strong>
                             </td>
-                            <td>{{ nomina.calendario_vacunacion_al_dia|yesno:"Sí,No,-" }}</td>
+                            <td>{{ nomina.get_calendario_vacunacion_al_dia_display|default:"-" }}</td>
                         </tr>
                         <tr>
                             <td>
@@ -195,6 +195,18 @@
                                 <strong>Provincia domicilio</strong>
                             </td>
                             <td>{{ nomina.provincia_domicilio|default:"-" }}</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <strong>Departamento (jurisdicción)</strong>
+                            </td>
+                            <td>{{ nomina.departamento|default:"-" }}</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <strong>Decil de CDI</strong>
+                            </td>
+                            <td>{{ nomina.departamento.decil_ipi|default:"-" }}</td>
                         </tr>
                         <tr>
                             <td>

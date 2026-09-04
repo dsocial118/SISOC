@@ -81,6 +81,11 @@ def _configurar_campos_informe_2233(form, admision, tipo_informe):
             and getattr(admision, "informe_complementario_modifica_prestaciones", None)
             == "si"
         ),
+        "if_it_complementario": (
+            es_renovacion
+            and getattr(admision, "informe_complementario_modifica_prestaciones", None)
+            == "si"
+        ),
     }
     for nombre, aplica in condiciones.items():
         if not aplica:

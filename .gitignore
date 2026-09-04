@@ -421,3 +421,8 @@ mobile/
 
 # OCR eval temporales (no versionar: pueden contener datos personales)
 tmp_ocr_eval/
+
+# Artefactos locales de renderizado/validación PAS
+/output/pdf/ddjj_pas_muestra.pdf
+/tmp/pdfs/ddjj-generated/
+/tmp/pdfs/ddjj-reference/

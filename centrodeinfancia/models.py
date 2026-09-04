@@ -161,6 +161,12 @@ class CentroDeInfancia(SoftDeleteModelMixin, models.Model):
     apellido_referente = models.CharField(max_length=255, blank=True, null=True)
     email_referente = models.EmailField(blank=True, null=True)
     telefono_referente = models.CharField(max_length=50, blank=True, null=True)
+    dni_referente = models.CharField(
+        max_length=16, blank=True, null=True, verbose_name="DNI del referente"
+    )
+    cuil_referente = models.CharField(
+        max_length=16, blank=True, null=True, verbose_name="CUIL del referente"
+    )
     meses_funcionamiento = models.JSONField(default=list, blank=True)
     dias_funcionamiento = models.JSONField(default=list, blank=True)
     tipo_jornada = models.CharField(
@@ -186,7 +192,7 @@ class CentroDeInfancia(SoftDeleteModelMixin, models.Model):
         blank=True,
         null=True,
         verbose_name="Año de inicio de actividades del CDI",
-        validators=[MinValueValidator(date(1990, 1, 1))],
+        validators=[MinValueValidator(date(1900, 1, 1))],
     )
     fecha_creacion = models.DateTimeField(auto_now_add=True)
 
@@ -491,6 +497,11 @@ TRABAJADOR_NIVEL_EDUCATIVO_CHOICES = [
     ("superior_incompleto", "Superior incompleto"),
     ("superior_en_curso", "Superior en curso"),
     ("superior_completo", "Superior completo"),
+    ("no_sabe", "No sabe"),
+]
+
+RESPONSABLE_NIVEL_EDUCATIVO_CHOICES = [
+    choice for choice in TRABAJADOR_NIVEL_EDUCATIVO_CHOICES if choice[0] != "no_sabe"
 ]
 
 TRABAJADOR_FORMACION_ACADEMICA_CHOICES = [
@@ -549,6 +560,7 @@ TRABAJADOR_ANOS_TRABAJO_CHOICES = [
     ("8", "8"),
     ("9", "9"),
     ("10_o_mas", "10 o más"),
+    ("no_sabe", "No sabe"),
 ]
 
 TRABAJADOR_TIPO_CONTRATACION_CHOICES = [
@@ -573,6 +585,7 @@ TRABAJADOR_GRUPO_PERTENENCIA_CHOICES = [
     ("indigena", "Indígena, descendiente de pueblos originarios o mestizo/a/e"),
     ("asiatico", "Asiático/a/e y/o descendiente de asiático/a/e"),
     ("ninguno", "Ninguno de los anteriores"),
+    ("no_sabe", "No sabe"),
 ]
 
 TRABAJADOR_PUEBLO_ORIGINARIO_CHOICES = [
@@ -667,6 +680,7 @@ TRABAJADOR_LENGUAJES_CHOICES = [
     ("yagan", "Yagán"),
     ("lsa", "Lengua de Señas de Argentina (LSA)"),
     ("otro", "Otro"),
+    ("no_sabe", "No sabe"),
 ]
 
 TRABAJADOR_TIPO_DISCAPACIDAD_CHOICES = [
@@ -731,6 +745,7 @@ NOMINA_COBERTURA_SALUD_CHOICES = [
     ("obra_social", "Obra social"),
     ("prepaga", "Prepaga / medicina privada"),
     ("no_corresponde", "No corresponde"),
+    ("no_sabe", "No sabe"),
 ]
 
 NOMINA_CONTROLES_SANITARIOS_CHOICES = [
@@ -742,6 +757,7 @@ NOMINA_CONTROLES_SANITARIOS_CHOICES = [
     ("5", "5 controles"),
     ("6", "6 controles"),
     ("7", "7 controles"),
+    ("no_sabe", "No sabe"),
 ]
 
 NOMINA_LACTANCIA_CHOICES = [
@@ -749,6 +765,7 @@ NOMINA_LACTANCIA_CHOICES = [
     ("complementaria", "Complementaria"),
     ("continuada", "Continuada"),
     ("no_lactante", "No es lactante"),
+    ("no_sabe", "No sabe"),
 ]
 
 NOMINA_DX_PESO_CHOICES = [
@@ -779,12 +796,14 @@ NOMINA_ORIENTACION_MSAL_CHOICES = [
 ]
 
 NOMINA_ALERGIA_CHOICES = [
+    ("sin_alergias_alimentarias", "No tiene alergias alimentarias"),
     ("leche_vaca", "Leche de vaca"),
     ("tacc", "Trigo-Avena-Cebada-Centeno (TACC)"),
     ("huevo", "Huevo"),
     ("soja", "Soja"),
     ("pescado", "Pescado"),
     ("frutos_secos", "Frutos secos"),
+    ("no_sabe", "No sabe"),
 ]
 
 NOMINA_DOSIS_VACUNA_CHOICES = [
@@ -1053,7 +1072,7 @@ class Trabajador(SoftDeleteModelMixin, models.Model):
     )
     es_interprete = models.CharField(
         max_length=16,
-        choices=[("si", "Sí"), ("no", "No")],
+        choices=[("si", "Sí"), ("no", "No"), ("no_sabe", "No sabe")],
         blank=True,
         null=True,
         verbose_name="¿Es intérprete?",
@@ -1299,7 +1318,7 @@ class NominaCentroInfancia(SoftDeleteModelMixin, models.Model):
     class RespuestaSiNoNsNc(models.TextChoices):
         SI = "si", "Si"
         NO = "no", "No"
-        NS_NC = "ns_nc", "Ns/Nc"
+        NS_NC = "ns_nc", "No sabe"
 
     class TipoDiscapacidad(models.TextChoices):
         MOTORA = "motora", "Motora"
@@ -1309,7 +1328,7 @@ class NominaCentroInfancia(SoftDeleteModelMixin, models.Model):
         MENTAL = "mental", "Mental"
         VISCERAL = "visceral", "Visceral"
         MULTIPLE = "multiple", "Múltiple"
-        NS_NC = "ns_nc", "Ns/Nc"
+        NS_NC = "ns_nc", "No sabe"
 
     class SexoChoices(models.TextChoices):
         FEMENINO = "Femenino", "Femenino"
@@ -1369,9 +1388,15 @@ class NominaCentroInfancia(SoftDeleteModelMixin, models.Model):
         null=True,
     )
 
-    talla = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True)
+    talla = models.CharField(max_length=50, blank=True, null=True)
     peso = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True)
-    calendario_vacunacion_al_dia = models.BooleanField(blank=True, null=True)
+    calendario_vacunacion_al_dia = models.CharField(
+        max_length=8,
+        choices=[("si", "Sí"), ("no", "No"), ("no_sabe", "No sabe")],
+        blank=True,
+        null=True,
+        verbose_name="Calendario de vacunación al día",
+    )
     tiene_discapacidad = models.CharField(
         max_length=16,
         choices=RespuestaSiNoNsNc.choices,
@@ -1398,6 +1423,14 @@ class NominaCentroInfancia(SoftDeleteModelMixin, models.Model):
         blank=True,
         null=True,
         related_name="+",
+    )
+    departamento = models.ForeignKey(
+        DepartamentoIpi,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="nominas_centros_infancia",
+        verbose_name="Departamento (jurisdicción)",
     )
     municipio_domicilio = models.ForeignKey(
         Municipio,
@@ -1510,7 +1543,7 @@ class NominaCentroInfancia(SoftDeleteModelMixin, models.Model):
     )
     responsable_legal_1_nivel_educativo = models.CharField(
         max_length=32,
-        choices=TRABAJADOR_NIVEL_EDUCATIVO_CHOICES,
+        choices=RESPONSABLE_NIVEL_EDUCATIVO_CHOICES,
         blank=True,
         null=True,
     )
@@ -1550,7 +1583,7 @@ class NominaCentroInfancia(SoftDeleteModelMixin, models.Model):
     )
     responsable_legal_2_nivel_educativo = models.CharField(
         max_length=32,
-        choices=TRABAJADOR_NIVEL_EDUCATIVO_CHOICES,
+        choices=RESPONSABLE_NIVEL_EDUCATIVO_CHOICES,
         blank=True,
         null=True,
     )
@@ -1590,8 +1623,8 @@ class NominaCentroInfancia(SoftDeleteModelMixin, models.Model):
     grupo_pertenencia = models.JSONField(default=list, blank=True)
     lenguajes = models.JSONField(default=list, blank=True)
     necesito_interprete = models.CharField(
-        max_length=4,
-        choices=[("si", "Sí"), ("no", "No")],
+        max_length=8,
+        choices=[("si", "Sí"), ("no", "No"), ("no_sabe", "No sabe")],
         blank=True,
         null=True,
     )
@@ -1608,7 +1641,7 @@ class NominaCentroInfancia(SoftDeleteModelMixin, models.Model):
         null=True,
     )
     controles_sanitarios_ultimo_anio = models.CharField(
-        max_length=4,
+        max_length=8,
         choices=NOMINA_CONTROLES_SANITARIOS_CHOICES,
         blank=True,
         null=True,
@@ -1680,8 +1713,8 @@ class NominaCentroInfancia(SoftDeleteModelMixin, models.Model):
 
     # ── Sección 16: Desarrollo Infantil Temprano ──────────────────────────────
     recibe_apoyo_desarrollo = models.CharField(
-        max_length=4,
-        choices=[("si", "Sí"), ("no", "No")],
+        max_length=8,
+        choices=[("si", "Sí"), ("no", "No"), ("no_sabe", "No sabe")],
         blank=True,
         null=True,
     )
@@ -1707,6 +1740,14 @@ class NominaCentroInfancia(SoftDeleteModelMixin, models.Model):
                 < (self.fecha_nacimiento.month, self.fecha_nacimiento.day)
             )
         )
+
+    @property
+    def apoyo_desarrollo_unificado_display(self):
+        if self.recibe_apoyo_desarrollo:
+            return self.get_recibe_apoyo_desarrollo_display()
+        if self.recibe_apoyo_discapacidad is None:
+            return "-"
+        return "Sí" if self.recibe_apoyo_discapacidad else "No"
 
     @staticmethod
     def _validar_multiselect(field_name, value, choices):
@@ -1743,6 +1784,11 @@ class NominaCentroInfancia(SoftDeleteModelMixin, models.Model):
             self.recibe_apoyo_discapacidad = None
             self.tipo_discapacidad = []
             self.numero_cud = None
+        else:
+            self.recibe_apoyo_discapacidad = {
+                "si": True,
+                "no": False,
+            }.get(self.recibe_apoyo_desarrollo)
         if not self.posee_cud:
             self.numero_cud = None
 
@@ -1761,6 +1807,12 @@ class NominaCentroInfancia(SoftDeleteModelMixin, models.Model):
 
         # ── Validar geografía domicilio ───────────────────────────────────────
         relation_rules = (
+            (
+                "departamento",
+                "provincia_domicilio",
+                "provincia_id",
+                "El departamento no pertenece a la provincia indicada.",
+            ),
             (
                 "municipio_domicilio",
                 "provincia_domicilio",

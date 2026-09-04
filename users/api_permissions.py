@@ -1,7 +1,13 @@
 from rest_framework.permissions import BasePermission
 
 from iam.services import user_has_permission_code
-from users.services_pwa import has_pwa_access_to_comedor, is_pwa_user, is_representante
+from users.services_pwa import (
+    has_pwa_access_to_comedor,
+    is_coordinador_equipo_tecnico_pwa,
+    is_pwa_user,
+    is_representante,
+    is_territorial_comedor_user,
+)
 
 MOBILE_RENDICION_PERMISSION_CODE = "rendicioncuentasmensual.manage_mobile_rendicion"
 PWA_PRESTACIONES_MENSUALES_PERMISSION_CODE = "pwa.manage_prestaciones_mensuales_pwa"
@@ -20,6 +26,18 @@ class IsPWAAuthenticatedToken(BasePermission):
         if not user or not user.is_authenticated:
             return False
         return is_pwa_user(user)
+
+
+class IsTerritorialComedorUser(BasePermission):
+    """Permite solo usuarios marcados como territorial de comedores (mobile)."""
+
+    message = "El usuario autenticado no es territorial de comedores."
+
+    def has_permission(self, request, view):
+        user = request.user
+        if not user or not user.is_authenticated:
+            return False
+        return is_territorial_comedor_user(user)
 
 
 class IsPWARepresentativeForComedor(BasePermission):
@@ -58,6 +76,74 @@ class IsPWAUserForComedor(BasePermission):
         except (TypeError, ValueError):
             return False
         return has_pwa_access_to_comedor(user, comedor_id)
+
+
+class IsPWAWriteAllowed(BasePermission):
+    """Bloquea mutaciones para el coordinador PWA de solo lectura.
+
+    Los endpoints web heredados también aceptan usuarios no PWA, por eso esta
+    regla no exige un rol: únicamente veta al rol de lectura explícito.
+    """
+
+    message = "El coordinador de equipo técnico PWA tiene acceso de solo lectura."
+
+    def has_permission(self, request, view):
+        return not is_coordinador_equipo_tecnico_pwa(request.user)
+
+
+class CanViewPwaRendicionesPermission(BasePermission):
+    """Conserva el acceso de lectura actual y suma al coordinador PWA."""
+
+    message = "No tiene permiso para consultar rendiciones en SISOC Mobile."
+
+    def has_permission(self, request, view):
+        user = request.user
+        if not user or not user.is_authenticated:
+            return False
+        if is_coordinador_equipo_tecnico_pwa(user):
+            return True
+        comedor_id = view.kwargs.get("comedor_id") or view.kwargs.get("pk")
+        return bool(
+            comedor_id
+            and is_representante(user, comedor_id)
+            and user_has_permission_code(user, MOBILE_RENDICION_PERMISSION_CODE)
+        )
+
+
+class CanViewPwaColaboradoresPermission(BasePermission):
+    """Conserva el acceso de lectura actual y suma al coordinador PWA."""
+
+    message = "No tiene permiso para consultar colaboradores en SISOC Mobile."
+
+    def has_permission(self, request, view):
+        user = request.user
+        return bool(
+            user
+            and user.is_authenticated
+            and (
+                is_coordinador_equipo_tecnico_pwa(user)
+                or user_has_permission_code(user, PWA_COLABORADORES_PERMISSION_CODE)
+            )
+        )
+
+
+class CanViewPwaUsuariosPermission(BasePermission):
+    """Conserva el acceso de lectura actual y suma al coordinador PWA."""
+
+    message = "No tiene permiso para consultar usuarios PWA."
+
+    def has_permission(self, request, view):
+        user = request.user
+        if not user or not user.is_authenticated:
+            return False
+        if is_coordinador_equipo_tecnico_pwa(user):
+            return True
+        comedor_id = view.kwargs.get("comedor_id") or view.kwargs.get("pk")
+        return bool(
+            comedor_id
+            and is_representante(user, comedor_id)
+            and user_has_permission_code(user, PWA_USUARIOS_PERMISSION_CODE)
+        )
 
 
 class HasMobileRendicionPermission(BasePermission):

@@ -65,10 +65,16 @@ def _actor(*, can_delegate=True):
         egp, _ = Group.objects.get_or_create(name=UserGroups.SIMEPI_EGP)
         Group.objects.get_or_create(name=UserGroups.CDI_REFERENTE_CENTRO)
         user.groups.add(egp)
+        user.profile.es_usuario_provincial = True
+        user.profile.provincia = _ubicacion_cdi()["provincia"]
+        user.profile.save(update_fields=["es_usuario_provincial", "provincia"])
     return user
 
 
 def _guardar_centro(client, centro, **referente):
+    if centro.provincia_id is None:
+        centro.provincia = _ubicacion_cdi()["provincia"]
+        centro.save(update_fields=["provincia"])
     return client.post(
         reverse("centrodeinfancia_editar", kwargs={"pk": centro.pk}),
         _payload_cdi(centro, **referente),
@@ -140,6 +146,34 @@ def test_guardar_cdi_crea_referente_automaticamente(client):
     assert acceso.user.email == "lia.paz@example.com"
     assert acceso.user.groups.filter(name=UserGroups.CDI_REFERENTE_CENTRO).exists()
     assert acceso.creado_por == actor
+
+
+@pytest.mark.django_db
+def test_guardar_cdi_vincula_referente_con_email_existente(client):
+    actor = _actor()
+    existente = User.objects.create_user(
+        username="referente-existente",
+        email="lia.existente@example.com",
+        password="test1234",
+    )
+    client.force_login(actor)
+    centro = CentroDeInfancia.objects.create(
+        nombre="CDI Referente existente",
+        telefono="1122334455",
+        telefono_referente="1199887766",
+    )
+
+    response = _guardar_centro(
+        client,
+        centro,
+        nombre_referente="Lia",
+        apellido_referente="Paz",
+        email_referente=existente.email,
+    )
+
+    assert response.status_code == 302
+    assert AccesoCDI.objects.get(centro=centro).user == existente
+    assert existente.groups.filter(name=UserGroups.CDI_REFERENTE_CENTRO).exists()
 
 
 @pytest.mark.django_db
@@ -255,6 +289,38 @@ def test_guardar_trabajador_con_email_crea_usuario_y_vinculo(client):
     assert trabajador.usuario.email == "ana.lopez@example.com"
     assert trabajador.usuario.groups.filter(name=UserGroups.CDI_TRABAJADOR).exists()
     assert not AccesoCDI.objects.filter(user=trabajador.usuario).exists()
+    assert any(
+        "no se pudieron enviar las credenciales" in str(message)
+        for message in get_messages(response.wsgi_request)
+    )
+
+
+@pytest.mark.django_db
+def test_guardar_trabajador_desde_interfaz_envia_credenciales(client, monkeypatch):
+    envios = []
+
+    def registrar_envio(**kwargs):
+        envios.append(kwargs)
+        return True
+
+    monkeypatch.setattr(
+        "users.services_generate_user._enviar_credenciales", registrar_envio
+    )
+    centro = CentroDeInfancia.objects.create(nombre="CDI Trabajador con correo")
+    actor = _referente_actor(centro)
+    client.force_login(actor)
+
+    response = _guardar_trabajador(client, centro, email="ana.credenciales@example.com")
+
+    trabajador = Trabajador.objects.get(centro=centro)
+    assert response.status_code == 302
+    assert len(envios) == 1
+    assert envios[0]["user"] == trabajador.usuario
+    assert envios[0]["request"].user == actor
+    assert any(
+        "credenciales enviadas" in str(message)
+        for message in get_messages(response.wsgi_request)
+    )
 
 
 @pytest.mark.django_db
@@ -278,15 +344,16 @@ def test_trabajadores_con_email_repetido_reciben_usuarios_distintos(client):
 
 
 @pytest.mark.django_db
-def test_guardar_trabajador_sin_email_omite_usuario(client):
+def test_guardar_trabajador_sin_email_es_rechazado(client):
     centro = CentroDeInfancia.objects.create(nombre="CDI Trabajadores sin email")
     actor = _referente_actor(centro)
     client.force_login(actor)
 
-    response = _guardar_trabajador(client, centro)
+    response = _guardar_trabajador(client, centro, email="")
 
-    assert response.status_code == 302
-    assert Trabajador.objects.get(centro=centro).usuario is None
+    assert response.status_code == 200
+    assert "email" in response.context["form"].errors
+    assert not Trabajador.objects.filter(centro=centro).exists()
 
 
 @pytest.mark.django_db

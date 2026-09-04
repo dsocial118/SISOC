@@ -22,7 +22,11 @@ from comedores.models import Comedor
 from organizaciones.models import ProyectoOrganizacion
 from pwa.services.mensajes_service import MOBILE_RENDICION_PERMISSION_CODE
 from pwa.services.push_service import notify_rendicion_revision_push
-from rendicioncuentasmensual.models import DocumentacionAdjunta, RendicionCuentaMensual
+from rendicioncuentasmensual.models import (
+    DocumentacionAdjunta,
+    RendicionCuentaMensual,
+    SolicitudDocumentoFaltante,
+)
 from rendicioncuentasmensual.service_helpers import (
     cerrar_archivo_seguro,
     convertir_documento_office_a_pdf,
@@ -70,11 +74,13 @@ def inferir_linea_programatica(comedor):
     return DocumentacionAdjunta.LINEA_TRADICIONAL
 
 
-class RendicionCuentaMensualService:
+class RendicionCuentaMensualService:  # pylint: disable=too-many-public-methods
     MOBILE_MESSAGE_ACTION_PREFIX = "[SISOC_ACCION]"
     MOBILE_MESSAGE_ACTION_SUFFIX = "[/SISOC_ACCION]"
     CATEGORIAS_CON_HISTORIAL_SUBSANACION = {
         DocumentacionAdjunta.CATEGORIA_COMPROBANTES,
+        DocumentacionAdjunta.CATEGORIA_COMPROBANTES_ALIMENTARIO,
+        DocumentacionAdjunta.CATEGORIA_COMPROBANTES_SIPH,
         DocumentacionAdjunta.CATEGORIA_OTROS,
     }
 
@@ -238,10 +244,13 @@ class RendicionCuentaMensualService:
     @staticmethod
     def _get_project_queryset(comedor, proyecto=None):
         queryset = RendicionCuentaMensual.objects.filter(deleted_at__isnull=True)
+        proyecto_explicito = proyecto is not None
         if proyecto is None:
             proyecto = getattr(comedor, "proyecto", None)
         if proyecto is not None:
-            return queryset.filter(proyecto=proyecto)
+            if proyecto_explicito:
+                return queryset.filter(proyecto=proyecto)
+            return queryset.filter(Q(proyecto=proyecto) | Q(comedor=comedor)).distinct()
         proyecto_codigo = (getattr(comedor, "codigo_de_proyecto", "") or "").strip()
         if proyecto_codigo:
             filters = {"comedor__codigo_de_proyecto": proyecto_codigo}
@@ -329,9 +338,37 @@ class RendicionCuentaMensualService:
         proyecto=None,
     ):
         periodo_inicio, periodo_fin = periodo
+        if convenio not in {"P01", "P02", "P03"}:
+            raise ValidationError({"convenio": "El convenio debe ser P01, P02 o P03."})
+        if numero_rendicion not in {1, 2, 3, 4, 5, 6}:
+            raise ValidationError(
+                {"numero_rendicion": "El número de rendición debe estar entre 1 y 6."}
+            )
+        if (
+            periodo_inicio > periodo_fin
+            or periodo_inicio.year != periodo_fin.year
+            or periodo_inicio.month != periodo_fin.month
+        ):
+            raise ValidationError(
+                {"periodo": "Las fechas deben pertenecer al mismo período mensual."}
+            )
         queryset = RendicionCuentaMensualService._get_project_queryset(
             comedor, proyecto
         )
+        ultimo_periodo = (
+            queryset.filter(
+                periodo_inicio__isnull=False,
+            )
+            .order_by("-periodo_inicio")
+            .values_list("periodo_inicio", flat=True)
+            .first()
+        )
+        if ultimo_periodo and periodo_inicio < ultimo_periodo:
+            raise ValidationError(
+                {
+                    "periodo": "No se pueden cargar períodos anteriores a los ya gestionados."
+                }
+            )
         if queryset.filter(
             convenio=convenio,
             numero_rendicion=numero_rendicion,
@@ -345,7 +382,6 @@ class RendicionCuentaMensualService:
             )
 
         if queryset.filter(
-            convenio=convenio,
             periodo_inicio__lte=periodo_fin,
             periodo_fin__gte=periodo_inicio,
         ).exists():
@@ -480,6 +516,22 @@ class RendicionCuentaMensualService:
                 }
             )
 
+        documentos_categoria = (
+            RendicionCuentaMensualService._documentos_activos_queryset(
+                rendicion
+            ).filter(categoria=categoria)
+        )
+        if config["multiple"] and not documento_subsanado_id:
+            return {"config": config, "documento_subsanado": None}
+
+        if (
+            not documentos_categoria.exists()
+            or rendicion.solicitudes_documentos_faltantes.filter(
+                categoria=categoria, activa=True
+            ).exists()
+        ):
+            return {"config": config, "documento_subsanado": None}
+
         documento_subsanado = (
             RendicionCuentaMensualService._obtener_documento_subsanado_para_carga(
                 rendicion=rendicion,
@@ -508,7 +560,10 @@ class RendicionCuentaMensualService:
             )
         }
         for documento in documentos:
-            grouped.setdefault(documento.categoria, []).append(documento)
+            categoria = documento.categoria
+            if categoria == DocumentacionAdjunta.CATEGORIA_COMPROBANTES:
+                categoria = DocumentacionAdjunta.CATEGORIA_COMPROBANTES_ALIMENTARIO
+            grouped.setdefault(categoria, []).append(documento)
         return grouped
 
     @staticmethod
@@ -529,6 +584,12 @@ class RendicionCuentaMensualService:
         grouped = RendicionCuentaMensualService._construir_documentacion_para_detalle(
             rendicion
         )
+        solicitudes_faltantes = {
+            solicitud.categoria: solicitud
+            for solicitud in rendicion.solicitudes_documentos_faltantes.filter(
+                activa=True
+            )
+        }
         categorias = []
         for categoria in DocumentacionAdjunta.categorias_mobile(
             getattr(rendicion, "linea_programatica", None)
@@ -537,6 +598,9 @@ class RendicionCuentaMensualService:
                 {
                     **categoria,
                     "archivos": grouped.get(categoria["codigo"], []),
+                    "solicitud_faltante": solicitudes_faltantes.get(
+                        categoria["codigo"]
+                    ),
                 }
             )
         return categorias
@@ -562,8 +626,8 @@ class RendicionCuentaMensualService:
             rendicion
         ):
             for archivo in categoria["archivos"]:
-                documentos.append(archivo)
-                documentos.extend(getattr(archivo, "subsanaciones_historial", []))
+                if archivo.estado == DocumentacionAdjunta.ESTADO_VALIDADO:
+                    documentos.append(archivo)
         return documentos
 
     @staticmethod
@@ -702,6 +766,7 @@ class RendicionCuentaMensualService:
         periodo_inicio = data.get("periodo_inicio")
         periodo_fin = data.get("periodo_fin")
         observaciones = (data.get("observaciones") or "").strip()
+        nombre = (data.get("nombre") or "").strip()
         linea_programatica = DocumentacionAdjunta.normalizar_linea_programatica(
             data.get("linea_programatica") or inferir_linea_programatica(comedor)
         )
@@ -720,6 +785,7 @@ class RendicionCuentaMensualService:
             mes=periodo_inicio.month,
             anio=periodo_inicio.year,
             convenio=convenio,
+            nombre=nombre or None,
             numero_rendicion=numero_rendicion,
             periodo_inicio=periodo_inicio,
             periodo_fin=periodo_fin,
@@ -777,7 +843,39 @@ class RendicionCuentaMensualService:
                 update_fields=["usuario_ultima_modificacion", "ultima_modificacion"]
             )
         RendicionCuentaMensualService._sincronizar_flag_documento_adjunto(rendicion)
+        SolicitudDocumentoFaltante.objects.filter(
+            rendicion=rendicion, categoria=categoria, activa=True
+        ).update(activa=False)
         return documento
+
+    @staticmethod
+    @transaction.atomic
+    def solicitar_documento_faltante(
+        *, rendicion, categoria, observaciones, actor=None
+    ):
+        RendicionCuentaMensualService._validar_categoria_documental(
+            rendicion, categoria
+        )
+        observaciones = (observaciones or "").strip()
+        if not observaciones:
+            raise ValidationError({"observaciones": "Debe ingresar observaciones."})
+        solicitud, _ = SolicitudDocumentoFaltante.objects.update_or_create(
+            rendicion=rendicion,
+            categoria=categoria,
+            activa=True,
+            defaults={"observaciones": observaciones, "usuario_creador": actor},
+        )
+        RendicionCuentaMensualService._aplicar_usuario_ultima_modificacion(
+            rendicion, actor
+        )
+        update_fields = ["ultima_modificacion"]
+        if getattr(actor, "is_authenticated", False):
+            update_fields.append("usuario_ultima_modificacion")
+        rendicion.save(update_fields=update_fields)
+        RendicionCuentaMensualService._crear_notificacion_mobile_revision_documento(
+            documento=solicitud, actor=actor
+        )
+        return solicitud
 
     @staticmethod
     @transaction.atomic
@@ -800,7 +898,8 @@ class RendicionCuentaMensualService:
     @staticmethod
     @transaction.atomic
     def presentar_rendicion_mobile(rendicion, actor=None):
-        RendicionCuentaMensualService.validar_documentacion_obligatoria(rendicion)
+        if rendicion.estado == RendicionCuentaMensual.ESTADO_ELABORACION:
+            RendicionCuentaMensualService.validar_documentacion_obligatoria(rendicion)
         RendicionCuentaMensualService._sincronizar_flag_documento_adjunto(rendicion)
         documentos_vigentes = list(
             RendicionCuentaMensualService._documentos_vigentes_queryset(rendicion)
@@ -814,6 +913,15 @@ class RendicionCuentaMensualService:
                     "detail": (
                         "Todavía hay documentación observada pendiente de subsanar."
                     )
+                }
+            )
+        if (
+            isinstance(rendicion, RendicionCuentaMensual)
+            and rendicion.solicitudes_documentos_faltantes.filter(activa=True).exists()
+        ):
+            raise ValidationError(
+                {
+                    "detail": "Todavía hay documentos faltantes solicitados pendientes de adjuntar."
                 }
             )
         rendicion.estado = RendicionCuentaMensual.ESTADO_REVISION
@@ -1156,7 +1264,10 @@ class RendicionProcesoService:
             documentos_observados = (
                 RendicionProcesoService._documentos_observados_al_finalizar(rendicion)
             )
-            if documentos_observados:
+            tiene_documentos_faltantes = (
+                rendicion.solicitudes_documentos_faltantes.filter(activa=True).exists()
+            )
+            if documentos_observados or tiene_documentos_faltantes:
                 RendicionProcesoService._enviar_documentos_a_subsanacion(
                     rendicion, documentos_observados, actor
                 )
@@ -1199,7 +1310,10 @@ class RendicionProcesoService:
             documentos_observados = (
                 RendicionProcesoService._documentos_observados_al_finalizar(rendicion)
             )
-            if documentos_observados:
+            tiene_documentos_faltantes = (
+                rendicion.solicitudes_documentos_faltantes.filter(activa=True).exists()
+            )
+            if documentos_observados or tiene_documentos_faltantes:
                 RendicionProcesoService._enviar_documentos_a_subsanacion(
                     rendicion, documentos_observados, actor
                 )

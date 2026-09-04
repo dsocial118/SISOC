@@ -19,6 +19,7 @@ from lxml import etree
 
 from comedores.models import Nomina
 from pwa.models import NominaDestinatariosDocumentoPWA
+from pwa.services.nomina_queryset_service import get_nomina_queryset_for_comedor
 
 
 DDJJ_TEXTO_PROVISORIO = (
@@ -70,11 +71,8 @@ def _full_name(user):
 
 def _nomina_alimentaria_activa_queryset(comedor_id):
     queryset = (
-        Nomina.objects.filter(
-            (
-                Q(admision__comedor_id=comedor_id)
-                | Q(comedor_id=comedor_id, admision__isnull=True)
-            ),
+        get_nomina_queryset_for_comedor(comedor_id)
+        .filter(
             deleted_at__isnull=True,
             estado=Nomina.ESTADO_ACTIVO,
         )

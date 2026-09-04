@@ -1,0 +1,181 @@
+# Contexto de feature PR #2353 - chore(release): promover development a main 2026-08-26
+
+## Resumen
+
+- PR: https://github.com/dsocial118/SISOC/pull/2353
+- Base: `main`
+- Rama origen: `development`
+- Autor: `juanikitro`
+
+## Contexto funcional
+
+- promoción semanal development -> main con artefactos spec-as-source y auto-merge nativo.
+
+## Arquitectura tocada
+
+- El PR toca lógica en `services/`, por lo que impacta reglas de negocio u orquestación.
+- Hay cambios en capa API/DRF y conviene revisar contratos de request/response.
+- Hay cambios en vistas web y puede existir impacto en permisos o renderizado.
+- Se modifican templates, con posible impacto visual o de composición UI.
+- Existen cambios de persistencia o migraciones que requieren revisión de datos.
+- El alcance incluye automatización o tooling de CI/CD.
+
+## Decisiones y supuestos detectados
+
+- Tipo de cambio declarado: actualización de release.
+- Área principal declarada: plataforma de release, CDI, Rendiciones, Usuarios/PWA y Comedores.
+- Impacto usuario declarado: nuevas validaciones CDI, conciliación de rendiciones y controles territoriales PWA; deploy sujeto a gates vigentes.
+- Riesgos / rollback: nueve migraciones y alcance transversal; rollback por PR nativo/tag previo y backup evaluado para datos.
+
+## Design system y UI
+
+- El PR toca piezas de UI y conviene revisar consistencia visual con el patrón existente.
+- Archivos visuales relevantes: centrodeinfancia/templates/centrodeinfancia/centrodeinfancia_form.html, centrodeinfancia/templates/centrodeinfancia/generar_usuario_cdi.html, centrodeinfancia/templates/centrodeinfancia/trabajador_form.html, comedores/templates/comedor/nomina_form.html, rendicioncuentasmensual/templates/components/rendicion_global_list_cell.html, rendicioncuentasmensual/templates/rendicioncuentasmensual_datos_form.html, rendicioncuentasmensual/templates/rendicioncuentasmensual_detail.html, rendicioncuentasmensual/templates/rendicioncuentasmensual_global_list.html
+
+## Memoria operativa para agentes
+
+- Empezar por `docs/registro/prs/PR-2353.md` para contexto resumido del PR.
+- Revisar primero estos archivos del diff:
+- `.github/workflows/deploy.yml`
+- `.github/workflows/pr-docs.yml`
+- `AGENT_REPO_MAP.md`
+- `centrodeinfancia/forms.py`
+- `centrodeinfancia/forms_generar_usuario.py`
+- `centrodeinfancia/management/__init__.py`
+- `centrodeinfancia/management/commands/__init__.py`
+- `centrodeinfancia/management/commands/relevar_cdi_duplicados.py`
+- `centrodeinfancia/migrations/0045_centrodeinfancia_dni_cuil_referente.py`
+- `centrodeinfancia/models.py`
+- `centrodeinfancia/templates/centrodeinfancia/centrodeinfancia_form.html`
+- `centrodeinfancia/templates/centrodeinfancia/generar_usuario_cdi.html`
+- `centrodeinfancia/templates/centrodeinfancia/trabajador_form.html`
+- `centrodeinfancia/tests/test_centrodeinfancia_form.py`
+- `centrodeinfancia/tests/test_destinatario_form.py`
+- `centrodeinfancia/tests/test_generar_usuario_cdi.py`
+- `centrodeinfancia/tests/test_relevar_cdi_duplicados_command.py`
+- `centrodeinfancia/tests/test_trabajador_form.py`
+- `centrodeinfancia/views_usuario_cdi.py`
+- `comedores/api_serializers.py`
+- ... y 192 archivo(s) adicional(es) relacionados.
+- Documentación sugerida para ampliar contexto:
+- `docs/indice.md`
+- `docs/ia/CONTEXT_HYGIENE.md`
+- `docs/ia/ARCHITECTURE.md`
+- `docs/ia/TESTING.md`
+- `docs/contexto/aplicaciones.md`
+- `docs/contexto/features/pr-2258-feat-celiaquia-contrato-publico-de-integracion.md`
+- `docs/contexto/features/pr-2263-docs-spec-completar-trazabilidad-de-prs-y-guias-canonicas.md`
+- `docs/contexto/features/pr-2265-fixs.md`
+- `docs/contexto/features/pr-2266-refactor-core-centralizar-integracion-renaper.md`
+- `docs/contexto/features/pr-2268-release-promover-development-a-homologacion.md`
+- `docs/contexto/features/pr-2278-chore-release-promover-development-a-homologacion.md`
+- `docs/contexto/features/pr-2280-fix-deploy-recuperar-checkout-movil-de-hml.md`
+- `docs/contexto/features/pr-2281-fix-deploy-reparar-metadata-git-movil-con-docker.md`
+- `docs/contexto/features/pr-2288-usuarios-organizacion-pwa.md`
+- `docs/contexto/features/pr-2293-chore-sync-integrar-main-en-homologacion.md`
+- `docs/contexto/features/pr-2294-chore-sync-integrar-main-en-development.md`
+- `docs/contexto/features/pr-2295-chore-sync-integrar-main-en-homologacion.md`
+- `docs/contexto/features/pr-2297-chore-sync-integrar-main-en-development.md`
+- `docs/contexto/features/pr-2298-chore-sync-integrar-main-en-homologacion.md`
+- `docs/contexto/features/pr-2299-fix-ui-comunicados.md`
+- `docs/contexto/features/pr-2301-fix.md`
+- `docs/contexto/features/pr-2303-docs-spec-corregir-trazabilidad-y-guias-canonicas.md`
+- `docs/contexto/features/pr-2313-chore-sync-integrar-main-en-development.md`
+- `docs/contexto/features/pr-2314-chore-sync-integrar-main-en-homologacion.md`
+- `docs/contexto/features/pr-2315-evolutivos-de-rendicion-de-cuentas-ii-2305.md`
+- `docs/contexto/features/pr-2317-hml.md`
+- `docs/contexto/features/pr-2321-fix-resolver-observaciones-de-reapertura-del-issue-2305.md`
+- `docs/contexto/features/pr-2322-recupero-pass.md`
+- `docs/contexto/features/pr-2323-chore-sync-integrar-homologacion-en-development-para-pr-2317.md`
+- `docs/contexto/features/pr-2325-docs-ci-agregar-artefactos-del-pr-2317.md`
+- `docs/contexto/features/pr-2327-rendiciones-filtros-etapas-y-flujo-de-subsanacion.md`
+- `docs/contexto/features/pr-2329-docs-spec-completar-guias-canonicas-de-flujos-recientes.md`
+- `docs/contexto/features/pr-2331-fix-rendiciones-resolver-observaciones-de-subsanacion.md`
+- `docs/contexto/features/pr-2333-chore-sync-integrar-main-en-development.md`
+- `docs/contexto/features/pr-2334-chore-sync-integrar-main-en-homologacion.md`
+- `docs/contexto/features/pr-2335-release-pwa-promover-territorial-y-fotos-a-qa.md`
+- `docs/contexto/features/pr-2337-release-pwa-promover-territorial-y-fotos-a-hml.md`
+- `docs/contexto/features/pr-2340-fix-rendiciones-reconciliar-comprobantes-legacy.md`
+- `docs/contexto/features/pr-2346-feat-cdi-completar-datos-y-validaciones-de-formularios.md`
+- `docs/contexto/features/pr-2347-fix-relevamientos-restringir-patch-pwa-por-provincia.md`
+- `docs/contexto/features/pr-2348-fix-ci-advertir-artefactos-en-promociones-protegidas.md`
+- `docs/contexto/features/pr-2350-feat-cdi-prevenir-duplicados-por-referente.md`
+- `docs/contexto/features/pr-2351-docs-postman-cubrir-la-api-publica-completa-de-vat.md`
+- `docs/flujos/rendiciones_mensuales_proyectos.md`
+- `docs/implementaciones/admisiones_informes_tecnicos.md`
+- `docs/implementaciones/centrodeinfancia_nomina_ninos_simepi.md`
+- `docs/implementaciones/comedores_certificaciones_prestaciones.md`
+- `docs/implementaciones/comedores_nomina_ciudadanos.md`
+- `docs/implementaciones/pwa_backend.md`
+- `docs/implementaciones/usuarios_perfil_iam.md`
+- `docs/operacion/comandos_administracion.md`
+- `docs/operacion/infraestructura.md`
+- `docs/operacion/integraciones.md`
+- `docs/plans/2026-08-18-pr-2288-accesos-organizacion-hardening-design.md`
+- `docs/plans/2026-08-20-pr-2321-review-findings-design.md`
+- `docs/plans/2026-08-21-pr-2322-review-fixes-design.md`
+- `docs/plans/2026-08-25-issue-2339-reconciliacion-documentos-design.md`
+- `docs/plans/2026-08-26-pr-artifacts-protected-source-warning-design.md`
+- `docs/plans/2026-08-26-vat-postman-api-completa-design.md`
+- `docs/registro/README.md`
+- `docs/registro/cambios/2026-07-17-usuario-territorial-comedor.md`
+- `docs/registro/cambios/2026-08-10-alta-ciudadano-sin-dni-nomina.md`
+- `docs/registro/cambios/2026-08-12-accesos-pwa-organizacion-automaticos.md`
+- `docs/registro/cambios/2026-08-18-gate-spec-as-source-promociones.md`
+- `docs/registro/cambios/2026-08-19-issue-2305-rendiciones.md`
+- `docs/registro/cambios/2026-08-20-fix-cache-metricas-dashboard.md`
+- `docs/registro/cambios/2026-08-20-reset-password-issue-2236.md`
+- `docs/registro/cambios/2026-08-21-filtro-estado-rendiciones.md`
+- `docs/registro/cambios/2026-08-21-permisos-etapas-rendiciones.md`
+- `docs/registro/cambios/2026-08-24-spec-as-source-backfill.md`
+- `docs/registro/cambios/2026-08-25-issue-2339-reconciliacion-comprobantes.md`
+- `docs/registro/cambios/2026-08-25-issue-2342-cdi-forms.md`
+- `docs/registro/cambios/2026-08-25-pwanueva-migraciones-pwa.md`
+- `docs/registro/cambios/2026-08-26-artefactos-pr-ramas-protegidas.md`
+- `docs/registro/cambios/2026-08-26-issue-2349-cdi-duplicados.md`
+- `docs/registro/cambios/2026-08-26-pwa-territorial-idor.md`
+- `docs/registro/cambios/2026-08-26-vat-postman-api-completa.md`
+- `docs/registro/prs/PR-2258.md`
+- `docs/registro/prs/PR-2263.md`
+- `docs/registro/prs/PR-2265.md`
+- `docs/registro/prs/PR-2266.md`
+- `docs/registro/prs/PR-2268.md`
+- `docs/registro/prs/PR-2278.md`
+- `docs/registro/prs/PR-2280.md`
+- `docs/registro/prs/PR-2281.md`
+- `docs/registro/prs/PR-2288.md`
+- `docs/registro/prs/PR-2293.md`
+- `docs/registro/prs/PR-2294.md`
+- `docs/registro/prs/PR-2295.md`
+- `docs/registro/prs/PR-2297.md`
+- `docs/registro/prs/PR-2298.md`
+- `docs/registro/prs/PR-2299.md`
+- `docs/registro/prs/PR-2301.md`
+- `docs/registro/prs/PR-2303.md`
+- `docs/registro/prs/PR-2313.md`
+- `docs/registro/prs/PR-2314.md`
+- `docs/registro/prs/PR-2315.md`
+- `docs/registro/prs/PR-2317.md`
+- `docs/registro/prs/PR-2321.md`
+- `docs/registro/prs/PR-2322.md`
+- `docs/registro/prs/PR-2323.md`
+- `docs/registro/prs/PR-2325.md`
+- `docs/registro/prs/PR-2327.md`
+- `docs/registro/prs/PR-2329.md`
+- `docs/registro/prs/PR-2331.md`
+- `docs/registro/prs/PR-2333.md`
+- `docs/registro/prs/PR-2334.md`
+- `docs/registro/prs/PR-2335.md`
+- `docs/registro/prs/PR-2337.md`
+- `docs/registro/prs/PR-2340.md`
+- `docs/registro/prs/PR-2346.md`
+- `docs/registro/prs/PR-2347.md`
+- `docs/registro/prs/PR-2348.md`
+- `docs/registro/prs/PR-2350.md`
+- `docs/registro/prs/PR-2351.md`
+- `docs/seguridad/security_baseline.md`
+
+## Trazabilidad
+
+- Documento generado automáticamente desde el evento de `pull_request`.
+- Si este PR cambia de título, el archivo se renombrará para mantener el slug alineado.

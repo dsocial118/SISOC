@@ -1,5 +1,54 @@
+<!-- AUTO-GENERATED RELEASE START: 2026-09-02 -->
+# Versión SISOC 02.09.2026
+
+## Actualizaciones
+
+- [sin-area] feat(relevamientos): asignación por usuario territorial + corte AppSheet por flag. (PR #2380)
+- [sin-area] fix(relevamientos): feedback QA territoriales (visibilidad, finalizar, estados, permisos). (PR #2386)
+- [sin-area] fix(territorial): excluir relevamientos borrados del scope por asignación. (PR #2389)
+- [sin-area] fix: reparar mojibake en datos y RENAPER. (PR #2415)
+- [sin-area] fix(encoding): reparar mojibake capitalizado histórico. (PR #2421)
+- [sin-area] fix(encoding): reparar mojibake capitalizado restante. (PR #2424)
+<!-- AUTO-GENERATED RELEASE END: 2026-09-02 -->
+
+<!-- AUTO-GENERATED RELEASE START: 2026-08-26 -->
+# Versión SISOC 26.08.2026
+
+## Actualizaciones
+
+- [sin-area] feat(admisiones): variables documentales para renovaciones. (PR #2330)
+- [sin-area] feat(admisiones): agregar descarga DOCX para GDE. (PR #2332)
+- [plataforma de release, CDI, Rendiciones, Usuarios/PWA y Comedores.] Promoción semanal con mejoras de CDI, rendiciones, permisos PWA, comedores y documentación VAT. (PR #2353)
+
+## Corrección de Errores
+
+- [Centro de Infancia] Corrige permisos y validaciones urgentes del módulo CDI. (PR #2310)
+<!-- AUTO-GENERATED RELEASE END: 2026-08-26 -->
+
+<!-- AUTO-GENERATED RELEASE START: 2026-08-19 -->
+# Versión SISOC 19.08.2026
+
+## Actualizaciones
+
+- [sin-area] fix(admisiones): autorizar transferencias issue 2272. (PR #2296)
+- [sin-area] fix(users): quitar declaración de confirmación de datos. (PR #2300)
+- [sin-area] feat(centrodeinfancia): descargar nómina provincial de niños. (PR #2308)
+<!-- AUTO-GENERATED RELEASE END: 2026-08-19 -->
+
+<!-- AUTO-GENERATED RELEASE START: 2026-08-13 -->
+# Versión SISOC 13.08.2026
+
+## Actualizaciones
+
+- [release y plataforma transversal.] Promoción semanal con mejoras de Admisiones, Comedores, Usuarios/PWA, auditoría, APIs y operación. (PR #2289)
+<!-- AUTO-GENERATED RELEASE END: 2026-08-13 -->
+
 <!-- AUTO-GENERATED RELEASE START: 2026-07-30 -->
 # Versión SISOC 30.07.2026
+
+## Actualizaciones
+
+- [Centro de Infancia y despliegue productivo.] Restaura talla CDI como texto para evitar que la migración bloqueante detenga producción. (PR #2210)
 
 ## Corrección de Errores
 

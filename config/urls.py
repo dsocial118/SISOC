@@ -52,6 +52,7 @@ urlpatterns = [
     path("", include("healthcheck.urls")),
     path("", include("centrodeinfancia.urls")),
     path("", include("ver_para_ser_libre.urls")),
+    path("", include("pas.urls")),
     path("acompanamientos/", include("acompanamientos.urls")),
     path("expedientespagos/", include("expedientespagos.urls")),
     path("", include("rendicioncuentasfinal.urls")),
@@ -64,6 +65,7 @@ urlpatterns = [
     # API URLs
     path("api/users/", include("users.api_urls")),
     path("api/comedores/", include("comedores.api_urls")),
+    path("api/territorial/", include("comedores.api_urls_territorial")),
     path("api/centrodefamilia/", include("centrodefamilia.api_urls")),
     path("api/vat/", include("VAT.api_urls")),
     path("api/comunicados/", include("comunicados.api_urls")),
@@ -73,6 +75,7 @@ urlpatterns = [
     path("", include("importarexpediente.urls")),
     path("", include("comunicados.urls")),
     path("ocr/", include("ocr.urls")),
+    path("", include("encuestas.urls")),
 ]
 
 if settings.DEBUG and not getattr(settings, "RUNNING_TESTS", False):

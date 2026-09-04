@@ -1,5 +1,5 @@
 {% load static custom_filters dashboard_tags %}
-{% with pagina_actual=request.resolver_match.route vat_sidebar_only=request.user|is_vat_sidebar_only %}
+{% with pagina_actual=request.resolver_match.route vat_sidebar_only=request.user|is_vat_sidebar_only cdi_local_sidebar_only=request.user|is_cdi_local_sidebar_only %}
     <!-- INFORMACIÓN DE USUARIO -->
     <li class="nav-item user-info mb-2 mt-2">
         <div class="user-panel d-flex align-items-center p-3">
@@ -35,7 +35,7 @@
             <p>Inicio</p>
         </a>
     </li>
-    {% if not vat_sidebar_only %}
+    {% if not vat_sidebar_only and not cdi_local_sidebar_only %}
         <!-- COMUNICADOS -->
         <li class="nav-item nav-main-item {% if 'comunicados' in pagina_actual %}menu-open{% endif %}"
             style="order: 7;
@@ -65,7 +65,7 @@
         </li>
     {% endif %}
 
-    {% if not vat_sidebar_only and request.user|has_any_perm:"auth.view_user,auth.add_user,auth.change_user,auth.delete_user,auth.view_group,auth.add_group,auth.change_group" or perms.auditlog.view_logentry or request.user.is_superuser %}
+    {% if not vat_sidebar_only and request.user|has_any_perm:"auth.view_user,auth.add_user,auth.change_user,auth.delete_user,auth.view_group,auth.add_group,auth.change_group,encuestas.view_encuesta,encuestas.ver_resultados" or perms.auditlog.view_logentry or request.user.is_superuser %}
         <li class="nav-item nav-main-item" style="order: 4;">
             <a href="#" class="nav-link">
                 <img src="{% static 'custom/img/iconos_sidebar/administracion.svg' %}"
@@ -80,12 +80,14 @@
                         <p>Usuarios</p>
                     </a>
                 </li>
-                <li class="nav-item">
-                    <a href="{% url 'grupos' %}"
-                       class="nav-link nav-dot ms-2 {% if 'grupos' in pagina_actual %}active{% endif %}">
-                        <p>Grupos</p>
-                    </a>
-                </li>
+                {% if request.user|has_perm_code:"auth.view_group" %}
+                    <li class="nav-item">
+                        <a href="{% url 'grupos' %}"
+                           class="nav-link nav-dot ms-2 {% if 'grupos' in pagina_actual %}active{% endif %}">
+                            <p>Grupos</p>
+                        </a>
+                    </li>
+                {% endif %}
                 <li class="nav-item">
                     <a href="{% url 'programa_listar' %}"
                        class="nav-link nav-dot ms-2 {% if 'programas/' in pagina_actual %}active{% endif %}">
@@ -97,6 +99,14 @@
                         <a href="{% url 'audittrail:log_list' %}"
                            class="nav-link nav-dot ms-2 {% if 'auditoria/' in pagina_actual %}active{% endif %}">
                             <p>Auditoría</p>
+                        </a>
+                    </li>
+                {% endif %}
+                {% if request.user|has_any_perm:"encuestas.view_encuesta,encuestas.ver_resultados" %}
+                    <li class="nav-item">
+                        <a href="{% url 'encuestas_listar' %}"
+                           class="nav-link nav-dot ms-2 {% if 'encuestas' in pagina_actual %}active{% endif %}">
+                            <p>Encuestas</p>
                         </a>
                     </li>
                 {% endif %}
@@ -389,7 +399,7 @@
                     </li>
                 {% endif %}
                 <!-- ORGANIZACIONES -->
-                {% if request.user|has_perm_code:"organizaciones.view_organizacion" or request.user|has_perm_code:"auth.role_tecnico_comedor" or request.user|has_perm_code:"auth.role_abogado_dupla" or request.user|has_perm_code:"rendicioncuentasmensual.view_rendicioncuentamensual" %}
+                {% if request.user|has_perm_code:"organizaciones.view_organizacion" or request.user|has_perm_code:"auth.role_tecnico_comedor" or request.user|has_perm_code:"auth.role_abogado_dupla" or request.user|has_any_perm:"rendicioncuentasmensual.view_rendicioncuentamensual,rendicioncuentasmensual.manage_territorial_stage,rendicioncuentasmensual.manage_auditoria_review_stage,rendicioncuentasmensual.manage_auditoria_stage,rendicioncuentasmensual.manage_regularizacion_stage" %}
                     <li class="nav-item {% if 'organizaciones' in pagina_actual or 'rendicioncuentasmensual' in pagina_actual %}menu-open{% endif %}">
                         <a href="#"
                            class="nav-link nav-dot ms-2 {% if 'organizaciones' in pagina_actual or 'rendicioncuentasmensual' in pagina_actual %}active{% endif %}">
@@ -406,7 +416,7 @@
                                     </a>
                                 </li>
                             {% endif %}
-                            {% if request.user|has_perm_code:"rendicioncuentasmensual.view_rendicioncuentamensual" %}
+                            {% if request.user|has_any_perm:"rendicioncuentasmensual.view_rendicioncuentamensual,rendicioncuentasmensual.manage_territorial_stage,rendicioncuentasmensual.manage_auditoria_review_stage,rendicioncuentasmensual.manage_auditoria_stage,rendicioncuentasmensual.manage_regularizacion_stage" %}
                                 <li class="nav-item">
                                     <a href="{% url 'rendicioncuentasmensual_global_list' %}"
                                        class="nav-link ms-4 {% if 'rendicioncuentasmensual' in pagina_actual %}active{% endif %}">
@@ -435,15 +445,6 @@
                                     <p>Ver Centros de Infancia</p>
                                 </a>
                             </li>
-                            {% if request.user.is_superuser or request.user|has_any_group:"SIMEPI - Equipo Nacional" %}
-                                <li class="nav-item">
-                                    <a href="{% url 'simepi_egp_generar_usuario' %}"
-                                       class="nav-link ms-4 {% if 'simepi/egp/' in pagina_actual %}active{% endif %}">
-                                        <i class="nav-icon bi bi-arrow-return-right"></i>
-                                        <p>Alta de referente EGP</p>
-                                    </a>
-                                </li>
-                            {% endif %}
                         </ul>
                     </li>
                 {% endif %}
@@ -701,20 +702,27 @@
             {% endif %}
             {% if not vat_sidebar_only %}
                 <!-- CELIAQUÍA -->
-                {% if request.user|has_perm_code:"celiaquia.view_expediente" or request.user.is_superuser %}
+                {% comment %}
+                El menú se muestra con cualquiera de los tres permisos: un grupo
+                puede tener sólo el de Reporte (o sólo el de Dashboard) sin ver
+                expedientes, y aun así necesita llegar a su módulo.
+                {% endcomment %}
+                {% if request.user|has_perm_code:"celiaquia.view_expediente" or request.user|has_perm_code:"celiaquia.view_cupo_dashboard" or request.user|has_perm_code:"celiaquia.view_reporte_provincias" or request.user.is_superuser %}
                     <li class="nav-item">
                         <a href="#" class="nav-link nav-dot ms-2">
                             <p>Celiaquía</p>
                             <i class="nav-arrow bi bi-chevron-right"></i>
                         </a>
                         <ul class="nav nav-treeview">
-                            <li class="nav-item">
-                                <a href="{% url 'expediente_list' %}" class="nav-link ms-2">
-                                    <i class="nav-icon fas fa-folder-open"></i>
-                                    <p>Expedientes</p>
-                                </a>
-                            </li>
                             {% if request.user|has_perm_code:"celiaquia.view_expediente" %}
+                                <li class="nav-item">
+                                    <a href="{% url 'expediente_list' %}" class="nav-link ms-2">
+                                        <i class="nav-icon fas fa-folder-open"></i>
+                                        <p>Expedientes</p>
+                                    </a>
+                                </li>
+                            {% endif %}
+                            {% if request.user|has_perm_code:"celiaquia.view_cupo_dashboard" %}
                                 <li class="nav-item">
                                     <a href="{% url 'cupo_dashboard' %}" class="nav-link ms-2">
                                         <i class="nav-icon fas fa-chart-bar"></i>
@@ -722,7 +730,7 @@
                                     </a>
                                 </li>
                             {% endif %}
-                            {% if request.user|has_perm_code:"celiaquia.view_expediente" or request.user|has_perm_code:"celiaquia.view_expediente" %}
+                            {% if request.user|has_perm_code:"celiaquia.view_reporte_provincias" %}
                                 <li class="nav-item">
                                     <a href="{% url 'reporter_provincias' %}" class="nav-link ms-2">
                                         <i class="nav-icon fas fa-chart-pie"></i>

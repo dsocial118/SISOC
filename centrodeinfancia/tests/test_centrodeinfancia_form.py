@@ -1,6 +1,7 @@
 from datetime import date
 
 import pytest
+from django import forms
 from django.contrib.auth.models import User
 from django.urls import reverse
 
@@ -65,6 +66,7 @@ def datos_validos(ubicacion, servicio, **overrides):
         "calle": "San Martín",
         "numero": "1234",
         "meses_funcionamiento": ["enero", "febrero"],
+        "dias_funcionamiento": ["lunes", "martes"],
         "tipo_jornada": "simple_single_shift",
         "oferta_servicios": [str(servicio.pk)],
         "modalidad_gestion": "gobierno_municipal",
@@ -72,6 +74,7 @@ def datos_validos(ubicacion, servicio, **overrides):
         "apellido_referente": "Pérez",
         "email_referente": "ana.perez@cdi.com",
         "telefono_referente": "4774-2015",
+        "cuil_referente": CUIT_VALIDO,
     }
     datos.update(overrides)
     return datos
@@ -85,6 +88,16 @@ def fixture_user():
 def construir_form(datos, user=None, **kwargs):
     kwargs.setdefault("lock_provincia_from_user", False)
     return CentroDeInfanciaForm(data=datos, user=user, **kwargs)
+
+
+@pytest.mark.django_db
+def test_servicios_se_muestran_como_casillas_de_seleccion_multiple():
+    form = CentroDeInfanciaForm()
+
+    assert isinstance(
+        form.fields["oferta_servicios"].widget,
+        forms.CheckboxSelectMultiple,
+    )
 
 
 # --- Alta completa (caso feliz, no-regresión) --------------------------------
@@ -106,6 +119,98 @@ def test_alta_con_todos_los_campos_validos_guarda(user, ubicacion, servicio):
     assert list(centro.oferta_servicios.values_list("codigo", flat=True)) == [
         "multiedad"
     ]
+
+
+@pytest.mark.django_db
+def test_alta_normaliza_identificadores_del_referente(user, ubicacion, servicio):
+    form = construir_form(
+        datos_validos(
+            ubicacion,
+            servicio,
+            dni_referente="30.123.456",
+            cuil_referente="20-44535030-4",
+        ),
+        user=user,
+    )
+
+    assert form.is_valid(), form.errors
+    centro = form.save()
+    assert centro.dni_referente == "30123456"
+    assert centro.cuil_referente == "20445350304"
+
+
+@pytest.mark.django_db
+def test_alta_requiere_cuil_del_referente(user, ubicacion, servicio):
+    datos = datos_validos(ubicacion, servicio)
+    datos.pop("cuil_referente")
+    form = construir_form(datos, user=user)
+
+    assert not form.is_valid()
+    assert form.errors["cuil_referente"] == [
+        "Este campo es obligatorio para dar de alta un CDI."
+    ]
+
+
+@pytest.mark.django_db
+def test_alta_rechaza_cdi_duplicado_por_provincia_cuit_y_cuil(
+    user, ubicacion, servicio
+):
+    CentroDeInfancia.objects.create(
+        nombre="CDI Existente",
+        provincia=ubicacion["provincia"],
+        cuit_organizacion_gestiona="20445350304",
+        cuil_referente="20445350304",
+    )
+    form = construir_form(datos_validos(ubicacion, servicio), user=user)
+
+    assert not form.is_valid()
+    assert "CDI Existente" in form.errors["cuil_referente"][0]
+    assert "CDI Existente" in form.non_field_errors()[0]
+
+
+@pytest.mark.django_db
+def test_alta_permite_misma_identidad_en_otra_provincia(user, ubicacion, servicio):
+    otra_provincia = Provincia.objects.create(nombre="Catamarca")
+    CentroDeInfancia.objects.create(
+        nombre="CDI Catamarca",
+        provincia=otra_provincia,
+        cuit_organizacion_gestiona="20445350304",
+        cuil_referente="20445350304",
+    )
+    form = construir_form(datos_validos(ubicacion, servicio), user=user)
+
+    assert form.is_valid(), form.errors
+
+
+@pytest.mark.django_db
+def test_edicion_permite_conservar_la_identidad_del_propio_cdi(
+    user, ubicacion, servicio
+):
+    centro = CentroDeInfancia.objects.create(
+        nombre="CDI Existente",
+        provincia=ubicacion["provincia"],
+        cuit_organizacion_gestiona="20445350304",
+        cuil_referente="20445350304",
+    )
+    form = construir_form(
+        datos_validos(ubicacion, servicio), user=user, instance=centro
+    )
+
+    assert form.is_valid(), form.errors
+
+
+@pytest.mark.django_db
+def test_alta_ignora_cdi_dado_de_baja_al_validar_duplicados(user, ubicacion, servicio):
+    centro = CentroDeInfancia.objects.create(
+        nombre="CDI Dado de baja",
+        provincia=ubicacion["provincia"],
+        cuit_organizacion_gestiona="20445350304",
+        cuil_referente="20445350304",
+    )
+    centro.delete()
+    form = construir_form(datos_validos(ubicacion, servicio), user=user)
+
+    assert form.is_valid(), form.errors
 
 
 # --- BUG-01 / BUG-02: campos obligatorios en el alta -------------------------
@@ -358,6 +463,16 @@ def test_acepta_anio_inicio_valido(user, ubicacion, servicio):
 
     assert form.is_valid(), form.errors
     assert form.cleaned_data["fecha_inicio"] == date(1995, 1, 1)
+
+
+@pytest.mark.django_db
+def test_acepta_anio_inicio_minimo_historico(user, ubicacion, servicio):
+    form = construir_form(
+        datos_validos(ubicacion, servicio, fecha_inicio="1900"), user=user
+    )
+
+    assert form.is_valid(), form.errors
+    assert form.cleaned_data["fecha_inicio"] == date(1900, 1, 1)
 
 
 @pytest.mark.django_db

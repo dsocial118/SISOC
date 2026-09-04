@@ -2,9 +2,11 @@ from datetime import date
 
 import pytest
 
+from core.models import Localidad, Municipio, Provincia
 from centrodeinfancia.forms import TrabajadorCDIForm
 from centrodeinfancia.models import (
     CentroDeInfancia,
+    DepartamentoIpi,
     NominaNacionalidad,
     NominaPais,
     Trabajador,
@@ -30,6 +32,11 @@ def fixture_centro():
 def datos_validos(**overrides):
     """Payload completo que pasa todas las validaciones del legajo."""
 
+    provincia, _ = Provincia.objects.get_or_create(nombre="Buenos Aires")
+    municipio, _ = Municipio.objects.get_or_create(nombre="Moreno", provincia=provincia)
+    localidad, _ = Localidad.objects.get_or_create(
+        nombre="Paso del Rey", municipio=municipio
+    )
     datos = {
         "fecha_carga": "2026-07-01",
         "subcomponente": "cdi",
@@ -50,8 +57,13 @@ def datos_validos(**overrides):
         "anos_trabajo_primera_infancia": "5",
         "tipo_contratacion": "relacion_dependencia",
         "carga_horaria_semanal": "40",
+        "email": "julia.mendez@example.com",
         "telefono": "4774-2015",
         "calle_contacto": "San Martín 1234",
+        "tipo_barrio": "urbano",
+        "provincia_contacto": str(provincia.pk),
+        "municipio_contacto": str(municipio.pk),
+        "localidad_contacto": str(localidad.pk),
         "grupo_pertenencia": ["ninguno"],
         "lenguajes": ["espanol_castellano"],
         "es_interprete": "no",
@@ -59,6 +71,19 @@ def datos_validos(**overrides):
     }
     datos.update(overrides)
     return datos
+
+
+def ubicacion_para_provincia(provincia, prefijo):
+    municipio = Municipio.objects.create(
+        nombre=f"{prefijo} Municipio", provincia=provincia
+    )
+    localidad = Localidad.objects.create(
+        nombre=f"{prefijo} Localidad", municipio=municipio
+    )
+    return {
+        "municipio_contacto": str(municipio.pk),
+        "localidad_contacto": str(localidad.pk),
+    }
 
 
 # --- Caso feliz --------------------------------------------------------------
@@ -76,6 +101,96 @@ def test_alta_con_todos_los_campos_validos_guarda(catalogos, centro):
     assert trabajador.pk
     assert trabajador.nombre == "Julia"
     assert trabajador.cuit == "20445350304"
+    assert trabajador.sala_cdi == "2_anios"
+
+
+@pytest.mark.django_db
+def test_departamento_contacto_usa_catalogo_de_la_provincia(catalogos):
+    provincia = Provincia.objects.create(nombre="Tierra del Fuego")
+    departamento = DepartamentoIpi.objects.create(
+        codigo_departamento="94001",
+        provincia=provincia,
+        nombre="Ushuaia",
+    )
+    ubicacion = ubicacion_para_provincia(provincia, "Ushuaia")
+
+    form = TrabajadorCDIForm(
+        data=datos_validos(
+            provincia_contacto=str(provincia.pk),
+            departamento_contacto="Ushuaia",
+            **ubicacion,
+        )
+    )
+
+    assert form.is_valid(), form.errors
+    assert form.cleaned_data["departamento_contacto"] == departamento.nombre
+
+
+@pytest.mark.django_db
+def test_departamento_contacto_normaliza_id_enviado_por_desplegable(catalogos):
+    provincia = Provincia.objects.create(nombre="Ciudad Autónoma de Buenos Aires")
+    departamento = DepartamentoIpi.objects.create(
+        codigo_departamento="02001",
+        provincia=provincia,
+        nombre="Comuna 1",
+    )
+    ubicacion = ubicacion_para_provincia(provincia, "Comuna 1")
+
+    form = TrabajadorCDIForm(
+        data=datos_validos(
+            provincia_contacto=str(provincia.pk),
+            departamento_contacto=str(departamento.pk),
+            **ubicacion,
+        )
+    )
+
+    assert form.is_valid(), form.errors
+    assert form.cleaned_data["departamento_contacto"] == departamento.nombre
+
+
+@pytest.mark.django_db
+def test_departamento_contacto_rechaza_valor_fuera_del_catalogo(catalogos):
+    provincia = Provincia.objects.create(nombre="Neuquén")
+    DepartamentoIpi.objects.create(
+        codigo_departamento="58001",
+        provincia=provincia,
+        nombre="Confluencia",
+    )
+    ubicacion = ubicacion_para_provincia(provincia, "Confluencia")
+
+    form = TrabajadorCDIForm(
+        data=datos_validos(
+            provincia_contacto=str(provincia.pk),
+            departamento_contacto="Inventado",
+            **ubicacion,
+        )
+    )
+
+    assert not form.is_valid()
+    assert "departamento_contacto" in form.errors
+
+
+@pytest.mark.django_db
+def test_departamento_contacto_rechaza_id_de_otra_provincia(catalogos):
+    provincia_elegida = Provincia.objects.create(nombre="Neuquén")
+    otra_provincia = Provincia.objects.create(nombre="Río Negro")
+    departamento_ajeno = DepartamentoIpi.objects.create(
+        codigo_departamento="62001",
+        provincia=otra_provincia,
+        nombre="Adolfo Alsina",
+    )
+    ubicacion = ubicacion_para_provincia(provincia_elegida, "Neuquén")
+
+    form = TrabajadorCDIForm(
+        data=datos_validos(
+            provincia_contacto=str(provincia_elegida.pk),
+            departamento_contacto=str(departamento_ajeno.pk),
+            **ubicacion,
+        )
+    )
+
+    assert not form.is_valid()
+    assert "departamento_contacto" in form.errors
 
 
 # --- TC51: no se guarda un legajo incompleto ---------------------------------
@@ -100,8 +215,13 @@ def test_alta_con_todos_los_campos_validos_guarda(catalogos, centro):
         "anos_trabajo_primera_infancia",
         "tipo_contratacion",
         "carga_horaria_semanal",
+        "email",
         "telefono",
         "calle_contacto",
+        "tipo_barrio",
+        "provincia_contacto",
+        "municipio_contacto",
+        "localidad_contacto",
         "grupo_pertenencia",
         "lenguajes",
         "es_interprete",
@@ -110,6 +230,36 @@ def test_alta_con_todos_los_campos_validos_guarda(catalogos, centro):
 )
 def test_rechaza_campo_obligatorio_vacio(catalogos, campo):
     form = TrabajadorCDIForm(data=datos_validos(**{campo: ""}))
+
+    assert not form.is_valid()
+    assert campo in form.errors
+
+
+@pytest.mark.django_db
+def test_acepta_no_sabe_en_formacion_y_cultura_obligatorias(catalogos):
+    form = TrabajadorCDIForm(
+        data=datos_validos(
+            nivel_educativo="no_sabe",
+            anos_trabajo_primera_infancia="no_sabe",
+            grupo_pertenencia=["no_sabe"],
+            lenguajes=["no_sabe"],
+            es_interprete="no_sabe",
+        )
+    )
+
+    assert form.is_valid(), form.errors
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    ("campo", "valor"),
+    [
+        ("grupo_pertenencia", ["no_sabe", "indigena"]),
+        ("lenguajes", ["no_sabe", "espanol_castellano"]),
+    ],
+)
+def test_no_sabe_es_excluyente_en_multiselects_de_trabajador(catalogos, campo, valor):
+    form = TrabajadorCDIForm(data=datos_validos(**{campo: valor}))
 
     assert not form.is_valid()
     assert campo in form.errors
@@ -349,6 +499,56 @@ def test_subcomponente_egp_no_exige_campos_de_cdi(catalogos):
             funcion_cdi="",
             sala_cdi="",
         )
+    )
+
+    assert form.is_valid(), form.errors
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    ("subcomponente", "campo"),
+    [
+        ("pfpi", "funcion_pfpi"),
+        ("egp", "funcion_egp"),
+        ("cdi", "funcion_cdi"),
+        ("uaf", "funcion_uaf"),
+    ],
+)
+def test_subcomponente_exige_su_funcion(catalogos, subcomponente, campo):
+    form = TrabajadorCDIForm(
+        data=datos_validos(subcomponente=subcomponente, **{campo: ""})
+    )
+
+    assert not form.is_valid()
+    assert campo in form.errors
+
+
+@pytest.mark.django_db
+def test_subcomponente_cdi_exige_sala(catalogos):
+    form = TrabajadorCDIForm(data=datos_validos(sala_cdi=""))
+
+    assert not form.is_valid()
+    assert "sala_cdi" in form.errors
+
+
+@pytest.mark.django_db
+def test_alta_exige_email_para_generar_usuario(catalogos):
+    form = TrabajadorCDIForm(data=datos_validos(email=""))
+
+    assert not form.is_valid()
+    assert "email" in form.errors
+
+
+@pytest.mark.django_db
+def test_edicion_historica_permite_email_vacio(catalogos, centro):
+    trabajador = Trabajador.objects.create(
+        centro=centro,
+        nombre="Trabajadora",
+        apellido="Histórica",
+    )
+    form = TrabajadorCDIForm(
+        data=datos_validos(email=""),
+        instance=trabajador,
     )
 
     assert form.is_valid(), form.errors

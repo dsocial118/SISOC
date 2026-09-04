@@ -2,6 +2,7 @@ import logging
 
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
+from django.db.models import Q
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
@@ -11,8 +12,36 @@ from core.api_auth import HasAPIKeyOrToken
 from core.utils import format_error_detail
 from relevamientos.models import PrimerSeguimiento, Relevamiento
 from relevamientos.serializer import PrimerSeguimientoSerializer, RelevamientoSerializer
+from users.services_pwa import get_territorial_comedor_provincia_ids
 
 logger = logging.getLogger("django")
+
+
+def _scope_relevamientos_for_authenticated_user(
+    request,
+    queryset,
+    *,
+    comedor_lookup="comedor",
+    territorial_user_lookup="territorial_user",
+):
+    """Restringe solicitudes de usuario a lo que el territorial puede ver.
+
+    Las API keys de integraci\u00f3n no autentican ``request.user`` y conservan el
+    acceso global necesario para GESTIONAR. Un token DRF o una sesi\u00f3n web, en
+    cambio, solo puede resolver relevamientos **asignados a \u00e9l**
+    (``territorial_user``) o de las provincias que tiene cargadas. Se incluye la
+    asignaci\u00f3n para que pueda finalizar/editar lo que la app le muestra aunque
+    el comedor sea de otra provincia; una lista vac\u00eda falla cerrada.
+    """
+    user = request.user
+    if not user or not user.is_authenticated:
+        return queryset
+
+    provincia_ids = get_territorial_comedor_provincia_ids(user)
+    return queryset.filter(
+        Q(**{f"{comedor_lookup}__provincia_id__in": provincia_ids})
+        | Q(**{territorial_user_lookup: user})
+    )
 
 
 class RelevamientoApiView(APIView):
@@ -20,10 +49,19 @@ class RelevamientoApiView(APIView):
     permission_classes = [HasAPIKeyOrToken]
 
     def patch(self, request):
+        sisoc_id = request.data.get("sisoc_id")
+        if sisoc_id in (None, ""):
+            return Response(
+                "Falta 'sisoc_id' en el cuerpo de la solicitud.",
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         relevamiento_serializer = None
         try:
-            relevamiento = Relevamiento.objects.get(
-                id=request.data["sisoc_id"],
+            relevamiento = _scope_relevamientos_for_authenticated_user(
+                request,
+                Relevamiento.objects.all(),
+            ).get(
+                id=sisoc_id,
             )
             try:
                 relevamiento_serializer = RelevamientoSerializer(
@@ -61,19 +99,19 @@ class RelevamientoApiView(APIView):
             )
         except Relevamiento.DoesNotExist:
             return Response(
-                f"Relevamiento {request.data['sisoc_id']} no encontrado",
+                f"Relevamiento {sisoc_id} no encontrado",
                 status=status.HTTP_404_NOT_FOUND,
             )
         except Exception:
             logger.exception(
                 "Error en PATCH al relevamiento",
                 extra={
-                    "sisoc_id": request.data.get("sisoc_id"),
+                    "sisoc_id": sisoc_id,
                     "data": request.data,
                 },
             )
             return Response(
-                f"Error al actualizar el relevamiento {request.data['sisoc_id']}",
+                f"Error al actualizar el relevamiento {sisoc_id}",
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
@@ -83,7 +121,7 @@ class PrimerSeguimientoApiView(APIView):
     permission_classes = [HasAPIKeyOrToken]
 
     @staticmethod
-    def _resolve_seguimiento(data):
+    def _resolve_seguimiento(data, queryset):
         """Resuelve el PrimerSeguimiento por cualquiera de los identificadores
         que GESTIONAR puede enviar: sisoc_id (PK SISOC), gestionar_id /
         ID_Seguimiento1 / id_seguimiento1 (PK GESTIONAR) o id_relevamiento
@@ -113,7 +151,6 @@ class PrimerSeguimientoApiView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        queryset = PrimerSeguimiento.objects.select_related("id_relevamiento__comedor")
         try:
             if sisoc_id:
                 seguimiento = queryset.get(id=int(sisoc_id))
@@ -152,7 +189,16 @@ class PrimerSeguimientoApiView(APIView):
         return seguimiento, None
 
     def patch(self, request):
-        seguimiento, error_response = self._resolve_seguimiento(request.data)
+        seguimiento_queryset = _scope_relevamientos_for_authenticated_user(
+            request,
+            PrimerSeguimiento.objects.select_related("id_relevamiento__comedor"),
+            comedor_lookup="id_relevamiento__comedor",
+            territorial_user_lookup="id_relevamiento__territorial_user",
+        )
+        seguimiento, error_response = self._resolve_seguimiento(
+            request.data,
+            seguimiento_queryset,
+        )
         if error_response is not None:
             return error_response
 

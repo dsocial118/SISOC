@@ -18,7 +18,7 @@ from VAT.services.tipo_alumno_service import (
     tiene_voucher_activo_subquery,
     tipo_alumno_label,
 )
-from VAT.services.vat_inscripciones_base import base_inscripciones_queryset_for_user
+from core.services.csv_export import build_csv_response
 
 
 DATE_INPUT_FORMAT = "%Y-%m-%d"
@@ -431,11 +431,7 @@ def _detalle_row_cells(row, estado_labels):
 
 
 def export_detalle_to_csv(user, filtros: ReporteFiltros) -> HttpResponse:
-    response = HttpResponse(content_type="text/csv; charset=utf-8")
-    response["Content-Disposition"] = (
-        "attachment; filename=vat_reporte_detalle_inscripciones.csv"
-    )
-    response.write("﻿")  # BOM: Excel respeta los acentos en UTF-8
+    response = build_csv_response("vat_reporte_detalle_inscripciones.csv")
     estado_labels = dict(Inscripcion.ESTADO_INSCRIPCION_CHOICES)
     writer = csv.writer(response)
     writer.writerow(DETALLE_HEADERS)
@@ -470,10 +466,7 @@ def export_detalle_to_excel(user, filtros: ReporteFiltros) -> HttpResponse:
 
 
 def export_rows_to_csv(rows, group_by: str) -> HttpResponse:
-    response = HttpResponse(content_type="text/csv")
-    response["Content-Disposition"] = (
-        "attachment; filename=vat_reporte_inscripciones_asistencias.csv"
-    )
+    response = build_csv_response("vat_reporte_inscripciones_asistencias.csv")
 
     writer = csv.writer(response)
     writer.writerow(

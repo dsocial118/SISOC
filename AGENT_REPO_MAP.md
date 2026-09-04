@@ -13,7 +13,7 @@ Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrollador
 ### Hechos observados
 
 - Es un monolito Django grande, modularizado por apps de dominio, con backend renderizado por templates y APIs DRF convivientes.
-- El stack principal es Python 3.11 + Django 4.2 + MySQL 8 + Docker Compose.
+- El stack principal es Python 3.11 + Django 5.2 LTS + MySQL 8 + Docker Compose.
 - La operacion local y CI estan pensadas en modo Docker-first.
 - El repo mezcla backoffice web tradicional, APIs internas/server-to-server, flujos asincronos simples sin Celery, y una capa PWA/API para ciertos casos de uso.
 - La logica de negocio suele vivir en `services/` cuando la app la tiene, pero coexisten apps mas legacy con mas logica en `views.py`, `models.py` o `tasks.py`.
@@ -32,7 +32,7 @@ Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrollador
 | Item | Estado | Evidencia |
 | --- | --- | --- |
 | Python 3.11 | Hecho observado | `pyproject.toml`, workflows CI |
-| Django 4.2.27 | Hecho observado | `requirements/base.txt` |
+| Django 5.2.16 | Hecho observado | `requirements/base.txt` |
 | Django REST Framework | Hecho observado | `requirements/base.txt`, `config/settings.py` |
 | drf-spectacular | Hecho observado | `requirements/base.txt`, `config/urls.py` |
 | Gunicorn | Hecho observado | `requirements/base.txt`, `docker/django/entrypoint.py` |
@@ -91,7 +91,7 @@ Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrollador
 
 ### Hechos observados
 
-- `docker-compose.yml` levanta `mysql`, `django` y `ocr_worker`.
+- `docker-compose.yml` levanta `mysql`, `django`, `ocr_worker` y `encuestas_worker`.
 - El contenedor `django` monta el repo completo en `/sisoc/`.
 - `docker/django/entrypoint.py` espera MySQL, puede correr `makemigrations`, siempre corre `migrate`, `load_fixtures`, `create_test_users`, `create_groups`, y luego levanta `runserver` o `gunicorn` segun `ENVIRONMENT`.
 
@@ -181,6 +181,7 @@ SISOC/
 - `mailing_worker`
 - `user_import_worker`
 - `ocr_worker`
+- `encuestas_worker`: abre/cierra rondas de encuestas por fecha (ver `encuestas/services.py:run_encuestas_scheduler`, sin Celery).
 
 ## Configuracion y variables de entorno relevantes
 
@@ -202,7 +203,7 @@ SISOC/
 | Seguridad/CSP | `ENABLE_CSP`, `CSP_REPORT_ONLY`, `CSP_ALLOW_UNSAFE_INLINE_SCRIPTS`, `CSP_ALLOW_UNSAFE_EVAL` |
 | Async | `DISABLE_ASYNC_THREADS` |
 | Testing | `USE_SQLITE_FOR_TESTS`, `PYTEST_RUNNING` |
-| Integracion GESTIONAR | `GESTIONAR_API_KEY`, endpoints `GESTIONAR_API_*`, workers `GESTIONAR_*`, `DOMINIO` |
+| Integracion GESTIONAR | `GESTIONAR_INTEGRATION_ENABLED` (corte total de envíos, pulls y comandos), `GESTIONAR_API_KEY`, endpoints `GESTIONAR_API_*`, workers `GESTIONAR_*`, `DOMINIO` |
 | Ticketera | `TICKETERA_ENABLED` |
 | RENAPER | `RENAPER_API_USERNAME`, `RENAPER_API_PASSWORD`, `RENAPER_REQUEST_TIMEOUT_SECONDS`, retries/backoff; sin cache ni TTL de token |
 | Google Maps | `GOOGLE_MAPS_API_KEY` |
@@ -283,7 +284,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 | `ticketera/` | API server-to-server con kill-switch | `api_urls.py`, `api_views.py`, `api_serializers.py` | Medio |
 | `comunicados/` | mensajes/comunicados y API asociada | `models.py`, `views.py`, `api_views.py`, forms | Medio |
 | `organizaciones/` | entidades/organizaciones vinculadas; edición modal de proyectos y detalle con rendiciones por relación directa o legado | `models.py`, `forms.py`, `views.py`, templates de organización | Alto |
-| `centrodeinfancia/` | dominio de centros de infancia, personal y asistencia | `models.py`, `services.py`, `views.py`, `tests/`, urls | Alto |
+| `centrodeinfancia/` | dominio de centros de infancia, personal, asistencia y descargables provinciales | `models.py`, `services.py`, `services_nomina_ninos_pdf.py`, `views.py`, `tests/`, urls | Alto |
 | `acompanamientos/` | seguimiento/acompanamientos | `views.py`, `acompanamiento_service.py`, `services/filter_config.py`, templates | Medio |
 | `expedientespagos/` | expedientes de pagos | `models.py`, `views.py`, urls | Bajo |
 | `rendicioncuentasfinal/` | rendicion final | `models.py`, `views.py`, urls | Bajo |
@@ -293,10 +294,12 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 | `importarexpediente/` | flujo de importacion de expedientes | `views.py`, `models.py`, urls, tests | Medio |
 | `ocr/` | OCR y procesamiento asociado | `models.py`, `views.py`, urls, tests | Medio |
 | `ver_para_ser_libre/` | modulo de negocio independiente dentro del monolito | `models.py`, `views.py`, `services/workflow.py` | Medio |
+| `pas/` | núcleo del Programa de Acompañamiento Social, circuito DDJJ —padrón, tokens, formulario público, PDF e importación CSV— e Informes PAS versionados | `models.py`, `api.py`, `services/ddjj_service.py`, `services/titulares_import_service.py`, `services/informe_service.py`, `urls.py`, `migrations/` | Alto |
 | `audittrail/` | auditoria interna | `models.py`, `views.py`, `services/query_service` | Alto |
 | `historial/` | historial de dominio | `models.py`, `services/` | Bajo |
 | `intervenciones/` | intervenciones sobre casos | tests + archivos del modulo | Bajo; exploracion parcial |
 | `sentry/` | soporte/integracion local de sentry | codigo del modulo si toca observabilidad | Bajo |
+| `encuestas/` | encuestas periodicas a usuarios logueados: preguntas con logica condicional, segmentacion, rondas recurrentes, bloqueo global si son obligatorias, resultados y export | `models.py`, `services.py`, `services_resultados.py`, `middleware.py`, `context_processors.py`, `management/commands/process_encuestas_rondas.py`, `tests/` | Alto (modulo propio, doc completa en `docs/registro/analisis/2026-08-28-modulo-encuestas.md`) |
 
 ## Patrones arquitectonicos y de codigo
 
@@ -320,6 +323,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - Los módulos externos sólo consumen `*.api` de Comedores Core. La FK histórica `centrodefamilia.Centro.organizacion_asociada` es la única excepción declarada hasta que se trate su migración y semántica de borrado.
 - Los consumidores interdominio usan contratos Python acotados: `centrodefamilia.api` expone métricas para Dashboard, `ciudadanos.api` resuelve ciudadanos desde RENAPER y `intervenciones.api` provee el catálogo autorizado para CDI.
 - Los receivers de auditoría de Centro de Infancia viven en `centrodeinfancia.signals` y llaman `audittrail.api`; Audittrail no debe importar modelos CDI.
+- Los alcances de usuarios propios de un dominio se registran mediante `iam.services.register_user_queryset_scope`; Centro de Infancia registra el suyo desde `centrodeinfancia.apps` para que `users` no importe dominios.
 - Dispositivos, VAT y Ver para Ser Libre no exponen internals a otros dominios. La composición de rutas de preview de VAT se realiza desde `VAT.global_urls`.
 - Los efectos de backfill de soft delete se registran desde cada dominio en `core.soft_delete.registry`; `core.soft_delete.state_sync` no debe importar handlers de dominio.
 - Las restricciones de navegacion aportadas por dominios se registran en `core.services.sidebar_access`; el template tag global no debe importar reglas VAT.
@@ -331,6 +335,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - Las pruebas de alcance territorial que ejercitan `Ciudadano` viven en `ciudadanos/test_territorial_scope.py`; el módulo heredado de regresiones de Users vive en `tests/test_users_regressions.py` para no abrir imports de dominio dentro de la app.
 - Los querysets de dominio requeridos por formularios administrativos de Users se registran en `users.form_catalogs`; `users.forms` no debe importar modelos de Comedores, Duplas ni Organizaciones.
 - La expansión de organizaciones y comedores del importador PWA se resuelve mediante `users.pwa_import_access`; Comedores registra el proveedor y `users.services_user_import` sólo consume IDs y especificaciones de acceso.
+- `users.api` es la fachada pública de la proyección PWA por organización. `comedores.signals` y `sincronizar_accesos_pwa_organizaciones` sólo le pasan IDs; `AccesoOrganizacionPWA` es la fuente de verdad y `AccesoComedorPWA` la proyección. El save/soft-delete/restore de `Comedor` es transaccional para estos side effects y los envíos a GESTIONAR quedan en `on_commit`.
 
 ### Convenciones visibles
 
@@ -369,6 +374,9 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 
 - `users/services_user_import.py`: parsing, alta/actualizacion, mail de
   credenciales y exportacion CSV.
+- El alta canónica de `SIMEPI - EGP` es `users.UserCreationForm` en
+  `/usuarios/crear/`; admite uno o más scopes provinciales completos. La URL
+  histórica `/simepi/egp/generar-usuario/` sólo redirige por compatibilidad.
 - `users/services_user_import_jobs.py`: procesamiento y reanudacion del lote.
 - `users/views_user_import.py`, `users/urls.py` y
   `users/templates/user/user_import_job_detail.html`: detalle y descargas.
@@ -433,9 +441,10 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 ### Si necesitas cambiar Relevamientos
 
 - `relevamientos/models.py`
+- `relevamientos/service.py` (asignación territorial local/legacy)
 - `relevamientos/tasks.py`
 - `relevamientos/views.py`
-- `tests/test_relevamientos*`
+- `tests/test_relevamientos*` y `tests/test_territorial_api.py`
 - docs: `docs/flujos/relevamiento_sync.md`
 
 ### Si necesitas cambiar importacion de expedientes de pago
@@ -486,9 +495,14 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
   marca de agua y nunca se adjuntan a la admisión. Al crear un template, el
   tipo de convenio se limita al catálogo de Personerías o Organización Base,
   presentada funcionalmente como Asociación de hecho.
+- La descarga del Informe Técnico ofrece una copia transitoria "Descargar para
+  GDE": prioriza el DOCX editado y, si no existe, el borrador. Se normaliza la
+  geometría OOXML de sus tablas antes de responder, sin reemplazar archivos ni
+  modificar estados.
 - El Informe Tecnico Complementario se abre tanto desde Admision como desde el
   convenio seleccionado en `acompanamientos/views.py` y
   `acompanamientos/templates/acompañamiento_detail.html`.
+- Documentación canónica: `docs/implementaciones/admisiones_informes_tecnicos.md`.
 
 ### Si necesitas cambiar PWA
 
@@ -497,26 +511,97 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - `pwa/models.py`
 - `pwa/api_urls.py`
 - `pwa/api_views.py`
+- `users/services_pwa.py`: alcance PWA, accesos y coordinador de equipo técnico PWA.
+- `users/api_permissions.py`: permisos de lectura y veto transversal de escritura
+  para roles PWA de solo lectura.
+- Toda mutación PWA debe incluir `IsPWAWriteAllowed`, excepto las acciones
+  personales expresamente permitidas (contraseña y suscripciones push).
 - `pwa/services/`
+- alcance de nómina por admisión vigente o comedor directo:
+  `pwa/services/nomina_queryset_service.py`
 - frontend: `mobile/src/api/` y `mobile/src/features/home/`
 - tests `tests/test_pwa_*`
-- docs: `docs/implementaciones/pwa_backend.md`, `docs/seguridad/security_baseline_pwa.md`
+- docs: `docs/implementaciones/pwa_backend.md`,
+  `docs/implementaciones/comedores_certificaciones_prestaciones.md`,
+  `docs/seguridad/security_baseline_pwa.md`
 
 ### Si necesitas cambiar documentos DOCX/PDF de prestaciones o nóminas
 
 - plantillas versionadas: `pwa/files/varios/PROGRAMA.ALIMENTAR.COMUNIDAD.docx` y `pwa/files/varios/NOMINA.DE.DESTINATARIOS.docx`
 - certificación de prestaciones: `comedores/services/certificacion_prestaciones_service.py`
 - nómina de destinatarios: `pwa/services/nomina_destinatarios_pdf_service.py`
+- descarga provincial de niños SIMEPI: endpoint
+  `centrodeinfancia_nomina_ninos_pdf`, servicio
+  `centrodeinfancia/services_nomina_ninos_pdf.py` y pruebas
+  `centrodeinfancia/tests/test_nomina_ninos_pdf.py`; exige grupo `SIMEPI - EGP`
+  y selección explícita de una provincia dentro de uno o más alcances completos,
+  excluye fichas mayores de 48 meses y entrega un JPEG por página
+- contrato canónico de esa descarga, privacidad y formularios CDI:
+  `docs/implementaciones/centrodeinfancia_nomina_ninos_simepi.md`
 - conversión e incrustación de Office en rendiciones: `rendicioncuentasmensual/service_helpers.py`
 - el runtime Django requiere LibreOffice Writer/Calc para convertir DOCX/XLSX a PDF
 
 ### Si necesitas cambiar rendiciones mensuales u Organizaciones
 
 - estados, etapas, subsanaciones y alcance por proyecto: `rendicioncuentasmensual/services.py`
+- solicitudes de documentos faltantes y categorías documentales: `rendicioncuentasmensual/models.py`; el contrato PWA se serializa en `comedores/api_serializers.py`
 - asociación actual: `RendicionCuentaMensual.proyecto`; conservar fallback por `comedor.codigo_de_proyecto` para datos legados
 - listado y detalle del legajo: `organizaciones/views.py` y templates `organizacion_*`
 - proyectos editables: `OrganizacionForm.codigos_proyecto` mantiene el contrato CSV mediante un campo oculto
 - tests: `tests/test_rendicioncuentasmensual_services_unit.py` y `organizaciones/tests.py`
+- escenarios QA de permisos por etapa: `python manage.py seed_rendicion_stage_examples --comedor-id <id>` (solicita la contraseña de forma interactiva)
+- documentación canónica: `docs/flujos/rendiciones_mensuales_proyectos.md`
+
+### Si necesitas cambiar altas de ciudadanos en nómina
+
+- `comedores/forms/comedor_form.py`, `comedores/views/nomina.py` y
+  `comedores/services/comedor_service/impl.py`
+- `tests/test_comedor_form_unit.py` y `tests/test_nomina_views_unit.py`
+- documentación canónica: `docs/implementaciones/comedores_nomina_ciudadanos.md`
+
+### Si necesitas cambiar exportaciones CSV
+
+- Política UTF-8/BOM y helpers HTTP: `core/services/csv_export.py`.
+- Streaming reutilizable: `core/mixins.py:CSVExportMixin`.
+- Admin import/export: `core/admin_import_export.py`.
+- Guía y contrato: `docs/implementaciones/exportar_listados.md`.
+- Los productores CSV nuevos deben reutilizar la política central; el guard
+  vive en `tests/test_csv_export_architecture.py`.
+
+### Si necesitas cambiar Encuestas
+
+- `encuestas/models.py`: `Encuesta` (versionado por edicion, ver `version`/`version_de`), `Pregunta` (condicion de visibilidad via `pregunta_condicion`/`operador_condicion`/`valor_condicion`), `OpcionPregunta`, `SegmentacionEncuesta`/`SegmentacionDestinatario`, `RondaEncuesta`, `RespuestaRonda`/`RespuestaPregunta`, `RecordatorioUsuario`.
+- `encuestas/services.py`: ciclo de vida (crear/editar-nueva version/publicar/abrir-cerrar ronda), respuestas (`registrar_respuesta`, respeta anonimato), segmentacion (`actualizar_segmentacion`, `agregar_destinatario`/`quitar_destinatario`, aplican en caliente con ronda abierta), cola de pendientes (`get_rondas_pendientes_para_request`, cacheada por request) y el scheduler (`procesar_rondas_pendientes`, `run_encuestas_scheduler`).
+- `encuestas/services_resultados.py`: agregacion de resultados por pregunta y export CSV/Excel (nunca vincula contenido a identidad si la encuesta es anonima).
+- `encuestas/validators.py`: parseo del listado de segmentacion (Excel/CSV) y del payload JSON del editor de preguntas (no usa formsets de Django a proposito).
+- `encuestas/middleware.py` (`EncuestaObligatoriaMiddleware`): bloquea la navegacion de cualquier usuario con una encuesta obligatoria pendiente; registrado en `config/settings.py` despues de `ProfileConfirmationMiddleware`. Mismo patron que `users/middleware.py`.
+- `encuestas/context_processors.py`: expone la ronda pendiente al modal global (`templates/includes/base.html` + `encuestas/templates/encuestas/partials/responder_modal.html`); comparte cache de request con el middleware para no duplicar la consulta.
+- `encuestas/management/commands/process_encuestas_rondas.py` + servicio `encuestas_worker` en `docker-compose.yml`: abre/cierra rondas por fecha, sin Celery.
+- `users/bootstrap/groups_seed.py`: grupos `Gestor de Encuestas` y `Encuestas Resultados`.
+- Doc funcional completa (modelo, reglas de negocio, permisos, decisiones y desvios respecto del plan original): `docs/registro/analisis/2026-08-28-modulo-encuestas.md`.
+- Limite conocido: la segmentacion por CUIT nunca matchea a un usuario individual (`users.Profile` no tiene CUIT propio, solo DNI/CUIL).
+### Si necesitas auditar o reparar mojibake en datos
+
+- Reparación conservadora compartida: `core/services/text_encoding.py`.
+- Prevención en RENAPER: `core/integrations/renaper.py`; el JSON se decodifica
+  desde bytes UTF-8 y el payload se normaliza antes de persistirse.
+- Auditoría read-only de campos explícitos: `python manage.py
+  audit_utf8_mojibake --field app.Model.campo`.
+- Reparación focalizada de nombres y apellidos: `python manage.py
+  repair_utf8_mojibake`; es dry-run por defecto y `--apply` requiere backup,
+  ventana y autorización operativa.
+- Diseño y runbook: `docs/plans/2026-09-01-reparacion-mojibake-datos-design.md`
+  y `docs/registro/cambios/2026-09-01-reparacion-mojibake-datos.md`.
+- La variante capitalizada (`ã` más una continuación que reconstruye una letra
+  mayúscula) usa el mismo comando y requiere un nuevo dry-run después de
+  desplegar el correctivo; ver
+  `docs/plans/2026-09-01-reparacion-mojibake-capitalizado-design.md` y
+  `docs/registro/cambios/2026-09-01-reparacion-mojibake-capitalizado.md`.
+- Las variantes restantes que reconstruyen minúsculas requieren además una
+  mayúscula artificial posterior y normalizan sólo el token afectado. El mismo
+  flujo corrige fronteras persistidas como `ÁNabelle`; ver
+  `docs/plans/2026-09-01-reparacion-mojibake-capitalizado-minusculas-design.md`
+  y `docs/registro/cambios/2026-09-01-reparacion-mojibake-capitalizado-minusculas.md`.
 
 ### Si necesitas cambiar OCR / procesamiento documental
 
@@ -526,7 +611,11 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 
 ### Si necesitas cambiar syncs externos
 
-- GESTIONAR: `comedores/tasks.py`, `relevamientos/tasks.py`, management commands relacionados, `.env.example`
+- GESTIONAR: `config/settings.py`, `comedores/tasks.py`,
+  `comedores/services/territorial_service/impl.py`, `relevamientos/tasks.py`,
+  management commands relacionados, `.env.example`. El flag
+  `GESTIONAR_INTEGRATION_ENABLED` corta todo el tráfico AppSheet/GESTIONAR; no
+  usarlo como interruptor parcial.
 - RENAPER: `core/integrations/renaper.py`, `core/services/renaper.py`, docs `docs/flujos/consulta_renaper.md`
 - Ticketera: `ticketera/`, `docs/integraciones/ticketera_api.md`
 
@@ -538,6 +627,19 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - Vouchers VAT: `VAT/services/voucher_service/`,
   `VAT/services/tipo_alumno_service.py`, tests VAT y
   `docs/vat/VOUCHER_SETUP.md`.
+
+### Si necesitas cambiar la búsqueda de Centros VAT por CUE
+
+- API pública: `VAT/api_views.py:CentroViewSet` y
+  `VAT/serializers.py:CentroCueDetalleSerializer`.
+- El parámetro `cue` busca el valor vigente e histórico en
+  `InstitucionIdentificadorHist` y usa `Centro.codigo` como compatibilidad
+  legacy; la respuesta detallada sólo se activa cuando el parámetro está
+  presente.
+- Tests de contrato: `VAT/tests.py` con prefijo
+  `test_api_vat_centros_cue_`.
+- Request manual: `postman/SISOC APIs.postman_collection.json`, carpeta VAT /
+  Centros e institución.
 
 ### Si necesitas cambiar CI o reglas de calidad
 
@@ -559,11 +661,11 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - Producción sondea hasta 30 veces `migrate --check` y su healthcheck luego
   de `deploy_refresh.sh`; si no convergen, publica `docker compose ps` y los
   últimos logs de Django. La regresión vive en `tests/test_deploy_workflow.py`.
-- Ante el bloqueo conocido de `centrodeinfancia.0042`, `deploy.yml` concentra
-  una recuperación manual de los ids legacy 7, 237 y 242: clasifica sin PII y
-  sólo permite nulificarlos bajo categorías exactas, `FOR UPDATE` y transacción;
-  antes archiva el SHA aprobado en un directorio temporal y valida host,
-  servidor y schema de DB esperados, sin tocar el checkout vivo.
+- Ante el bloqueo histórico de `centrodeinfancia.0042`, `deploy.yml` sólo
+  permite inspeccionar sin PII las categorías de los ids legacy 7, 237 y 242.
+  No expone una acción que nulifique filas; antes archiva el SHA aprobado en un
+  directorio temporal y valida host, servidor y schema de DB esperados, sin
+  tocar el checkout vivo.
 - Al cambiar la fecha explícita de un PR a `main`,
   `scripts/ci/pr_doc_automation.py` regenera o elimina el bloque de changelog
   previo de ese PR para no dejar una release fantasma.
@@ -647,6 +749,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - `config/urls.py`: cualquier ajuste impacta routing global.
 - `docker/django/entrypoint.py`: side effects de arranque, migraciones, workers.
 - `users/bootstrap/groups_seed.py` y comandos de grupos: permisos globales.
+- `encuestas/middleware.py`: middleware global nuevo (registrado en `config/settings.py`), puede bloquear la navegacion de cualquier usuario autenticado en cualquier vista del sistema si tiene una encuesta obligatoria pendiente.
 - `comedores/tasks.py` y `relevamientos/tasks.py`: syncs externos, threads y side effects.
 - `signals.py` de varias apps: pueden disparar efectos colaterales no obvios.
 - `templates/includes/` y `templates/components/`: impacto transversal de UI.
@@ -746,6 +849,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 | docx/pdf | `admisiones/services/`, `comedores/services/certificacion_prestaciones_service.py`, `pwa/services/nomina_destinatarios_pdf_service.py`, `pwa/files/varios/` |
 | PWA | `pwa/api_views.py`, `pwa/services/`, tests `test_pwa_*` |
 | OCR | `ocr/`, `docker/django/entrypoint.py` |
+| encuestas | `encuestas/services.py`, `encuestas/middleware.py`, `docs/registro/analisis/2026-08-28-modulo-encuestas.md` |
 | auditoria | `audittrail/`, docs `audittrail_*` |
 | release/deploy | `docs/operacion/*.md`, workflows, compose deploy |
 | CI rota por estilo | `.github/workflows/lint.yml`, `scripts/ci/pr_lint_tools.py` |
@@ -804,8 +908,9 @@ Marcar esas zonas como `A inferir` hasta relevarlas cuando una tarea real las to
 - `.github/workflows/sync-main-downstream.yml`
 - `.github/workflows/pr-docs.yml`: genera los artefactos spec-as-source; usa
   `git status --porcelain --untracked-files=all` para incluir archivos nuevos.
-  Solo pushea en ramas internas no protegidas; para forks y ramas protegidas
-  falla `sync_pr_artifacts` con los paths pendientes para bloquear el merge.
+  Solo pushea en ramas internas no protegidas; `sync_pr_artifacts` verifica
+  también forks y ramas protegidas. Los PRs hacia `main` requieren además
+  release note pendiente y `CHANGELOG.md` ya versionados.
 - `.github/workflows/deploy.yml`
 - `scripts/ai/codex_run.ps1`
 - `scripts/ai/codex_task.ps1`

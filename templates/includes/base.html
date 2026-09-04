@@ -92,7 +92,8 @@
         {% endcomment %}
         <link rel="stylesheet" href="{% static 'custom/css/poncho.css' %}" />
         <link rel="stylesheet" href="{% static 'custom/css/utils.css' %}" />
-        <link rel="stylesheet" href="{% static 'custom/css/main.css' %}" />
+        <link rel="stylesheet"
+              href="{% static 'custom/css/main.css' %}?v=20260821-2" />
         <link rel="stylesheet" href="{% static 'custom/css/select2_theme.css' %}" />
         <link rel="stylesheet" href="{% static 'custom/css/hitos.css' %}" />
         {% comment %}
@@ -159,6 +160,10 @@
             {% block customJS %}{% endblock %}
             <!-- Bloque de modales - renderizado fuera de la estructura principal -->
             {% block modals %}{% endblock %}
+            {% if ronda_pendiente %}
+                {% include "encuestas/partials/responder_modal.html" %}
+                <script src="{% static 'custom/js/encuestaPendienteModal.js' %}" defer></script>
+            {% endif %}
         </div>
     </body>
 </html>

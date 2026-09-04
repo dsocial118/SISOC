@@ -178,6 +178,15 @@ class Profile(models.Model):
         verbose_name="Es Coordinador de Gestión",
         help_text="Marca si este usuario es coordinador de gestión",
     )
+    es_territorial_comedor = models.BooleanField(
+        default=False,
+        verbose_name="Acceso SISOC - Mobile Territorial comedor",
+        help_text=(
+            "Marca al usuario como territorial (relevador) de comedores en "
+            "SISOC - Mobile. El alcance se define por provincia en "
+            "TerritorialComedorProvincia."
+        ),
+    )
     duplas_asignadas = models.ManyToManyField(
         "duplas.Dupla",
         blank=True,
@@ -296,6 +305,43 @@ class ProfileTerritorialScope(models.Model):
         return " / ".join(parts)
 
 
+class TerritorialComedorProvincia(models.Model):
+    """Provincia de alcance de un usuario territorial de comedores (SISOC - Mobile).
+
+    Estructura dedicada al rol territorial: mantiene el alcance desacoplado de
+    ``ProfileTerritorialScope`` (usuarios provinciales) y de ``AccesoComedorPWA``
+    (representantes PWA). Solo modela provincia, que es el eje con el que el pull
+    de territoriales desde GESTIONAR/AppSheet cachea los relevadores.
+    """
+
+    profile = models.ForeignKey(
+        Profile,
+        on_delete=models.CASCADE,
+        related_name="territorial_comedor_provincias",
+    )
+    provincia = models.ForeignKey(
+        Provincia,
+        on_delete=models.PROTECT,
+        related_name="+",
+    )
+
+    class Meta:
+        verbose_name = "Provincia de territorial de comedor"
+        verbose_name_plural = "Provincias de territorial de comedor"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["profile", "provincia"],
+                name="uniq_territorial_comedor_provincia",
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["provincia"]),
+        ]
+
+    def __str__(self):
+        return f"{self.profile.user.username} / {self.provincia}"
+
+
 class AccesoComedorPWA(models.Model):
     """Relación de alcance PWA entre usuario y comedor."""
 
@@ -365,6 +411,88 @@ class AccesoComedorPWA(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.comedor_id} - {self.rol}"
+
+
+class AccesoOrganizacionPWA(models.Model):
+    """Organizaciones asignadas a un usuario PWA.
+
+    Es la fuente de verdad de la relación usuario-organización: los accesos
+    por comedor (`AccesoComedorPWA` con `tipo_asociacion='organizacion'`) se
+    derivan de esta membresía y se reconcilian cuando cambia la organización
+    de un comedor.
+    """
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="accesos_organizacion_pwa",
+    )
+    organizacion = models.ForeignKey(
+        "organizaciones.Organizacion",
+        on_delete=models.PROTECT,
+        related_name="accesos_organizacion_pwa",
+    )
+    creado_por = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="accesos_organizacion_pwa_creados",
+    )
+    activo = models.BooleanField(default=True)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_baja = models.DateTimeField(null=True, blank=True)
+    fecha_actualizacion = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Acceso PWA a organización"
+        verbose_name_plural = "Accesos PWA a organización"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "organizacion"],
+                name="unique_pwa_user_organizacion",
+            )
+        ]
+        indexes = [
+            models.Index(fields=["user", "activo"]),
+            models.Index(fields=["organizacion", "activo"]),
+        ]
+
+    def __str__(self):
+        return f"{self.user.username} - organización {self.organizacion_id}"
+
+
+class CoordinadorEquipoTecnicoPWA(models.Model):
+    """Alcance PWA de solo lectura derivado de equipos técnicos."""
+
+    user = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        related_name="coordinador_equipo_tecnico_pwa",
+    )
+    duplas = models.ManyToManyField(
+        "duplas.Dupla",
+        related_name="coordinadores_pwa",
+        blank=True,
+        verbose_name="Equipos técnicos",
+    )
+    comedores_adicionales = models.ManyToManyField(
+        "comedores.Comedor",
+        related_name="coordinadores_pwa_adicionales",
+        blank=True,
+        verbose_name="Comedores adicionales",
+    )
+    activo = models.BooleanField(default=True)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_actualizacion = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Coordinador de equipo técnico PWA"
+        verbose_name_plural = "Coordinadores de equipo técnico PWA"
+        indexes = [models.Index(fields=["user", "activo"])]
+
+    def __str__(self):
+        return f"{self.user.username} - Coordinador PWA"
 
 
 class AuditAccesoComedorPWA(models.Model):

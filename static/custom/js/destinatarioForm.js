@@ -134,8 +134,9 @@ function checkSectionDomicilio() {
 }
 
 function checkSectionCultura() {
-    const checked = document.querySelectorAll("#id_grupo_pertenencia input[type=checkbox]:checked");
-    return checked.length > 0;
+    // Cultura e identidad es optativa: sin datos no debe presentarse como un
+    // bloqueo. Si se informa algún dato, también se considera completada.
+    return true;
 }
 
 function checkSectionDiscapacidad() {
@@ -159,7 +160,7 @@ function checkSectionVacunacion() {
     ];
     return dosisCodes.some(function (code) {
         return val("id_vacuna_" + code + "_dosis") !== "";
-    }) || val("id_recibe_apoyo_desarrollo") !== "";
+    });
 }
 
 function hasSectionData(sectionId) {
@@ -229,8 +230,11 @@ function initializeConditionalFields() {
 
 function initializeGeography() {
     const provinciaSelect  = document.getElementById("id_provincia_domicilio");
+    const departamentoSelect = document.getElementById("id_departamento");
+    const decilIpiInput = document.getElementById("id_decil_ipi");
     const municipioSelect  = document.getElementById("id_municipio_domicilio");
     const localidadSelect  = document.getElementById("id_localidad_domicilio");
+    const initialDepartamento = departamentoSelect ? departamentoSelect.value : "";
     const initialMunicipio = municipioSelect ? municipioSelect.value : "";
     const initialLocalidad = localidadSelect ? localidadSelect.value : "";
 
@@ -287,13 +291,44 @@ function initializeGeography() {
         return data.length;
     }
 
+    async function loadDepartamentos(provinciaId, selectedValue) {
+        if (!departamentoSelect || !window.ajaxLoadDepartamentosIpiUrl) return;
+        const resp = await fetch(
+            window.ajaxLoadDepartamentosIpiUrl + "?provincia_id=" + provinciaId,
+            { headers: { "X-Requested-With": "XMLHttpRequest" }, credentials: "same-origin" }
+        );
+        if (!resp.ok) throw new Error("HTTP " + resp.status);
+        const data = await resp.json();
+        resetSelect(departamentoSelect, "Seleccionar departamento...");
+        data.forEach(function (item) {
+            const opt = document.createElement("option");
+            opt.value = item.id;
+            opt.textContent = item.nombre || "";
+            opt.dataset.decilIpi = item.decil_ipi ?? "";
+            departamentoSelect.appendChild(opt);
+        });
+        if (selectedValue) departamentoSelect.value = selectedValue;
+        const selected = departamentoSelect.options[departamentoSelect.selectedIndex];
+        if (decilIpiInput) decilIpiInput.value = selected?.dataset.decilIpi || "";
+    }
+
+    if (departamentoSelect) {
+        departamentoSelect.addEventListener("change", function () {
+            const selected = this.options[this.selectedIndex];
+            if (decilIpiInput) decilIpiInput.value = selected?.dataset.decilIpi || "";
+        });
+    }
+
     if (provinciaSelect && municipioSelect) {
         provinciaSelect.addEventListener("change", async function () {
             try {
+                resetSelect(departamentoSelect, "Seleccionar departamento...");
+                if (decilIpiInput) decilIpiInput.value = "";
                 resetSelect(municipioSelect, "Seleccionar municipio...");
                 resetSelect(localidadSelect, "Seleccionar localidad...");
                 setHint(municipioSelect, "");
                 if (!this.value) return;
+                await loadDepartamentos(this.value, "");
                 const total = await loadOptions(
                     window.ajaxLoadMunicipiosUrl + "?provincia_id=" + this.value,
                     municipioSelect, "Seleccionar municipio..."
@@ -317,10 +352,14 @@ function initializeGeography() {
     }
 
     if (provinciaSelect && provinciaSelect.value) {
-        loadOptions(
-            window.ajaxLoadMunicipiosUrl + "?provincia_id=" + provinciaSelect.value,
-            municipioSelect, "Seleccionar municipio..."
-        ).then(function (total) {
+        Promise.all([
+            loadDepartamentos(provinciaSelect.value, initialDepartamento),
+            loadOptions(
+                window.ajaxLoadMunicipiosUrl + "?provincia_id=" + provinciaSelect.value,
+                municipioSelect, "Seleccionar municipio..."
+            ),
+        ]).then(function (results) {
+            const total = results[1];
             setHint(municipioSelect, total === 0 ? SIN_ALCANCE_MSG : "");
             if (initialMunicipio) municipioSelect.value = initialMunicipio;
             if (municipioSelect && municipioSelect.value && localidadSelect) {

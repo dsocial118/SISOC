@@ -1,17 +1,26 @@
 from datetime import date
 
 import pytest
+from django import forms
+from django.contrib.auth.models import Group, User
+from django.conf import settings
+from django.template.loader import render_to_string
 
 from ciudadanos.models import Ciudadano
 from centrodeinfancia.models import (
     CentroDeInfancia,
+    DepartamentoIpi,
     NominaCentroInfancia,
     NominaNacionalidad,
     NominaPais,
     Trabajador,
 )
-from centrodeinfancia.forms import NominaCentroInfanciaDestinatariosForm
+from centrodeinfancia.forms import (
+    NominaCentroInfanciaDestinatariosForm,
+    NominaCentroInfanciaForm,
+)
 from core.models import Localidad, Municipio, Provincia
+from core.constants import UserGroups
 
 
 @pytest.fixture
@@ -61,6 +70,14 @@ def datos_validos(centro, **overrides):
     """Payload completo del legajo de destinatario: todos los campos obligatorios."""
 
     provincia, municipio, localidad, trabajador = _relacionados(centro)
+    departamento, _ = DepartamentoIpi.objects.get_or_create(
+        codigo_departamento="BA-001",
+        defaults={
+            "provincia": provincia,
+            "nombre": "Moreno",
+            "decil_ipi": 3,
+        },
+    )
     datos = {
         # Registro
         "estado": NominaCentroInfancia.ESTADO_ACTIVO,
@@ -74,6 +91,7 @@ def datos_validos(centro, **overrides):
         "sexo": "Masculino",
         "tipo_documentacion": "dni_permanente",
         "dni": "45123456",
+        "cuit_nino": "20-44535030-4",
         "pais_nacimiento": "Argentina",
         "nacionalidad": "Argentino",
         "sala": "Sala Verde",
@@ -84,6 +102,7 @@ def datos_validos(centro, **overrides):
         "responsable_legal_1_fecha_nacimiento": "1990-05-04",
         "responsable_legal_1_tipo_documentacion": "dni_permanente",
         "responsable_legal_1_dni": "30123456",
+        "responsable_legal_1_cuit": "27-30123456-8",
         "responsable_legal_1_pais_nacimiento": "Argentina",
         "responsable_legal_1_nacionalidad": "Argentino",
         "responsable_legal_1_sexo_registral": "mujer",
@@ -95,6 +114,7 @@ def datos_validos(centro, **overrides):
         "departamento_domicilio": "3",
         "tipo_barrio": "urbano",
         "provincia_domicilio": str(provincia.pk),
+        "departamento": str(departamento.pk),
         "municipio_domicilio": str(municipio.pk),
         "localidad_domicilio": str(localidad.pk),
         # Cultura e identidad
@@ -106,8 +126,8 @@ def datos_validos(centro, **overrides):
         # Salud
         "cobertura_salud": "publica_exclusiva",
         "controles_sanitarios_ultimo_anio": "1",
-        "calendario_vacunacion_al_dia": "true",
-        # Antropometría (valores dentro de rango OMS)
+        "calendario_vacunacion_al_dia": "si",
+        # Antropometría
         "peso": "14.2",
         "longitud_acostado": "80.0",
         "talla": "95.0",
@@ -115,9 +135,113 @@ def datos_validos(centro, **overrides):
         # Nutrición
         "lactancia": "no_lactante",
         "alergias_alimentarias": ["leche_vaca"],
+        # Desarrollo infantil temprano
+        "recibe_apoyo_desarrollo": "no",
     }
     datos.update(overrides)
     return datos
+
+
+@pytest.mark.parametrize(
+    "template_path",
+    [
+        "centrodeinfancia/templates/centrodeinfancia/destinatario_form.html",
+        "centrodeinfancia/templates/centrodeinfancia/destinatario_detail.html",
+    ],
+)
+def test_se_renderiza_una_sola_pregunta_de_apoyo_en_discapacidad(template_path):
+    source = (settings.BASE_DIR / template_path).read_text(encoding="utf-8")
+    discapacidad = source.index('data-section="discapacidad"')
+    salud = source.index('data-section="salud"')
+    campo_visible = (
+        "recibe_apoyo_desarrollo"
+        if template_path.endswith("destinatario_form.html")
+        else "apoyo_desarrollo_unificado_display"
+    )
+    apoyo = source.index(campo_visible)
+
+    assert source.count(campo_visible) == 1
+    assert "recibe_apoyo_discapacidad" not in source
+    assert discapacidad < apoyo < salud
+
+
+@pytest.mark.django_db
+def test_apoyo_unificado_recupera_y_sincroniza_el_campo_historico(centro, ciudadano):
+    nomina = NominaCentroInfancia.objects.create(
+        centro=centro,
+        ciudadano=ciudadano,
+        recibe_apoyo_discapacidad=True,
+    )
+    form = NominaCentroInfanciaDestinatariosForm(instance=nomina, centro=centro)
+    assert form.initial["recibe_apoyo_desarrollo"] == "si"
+    assert nomina.apoyo_desarrollo_unificado_display == "Sí"
+
+    form = NominaCentroInfanciaDestinatariosForm(
+        datos_validos(
+            centro,
+            tiene_discapacidad="si",
+            tipo_discapacidad=["motora"],
+            recibe_apoyo_desarrollo="no",
+        ),
+        instance=nomina,
+        centro=centro,
+    )
+
+    assert form.is_valid(), form.errors
+    actualizado = form.save()
+    assert actualizado.recibe_apoyo_desarrollo == "no"
+    assert actualizado.recibe_apoyo_discapacidad is False
+
+
+@pytest.mark.django_db
+def test_apoyo_unificado_no_rellena_campo_historico_sin_discapacidad(centro):
+    form = NominaCentroInfanciaDestinatariosForm(
+        datos_validos(
+            centro,
+            tiene_discapacidad="no",
+            recibe_apoyo_desarrollo="no",
+        ),
+        centro=centro,
+    )
+
+    assert form.is_valid(), form.errors
+    nomina = form.save(commit=False)
+    assert nomina.recibe_apoyo_desarrollo == "no"
+    assert nomina.recibe_apoyo_discapacidad is None
+
+
+@pytest.mark.django_db
+def test_apoyo_unificado_es_obligatorio_aunque_no_haya_discapacidad(centro):
+    form = NominaCentroInfanciaDestinatariosForm(
+        datos_validos(
+            centro,
+            tiene_discapacidad="no",
+            recibe_apoyo_desarrollo="",
+        ),
+        centro=centro,
+    )
+
+    assert not form.is_valid()
+    assert "recibe_apoyo_desarrollo" in form.errors
+
+
+@pytest.mark.django_db
+def test_formulario_ajax_expone_solo_apoyo_canonico(ciudadano, centro):
+    nomina = NominaCentroInfancia.objects.create(
+        centro=centro,
+        ciudadano=ciudadano,
+        recibe_apoyo_discapacidad=True,
+    )
+
+    form = NominaCentroInfanciaForm(instance=nomina)
+
+    assert "recibe_apoyo_desarrollo" in form.fields
+    assert "recibe_apoyo_discapacidad" not in form.fields
+    assert form.fields["recibe_apoyo_desarrollo"].required is True
+    assert form.initial["recibe_apoyo_desarrollo"] == "si"
+    html = render_to_string("centrodeinfancia/nomina_editar_ajax.html", {"form": form})
+    assert 'name="recibe_apoyo_desarrollo"' in html
+    assert 'name="recibe_apoyo_discapacidad"' not in html
 
 
 # ─────────────────────────────────────────────────────────
@@ -128,10 +252,85 @@ def datos_validos(centro, **overrides):
 @pytest.mark.django_db
 class TestNominaCentroInfanciaDestinatariosFormValidation:
 
+    def test_sala_es_select_unico_con_opciones_solicitadas(self, centro):
+        form = NominaCentroInfanciaDestinatariosForm(centro=centro)
+        assert not isinstance(form.fields["sala"].widget, forms.SelectMultiple)
+        assert [label for _value, label in form.fields["sala"].choices[1:]] == [
+            "Menos de un año",
+            "1 año",
+            "2 años",
+            "3 años",
+            "4 años",
+            "Multiedad",
+        ]
+
+    def test_piso_y_departamento_habitacional_son_opcionales(self, centro):
+        data = datos_validos(centro)
+        data.pop("piso_domicilio", None)
+        data.pop("departamento_domicilio", None)
+        form = NominaCentroInfanciaDestinatariosForm(data, centro=centro)
+        assert form.is_valid(), form.errors
+
+    def test_departamento_jurisdiccional_se_filtra_por_provincia(self, centro):
+        provincia, _, _, _ = _relacionados(centro)
+        otro_provincia = Provincia.objects.create(nombre="Chaco")
+        DepartamentoIpi.objects.create(
+            codigo_departamento="CHA-001",
+            provincia=otro_provincia,
+            nombre="Capital",
+        )
+        form = NominaCentroInfanciaDestinatariosForm(centro=centro)
+        assert (
+            list(
+                form.fields["departamento"].queryset.values_list(
+                    "provincia_id", flat=True
+                )
+            )
+            == []
+        )
+
+        form = NominaCentroInfanciaDestinatariosForm(
+            datos_validos(centro), centro=centro
+        )
+        assert set(
+            form.fields["departamento"].queryset.values_list("provincia_id", flat=True)
+        ) == {provincia.pk}
+
+    def test_departamento_bonaerense_id_16_es_valido_en_su_jurisdiccion(self, centro):
+        provincia, _, _, _ = _relacionados(centro)
+        departamento = DepartamentoIpi.objects.create(
+            pk=16,
+            codigo_departamento="06001",
+            provincia=provincia,
+            nombre="Adolfo Alsina",
+        )
+
+        form = NominaCentroInfanciaDestinatariosForm(
+            datos_validos(centro, departamento=str(departamento.pk)), centro=centro
+        )
+
+        assert form.is_valid(), form.errors
+
     def test_form_valido_con_datos_minimos(self, centro):
         form = NominaCentroInfanciaDestinatariosForm(
             datos_validos(centro), centro=centro
         )
+        assert form.is_valid(), form.errors
+
+    def test_mayor_de_48_meses_queda_pendiente_salvo_admin_simepi(self, centro):
+        actor = User.objects.create_user(username="operador-nomina")
+        data = datos_validos(centro, fecha_nacimiento="2020-01-01")
+        form = NominaCentroInfanciaDestinatariosForm(data, centro=centro, actor=actor)
+
+        assert not form.is_valid()
+        assert "estado" in form.errors
+
+        admin_group, _ = Group.objects.get_or_create(
+            name=UserGroups.SIMEPI_ADMINISTRADOR
+        )
+        actor.groups.add(admin_group)
+        form = NominaCentroInfanciaDestinatariosForm(data, centro=centro, actor=actor)
+
         assert form.is_valid(), form.errors
 
     def test_form_invalido_sin_apellido(self, centro):
@@ -147,6 +346,36 @@ class TestNominaCentroInfanciaDestinatariosFormValidation:
         form = NominaCentroInfanciaDestinatariosForm(data, centro=centro)
         assert not form.is_valid()
         assert "nombre" in form.errors
+
+    def test_form_invalido_sin_cuit_del_nino(self, centro):
+        data = datos_validos(centro)
+        data.pop("cuit_nino")
+        form = NominaCentroInfanciaDestinatariosForm(data, centro=centro)
+        assert not form.is_valid()
+        assert "cuit_nino" in form.errors
+
+    def test_form_invalido_sin_cuit_del_responsable_1(self, centro):
+        data = datos_validos(centro)
+        data.pop("responsable_legal_1_cuit")
+
+        form = NominaCentroInfanciaDestinatariosForm(data, centro=centro)
+
+        assert not form.is_valid()
+        assert "responsable_legal_1_cuit" in form.errors
+
+    def test_unidad_de_edad_es_automatica_y_no_admite_post_manipulado(self, centro):
+        form = NominaCentroInfanciaDestinatariosForm(
+            datos_validos(
+                centro,
+                fecha_nacimiento="2021-07-01",
+                edad_unidad="meses",
+            ),
+            centro=centro,
+        )
+
+        assert form.fields["edad_unidad"].disabled is True
+        assert form.is_valid(), form.errors
+        assert form.cleaned_data["edad_unidad"] == "anios"
 
     def test_form_invalido_fecha_nacimiento_incorrecta(self, centro):
         form = NominaCentroInfanciaDestinatariosForm(
@@ -190,6 +419,17 @@ class TestNominaCentroInfanciaDestinatariosFormJsonFields:
         nomina.refresh_from_db()
         assert set(nomina.alergias_alimentarias) == {"leche_vaca", "tacc"}
 
+    def test_acepta_la_opcion_sin_alergias_alimentarias(self, centro):
+        form = NominaCentroInfanciaDestinatariosForm(
+            datos_validos(centro, alergias_alimentarias=["sin_alergias_alimentarias"]),
+            centro=centro,
+        )
+
+        assert form.is_valid(), form.errors
+        assert form.cleaned_data["alergias_alimentarias"] == [
+            "sin_alergias_alimentarias"
+        ]
+
     def test_grupo_pertenencia_se_guarda_como_lista(self, centro, ciudadano):
         data = datos_validos(centro, grupo_pertenencia=["africano", "asiatico"])
         form = NominaCentroInfanciaDestinatariosForm(data, centro=centro)
@@ -207,7 +447,7 @@ class TestNominaCentroInfanciaDestinatariosFormJsonFields:
             tiene_discapacidad="si",
             tipo_discapacidad=["motora", "visual"],
             # Obligatorio cuando hay discapacidad (TC_102).
-            recibe_apoyo_discapacidad="true",
+            recibe_apoyo_desarrollo="si",
         )
         form = NominaCentroInfanciaDestinatariosForm(data, centro=centro)
         assert form.is_valid(), form.errors
@@ -393,7 +633,7 @@ class TestValidacionesQA:
         form = self._form(
             centro,
             tiene_discapacidad="si",
-            recibe_apoyo_discapacidad="true",
+            recibe_apoyo_desarrollo="si",
             posee_cud="true",
             numero_cud="ABC123",
         )
@@ -405,7 +645,7 @@ class TestValidacionesQA:
         form = self._form(
             centro,
             tiene_discapacidad="si",
-            recibe_apoyo_discapacidad="true",
+            recibe_apoyo_desarrollo="si",
             posee_cud="true",
             numero_cud="",
         )
@@ -414,15 +654,27 @@ class TestValidacionesQA:
 
     # TC_102: si hay discapacidad, los apoyos son obligatorios
     def test_apoyos_obligatorios_si_tiene_discapacidad(self, centro):
-        form = self._form(centro, tiene_discapacidad="si", recibe_apoyo_discapacidad="")
+        form = self._form(centro, tiene_discapacidad="si", recibe_apoyo_desarrollo="")
         assert not form.is_valid()
-        assert "recibe_apoyo_discapacidad" in form.errors
+        assert "recibe_apoyo_desarrollo" in form.errors
+
+    def test_tipo_discapacidad_obligatorio_si_tiene_discapacidad(self, centro):
+        form = self._form(
+            centro,
+            tiene_discapacidad="si",
+            recibe_apoyo_desarrollo="no",
+            tipo_discapacidad=[],
+        )
+
+        assert not form.is_valid()
+        assert "tipo_discapacidad" in form.errors
 
     def test_acepta_sin_apoyo_si_tiene_discapacidad(self, centro):
         form = self._form(
             centro,
             tiene_discapacidad="si",
-            recibe_apoyo_discapacidad="false",
+            recibe_apoyo_desarrollo="no",
+            tipo_discapacidad=["motora"],
         )
         assert form.is_valid(), form.errors
 
@@ -431,7 +683,7 @@ class TestValidacionesQA:
         form = self._form(
             centro,
             tiene_discapacidad="si",
-            recibe_apoyo_discapacidad="true",
+            recibe_apoyo_desarrollo="si",
             tipo_discapacidad=["no_sabe", "motora"],
         )
         assert not form.is_valid()
@@ -442,6 +694,39 @@ class TestValidacionesQA:
         form = self._form(centro, grupo_pertenencia=["ninguno", "africano"])
         assert not form.is_valid()
         assert "grupo_pertenencia" in form.errors
+
+    def test_acepta_no_sabe_en_preguntas_obligatorias_de_categorias_solicitadas(
+        self, centro
+    ):
+        form = self._form(
+            centro,
+            grupo_pertenencia=["no_sabe"],
+            lenguajes=["no_sabe"],
+            necesito_interprete="no_sabe",
+            tiene_discapacidad="ns_nc",
+            cobertura_salud="no_sabe",
+            controles_sanitarios_ultimo_anio="no_sabe",
+            calendario_vacunacion_al_dia="no_sabe",
+            lactancia="no_sabe",
+            alergias_alimentarias=["no_sabe"],
+            recibe_apoyo_desarrollo="no_sabe",
+        )
+
+        assert form.is_valid(), form.errors
+
+    @pytest.mark.parametrize(
+        ("campo", "valor"),
+        [
+            ("grupo_pertenencia", ["no_sabe", "indigena"]),
+            ("lenguajes", ["no_sabe", "espanol_castellano"]),
+            ("alergias_alimentarias", ["no_sabe", "leche_vaca"]),
+        ],
+    )
+    def test_no_sabe_es_excluyente_en_multiselects_de_ninos(self, centro, campo, valor):
+        form = self._form(centro, **{campo: valor})
+
+        assert not form.is_valid()
+        assert campo in form.errors
 
     # TC_034/048: teléfono de 6 a 15 dígitos (criterio único del sistema)
     @pytest.mark.parametrize("valor", ["12345", "1234567890123456"])
@@ -489,8 +774,6 @@ class TestValidacionesQA:
             ("peso", "40"),  # > 29.5
             ("longitud_acostado", "20"),  # < 34.9
             ("longitud_acostado", "200"),  # > 115.0
-            ("talla", "50"),  # < 60.6
-            ("talla", "200"),  # > 146.4
             ("perimetro_cefalico", "10"),  # < 25.2
             ("perimetro_cefalico", "90"),  # > 64.7
         ],
@@ -505,7 +788,6 @@ class TestValidacionesQA:
         [
             ("peso", "1.6"),
             ("peso", "29.5"),
-            ("talla", "146.4"),
             ("perimetro_cefalico", "25.2"),
         ],
     )
@@ -513,8 +795,21 @@ class TestValidacionesQA:
         form = self._form(centro, **{campo: valor})
         assert form.is_valid(), form.errors
 
-    def test_talla_rechaza_texto(self, centro):
-        # talla dejó de ser texto libre: ahora es numérico.
+    def test_talla_legacy_acepta_texto_y_no_es_obligatoria(self, centro):
+        # El rollback preserva los valores históricos de texto y no obliga a cargarlo.
         form = self._form(centro, talla="alto")
-        assert not form.is_valid()
-        assert "talla" in form.errors
+        assert form.is_valid(), form.errors
+
+        data = datos_validos(centro)
+        data.pop("talla")
+        form = NominaCentroInfanciaDestinatariosForm(data, centro=centro)
+        assert form.is_valid(), form.errors
+
+    def test_antropometria_es_optativa(self, centro):
+        data = datos_validos(centro)
+        for campo in ("talla", "peso", "longitud_acostado", "perimetro_cefalico"):
+            data.pop(campo)
+
+        form = NominaCentroInfanciaDestinatariosForm(data, centro=centro)
+
+        assert form.is_valid(), form.errors

@@ -5,7 +5,7 @@ import traceback
 
 from django.views import View
 from django.views.generic import ListView, CreateView, DetailView, UpdateView
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.shortcuts import get_object_or_404, redirect
 from django.http import (
     FileResponse,
@@ -58,15 +58,30 @@ from celiaquia.services.importacion_service import (
     _resolver_nacionalidad_payload_importacion,
     validar_y_normalizar_payloads_importacion,
 )
+from celiaquia.comentarios_tecnicos import (
+    TipoDocumentoComentario,
+    catalogo_serializable as catalogo_comentarios_tecnicos,
+)
 from celiaquia.permissions import can_delete_legajo
+from celiaquia.services.comentarios_tecnicos_service import ComentariosTecnicosService
 from celiaquia.services.cruce_service import CruceService
 from celiaquia.services.cupo_service import CupoService, CupoNoConfigurado
+from celiaquia.services.expediente_filter_config import (  # pylint: disable=no-name-in-module
+    CHOICE_OPS,
+    DATE_OPS,
+    FIELD_MAP as EXPEDIENTE_FILTER_MAP,
+    FIELD_TYPES as EXPEDIENTE_FILTER_TYPES,
+    NUM_OPS,
+    TEXT_OPS,
+    get_filters_ui_config,
+)
 from celiaquia.services.padron_final_service import (  # pylint: disable=no-name-in-module
     PadronFinalService,
 )
 from django.utils import timezone
 from django.db import transaction
 from core.models import Nacionalidad, Provincia, Localidad
+from core.services.advanced_filters import AdvancedFilterEngine
 from core.soft_delete.preview import build_delete_preview
 from core.soft_delete.view_helpers import is_soft_deletable_instance
 from users.territorial_scope import (
@@ -83,6 +98,35 @@ ROLE_COORDINADOR_CELIAQUIA_PERMISSION = "auth.role_coordinadorceliaquia"
 ROLE_TECNICO_CELIAQUIA_PERMISSION = "auth.role_tecnicoceliaquia"
 ROLE_PROVINCIA_CELIAQUIA_PERMISSION = "auth.role_provinciaceliaquia"
 
+EXPEDIENTE_ADVANCED_FILTER = AdvancedFilterEngine(
+    field_map=EXPEDIENTE_FILTER_MAP,
+    field_types=EXPEDIENTE_FILTER_TYPES,
+    allowed_ops={
+        "text": TEXT_OPS,
+        "number": NUM_OPS,
+        "date": DATE_OPS,
+        "choice": CHOICE_OPS,
+    },
+)
+EXPEDIENTE_ADVANCED_FILTER_SIN_TECNICO = AdvancedFilterEngine(
+    field_map={
+        field: lookup
+        for field, lookup in EXPEDIENTE_FILTER_MAP.items()
+        if field != "tecnico"
+    },
+    field_types={
+        field: field_type
+        for field, field_type in EXPEDIENTE_FILTER_TYPES.items()
+        if field != "tecnico"
+    },
+    allowed_ops={
+        "text": TEXT_OPS,
+        "number": NUM_OPS,
+        "date": DATE_OPS,
+        "choice": CHOICE_OPS,
+    },
+)
+
 
 def _user_has_permission(user, permission_code: str) -> bool:
     return user_has_permission_code(user, permission_code)
@@ -92,6 +136,14 @@ def _is_admin(user) -> bool:
     return bool(
         getattr(user, "is_authenticated", False)
         and getattr(user, "is_superuser", False)
+    )
+
+
+def _can_view_tecnico_column(user) -> bool:
+    return bool(
+        _is_admin(user)
+        or _user_has_permission(user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION)
+        or _user_has_permission(user, ROLE_TECNICO_CELIAQUIA_PERMISSION)
     )
 
 
@@ -786,6 +838,19 @@ class ExpedienteListView(ListView):
                 | Q(asignaciones_tecnicos__tecnico__username__icontains=search_query)
             ).distinct()
 
+        # Filtros combinables (?filters=...). Se aplican sobre el queryset ya
+        # acotado por rol/territorio, así ningún filtro puede ampliar el alcance.
+        # El distinct() cubre el filtro por técnico, que atraviesa una relación
+        # multivalor y de otro modo repetiría el expediente por cada asignación.
+        advanced_filter = (
+            EXPEDIENTE_ADVANCED_FILTER
+            if _can_view_tecnico_column(user)
+            else EXPEDIENTE_ADVANCED_FILTER_SIN_TECNICO
+        )
+        filtros_q = advanced_filter.build_q(self.request)
+        if filtros_q is not None:
+            qs = qs.filter(filtros_q).distinct()
+
         return qs
 
     def get_context_data(self, **kwargs):
@@ -802,7 +867,7 @@ class ExpedienteListView(ListView):
         ctx["is_provincial_celiaquia"] = _is_provincial(user)
         ctx["can_manage_tecnicos_celiaquia"] = is_admin or is_coord
         ctx["can_manage_excel_masivo_audit"] = is_admin or is_coord
-        ctx["show_tecnico_column_celiaquia"] = is_admin or is_coord or is_tecnico
+        ctx["show_tecnico_column_celiaquia"] = _can_view_tecnico_column(user)
 
         # El titulo depende del rol y lo consume el componente de busqueda, que
         # lo recibe como parametro; armarlo aca evita repetir el include.
@@ -813,8 +878,20 @@ class ExpedienteListView(ListView):
         else:
             ctx["titulo_listado"] = "Mis Expedientes"
 
+        # Filtros combinables. El campo "Técnico asignado" solo se ofrece a quien
+        # ve la columna de técnico; para el resto get_filters_ui_config lo omite
+        # al no recibir técnicos seleccionables.
+        tecnicos_filtrables = (
+            _tecnicos_queryset().order_by("last_name", "first_name")
+            if ctx["show_tecnico_column_celiaquia"]
+            else None
+        )
         if is_admin or is_coord:
-            ctx["tecnicos"] = _tecnicos_queryset().order_by("last_name", "first_name")
+            ctx["tecnicos"] = tecnicos_filtrables
+
+        ctx["filters_mode"] = True
+        ctx["filters_config"] = get_filters_ui_config(tecnicos=tecnicos_filtrables)
+        ctx["filters_action"] = reverse("expediente_list")
         return ctx
 
 
@@ -1094,8 +1171,12 @@ class ExpedienteDetailView(DetailView):
                 filter=Q(revision_tecnico="APROBADO", resultado_sintys="NO_MATCH"),
             ),
             c_subsanar=Count("id", filter=Q(revision_tecnico=RevisionTecnico.SUBSANAR)),
+            c_total=Count("id"),
         )
         ctx["hay_subsanar"] = counts["c_subsanar"] > 0
+        # Total de legajos del expediente. Sale del mismo aggregate que los
+        # conteos por estado, así que no agrega consultas.
+        ctx["legajos_total"] = counts["c_total"]
         ctx["legajos_aceptados"] = q.filter(
             revision_tecnico="APROBADO", resultado_sintys="MATCH"
         )
@@ -1216,6 +1297,12 @@ class ExpedienteDetailView(DetailView):
                     legajo.archivos_requeridos.items(), start=1
                 )
             ]
+            # La provincia ve el panel de comentarios en los estados en que
+            # puede haber observaciones publicadas: mientras subsana, después
+            # de responder (para releer qué le pidieron) y si se la rechazó.
+            legajo.comentarios_visibles_provincia = (
+                legajo.revision_tecnico in ESTADOS_CON_COMENTARIOS_PUBLICADOS
+            )
             # Subsanación activa (pendiente de respuesta) para que la provincia
             # adjunte archivos correctivos y se listen las evidencias cargadas.
             # Historial completo de subsanaciones (usa el prefetch del queryset).
@@ -1534,6 +1621,11 @@ class ExpedienteDetailView(DetailView):
                 "total_hijos_sin_responsable": len(
                     estructura_familiar.get("hijos_sin_responsable", [])
                 ),
+                # Catálogo de observaciones del formulario de comentarios
+                # técnicos: el desplegable se filtra por tipo de documento en
+                # el cliente, sin ida y vuelta al servidor.
+                "catalogo_comentarios_tecnicos": catalogo_comentarios_tecnicos(),
+                "tipos_documento_comentario": TipoDocumentoComentario.choices,
             }
         )
         return ctx
@@ -1883,6 +1975,45 @@ class SubirCruceExcelView(View):
         return HttpResponseNotAllowed(["POST"])
 
 
+#: Estados del legajo en los que la provincia puede tener observaciones
+#: técnicas publicadas y por lo tanto ve el panel de comentarios. Queda afuera
+#: PENDIENTE, donde todavía no se publicó nada. Se enumeran los estados que
+#: habilitan el panel, y no los que lo niegan, para que un estado nuevo no pase
+#: a mostrar comentarios internos por descuido.
+ESTADOS_CON_COMENTARIOS_PUBLICADOS = {
+    RevisionTecnico.SUBSANAR,
+    RevisionTecnico.SUBSANADO,
+    RevisionTecnico.RECHAZADO,
+    RevisionTecnico.APROBADO,
+}
+
+#: Los comentarios técnicos se registran por tipo de documento; las
+#: observaciones de la Fase 2 usan las categorías previas. ANSES y condición
+#: diagnóstica son ambas cuestiones de documentación respaldatoria.
+MAPA_TIPO_DOCUMENTO_A_SUBSANACION = {
+    TipoDocumentoComentario.RENAPER.value: TipoSubsanacion.RENAPER,
+    TipoDocumentoComentario.ANSES.value: TipoSubsanacion.DOCUMENTACION,
+    TipoDocumentoComentario.CONDICION_DIAGNOSTICA.value: TipoSubsanacion.DOCUMENTACION,
+}
+
+
+def _observaciones_desde_comentarios_tecnicos(legajo):
+    """Observaciones (tipo, detalle) derivadas de los comentarios técnicos.
+
+    Traduce las observaciones publicables del legajo al formato que consumen
+    `Subsanacion`/`SubsanacionObservacion`. Lista vacía si el legajo todavía no
+    tiene comentarios técnicos con observaciones."""
+    return [
+        (
+            MAPA_TIPO_DOCUMENTO_A_SUBSANACION.get(
+                comentario.tipo_documento, TipoSubsanacion.OTROS
+            ),
+            comentario.comentario,
+        )
+        for comentario in ComentariosTecnicosService.observaciones_publicables(legajo)
+    ]
+
+
 def _parse_observaciones_subsanacion(request, motivo_general):
     """Construye la lista de (tipo, detalle) de una solicitud de subsanación.
 
@@ -1924,6 +2055,140 @@ def _parse_observaciones_subsanacion(request, motivo_general):
 
 @method_decorator(csrf_protect, name="dispatch")
 class RevisarLegajoView(View):
+    def _componer_motivo(self, request, leg):
+        """Motivo de Subsanar/Rechazar armado en backend.
+
+        Concatena las observaciones técnicas del legajo (las que tienen
+        observaciones = Sí) y le suma el texto libre complementario. Lo que
+        llega del cliente es solo ese texto libre: la previsualización que
+        muestra el modal no es la fuente de verdad. Devuelve
+        ``(motivo, None)`` o ``("", JsonResponse)`` cuando no hay nada que
+        comunicar."""
+        texto_libre = request.POST.get("texto_libre")
+        if texto_libre is None:
+            # La UI previa al issue #2318 manda el motivo en `motivo`.
+            texto_libre = request.POST.get("motivo") or ""
+        try:
+            return ComentariosTecnicosService.componer_motivo(leg, texto_libre), None
+        except ValidationError as exc:
+            return "", JsonResponse(
+                {"success": False, "error": "; ".join(exc.messages)}, status=400
+            )
+
+    def _rechazar(self, user, leg, motivo):
+        """Rechaza el legajo, registra la auditoría y publica las observaciones."""
+        estado_anterior = leg.revision_tecnico
+        leg.revision_tecnico = "RECHAZADO"
+        # Marcar RENAPER como rechazado también
+        if getattr(leg, "estado_validacion_renaper", 0) == 0:
+            leg.estado_validacion_renaper = 2
+
+        with transaction.atomic():
+            leg.save(
+                update_fields=[
+                    "revision_tecnico",
+                    "estado_validacion_renaper",
+                    "modificado_en",
+                    "estado_cupo",
+                    "es_titular_activo",
+                ]
+            )
+
+            HistorialValidacionTecnica.objects.create(
+                legajo=leg,
+                estado_anterior=estado_anterior,
+                estado_nuevo="RECHAZADO",
+                usuario=user,
+                motivo=motivo,
+            )
+
+            publicados = ComentariosTecnicosService.publicar(leg, usuario=user)
+
+        return JsonResponse(
+            {
+                "success": True,
+                "estado": leg.revision_tecnico,
+                "cupo_liberado": True,
+                "comentarios_publicados": publicados,
+            }
+        )
+
+    def _subsanar(self, request, user, leg, motivo):
+        """Solicita la subsanación: estado, observaciones y publicación."""
+        tipo_subsanacion = (request.POST.get("tipo_subsanacion") or "").strip()
+
+        # Las observaciones salen de los comentarios técnicos del legajo. Si
+        # todavía no tiene ninguno (legajos previos al issue #2318), se cae al
+        # parseo del POST para no romper el flujo anterior.
+        observaciones = _observaciones_desde_comentarios_tecnicos(
+            leg
+        ) or _parse_observaciones_subsanacion(request, motivo)
+
+        estado_anterior = leg.revision_tecnico
+        leg.revision_tecnico = RevisionTecnico.SUBSANAR
+        # Campos legacy: se preserva el primer tipo y el motivo general para
+        # compatibilidad con la UI y los datos previos a la Fase 1.
+        leg.subsanacion_tipo = (
+            observaciones[0][0] if observaciones else (tipo_subsanacion or None)
+        )
+        leg.subsanacion_motivo = motivo
+        leg.subsanacion_solicitada_en = timezone.now()
+        leg.subsanacion_usuario = user
+        # Nota: la subsanación técnica ya no marca estado_validacion_renaper=3.
+        # Ese estado queda reservado para la validación RENAPER real
+        # (ValidacionRenaperView). Así la respuesta se gestiona por el flujo
+        # unificado de subsanación (multi-archivo) en lugar del modal RENAPER.
+
+        with transaction.atomic():
+            leg.save(
+                update_fields=[
+                    "revision_tecnico",
+                    "subsanacion_tipo",
+                    "subsanacion_motivo",
+                    "subsanacion_solicitada_en",
+                    "subsanacion_usuario",
+                    "modificado_en",
+                    "estado_cupo",
+                    "es_titular_activo",
+                ]
+            )
+
+            HistorialValidacionTecnica.objects.create(
+                legajo=leg,
+                estado_anterior=estado_anterior,
+                estado_nuevo=RevisionTecnico.SUBSANAR,
+                usuario=user,
+                motivo=motivo,
+            )
+
+            subsanacion = Subsanacion.objects.create(
+                legajo=leg,
+                estado=SubsanacionEstado.PENDIENTE,
+                motivo_general=motivo,
+                solicitada_por=user,
+            )
+            SubsanacionObservacion.objects.bulk_create(
+                [
+                    SubsanacionObservacion(
+                        subsanacion=subsanacion, tipo=tipo, detalle=detalle
+                    )
+                    for tipo, detalle in observaciones
+                ]
+            )
+
+            publicados = ComentariosTecnicosService.publicar(leg, usuario=user)
+
+        return JsonResponse(
+            {
+                "success": True,
+                "estado": str(RevisionTecnico.SUBSANAR),
+                "cupo_liberado": True,
+                "subsanacion_id": subsanacion.pk,
+                "observaciones": len(observaciones),
+                "comentarios_publicados": publicados,
+            }
+        )
+
     def _eliminar_legajo(self, request, user, leg):
         """Elimina un legajo (baja lógica en cascada) liberando el cupo si estaba
         ocupado. Soporta el modo `preview` para confirmar antes de eliminar y
@@ -2079,6 +2344,14 @@ class RevisarLegajoView(View):
                     status=400,
                 )
 
+        # El motivo se compone antes de tocar el cupo y el estado: si no hay
+        # nada que comunicar, el legajo tiene que quedar intacto.
+        motivo = ""
+        if accion in ("RECHAZAR", "SUBSANAR"):
+            motivo, error = self._componer_motivo(request, leg)
+            if error:
+                return error
+
         # Si RECHAZAR / SUBSANAR y estaba dentro de cupo -> liberar
         if accion in ("RECHAZAR", "SUBSANAR") and leg.estado_cupo == "DENTRO":
             try:
@@ -2126,41 +2399,8 @@ class RevisarLegajoView(View):
                 }
             )
 
-        motivo = (request.POST.get("motivo") or "").strip()
-
         if accion == "RECHAZAR":
-            if not motivo:
-                return JsonResponse(
-                    {"success": False, "error": "Debe indicar un motivo de rechazo."},
-                    status=400,
-                )
-
-            estado_anterior = leg.revision_tecnico
-            leg.revision_tecnico = "RECHAZADO"
-            # Marcar RENAPER como rechazado también
-            if getattr(leg, "estado_validacion_renaper", 0) == 0:
-                leg.estado_validacion_renaper = 2
-            leg.save(
-                update_fields=[
-                    "revision_tecnico",
-                    "estado_validacion_renaper",
-                    "modificado_en",
-                    "estado_cupo",
-                    "es_titular_activo",
-                ]
-            )
-
-            HistorialValidacionTecnica.objects.create(
-                legajo=leg,
-                estado_anterior=estado_anterior,
-                estado_nuevo="RECHAZADO",
-                usuario=user,
-                motivo=motivo[:500],
-            )
-
-            return JsonResponse(
-                {"success": True, "estado": leg.revision_tecnico, "cupo_liberado": True}
-            )
+            return self._rechazar(user, leg, motivo)
 
         # ELIMINAR - Solo coordinadores y admin (técnicos no eliminan)
         if accion == "ELIMINAR":
@@ -2178,76 +2418,7 @@ class RevisarLegajoView(View):
             return self._eliminar_legajo(request, user, leg)
 
         # SUBSANAR
-        tipo_subsanacion = (request.POST.get("tipo_subsanacion") or "").strip()
-        if not motivo:
-            return JsonResponse(
-                {"success": False, "error": "Debe indicar un motivo de subsanación."},
-                status=400,
-            )
-
-        observaciones = _parse_observaciones_subsanacion(request, motivo)
-
-        estado_anterior = leg.revision_tecnico
-        leg.revision_tecnico = RevisionTecnico.SUBSANAR
-        # Campos legacy: se preserva el primer tipo y el motivo general para
-        # compatibilidad con la UI y los datos previos a la Fase 1.
-        leg.subsanacion_tipo = (
-            observaciones[0][0] if observaciones else (tipo_subsanacion or None)
-        )
-        leg.subsanacion_motivo = motivo[:500]
-        leg.subsanacion_solicitada_en = timezone.now()
-        leg.subsanacion_usuario = user
-        # Nota: la subsanación técnica ya no marca estado_validacion_renaper=3.
-        # Ese estado queda reservado para la validación RENAPER real
-        # (ValidacionRenaperView). Así la respuesta se gestiona por el flujo
-        # unificado de subsanación (multi-archivo) en lugar del modal RENAPER.
-
-        with transaction.atomic():
-            leg.save(
-                update_fields=[
-                    "revision_tecnico",
-                    "subsanacion_tipo",
-                    "subsanacion_motivo",
-                    "subsanacion_solicitada_en",
-                    "subsanacion_usuario",
-                    "modificado_en",
-                    "estado_cupo",
-                    "es_titular_activo",
-                ]
-            )
-
-            HistorialValidacionTecnica.objects.create(
-                legajo=leg,
-                estado_anterior=estado_anterior,
-                estado_nuevo=RevisionTecnico.SUBSANAR,
-                usuario=user,
-                motivo=motivo[:500],
-            )
-
-            subsanacion = Subsanacion.objects.create(
-                legajo=leg,
-                estado=SubsanacionEstado.PENDIENTE,
-                motivo_general=motivo[:500],
-                solicitada_por=user,
-            )
-            SubsanacionObservacion.objects.bulk_create(
-                [
-                    SubsanacionObservacion(
-                        subsanacion=subsanacion, tipo=tipo, detalle=detalle
-                    )
-                    for tipo, detalle in observaciones
-                ]
-            )
-
-        return JsonResponse(
-            {
-                "success": True,
-                "estado": str(RevisionTecnico.SUBSANAR),
-                "cupo_liberado": True,
-                "subsanacion_id": subsanacion.pk,
-                "observaciones": len(observaciones),
-            }
-        )
+        return self._subsanar(request, user, leg, motivo)
 
 
 ESTADOS_EVALUACION_FINAL = {"APROBADO", "RECHAZADO", "SUBSANADO"}

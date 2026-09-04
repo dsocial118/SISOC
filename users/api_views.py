@@ -33,7 +33,11 @@ from users.services_auth import (
     confirm_password_reset,
     request_password_reset_for_identity,
 )
-from users.services_pwa import get_access_rows, is_pwa_user
+from users.services_pwa import (
+    get_pwa_context,
+    is_pwa_user,
+    is_territorial_comedor_user,
+)
 
 logger = logging.getLogger("django")
 
@@ -91,7 +95,7 @@ class UserLoginViewSet(viewsets.ViewSet):
             )
             return response
         user = serializer.validated_data["user"]
-        if not is_pwa_user(user):
+        if not is_pwa_user(user) and not is_territorial_comedor_user(user):
             detail = "Este usuario no tiene acceso PWA activo."
             response = Response(
                 {"detail": detail},
@@ -171,11 +175,9 @@ class UserContextViewSet(viewsets.ViewSet):
             )
             profile = get_profile_or_none(request.user)
             try:
-                roles = sorted(
-                    set(get_access_rows(request.user).values_list("rol", flat=True))
-                )
+                pwa_context = get_pwa_context(request.user)
             except Exception:  # pragma: no cover - fallback ultra defensivo
-                roles = []
+                pwa_context = {"roles": [], "read_only": False}
             payload = {
                 "id": getattr(request.user, "id", None),
                 "username": getattr(request.user, "username", ""),
@@ -183,7 +185,8 @@ class UserContextViewSet(viewsets.ViewSet):
                 "first_name": getattr(request.user, "first_name", ""),
                 "last_name": getattr(request.user, "last_name", ""),
                 "pwa": {
-                    "roles": roles,
+                    "roles": pwa_context["roles"],
+                    "read_only": pwa_context["read_only"],
                     "must_change_password": bool(
                         getattr(profile, "must_change_password", False)
                     ),

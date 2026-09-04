@@ -25,6 +25,7 @@ from pwa.services.auditoria_operacion_service import registrar_evento_operacion
 from pwa.services.nomina_destinatarios_pdf_service import (
     generar_nomina_destinatarios_pdf,
 )
+from pwa.services.nomina_queryset_service import get_nomina_queryset_for_comedor
 
 DNI_REGEX = re.compile(r"^\d{7,8}$")
 logger = logging.getLogger("django")
@@ -90,13 +91,13 @@ def _snapshot_registro_asistencia(
 
 
 def _active_nomina_queryset(*, comedor_id: int):
-    return Nomina.objects.filter(
-        (
-            Q(admision__comedor_id=comedor_id)
-            | Q(comedor_id=comedor_id, admision__isnull=True)
-        ),
-        deleted_at__isnull=True,
-    ).exclude(estado=Nomina.ESTADO_BAJA)
+    return (
+        get_nomina_queryset_for_comedor(comedor_id)
+        .filter(
+            deleted_at__isnull=True,
+        )
+        .exclude(estado=Nomina.ESTADO_BAJA)
+    )
 
 
 def _programa_nombre_normalizado(comedor: Comedor | None) -> str:
