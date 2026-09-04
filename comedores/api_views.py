@@ -1365,7 +1365,9 @@ class ComedorDetailViewSet(
                 )
             ):
                 return Response(
-                    {"detail": "No tiene permiso para gestionar rendiciones en SISOC Mobile."},
+                    {
+                        "detail": "No tiene permiso para gestionar rendiciones en SISOC Mobile."
+                    },
                     status=status.HTTP_403_FORBIDDEN,
                 )
             serializer = RendicionMensualCreateSerializer(data=request.data)
