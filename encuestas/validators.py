@@ -44,6 +44,11 @@ TIPOS_PREGUNTA_VALIDOS = (
 )
 TIPOS_PREGUNTA_CON_OPCIONES = ("opcion_unica", "opcion_multiple")
 OPERADORES_CONDICION_VALIDOS = ("igual", "distinto")
+# Preguntas que pueden ponderar para el puntaje total (ver Pregunta.pondera):
+# tienen un conjunto fijo de valores posibles (opciones o escala 1-10), a
+# diferencia de texto libre/numérico libre/fecha, donde no hay un valor
+# "correcto" o "esperado" al que asignarle puntos.
+TIPOS_PREGUNTA_PONDERABLES = ("si_no", "opcion_unica", "opcion_multiple", "escala")
 
 
 LISTADO_TEMPLATE_HEADERS = ("tipo_documento", "numero_documento")
@@ -183,13 +188,22 @@ class ParsedCondicion:
 
 
 @dataclass(frozen=True)
+class ParsedOpcion:
+    texto: str
+    puntaje: int
+
+
+@dataclass(frozen=True)
 class ParsedPregunta:
     orden: int
     texto: str
     tipo: str
     obligatoria: bool
-    opciones: tuple[str, ...]
+    opciones: tuple[ParsedOpcion, ...]
     condicion: ParsedCondicion | None
+    pondera: bool = False
+    puntaje_si: int | None = None
+    puntaje_no: int | None = None
 
 
 def _parse_condicion(item: dict, indice: int, orden: int) -> ParsedCondicion | None:
@@ -218,6 +232,34 @@ def _parse_condicion(item: dict, indice: int, orden: int) -> ParsedCondicion | N
     )
 
 
+def _parse_puntaje(valor, indice: int, campo: str) -> int:
+    if valor in (None, ""):
+        return 0
+    try:
+        puntaje = int(valor)
+    except (TypeError, ValueError) as exc:
+        raise ValidationError(
+            f"Pregunta {indice}: el {campo} debe ser un número entero."
+        ) from exc
+    if puntaje < 0:
+        raise ValidationError(f"Pregunta {indice}: el {campo} no puede ser negativo.")
+    return puntaje
+
+
+def _parse_opcion(item: object, indice: int) -> ParsedOpcion | None:
+    if isinstance(item, dict):
+        texto = str(item.get("texto") or "").strip()
+        puntaje = _parse_puntaje(item.get("puntaje"), indice, "puntaje de la opción")
+    else:
+        # Compatibilidad con el formato anterior (una lista de strings, sin
+        # puntaje por opción).
+        texto = str(item).strip()
+        puntaje = 0
+    if not texto:
+        return None
+    return ParsedOpcion(texto=texto, puntaje=puntaje)
+
+
 def _parse_una_pregunta(
     item: object, indice: int, ordenes_vistos: set[int]
 ) -> ParsedPregunta:
@@ -240,15 +282,28 @@ def _parse_una_pregunta(
         raise ValidationError(f"Pregunta {indice}: tipo '{tipo}' inválido.")
 
     opciones = tuple(
-        str(opcion).strip()
-        for opcion in item.get("opciones") or []
-        if str(opcion).strip()
+        opcion
+        for opcion in (_parse_opcion(raw, indice) for raw in item.get("opciones") or [])
+        if opcion is not None
     )
     if tipo in TIPOS_PREGUNTA_CON_OPCIONES and len(opciones) < 2:
         raise ValidationError(
             f"Pregunta {indice}: las preguntas de opción requieren al menos dos "
             "opciones."
         )
+
+    pondera = bool(item.get("pondera", False))
+    if pondera and tipo not in TIPOS_PREGUNTA_PONDERABLES:
+        raise ValidationError(
+            f"Pregunta {indice}: solo las preguntas de Sí/No, opción única, "
+            "opción múltiple o escala pueden ponderar para el puntaje."
+        )
+
+    puntaje_si = None
+    puntaje_no = None
+    if pondera and tipo == "si_no":
+        puntaje_si = _parse_puntaje(item.get("puntaje_si"), indice, "puntaje de 'Sí'")
+        puntaje_no = _parse_puntaje(item.get("puntaje_no"), indice, "puntaje de 'No'")
 
     return ParsedPregunta(
         orden=orden,
@@ -257,6 +312,9 @@ def _parse_una_pregunta(
         obligatoria=bool(item.get("obligatoria", True)),
         opciones=opciones,
         condicion=_parse_condicion(item, indice, orden),
+        pondera=pondera,
+        puntaje_si=puntaje_si,
+        puntaje_no=puntaje_no,
     )
 
 

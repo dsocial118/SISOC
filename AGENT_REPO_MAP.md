@@ -294,7 +294,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 | `importarexpediente/` | flujo de importacion de expedientes | `views.py`, `models.py`, urls, tests | Medio |
 | `ocr/` | OCR y procesamiento asociado | `models.py`, `views.py`, urls, tests | Medio |
 | `ver_para_ser_libre/` | modulo de negocio independiente dentro del monolito | `models.py`, `views.py`, `services/workflow.py` | Medio |
-| `pas/` | núcleo del Programa de Acompañamiento Social: titulares, estados, avisos e historial; circuito DDJJ con tokens, formulario público, PDF e importación CSV | `models.py`, `api.py`, `services/resumen_publico_service.py`, `services/ddjj_service.py`, `services/titulares_import_service.py`, `urls.py`, `migrations/` | Alto |
+| `pas/` | núcleo del Programa de Acompañamiento Social, circuito DDJJ —padrón, tokens, formulario público, PDF e importación CSV— e Informes PAS versionados | `models.py`, `api.py`, `services/ddjj_service.py`, `services/titulares_import_service.py`, `services/informe_service.py`, `urls.py`, `migrations/` | Alto |
 | `audittrail/` | auditoria interna | `models.py`, `views.py`, `services/query_service` | Alto |
 | `historial/` | historial de dominio | `models.py`, `services/` | Bajo |
 | `intervenciones/` | intervenciones sobre casos | tests + archivos del modulo | Bajo; exploracion parcial |
@@ -511,6 +511,11 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - `pwa/models.py`
 - `pwa/api_urls.py`
 - `pwa/api_views.py`
+- `users/services_pwa.py`: alcance PWA, accesos y coordinador de equipo técnico PWA.
+- `users/api_permissions.py`: permisos de lectura y veto transversal de escritura
+  para roles PWA de solo lectura.
+- Toda mutación PWA debe incluir `IsPWAWriteAllowed`, excepto las acciones
+  personales expresamente permitidas (contraseña y suscripciones push).
 - `pwa/services/`
 - alcance de nómina por admisión vigente o comedor directo:
   `pwa/services/nomina_queryset_service.py`
@@ -575,6 +580,28 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - `users/bootstrap/groups_seed.py`: grupos `Gestor de Encuestas` y `Encuestas Resultados`.
 - Doc funcional completa (modelo, reglas de negocio, permisos, decisiones y desvios respecto del plan original): `docs/registro/analisis/2026-08-28-modulo-encuestas.md`.
 - Limite conocido: la segmentacion por CUIT nunca matchea a un usuario individual (`users.Profile` no tiene CUIT propio, solo DNI/CUIL).
+### Si necesitas auditar o reparar mojibake en datos
+
+- Reparación conservadora compartida: `core/services/text_encoding.py`.
+- Prevención en RENAPER: `core/integrations/renaper.py`; el JSON se decodifica
+  desde bytes UTF-8 y el payload se normaliza antes de persistirse.
+- Auditoría read-only de campos explícitos: `python manage.py
+  audit_utf8_mojibake --field app.Model.campo`.
+- Reparación focalizada de nombres y apellidos: `python manage.py
+  repair_utf8_mojibake`; es dry-run por defecto y `--apply` requiere backup,
+  ventana y autorización operativa.
+- Diseño y runbook: `docs/plans/2026-09-01-reparacion-mojibake-datos-design.md`
+  y `docs/registro/cambios/2026-09-01-reparacion-mojibake-datos.md`.
+- La variante capitalizada (`ã` más una continuación que reconstruye una letra
+  mayúscula) usa el mismo comando y requiere un nuevo dry-run después de
+  desplegar el correctivo; ver
+  `docs/plans/2026-09-01-reparacion-mojibake-capitalizado-design.md` y
+  `docs/registro/cambios/2026-09-01-reparacion-mojibake-capitalizado.md`.
+- Las variantes restantes que reconstruyen minúsculas requieren además una
+  mayúscula artificial posterior y normalizan sólo el token afectado. El mismo
+  flujo corrige fronteras persistidas como `ÁNabelle`; ver
+  `docs/plans/2026-09-01-reparacion-mojibake-capitalizado-minusculas-design.md`
+  y `docs/registro/cambios/2026-09-01-reparacion-mojibake-capitalizado-minusculas.md`.
 
 ### Si necesitas cambiar OCR / procesamiento documental
 
