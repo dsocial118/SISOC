@@ -1204,6 +1204,9 @@ class FuncionamientoSeguimiento(models.Model):
     ]
 
     funcionamiento = _nullable_char(choices=FUNCIONAMIENTO_CHOICES)
+    funcionamiento_motivo = _nullable_char(
+        verbose_name="Motivo del estado de funcionamiento",
+    )
 
     class Meta:
         verbose_name = "Funcionamiento de primer seguimiento"
@@ -1303,6 +1306,18 @@ class TareasComedorSeguimiento(models.Model):
     )
     tareas_capacitacion = _nullable_char()
     tareas_capacitacion_especificar = _nullable_char()
+    tareas_capacitacion_anio = models.PositiveSmallIntegerField(
+        blank=True,
+        null=True,
+        validators=[MinValueValidator(1900), MaxValueValidator(2100)],
+        verbose_name="Año de la capacitación",
+    )
+    tareas_capacitacion_dictada_por = _nullable_char(
+        verbose_name="Quién dictó la capacitación",
+    )
+    tareas_capacitacion_temas_interes = _nullable_text(
+        verbose_name="Temas en los que quiere capacitarse",
+    )
 
     class Meta:
         verbose_name = "Tareas de comedor de primer seguimiento"
@@ -1411,6 +1426,12 @@ class MenuSeguimiento(models.Model):
         on_delete=models.PROTECT,
         blank=True,
         null=True,
+    )
+    cantidad_presencial_dia = _nullable_positive_int(
+        verbose_name="Cantidad de prestaciones presenciales del día",
+    )
+    cantidad_vianda_dia = _nullable_positive_int(
+        verbose_name="Cantidad de viandas del día",
     )
     considera_menu_variado = _nullable_bool()
     considera_menu_saludable = _nullable_bool()
@@ -1548,9 +1569,11 @@ class RendicionCuentasSeguimiento(models.Model):
     id_rendicion = _nullable_char(unique=True)
     persona_encargada = _nullable_bool()
     recibio_capacitacion = _nullable_bool()
-    norecibio_porque = _nullable_bool()
+    # "¿Por qué?" del papel (9.2.3.1 / 9.2.4.1): son texto, no booleanos. Estaban
+    # mal modelados como bool y la app no podía mandarlos.
+    norecibio_porque = _nullable_char()
     sencilla_plataforma = _nullable_bool()
-    nosencilla_porque = _nullable_bool()
+    nosencilla_porque = _nullable_char()
     inconvenientes_carga = _nullable_bool()
     incovenientes_porque = _nullable_char()
 
@@ -1628,6 +1651,11 @@ class PrimerSeguimiento(ValidacionCoordinadorMixin, models.Model):
     estado = _nullable_char(choices=ESTADO_CHOICES)
     gestionar_id = _nullable_char(max_length=64)
     sincronizado_gestionar = models.BooleanField(default=False)
+    motivo_diferencia_aprobado_declarado = _nullable_text(
+        verbose_name=(
+            "Motivo cuando lo aprobado difiere de lo declarado (prestaciones)"
+        ),
+    )
     funcionamiento = models.OneToOneField(
         to=FuncionamientoSeguimiento,
         on_delete=models.PROTECT,

@@ -399,6 +399,9 @@ class PrimerSeguimientoSerializer(serializers.ModelSerializer):
         "tareas_comedor_cant_personas",
         "tareas_capacitacion",
         "tareas_capacitacion_especificar",
+        "tareas_capacitacion_anio",
+        "tareas_capacitacion_dictada_por",
+        "tareas_capacitacion_temas_interes",
     )
     RECURSOS_FIELDS = (
         "recursos_comedor_estado_nacional",
@@ -457,6 +460,8 @@ class PrimerSeguimientoSerializer(serializers.ModelSerializer):
         "frecuencia_menu_preestablecido",
         "menu_preestablecido_porque",
         "modalidad_prestacion_del_dia",
+        "cantidad_presencial_dia",
+        "cantidad_vianda_dia",
         "considera_menu_variado",
         "considera_menu_saludable",
         "considera_menu_porque",
@@ -591,13 +596,19 @@ class PrimerSeguimientoSerializer(serializers.ModelSerializer):
             self.initial_data = self.initial_data.copy()
         self._normalize_aliases()
         self._normalize_fecha_hora()
+        self._process_comedor()
         self._process_referente()
         self._normalize_funcionamiento()
+        # El bloque comparte nombre con su propio campo (`funcionamiento`), por eso
+        # se arma el payload a mano en vez de extraerlo por nombre de campo.
         self._process_simple_block(
             "funcionamiento",
             FuncionamientoSeguimiento,
-            ("funcionamiento",),
-            {"funcionamiento": self.initial_data.get("funcionamiento")},
+            ("funcionamiento", "funcionamiento_motivo"),
+            {
+                "funcionamiento": self.initial_data.get("funcionamiento"),
+                "funcionamiento_motivo": self.initial_data.get("funcionamiento_motivo"),
+            },
         )
         self._process_simple_block(
             "servicios_basicos",
@@ -886,19 +897,32 @@ class PrimerSeguimientoSerializer(serializers.ModelSerializer):
             self._process_receta(menu, receta_data)
 
     def _process_receta(self, menu, receta_data):
-        if not isinstance(receta_data, dict):
+        """La receta del papel es una tabla de N ingredientes.
+
+        Acepta un objeto (compatibilidad) o una lista de objetos. Cada item se
+        deduplica por ``id_item_receta``: sin ese id estable, cada PATCH crea una
+        fila nueva.
+        """
+        if isinstance(receta_data, dict):
+            receta_data = [receta_data]
+        if not isinstance(receta_data, list):
             return
         fields = ("id_item_receta", "ingrediente", "unidad_medida", "cantidad_medida")
-        data = {field_name: receta_data.get(field_name) for field_name in fields}
-        self._upsert_child(
-            ItemRecetaSeguimiento,
-            data,
-            {
-                "parent_field": "menu",
-                "parent": menu,
-                "lookup_field": "id_item_receta",
-            },
-        )
+        for item in receta_data:
+            if not isinstance(item, dict):
+                raise serializers.ValidationError(
+                    {"menu": {"receta": "Formato invalido."}}
+                )
+            data = {field_name: item.get(field_name) for field_name in fields}
+            self._upsert_child(
+                ItemRecetaSeguimiento,
+                data,
+                {
+                    "parent_field": "menu",
+                    "parent": menu,
+                    "lookup_field": "id_item_receta",
+                },
+            )
 
     def _process_prestaciones(self):
         prestaciones_data = self.initial_data.get("prestaciones_seguimientos")
@@ -968,6 +992,22 @@ class PrimerSeguimientoSerializer(serializers.ModelSerializer):
             if found:
                 return found
         return model.objects.get_or_create(nombre=str(value).strip())[0]
+
+    def _process_comedor(self):
+        """Permite corregir "Datos generales" (domicilio) desde el seguimiento.
+
+        Reusa el mismo servicio que el bloque ``comedor`` de
+        ``PATCH /api/relevamiento``, así los campos y los parsers son idénticos.
+        ``comedor`` no es campo de ``PrimerSeguimiento``, por eso se descarta del
+        payload una vez aplicado.
+        """
+        data = self.initial_data.pop("comedor", None)
+        if not isinstance(data, dict) or not self.instance:
+            return
+        comedor = getattr(self.instance.id_relevamiento, "comedor", None)
+        if comedor is None:
+            return
+        RelevamientoService.update_comedor(data, comedor)
 
     def _process_referente(self):
         data = self.initial_data.get("referente")
