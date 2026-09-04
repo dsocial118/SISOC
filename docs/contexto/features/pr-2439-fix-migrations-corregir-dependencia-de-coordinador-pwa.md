@@ -30,14 +30,18 @@
 
 - Empezar por `docs/registro/prs/PR-2439.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
+- `docs/contexto/features/pr-2439-fix-migrations-corregir-dependencia-de-coordinador-pwa.md`
 - `docs/plans/2026-09-04-hml-migration-graph-fix-design.md`
+- `docs/registro/prs/PR-2439.md`
 - `users/migrations/0049_coordinadorequipotecnico_pwa.py`
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`
+- `docs/contexto/features/pr-2439-fix-migrations-corregir-dependencia-de-coordinador-pwa.md`
 - `docs/plans/2026-09-04-hml-migration-graph-fix-design.md`
+- `docs/registro/prs/PR-2439.md`
 
 ## Trazabilidad
 
