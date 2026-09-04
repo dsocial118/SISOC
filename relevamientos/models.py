@@ -86,6 +86,47 @@ class ValidacionCoordinadorMixin(models.Model):
         return self.estado_validacion == self.ESTADO_VALIDACION_VALIDADO
 
 
+class OrigenRegistroMixin(models.Model):
+    """De dónde salió el registro: asignado por SISOC o autoactivado en la app.
+
+    El territorial puede activar trabajo desde su zona sin esperar asignación
+    (N18); esos registros quedan marcados para poder distinguir/priorizar los
+    que SISOC asignó explícitamente. ``client_uuid`` hace idempotente el alta:
+    la cola offline reintenta y no debe duplicar.
+    """
+
+    ORIGEN_SISOC = "sisoc"
+    ORIGEN_APP = "app"
+    ORIGEN_CHOICES = [
+        (ORIGEN_SISOC, "SISOC"),
+        (ORIGEN_APP, "App territorial"),
+    ]
+
+    origen = models.CharField(
+        max_length=16,
+        choices=ORIGEN_CHOICES,
+        default=ORIGEN_SISOC,
+    )
+    asignado_desde_sisoc = models.BooleanField(
+        default=True,
+        help_text="False cuando lo autoactivó el territorial desde la app.",
+    )
+    client_uuid = models.CharField(
+        max_length=64,
+        blank=True,
+        null=True,
+        unique=True,
+        help_text=(
+            "Identificador estable del cliente para deduplicar reintentos "
+            "offline del alta. En MySQL los NULL son distintos, así que solo "
+            "enforcea cuando viene informado."
+        ),
+    )
+
+    class Meta:
+        abstract = True
+
+
 class TipoInsumos(models.Model):
     """
     Opciones de tipos de insumos recibidos por un Comedor/Merendero
@@ -1072,7 +1113,9 @@ class PuntoEntregas(models.Model):
         return f"Punto de entregas ({tipo})"
 
 
-class Relevamiento(SoftDeleteModelMixin, ValidacionCoordinadorMixin, models.Model):
+class Relevamiento(
+    SoftDeleteModelMixin, ValidacionCoordinadorMixin, OrigenRegistroMixin, models.Model
+):
 
     estado = models.CharField(max_length=255, blank=True, null=True)
     comedor = models.ForeignKey(
@@ -1713,7 +1756,7 @@ BLOQUES_SEGUIMIENTO = (
 )
 
 
-class PrimerSeguimiento(ValidacionCoordinadorMixin, models.Model):
+class PrimerSeguimiento(ValidacionCoordinadorMixin, OrigenRegistroMixin, models.Model):
     ESTADO_ASIGNADO = "Asignado"
     ESTADO_EN_PROCESO = "En Proceso"
     ESTADO_COMPLETO = "Completo"
@@ -1964,3 +2007,61 @@ class ClasificacionComedor(models.Model):
     class Meta:
         verbose_name = "Clasificacion de Comedor"
         verbose_name_plural = "Clasificaciones de Comedor"
+
+
+class ActaComplementaria(OrigenRegistroMixin, models.Model):
+    """Acta complementaria extraordinaria (§12 / §18.5).
+
+    Registra, **fuera del ciclo de visitas**, un cambio en la prestación del
+    comedor. Es espontánea: no hay asignación previa desde SISOC, la crea el
+    territorial desde la app sobre un comedor de su zona.
+    """
+
+    comedor = models.ForeignKey(
+        to=Comedor,
+        on_delete=models.CASCADE,
+        related_name="actas_complementarias",
+    )
+    tecnico = models.ForeignKey(
+        to=settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="actas_complementarias",
+    )
+    fecha_hora = models.DateTimeField(blank=True, null=True)
+    observaciones = _nullable_text(
+        verbose_name="Motivo / observaciones del cambio de prestación",
+    )
+    firma = _nullable_char(max_length=600)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Acta complementaria extraordinaria"
+        verbose_name_plural = "Actas complementarias extraordinarias"
+        ordering = ["-fecha_hora", "-id"]
+
+    def __str__(self):
+        comedor = self.comedor.nombre if self.comedor_id else "Sin comedor"
+        return f"Acta complementaria ({comedor})"
+
+
+class PrestacionActaComplementaria(models.Model):
+    """Fila de la tabla día x tipo del acta: cantidades actuales y en espera."""
+
+    acta = models.ForeignKey(
+        to=ActaComplementaria,
+        on_delete=models.CASCADE,
+        related_name="prestaciones",
+    )
+    dias_prestacion = _nullable_char()
+    tipo_prestacion = _nullable_char()
+    cantidad_actual = _nullable_positive_int()
+    cantidad_espera = _nullable_positive_int()
+
+    class Meta:
+        verbose_name = "Prestacion de acta complementaria"
+        verbose_name_plural = "Prestaciones de actas complementarias"
+
+    def __str__(self):
+        return f"{self.dias_prestacion or '-'} / {self.tipo_prestacion or '-'}"
