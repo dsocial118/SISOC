@@ -1,0 +1,604 @@
+{% extends "includes/main.html" %}
+{% load custom_filters %}
+
+{% block title %}VAT - Buscador por Ciudadano{% endblock %}
+
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <li class="breadcrumb-item">
+            <a href="{% url 'vat_centro_list' %}">VAT</a>
+        </li>
+        <li class="breadcrumb-item active">Buscador por Ciudadano</li>
+    </ol>
+{% endblock %}
+
+{% block head %}
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Lora:wght@600;700&family=Montserrat:wght@400;500;600;700&display=swap"
+          rel="stylesheet" />
+{% endblock %}
+
+{% block content %}
+    <style>
+        .app-content-header { display: none; }
+
+        .busc-page {
+            --cnav: #232D4F;
+            --cteal: #3B8681;
+            --cgold: #E7BA61;
+            --cgreen: #2e7d33;
+            --cred: #c8484c;
+            --cblue: #2e6fd1;
+            --cmuted: rgba(255, 255, 255, 0.76);
+            font-family: 'Montserrat', Inter, Roboto, sans-serif;
+            color: #ffffff;
+            margin: 0 auto 1rem;
+            padding: 0 0 1rem;
+        }
+
+        .busc-title-row {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+            background: var(--cnav);
+            border-radius: 0 0 14px 14px;
+            padding: 1.25rem 1.5rem 1.15rem;
+            box-shadow: 0 14px 20px rgba(18, 28, 46, 0.16);
+            margin-bottom: 22px;
+        }
+
+        .busc-title-block h1 {
+            margin: 0;
+            font-family: 'Lora', Georgia, 'Times New Roman', serif;
+            font-size: 30px;
+            font-weight: 700;
+            color: #ffffff;
+            letter-spacing: 1px;
+        }
+
+        .busc-title-sub {
+            margin: .55rem 0 0;
+            color: rgba(255, 255, 255, 0.78);
+            font-size: 13.5px;
+            line-height: 1.45;
+            max-width: 780px;
+        }
+
+        .busc-note {
+            display: flex;
+            gap: 11px;
+            align-items: flex-start;
+            background: rgba(231, 186, 97, 0.12);
+            border: 1px solid var(--cgold);
+            border-left: 5px solid var(--cgold);
+            border-radius: 10px;
+            padding: 12px 16px;
+            margin: 0 .75rem 20px;
+            font-size: 12.8px;
+            color: #f3e4c4;
+            line-height: 1.45;
+        }
+
+        .busc-note i { font-size: 16px; margin-top: 1px; }
+
+        .busc-card {
+            background: var(--cnav);
+            border-radius: 15px;
+            box-shadow: 4px 4px 4px 0 rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            margin: 0 .75rem 22px;
+        }
+
+        .busc-card-head {
+            display: flex;
+            align-items: center;
+            gap: .55rem;
+            background: var(--cteal);
+            border-bottom: 2px solid #ffffff;
+            padding: .85rem 1.25rem;
+            color: #ffffff;
+            font-size: 19px;
+            font-weight: 700;
+            letter-spacing: .5px;
+        }
+
+        .busc-card-head__right { margin-left: auto; display: flex; gap: 8px; }
+
+        .busc-card-body { padding: 22px 26px; }
+
+        .busc-field { display: flex; flex-direction: column; min-width: 0; }
+
+        .busc-field__label {
+            font-size: .72rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            color: var(--cmuted);
+            margin-bottom: .35rem;
+        }
+
+        .busc-page input[type="search"] {
+            width: 100%;
+            background: #1b2942;
+            border: 1px solid #2a3a4a;
+            color: #ffffff;
+            border-radius: 8px;
+            padding: .6rem .8rem;
+            font-size: .9rem;
+        }
+
+        .busc-page input:focus {
+            outline: none;
+            border-color: var(--cgold);
+            box-shadow: 0 0 0 2px rgba(231, 186, 97, 0.18);
+        }
+
+        .busc-search-row {
+            display: flex;
+            gap: 14px;
+            align-items: flex-end;
+            flex-wrap: wrap;
+        }
+
+        .busc-search-row .busc-field { flex: 1 1 380px; min-width: 280px; }
+
+        .busc-hint { margin: 10px 0 0; font-size: 12px; color: #9aa4c2; }
+        .busc-hint code {
+            background: #1b2942;
+            border: 1px solid #2a3a4a;
+            border-radius: 5px;
+            padding: 1px 6px;
+            color: var(--cgold);
+            font-size: 11.5px;
+        }
+
+        .busc-btn {
+            border: 1px solid transparent;
+            border-radius: 8px;
+            padding: 9px 18px;
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            min-height: 40px;
+            text-decoration: none;
+        }
+
+        .busc-btn--primary { background: #2f8f4f; color: #ffffff; }
+        .busc-btn--primary:hover { filter: brightness(1.08); color: #ffffff; }
+        .busc-btn--ghost { background: transparent; color: #ffffff; border-color: rgba(255, 255, 255, 0.35); }
+        .busc-btn--ghost:hover { background: rgba(255, 255, 255, 0.08); color: #ffffff; }
+        .busc-btn--sm { min-height: 30px; padding: 5px 11px; font-size: 11.5px; }
+
+        .busc-ficha { display: flex; gap: 22px; align-items: flex-start; flex-wrap: wrap; }
+        .busc-avatar {
+            width: 64px; height: 64px;
+            border-radius: 50%;
+            background: #2b3760;
+            border: 2px solid var(--cgold);
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'Lora', serif;
+            font-size: 23px;
+            color: var(--cgold);
+            font-weight: 700;
+            flex: 0 0 auto;
+            text-transform: uppercase;
+        }
+        .busc-dgrid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 14px 26px;
+            flex: 1 1 520px;
+            margin: 0;
+        }
+        .busc-dgrid > div { min-width: 0; }
+        .busc-dgrid dt { font-size: 10.5px; text-transform: uppercase; letter-spacing: .6px; color: var(--cmuted); }
+        .busc-dgrid dd {
+            margin: 3px 0 0;
+            font-size: 14px;
+            color: #fff;
+            font-weight: 500;
+            overflow-wrap: break-word;
+            word-break: break-word;
+        }
+
+        .busc-kpis {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+            margin: 0 .75rem 22px;
+        }
+        .busc-kpi {
+            background: var(--cnav);
+            border: 1px solid rgba(255, 255, 255, .16);
+            border-left: 6px solid var(--cgold);
+            border-radius: 14px;
+            padding: 13px 15px;
+        }
+        .busc-kpi--blue { border-left-color: var(--cblue); }
+        .busc-kpi--green { border-left-color: var(--cgreen); }
+        .busc-kpi--red { border-left-color: var(--cred); }
+        .busc-kpi--grey { border-left-color: #8b93ad; }
+        .busc-kpi--teal { border-left-color: var(--cteal); }
+        .busc-kpi__n { font-size: 25px; font-weight: 700; font-family: 'Lora', serif; color: #fff; line-height: 1.1; }
+        .busc-kpi__l { font-size: 10.5px; text-transform: uppercase; letter-spacing: .7px; color: var(--cmuted); margin-top: 3px; }
+
+        .busc-tbl-wrap { overflow-x: auto; }
+        .busc-tbl { width: 100%; border-collapse: collapse; min-width: 1120px; }
+        .busc-tbl th {
+            font-size: 10.5px;
+            text-transform: uppercase;
+            letter-spacing: .7px;
+            color: var(--cgold);
+            text-align: left;
+            padding: 11px 12px;
+            border-bottom: 2px solid rgba(255, 255, 255, .16);
+            white-space: nowrap;
+            font-weight: 700;
+        }
+        .busc-tbl td {
+            padding: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, .08);
+            font-size: 12.8px;
+            color: #e8ebf5;
+            vertical-align: top;
+        }
+        .busc-tbl tbody tr:hover td { background: rgba(59, 134, 129, .10); }
+        .busc-sub { display: block; font-size: 11px; color: #9aa4c2; margin-top: 3px; }
+        .busc-nowrap { white-space: nowrap; }
+
+        .busc-badge {
+            display: inline-flex;
+            align-items: center;
+            border-radius: 20px;
+            padding: 3px 10px;
+            font-size: 10.8px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .busc-badge--inscripta,
+        .busc-badge--validada_presencial { background: rgba(46, 111, 209, .22); color: #9dc0f5; border: 1px solid var(--cblue); }
+        .busc-badge--completada { background: rgba(46, 125, 51, .25); color: #7fd685; border: 1px solid var(--cgreen); }
+        .busc-badge--abandonada { background: rgba(200, 72, 76, .22); color: #f29b9e; border: 1px solid var(--cred); }
+        .busc-badge--pre_inscripta,
+        .busc-badge--en_espera,
+        .busc-badge--rechazada,
+        .busc-badge--grey { background: rgba(255, 255, 255, .08); color: var(--cmuted); border: 1px solid rgba(255, 255, 255, .16); }
+        .busc-badge--aprobado { background: rgba(46, 125, 51, .25); color: #7fd685; border: 1px solid var(--cgreen); }
+        .busc-badge--desaprobado { background: rgba(200, 72, 76, .22); color: #f29b9e; border: 1px solid var(--cred); }
+        .busc-badge--sin-calificar { background: rgba(255, 255, 255, .08); color: var(--cmuted); border: 1px solid rgba(255, 255, 255, .16); }
+
+        .busc-empty { text-align: center; padding: 52px 20px; color: #9aa4c2; }
+        .busc-empty .bi { font-size: 46px; color: #3d4a72; display: block; margin-bottom: 14px; }
+        .busc-empty h4 { margin: 0 0 8px; font-family: 'Lora', serif; font-size: 19px; color: #dfe5f5; font-weight: 600; }
+        .busc-empty p { margin: 0 auto; max-width: 460px; font-size: 13px; line-height: 1.5; }
+
+        .busc-cand {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            background: #2b3760;
+            border: 1px solid rgba(255, 255, 255, .16);
+            border-radius: 12px;
+            padding: 14px 18px;
+            margin-bottom: 12px;
+        }
+        .busc-cand:hover { border-color: var(--cgold); }
+        .busc-cand-who { flex: 1 1 auto; }
+        .busc-cand-who b { display: block; font-size: 15px; color: #fff; font-weight: 600; }
+        .busc-cand-who span { font-size: 12px; color: #9aa4c2; }
+
+        @media (max-width: 767.98px) {
+            .busc-title-block h1 { font-size: 1.6rem; }
+            .busc-card-head { font-size: 17px; }
+            .busc-card-body { padding: 18px 16px; }
+        }
+    </style>
+
+    <div class="busc-page">
+
+        <div class="busc-title-row">
+            <div class="busc-title-block">
+                <h1>Buscador por Ciudadano</h1>
+                <p class="busc-title-sub">
+                    Trayectoria formativa completa de una persona en INET: a qué cursos se anotó,
+                    en qué comisión y centro, en qué estado quedó cada inscripción y cuál fue su
+                    resultado final.
+                </p>
+            </div>
+        </div>
+
+        {% if estado == "resultado" and not scope_is_national %}
+            <div class="busc-note">
+                <i class="bi bi-shield-lock"></i>
+                <div>
+                    Estás viendo únicamente las inscripciones correspondientes a los centros
+                    dentro de tu alcance de acceso. Este listado no representa necesariamente la
+                    trayectoria completa del ciudadano en INET.
+                </div>
+            </div>
+        {% endif %}
+
+        <div class="busc-card">
+            <div class="busc-card-head">
+                <i class="bi bi-search"></i>
+                <span>Buscar ciudadano</span>
+            </div>
+            <div class="busc-card-body">
+                <form method="get" class="busc-search-row">
+                    <label class="busc-field" for="id_q">
+                        <span class="busc-field__label">DNI o CUIL / CUIT</span>
+                        <input type="search"
+                               id="id_q"
+                               name="q"
+                               value="{{ q }}"
+                               placeholder="Ej.: 30123456 · 20-30123456-5" />
+                    </label>
+                    <button type="submit" class="busc-btn busc-btn--primary">
+                        <i class="bi bi-search"></i>Buscar
+                    </button>
+                    {% if q %}
+                        <a href="{% url 'vat_buscador_ciudadano' %}"
+                           class="busc-btn busc-btn--ghost">
+                            <i class="bi bi-x-lg"></i>Limpiar
+                        </a>
+                    {% endif %}
+                </form>
+                <p class="busc-hint">
+                    <i class="bi bi-info-circle"></i>
+                    Se admite documento (<code>30123456</code>) o CUIL/CUIT con o sin guiones
+                    (<code>20-30123456-5</code>, <code>20301234565</code>). Los puntos, guiones y
+                    espacios se ignoran.
+                </p>
+            </div>
+        </div>
+
+        {% if estado == "inicial" %}
+            <div class="busc-card">
+                <div class="busc-card-body">
+                    <div class="busc-empty">
+                        <i class="bi bi-person-vcard"></i>
+                        <h4>Ingresá un documento para comenzar</h4>
+                        <p>El resultado muestra únicamente inscripciones de centros dentro de tu alcance de acceso.</p>
+                    </div>
+                </div>
+            </div>
+        {% elif estado == "no_encontrado" %}
+            <div class="busc-card">
+                <div class="busc-card-body">
+                    <div class="busc-empty">
+                        <i class="bi bi-person-x"></i>
+                        <h4>No se encontró un ciudadano con ese documento</h4>
+                        <p>
+                            Verificá el número ingresado. Si la persona no está registrada en
+                            SISOC, primero debe darse de alta desde el módulo de Ciudadanos.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        {% elif estado == "candidatos" %}
+            <div class="busc-note">
+                <i class="bi bi-people"></i>
+                <div>
+                    Se encontraron {{ candidatos|length }} ciudadanos con ese número en distintos
+                    tipos de documento. Elegí cuál querés consultar.
+                </div>
+            </div>
+            <div class="busc-card">
+                <div class="busc-card-head">
+                    <i class="bi bi-list-check"></i>
+                    <span>Coincidencias</span>
+                </div>
+                <div class="busc-card-body">
+                    {% for item in candidatos %}
+                        <div class="busc-cand">
+                            <div class="busc-avatar">{{ item.ciudadano.nombre|slice:":1" }}{{ item.ciudadano.apellido|slice:":1" }}</div>
+                            <div class="busc-cand-who">
+                                <b>{{ item.ciudadano.apellido }}, {{ item.ciudadano.nombre }}</b>
+                                <span>
+                                    {{ item.ciudadano.get_tipo_documento_display }}
+                                    {{ item.ciudadano.documento|default:"—" }}
+                                    · {{ item.total_inscripciones }} inscripción{{ item.total_inscripciones|pluralize:"es" }} INET
+                                </span>
+                            </div>
+                            <a class="busc-btn busc-btn--primary busc-btn--sm"
+                               href="?q={{ q|urlencode }}&ciudadano_id={{ item.ciudadano.pk }}">
+                                <i class="bi bi-arrow-right"></i>Ver trayectoria
+                            </a>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% elif estado == "resultado" %}
+            <div class="busc-card">
+                <div class="busc-card-head">
+                    <i class="bi bi-person-vcard"></i>
+                    <span>Ciudadano</span>
+                    {% if request.user|has_perm_code:"ciudadanos.view_ciudadano" %}
+                        <div class="busc-card-head__right">
+                            <a href="{% url 'ciudadanos_ver' ciudadano.pk %}"
+                               class="busc-btn busc-btn--ghost busc-btn--sm">
+                                <i class="bi bi-box-arrow-up-right"></i>Ver legajo
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="busc-card-body">
+                    <div class="busc-ficha">
+                        <div class="busc-avatar">{{ ciudadano.nombre|slice:":1" }}{{ ciudadano.apellido|slice:":1" }}</div>
+                        <dl class="busc-dgrid">
+                            <div>
+                                <dt>Apellido y nombre</dt>
+                                <dd>
+                                    {{ ciudadano.apellido }}, {{ ciudadano.nombre }}
+                                </dd>
+                            </div>
+                            <div>
+                                <dt>Documento</dt>
+                                <dd>
+                                    {{ ciudadano.get_tipo_documento_display }} {{ ciudadano.documento|default:"—" }}
+                                </dd>
+                            </div>
+                            <div>
+                                <dt>CUIL / CUIT</dt>
+                                <dd>
+                                    {{ ciudadano.cuil_cuit|default:"—" }}
+                                </dd>
+                            </div>
+                            <div>
+                                <dt>Email</dt>
+                                <dd>
+                                    {{ ciudadano.email|default:"—" }}
+                                </dd>
+                            </div>
+                            <div>
+                                <dt>Teléfono</dt>
+                                <dd>
+                                    {{ ciudadano.telefono|default:"—" }}
+                                </dd>
+                            </div>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+
+            <div class="busc-kpis">
+                <div class="busc-kpi">
+                    <div class="busc-kpi__n">{{ resumen.total }}</div>
+                    <div class="busc-kpi__l">Inscripciones</div>
+                </div>
+                <div class="busc-kpi busc-kpi--blue">
+                    <div class="busc-kpi__n">{{ resumen.en_curso }}</div>
+                    <div class="busc-kpi__l">En curso</div>
+                </div>
+                <div class="busc-kpi busc-kpi--green">
+                    <div class="busc-kpi__n">{{ resumen.completadas }}</div>
+                    <div class="busc-kpi__l">Completadas</div>
+                </div>
+                <div class="busc-kpi busc-kpi--red">
+                    <div class="busc-kpi__n">{{ resumen.abandonadas }}</div>
+                    <div class="busc-kpi__l">Abandonadas</div>
+                </div>
+                <div class="busc-kpi busc-kpi--grey">
+                    <div class="busc-kpi__n">{{ resumen.rechazadas }}</div>
+                    <div class="busc-kpi__l">Rechazadas</div>
+                </div>
+                <div class="busc-kpi busc-kpi--teal">
+                    <div class="busc-kpi__n">{{ resumen.porcentaje_asistencia }}%</div>
+                    <div class="busc-kpi__l">Asistencia global</div>
+                </div>
+            </div>
+
+            <div class="busc-card">
+                <div class="busc-card-head">
+                    <i class="bi bi-mortarboard"></i>
+                    <span>Trayectoria formativa</span>
+                    {% if inscripciones %}
+                        <div class="busc-card-head__right">
+                            <a href="?q={{ q|urlencode }}&ciudadano_id={{ ciudadano.pk }}&export=csv"
+                               class="busc-btn busc-btn--ghost busc-btn--sm">
+                                <i class="bi bi-filetype-csv"></i>CSV
+                            </a>
+                            <a href="?q={{ q|urlencode }}&ciudadano_id={{ ciudadano.pk }}&export=xlsx"
+                               class="busc-btn busc-btn--ghost busc-btn--sm">
+                                <i class="bi bi-file-earmark-excel"></i>XLSX
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+                {% if inscripciones %}
+                    <div class="busc-tbl-wrap">
+                        <table class="busc-tbl">
+                            <thead>
+                                <tr>
+                                    <th>Fecha insc.</th>
+                                    <th>Curso</th>
+                                    <th>Comisión</th>
+                                    <th>Período</th>
+                                    <th>Centro / CUE</th>
+                                    <th>Ubicación</th>
+                                    <th>Estado</th>
+                                    <th>Resultado</th>
+                                    <th>Asistencia</th>
+                                    <th>Origen</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for inscripcion in inscripciones %}
+                                    <tr>
+                                        <td class="busc-nowrap">{{ inscripcion.fecha_inscripcion|date:"d/m/Y" }}</td>
+                                        <td>
+                                            {{ inscripcion.unidad_formativa_nombre }}
+                                            <span class="busc-sub">Curso: {{ inscripcion.estado_curso_ref|default:"—" }}</span>
+                                        </td>
+                                        <td>{{ inscripcion.comision_codigo_ref }}</td>
+                                        <td class="busc-nowrap">
+                                            {% if inscripcion.periodo_inicio_ref %}
+                                                {{ inscripcion.periodo_inicio_ref|date:"d/m/Y" }}
+                                                <span class="busc-sub">→ {{ inscripcion.periodo_fin_ref|date:"d/m/Y" }}</span>
+                                            {% else %}
+                                                —
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {{ inscripcion.centro_nombre_ref }}
+                                            {% if inscripcion.cue_ref %}<span class="busc-sub">CUE {{ inscripcion.cue_ref }}</span>{% endif %}
+                                        </td>
+                                        <td>
+                                            {{ inscripcion.provincia_nombre_ref }} / {{ inscripcion.localidad_ref }}
+                                            {% if inscripcion.direccion_ref %}<span class="busc-sub">{{ inscripcion.direccion_ref }}</span>{% endif %}
+                                        </td>
+                                        <td>
+                                            <span class="busc-badge busc-badge--{{ inscripcion.estado }}">{{ inscripcion.get_estado_display }}</span>
+                                            <span class="busc-sub">Comisión: {{ inscripcion.estado_comision_ref|default:"—" }}</span>
+                                        </td>
+                                        <td>
+                                            {% if inscripcion.resultado_final == "aprobado" %}
+                                                <span class="busc-badge busc-badge--aprobado">Aprobado</span>
+                                            {% elif inscripcion.resultado_final == "desaprobado" %}
+                                                <span class="busc-badge busc-badge--desaprobado">Desaprobado</span>
+                                            {% else %}
+                                                <span class="busc-badge busc-badge--sin-calificar">Sin calificar</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% with total_asis=inscripcion.presentes_ref|add:inscripcion.ausentes_ref %}
+                                                {% if total_asis %}
+                                                    {% widthratio inscripcion.presentes_ref total_asis 100 %}%
+                                                    <span class="busc-sub">{{ inscripcion.presentes_ref }} de {{ total_asis }} sesiones</span>
+                                                {% else %}
+                                                    Sin registros
+                                                {% endif %}
+                                            {% endwith %}
+                                        </td>
+                                        <td>
+                                            <span class="busc-badge busc-badge--grey">{{ inscripcion.get_origen_canal_display }}</span>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="busc-card-body">
+                        <div class="busc-empty">
+                            <i class="bi bi-clipboard-x"></i>
+                            <h4>El ciudadano no registra inscripciones en INET</h4>
+                            <p>
+                                Existe en SISOC pero no tiene inscripciones a cursos o comisiones
+                                dentro de tu alcance de acceso.
+                            </p>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        {% endif %}
+
+    </div>
+{% endblock %}

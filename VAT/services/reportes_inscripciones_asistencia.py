@@ -6,8 +6,8 @@ from dataclasses import dataclass
 from datetime import datetime
 
 from django.core.cache import cache
-from django.db.models import Count, F, Q, Value
-from django.db.models.functions import Coalesce, TruncMonth
+from django.db.models import Count, Q
+from django.db.models.functions import TruncMonth
 from django.http import HttpResponse
 from openpyxl import Workbook
 from openpyxl.styles import Font
@@ -18,6 +18,7 @@ from VAT.services.tipo_alumno_service import (
     tiene_voucher_activo_subquery,
     tipo_alumno_label,
 )
+from VAT.services.vat_inscripciones_base import base_inscripciones_queryset_for_user
 
 
 DATE_INPUT_FORMAT = "%Y-%m-%d"
@@ -80,116 +81,6 @@ def _unique_choice_tuples(*choices_lists):
             seen.add(value)
             merged.append((value, label))
     return merged
-
-
-def _base_queryset_for_user(user):
-    centros_ids = filter_centros_queryset_for_user(Centro.objects.all(), user).values(
-        "id"
-    )
-    return (
-        Inscripcion.objects.select_related(
-            "comision",
-            "comision__oferta",
-            "comision__oferta__centro",
-            "comision__oferta__centro__provincia",
-            "comision__oferta__centro__municipio",
-            "comision__oferta__programa",
-            "comision__oferta__plan_curricular",
-            "comision__oferta__plan_curricular__modalidad_cursada",
-            "comision_curso",
-            "comision_curso__curso",
-            "comision_curso__curso__centro",
-            "comision_curso__curso__centro__provincia",
-            "comision_curso__curso__centro__municipio",
-            "comision_curso__curso__programa",
-            "comision_curso__curso__modalidad",
-            "comision_curso__curso__plan_estudio",
-        )
-        .filter(
-            Q(comision_curso__curso__centro_id__in=centros_ids)
-            | Q(comision__oferta__centro_id__in=centros_ids)
-        )
-        .annotate(
-            centro_id_ref=Coalesce(
-                F("comision_curso__curso__centro_id"),
-                F("comision__oferta__centro_id"),
-            ),
-            centro_nombre_ref=Coalesce(
-                F("comision_curso__curso__centro__nombre"),
-                F("comision__oferta__centro__nombre"),
-                Value("Sin centro"),
-            ),
-            provincia_id_ref=Coalesce(
-                F("comision_curso__curso__centro__provincia_id"),
-                F("comision__oferta__centro__provincia_id"),
-            ),
-            provincia_nombre_ref=Coalesce(
-                F("comision_curso__curso__centro__provincia__nombre"),
-                F("comision__oferta__centro__provincia__nombre"),
-                Value("Sin provincia"),
-            ),
-            municipio_id_ref=Coalesce(
-                F("comision_curso__curso__centro__municipio_id"),
-                F("comision__oferta__centro__municipio_id"),
-            ),
-            municipio_nombre_ref=Coalesce(
-                F("comision_curso__curso__centro__municipio__nombre"),
-                F("comision__oferta__centro__municipio__nombre"),
-                Value("Sin municipio"),
-            ),
-            unidad_formativa_id=Coalesce(
-                F("comision_curso__curso_id"),
-                F("comision__oferta_id"),
-            ),
-            unidad_formativa_nombre=Coalesce(
-                F("comision_curso__curso__nombre"),
-                F("comision__oferta__nombre_local"),
-                F("comision__oferta__plan_curricular__nombre"),
-                Value("Sin curso/oferta"),
-            ),
-            comision_id_ref=Coalesce(F("comision_curso_id"), F("comision_id")),
-            comision_codigo_ref=Coalesce(
-                F("comision_curso__codigo_comision"),
-                F("comision__codigo_comision"),
-                Value("Sin comisión"),
-            ),
-            programa_id_ref=Coalesce(
-                Value(None),
-                F("comision__oferta__programa_id"),
-            ),
-            programa_nombre_ref=Coalesce(
-                F("comision__oferta__programa__nombre"),
-                Value("Sin programa"),
-            ),
-            titulo_id_ref=Coalesce(
-                F("comision_curso__curso__plan_estudio__titulos__id"),
-                F("comision__oferta__plan_curricular__titulos__id"),
-            ),
-            titulo_nombre_ref=Coalesce(
-                F("comision_curso__curso__plan_estudio__titulos__nombre"),
-                F("comision__oferta__plan_curricular__titulos__nombre"),
-                Value("Sin título"),
-            ),
-            modalidad_id_ref=Coalesce(
-                F("comision_curso__curso__modalidad_id"),
-                F("comision__oferta__plan_curricular__modalidad_cursada_id"),
-            ),
-            modalidad_nombre_ref=Coalesce(
-                F("comision_curso__curso__modalidad__nombre"),
-                F("comision__oferta__plan_curricular__modalidad_cursada__nombre"),
-                Value("Sin modalidad"),
-            ),
-            usa_voucher_ref=Coalesce(
-                F("comision_curso__curso__usa_voucher"),
-                F("comision__oferta__usa_voucher"),
-            ),
-            estado_curso_ref=F("comision_curso__curso__estado"),
-            estado_comision_ref=Coalesce(
-                F("comision_curso__estado"),
-                F("comision__estado"),
-            ),
-        )
-    )
 
 
 def _apply_filters(queryset, filtros: ReporteFiltros):
@@ -342,7 +233,7 @@ def build_reporte_inscripciones_asistencia(user, filtros: ReporteFiltros):
     group_by = filtros.group_by if filtros.group_by in GROUP_BY_ALLOWED else "centro"
     nivel = filtros.nivel if filtros.nivel in NIVEL_ALLOWED else "inet"
 
-    queryset = _apply_filters(_base_queryset_for_user(user), filtros)
+    queryset = _apply_filters(base_inscripciones_queryset_for_user(user), filtros)
     if group_by == "mes":
         queryset = queryset.annotate(mes_ref=TruncMonth("fecha_inscripcion"))
 
@@ -391,7 +282,7 @@ DETALLE_VALUES = (
 def build_detalle_queryset(user, filtros: ReporteFiltros):
     """Queryset (sin materializar) del detalle nominal, ordenado de forma estable
     para paginar con LIMIT/OFFSET sin solapamientos entre páginas."""
-    queryset = _apply_filters(_base_queryset_for_user(user), filtros)
+    queryset = _apply_filters(base_inscripciones_queryset_for_user(user), filtros)
     return (
         queryset.annotate(tiene_voucher_activo=tiene_voucher_activo_subquery())
         .values(*DETALLE_VALUES)
@@ -433,7 +324,7 @@ def _build_filter_options(user):
     )
     centros = centros_qs.values("id", "nombre").order_by("nombre")
 
-    inscripciones_scope = _base_queryset_for_user(user)
+    inscripciones_scope = base_inscripciones_queryset_for_user(user)
     programas = (
         inscripciones_scope.values("programa_id_ref", "programa_nombre_ref")
         .exclude(programa_id_ref__isnull=True)
@@ -502,7 +393,7 @@ DETALLE_HEADERS = [
 
 def _detalle_export_queryset(user, filtros: ReporteFiltros):
     """Detalle nominal completo (sin tope de filas) para exportar."""
-    queryset = _apply_filters(_base_queryset_for_user(user), filtros)
+    queryset = _apply_filters(base_inscripciones_queryset_for_user(user), filtros)
     return (
         queryset.annotate(tiene_voucher_activo=tiene_voucher_activo_subquery())
         .values(

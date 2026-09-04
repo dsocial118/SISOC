@@ -419,6 +419,52 @@ Calificación de cada inscripto en cada evaluación.
 
 ---
 
+## 10. Buscador por Ciudadano
+
+Pantalla de solo lectura para consultar la trayectoria formativa completa de
+una persona en INET, sin necesidad de acceder a Personas ni a cada comisión
+por separado. Reemplaza las consultas manuales que antes requerían soporte
+técnico.
+
+**Cómo buscar:**
+1. Ir a **INET → Buscador por Ciudadano**.
+2. Ingresar DNI (`30123456`) o CUIT/CUIL, con o sin guiones/puntos
+   (`20-30123456-5`, `20301234565`).
+3. Buscar. Si el número coincide con más de una persona (mismo número, distinto
+   tipo de documento), el sistema pide elegir a cuál consultar.
+
+**Qué muestra:**
+- Ficha del ciudadano (nombre, documento, CUIL/CUIT, email, teléfono) con
+  enlace a su legajo si el usuario tiene permiso sobre Ciudadanos.
+- Contadores: total de inscripciones, en curso, completadas, abandonadas,
+  rechazadas y % de asistencia global.
+- Tabla con cada inscripción: curso, comisión, centro (con CUE vigente),
+  ubicación, período, **estado de la inscripción** y **resultado final** en
+  columnas separadas, y asistencia.
+- Exportación CSV y XLSX de la trayectoria visible.
+
+**Estado de inscripción vs. resultado final:** son dos datos independientes.
+El estado (`pre_inscripta` → `inscripta`/`validada_presencial` → `completada`
+o `abandonada`/`rechazada`) indica si la persona cursó. El resultado final
+(`aprobado`/`desaprobado`/**sin calificar**) indica si aprobó, y es
+independiente del estado — una inscripción `completada` puede seguir "sin
+calificar" hasta que se cargue la nota.
+
+**Alcance de acceso:** la búsqueda respeta el mismo alcance que el resto de
+INET. Un referente de centro solo ve las inscripciones de sus centros; SSE y
+el perfil Admin Visualizador ven la trayectoria completa del país. Cuando el
+alcance está limitado, la pantalla muestra una leyenda fija: el listado
+**no representa necesariamente** la trayectoria completa de la persona en
+INET, sino la parte visible para ese usuario.
+
+> **Ejemplo:** Mesa de ayuda recibe un reclamo de un ciudadano que dice haber
+> completado un curso pero no le figura el certificado. Un referente busca su
+> DNI en el Buscador por Ciudadano y ve que la inscripción sigue en estado
+> `inscripta` con resultado "Sin calificar": el curso no fue cerrado
+> administrativamente, no es un problema de certificado.
+
+---
+
 ## Flujos de uso frecuente
 
 ### Alta de un nuevo centro

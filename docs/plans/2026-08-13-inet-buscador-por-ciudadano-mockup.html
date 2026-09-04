@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="es" data-bs-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SISOC — Mockup INET · Buscador por Ciudadano</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   INET · Buscador por Ciudadano — mockup
+   Tokens SISOC / VAT: navy #232D4F, teal #3B8681, gold #E7BA61
+   Espeja docs/plans/atm/mockup_atm.html y
+   VAT/templates/vat/reportes/inscripciones_asistencia.html
+   Datos ficticios: ningún documento/persona real.
+   ============================================================ */
+:root{
+  --cnav:#232D4F; --cnav-soft:#2b3760; --cteal:#3B8681; --cgold:#E7BA61;
+  --cgreen:#2e7d33; --cblue:#2e6fd1; --cred:#c8484c;
+  --cline:rgba(255,255,255,.16); --ctext:#F2F2F2;
+  --bg:#1a2138; --panel:#232D4F; --panel2:#2b3760;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ctext);font-family:'Montserrat',Inter,Roboto,sans-serif;font-size:14px}
+a{color:#9fcbff;text-decoration:none}
+
+/* ---- Shell SISOC ---- */
+.app-header{position:fixed;top:0;left:0;right:0;height:72px;background:var(--cnav);border-bottom:5px solid var(--cgold);display:flex;align-items:center;justify-content:space-between;padding:0 24px;z-index:100}
+.brand{display:flex;align-items:center;gap:12px}
+.brand .logo{width:38px;height:38px;border-radius:8px;background:var(--cgold);color:var(--cnav);display:flex;align-items:center;justify-content:center;font-weight:700;font-family:'Lora',serif;font-size:18px}
+.brand b{font-family:'Lora',serif;font-size:20px;letter-spacing:.5px}
+.header-right{display:flex;align-items:center;gap:18px;color:#cfd6ea;font-size:13px}
+.app-sidebar{position:fixed;top:77px;bottom:0;left:0;width:250px;background:var(--cnav);overflow-y:auto;z-index:90;padding-bottom:30px}
+.smenu{list-style:none;margin:0;padding:0}
+.smenu>li>a{display:flex;align-items:center;gap:10px;height:46px;padding:0 18px;color:#cfd6ea;font-size:13px}
+.smenu .grp{color:#fff;font-weight:600}
+.smenu .sub{list-style:none;margin:0;padding:0}
+.smenu .sub a{display:flex;align-items:center;gap:9px;height:40px;padding:0 18px 0 34px;color:#cfd6ea;font-size:12.5px}
+.smenu a:hover{color:#fff}
+.smenu .sub a.active{color:var(--cgold);background:rgba(231,186,97,.10);position:relative;font-weight:600}
+.smenu .sub a.active::before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--cgold)}
+.sep{height:1px;background:rgba(255,255,255,.10);margin:6px 14px}
+.inet-box{outline:2px solid var(--cgold);outline-offset:-2px;border-radius:8px;margin:4px 8px;padding:2px 0}
+.new-chip{margin-left:auto;font-size:9px;background:var(--cteal);color:#fff;border-radius:8px;padding:1px 6px;letter-spacing:.6px;font-weight:700}
+
+.app-main{margin-left:250px;padding:96px 26px 40px;max-width:1500px}
+.app-footer{margin-left:250px;background:var(--cnav);border-top:10px solid var(--cgold);color:#cfd6ea;padding:18px 26px;font-size:12px;display:flex;justify-content:space-between}
+
+/* ---- Switcher (solo mockup) ---- */
+.mock-switch{position:fixed;bottom:16px;right:16px;z-index:200;background:#111832;border:1px solid var(--cline);border-radius:14px;padding:10px 12px;box-shadow:0 8px 30px rgba(0,0,0,.55);max-width:290px}
+.mock-switch span{display:block;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:#8b93ad;margin-bottom:6px}
+.mock-switch button{background:var(--cnav-soft);border:1px solid var(--cline);color:#e8ebf5;border-radius:20px;padding:5px 11px;margin:2px;font-size:11.5px;cursor:pointer;font-family:inherit}
+.mock-switch button.on{background:var(--cgold);border-color:var(--cgold);color:var(--cnav);font-weight:600}
+.screen{display:none}.screen.on{display:block}
+
+/* ---- Hero ---- */
+.hero{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;flex-wrap:wrap;background:var(--cnav);border-radius:0 0 14px 14px;padding:22px 28px;margin-bottom:22px;box-shadow:0 14px 20px rgba(18,28,46,.16)}
+.hero h1{margin:0;font-family:'Lora',Georgia,serif;font-size:30px;font-weight:700;color:#fff;letter-spacing:1px}
+.hero p{margin:.5rem 0 0;color:rgba(255,255,255,.78);font-size:13.5px;max-width:780px;line-height:1.45}
+.pill{display:inline-flex;align-items:center;border-radius:8px;padding:.42rem .75rem;background:var(--cteal);border:1px solid rgba(255,255,255,.22);color:#fff;font-size:.72rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+.crumb{color:#9fb0d8;font-size:12px;text-align:right;margin-bottom:6px}
+
+/* ---- Card ---- */
+.card{background:var(--panel);border-radius:15px;box-shadow:4px 4px 4px rgba(0,0,0,.3);overflow:hidden;margin:0 0 22px}
+.card-head{display:flex;align-items:center;gap:.55rem;background:var(--cteal);border-bottom:2px solid #fff;padding:.8rem 1.25rem;color:#fff;font-size:19px;font-weight:700;letter-spacing:.7px}
+.card-head .right{margin-left:auto;display:flex;gap:8px}
+.card-body{padding:22px 26px}
+
+/* ---- Form ---- */
+label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:#aab2cc;margin-bottom:6px;font-weight:600}
+input[type=text],input[type=search],select{width:100%;background:#1b2942;border:1px solid #2a3a4a;color:#fff;border-radius:8px;padding:.6rem .8rem;font-size:14px;font-family:inherit}
+input:focus,select:focus{outline:none;border-color:var(--cgold);box-shadow:0 0 0 2px rgba(231,186,97,.18)}
+::placeholder{color:rgba(255,255,255,.45)}
+.search-row{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap}
+.search-row .f{flex:1 1 380px;min-width:280px}
+.hint{margin:10px 0 0;font-size:12px;color:#9aa4c2}
+.hint code{background:#1b2942;border:1px solid #2a3a4a;border-radius:5px;padding:1px 6px;color:#e7ba61;font-size:11.5px}
+
+.btn{border:none;border-radius:8px;padding:9px 18px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:7px;min-height:40px}
+.btn-gold{background:var(--cgold);color:var(--cnav)}
+.btn-green{background:#2f8f4f;color:#fff}
+.btn-ghost{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.35)}
+.btn-sm{min-height:30px;padding:5px 11px;font-size:11.5px}
+
+/* ---- Ficha ciudadano ---- */
+.ficha{display:flex;gap:22px;align-items:flex-start;flex-wrap:wrap}
+.avatar{width:64px;height:64px;border-radius:50%;background:var(--cnav-soft);border:2px solid var(--cgold);display:flex;align-items:center;justify-content:center;font-family:'Lora',serif;font-size:23px;color:var(--cgold);font-weight:700;flex:0 0 auto}
+.dgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px 26px;flex:1 1 520px}
+.dgrid dt{font-size:10.5px;text-transform:uppercase;letter-spacing:.6px;color:#aab2cc}
+.dgrid dd{margin:3px 0 0;font-size:14px;color:#fff;font-weight:500}
+
+/* ---- KPIs ---- */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:22px}
+.kpi{background:var(--panel);border:1px solid var(--cline);border-left:6px solid var(--cgold);border-radius:14px;padding:13px 15px}
+.kpi.teal{border-left-color:var(--cteal)}.kpi.green{border-left-color:var(--cgreen)}
+.kpi.red{border-left-color:var(--cred)}.kpi.blue{border-left-color:var(--cblue)}.kpi.grey{border-left-color:#8b93ad}
+.kpi .n{font-size:25px;font-weight:700;font-family:'Lora',serif;color:#fff;line-height:1.1}
+.kpi .l{font-size:10.5px;text-transform:uppercase;letter-spacing:.7px;color:#aab2cc;margin-top:3px}
+
+/* ---- Tabla ---- */
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:1120px}
+th{font-size:10.5px;text-transform:uppercase;letter-spacing:.7px;color:var(--cgold);text-align:left;padding:11px 12px;border-bottom:2px solid var(--cline);white-space:nowrap;font-weight:700}
+td{padding:12px;border-bottom:1px solid rgba(255,255,255,.08);font-size:12.8px;color:#e8ebf5;vertical-align:top}
+tbody tr:hover td{background:rgba(59,134,129,.10)}
+td .sub{display:block;font-size:11px;color:#9aa4c2;margin-top:3px}
+.nowrap{white-space:nowrap}
+
+/* ---- Badges ---- */
+.badge{display:inline-flex;align-items:center;gap:5px;border-radius:20px;padding:3px 10px;font-size:10.8px;font-weight:600;white-space:nowrap}
+.b-green{background:rgba(46,125,51,.25);color:#7fd685;border:1px solid #2e7d33}
+.b-red{background:rgba(200,72,76,.22);color:#f29b9e;border:1px solid #c8484c}
+.b-gold{background:rgba(231,186,97,.18);color:var(--cgold);border:1px solid var(--cgold)}
+.b-teal{background:rgba(59,134,129,.22);color:#7fd0ca;border:1px solid var(--cteal)}
+.b-blue{background:rgba(46,111,209,.22);color:#9dc0f5;border:1px solid var(--cblue)}
+.b-grey{background:rgba(255,255,255,.08);color:#aab2cc;border:1px solid var(--cline)}
+
+/* ---- Barra de asistencia ---- */
+.att{min-width:112px}
+.att .bar{height:6px;border-radius:4px;background:rgba(255,255,255,.12);overflow:hidden;margin-top:5px}
+.att .bar i{display:block;height:100%;background:var(--cteal)}
+.att .bar i.low{background:var(--cred)}
+.att .t{font-size:12.5px;color:#fff;font-weight:600}
+.att .n{font-size:11px;color:#9aa4c2}
+.att.empty .t{color:#8b93ad;font-weight:500;font-style:italic;font-size:12px}
+
+/* ---- Avisos ---- */
+.note{display:flex;gap:11px;align-items:flex-start;background:rgba(59,134,129,.14);border:1px solid var(--cteal);border-left:5px solid var(--cteal);border-radius:10px;padding:12px 16px;margin-bottom:20px;font-size:12.8px;color:#d8e6e5;line-height:1.45}
+.note.gold{background:rgba(231,186,97,.12);border-color:var(--cgold);border-left-color:var(--cgold);color:#f3e4c4}
+.note .bi{font-size:16px;margin-top:1px}
+
+/* ---- Estados vacíos ---- */
+.empty{text-align:center;padding:52px 20px;color:#9aa4c2}
+.empty .bi{font-size:46px;color:#3d4a72;display:block;margin-bottom:14px}
+.empty h4{margin:0 0 8px;font-family:'Lora',serif;font-size:19px;color:#dfe5f5;font-weight:600}
+.empty p{margin:0 auto;max-width:460px;font-size:13px;line-height:1.5}
+
+/* ---- Candidatos (desambiguación) ---- */
+.cand{display:flex;align-items:center;gap:16px;background:var(--cnav-soft);border:1px solid var(--cline);border-radius:12px;padding:14px 18px;margin-bottom:12px}
+.cand:hover{border-color:var(--cgold)}
+.cand .who{flex:1 1 auto}
+.cand .who b{display:block;font-size:15px;color:#fff;font-weight:600}
+.cand .who span{font-size:12px;color:#9aa4c2}
+
+/* ---- Leyenda ---- */
+.legend{display:flex;gap:22px;flex-wrap:wrap;padding:14px 26px;border-top:1px solid rgba(255,255,255,.08);font-size:11.5px;color:#9aa4c2}
+.legend div{display:flex;align-items:center;gap:7px}
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="brand"><div class="logo">Si</div><b>SISOC</b></div>
+  <div class="header-right"><span><i class="bi bi-person-circle"></i> ldiaz · INET/SSE</span><i class="bi bi-box-arrow-right"></i></div>
+</header>
+
+<aside class="app-sidebar">
+  <ul class="smenu">
+    <li><a href="#"><i class="bi bi-dot"></i> Centro de Familia <i class="bi bi-chevron-right" style="margin-left:auto;font-size:10px"></i></a></li>
+    <div class="inet-box">
+      <li><a href="#" class="grp"><i class="bi bi-dot"></i> INET <i class="bi bi-chevron-down" style="margin-left:auto;font-size:10px"></i></a>
+        <ul class="sub">
+          <li><a href="#"><i class="bi bi-arrow-return-right"></i> Centros de Formación Pro…</a></li>
+          <li><a href="#"><i class="bi bi-arrow-return-right"></i> Reporte Inscriptos y Asist…</a></li>
+          <li><a href="#" class="active"><i class="bi bi-arrow-return-right"></i> Buscador por Ciudadano <span class="new-chip">NUEVO</span></a></li>
+          <li><a href="#"><i class="bi bi-arrow-return-right"></i> Catálogos</a></li>
+        </ul>
+      </li>
+    </div>
+    <div class="sep"></div>
+    <li><a href="#"><i class="bi bi-dot"></i> Celiaquía <i class="bi bi-chevron-right" style="margin-left:auto;font-size:10px"></i></a></li>
+    <li><a href="#"><i class="bi bi-pie-chart"></i> Tableros</a></li>
+    <li><a href="#"><i class="bi bi-people"></i> Administración del sistema</a></li>
+    <li><a href="#"><i class="bi bi-card-list"></i> Configuración de Comedores</a></li>
+    <li><a href="#"><i class="bi bi-file-earmark-text"></i> OCR</a></li>
+    <li><a href="#"><i class="bi bi-megaphone"></i> Comunicados</a></li>
+  </ul>
+</aside>
+
+<main class="app-main">
+
+<!-- ═══════════ 1 · ESTADO INICIAL ═══════════ -->
+<section class="screen on" id="s1">
+  <div class="crumb">INET / Buscador por Ciudadano</div>
+  <div class="hero">
+    <div>
+      <h1>BUSCADOR POR CIUDADANO</h1>
+      <p>Trayectoria formativa completa de una persona en INET: a qué cursos se anotó, en qué comisión y centro, en qué estado quedó cada inscripción y cuál fue su resultado final.</p>
+    </div>
+    <span class="pill">Solo lectura</span>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><i class="bi bi-search"></i> Buscar ciudadano</div>
+    <div class="card-body">
+      <div class="search-row">
+        <div class="f">
+          <label for="q">DNI o CUIL / CUIT</label>
+          <input type="search" id="q" placeholder="Ej.: 30123456  ·  20-30123456-5">
+        </div>
+        <button class="btn btn-green"><i class="bi bi-search"></i> Buscar</button>
+        <button class="btn btn-ghost"><i class="bi bi-x-lg"></i> Limpiar</button>
+      </div>
+      <p class="hint"><i class="bi bi-info-circle"></i> Se admite documento (<code>30123456</code>) o CUIL/CUIT con o sin guiones (<code>20-30123456-5</code>, <code>20301234565</code>). Los puntos, guiones y espacios se ignoran.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <div class="empty">
+        <i class="bi bi-person-vcard"></i>
+        <h4>Ingresá un documento para comenzar</h4>
+        <p>El resultado muestra únicamente inscripciones de centros dentro de tu alcance de acceso.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ 2 · RESULTADO (SSE / alcance nacional) ═══════════ -->
+<section class="screen" id="s2">
+  <div class="crumb">INET / Buscador por Ciudadano / Resultado</div>
+  <div class="hero">
+    <div>
+      <h1>BUSCADOR POR CIUDADANO</h1>
+      <p>Resultado para el documento <b>30.123.456</b> — 5 inscripciones encontradas.</p>
+    </div>
+    <span class="pill">Solo lectura</span>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><i class="bi bi-search"></i> Buscar ciudadano</div>
+    <div class="card-body">
+      <div class="search-row">
+        <div class="f"><label for="q2">DNI o CUIL / CUIT</label><input type="search" id="q2" value="20-30123456-5"></div>
+        <button class="btn btn-green"><i class="bi bi-search"></i> Buscar</button>
+        <button class="btn btn-ghost"><i class="bi bi-x-lg"></i> Limpiar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><i class="bi bi-person-vcard"></i> Ciudadano
+      <div class="right"><a href="#" class="btn btn-ghost btn-sm"><i class="bi bi-box-arrow-up-right"></i> Ver legajo</a></div>
+    </div>
+    <div class="card-body">
+      <div class="ficha">
+        <div class="avatar">MP</div>
+        <dl class="dgrid">
+          <div><dt>Apellido y nombre</dt><dd>PÉREZ, María Laura</dd></div>
+          <div><dt>Documento</dt><dd>DNI 30.123.456</dd></div>
+          <div><dt>CUIL / CUIT</dt><dd>27-30123456-4</dd></div>
+          <div><dt>Email</dt><dd>m.perez@example.com</dd></div>
+          <div><dt>Teléfono</dt><dd>+54 388 461-2526</dd></div>
+          <div><dt>Primera inscripción INET</dt><dd>14/03/2024</dd></div>
+        </dl>
+      </div>
+    </div>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi"><div class="n">5</div><div class="l">Inscripciones</div></div>
+    <div class="kpi blue"><div class="n">1</div><div class="l">En curso</div></div>
+    <div class="kpi green"><div class="n">2</div><div class="l">Completadas</div></div>
+    <div class="kpi red"><div class="n">1</div><div class="l">Abandonadas</div></div>
+    <div class="kpi grey"><div class="n">1</div><div class="l">Rechazadas</div></div>
+    <div class="kpi teal"><div class="n">78%</div><div class="l">Asistencia global</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><i class="bi bi-mortarboard"></i> Trayectoria formativa
+      <div class="right">
+        <button class="btn btn-ghost btn-sm"><i class="bi bi-filetype-csv"></i> CSV</button>
+        <button class="btn btn-ghost btn-sm"><i class="bi bi-file-earmark-excel"></i> XLSX</button>
+      </div>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Fecha insc.</th><th>Curso</th><th>Comisión</th><th>Período</th>
+            <th>Centro / CUE</th><th>Ubicación</th><th>Estado</th><th>Resultado</th>
+            <th>Asistencia</th><th>Origen</th><th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="nowrap">02/08/2026</td>
+            <td>Instalaciones Sanitarias<span class="sub">Curso: Activo</span></td>
+            <td>C-2026-114<span class="sub">Instalaciones Sanitarias — Turno tarde</span></td>
+            <td class="nowrap">01/08/2026<span class="sub">→ 20/12/2026</span></td>
+            <td>C.F.P. N° 33 — Aula Taller Móvil N° 33<span class="sub">CUE 6600123-00</span></td>
+            <td>San Juan / Capital<span class="sub">Avda. España s/n</span></td>
+            <td><span class="badge b-blue"><i class="bi bi-play-circle"></i> Inscripta</span><span class="sub">Comisión: Activa</span></td>
+            <td><span class="badge b-grey">Sin calificar</span></td>
+            <td><div class="att"><div class="t">86%</div><div class="n">12 de 14 sesiones</div><div class="bar"><i style="width:86%"></i></div></div></td>
+            <td><span class="badge b-grey">Backoffice</span></td>
+            <td class="nowrap"><a href="#" class="btn btn-ghost btn-sm"><i class="bi bi-box-arrow-up-right"></i></a></td>
+          </tr>
+          <tr>
+            <td class="nowrap">11/03/2026</td>
+            <td>Textil e Indumentaria<span class="sub">Curso: Finalizado</span></td>
+            <td>C-2026-041<span class="sub">Textil e Indumentaria N° 27</span></td>
+            <td class="nowrap">15/03/2026<span class="sub">→ 28/06/2026</span></td>
+            <td>C.F.P. N° 27 — Aula Taller Móvil N° 27<span class="sub">CUE 6600098-00</span></td>
+            <td>San Juan / Rawson<span class="sub">Avda. España s/n</span></td>
+            <td><span class="badge b-green"><i class="bi bi-check-circle"></i> Completada</span><span class="sub">Comisión: Cerrada</span></td>
+            <td><span class="badge b-green">Aprobado</span><span class="sub">Acta N° 2026-118</span></td>
+            <td><div class="att"><div class="t">93%</div><div class="n">28 de 30 sesiones</div><div class="bar"><i style="width:93%"></i></div></div></td>
+            <td><span class="badge b-grey">Front público</span></td>
+            <td class="nowrap"><a href="#" class="btn btn-ghost btn-sm"><i class="bi bi-box-arrow-up-right"></i></a></td>
+          </tr>
+          <tr>
+            <td class="nowrap">05/09/2025</td>
+            <td>Informática — Operador PC<span class="sub">Curso: Finalizado</span></td>
+            <td>C-2025-207<span class="sub">Informática Aula Taller Móvil N° 51</span></td>
+            <td class="nowrap">10/09/2025<span class="sub">→ 19/12/2025</span></td>
+            <td>C.F.P. Aula Taller Móvil N° 51<span class="sub">CUE 6600151-00</span></td>
+            <td>San Juan / Chimbas<span class="sub">Avda. España s/n</span></td>
+            <td><span class="badge b-green"><i class="bi bi-check-circle"></i> Completada</span><span class="sub">Comisión: Cerrada</span></td>
+            <td><span class="badge b-red">Desaprobado</span><span class="sub">Acta N° 2025-402</span></td>
+            <td><div class="att"><div class="t">61%</div><div class="n">17 de 28 sesiones</div><div class="bar"><i class="low" style="width:61%"></i></div></div></td>
+            <td><span class="badge b-grey">Backoffice</span></td>
+            <td class="nowrap"><a href="#" class="btn btn-ghost btn-sm"><i class="bi bi-box-arrow-up-right"></i></a></td>
+          </tr>
+          <tr>
+            <td class="nowrap">18/04/2025</td>
+            <td>Soldadura — Nivel I<span class="sub">Curso: Finalizado</span></td>
+            <td>C-2025-088<span class="sub">Soldadura Turno mañana</span></td>
+            <td class="nowrap">02/05/2025<span class="sub">→ 29/08/2025</span></td>
+            <td>C.F.P. N° 1 — Aula Taller Móvil (Sede)<span class="sub">CUE 3800001-00</span></td>
+            <td>Jujuy / San Salvador<span class="sub">Av. Gavazzini esq. Av. Tte. Farías</span></td>
+            <td><span class="badge b-red"><i class="bi bi-x-circle"></i> Abandonada</span><span class="sub">Comisión: Cerrada</span></td>
+            <td><span class="badge b-grey">Sin calificar</span></td>
+            <td><div class="att"><div class="t">24%</div><div class="n">5 de 21 sesiones</div><div class="bar"><i class="low" style="width:24%"></i></div></div></td>
+            <td><span class="badge b-grey">Front público</span></td>
+            <td class="nowrap"><a href="#" class="btn btn-ghost btn-sm"><i class="bi bi-box-arrow-up-right"></i></a></td>
+          </tr>
+          <tr>
+            <td class="nowrap">14/03/2024</td>
+            <td>Gastronomía — Panadería<span class="sub">Curso: Finalizado</span></td>
+            <td>C-2024-016<span class="sub">Panadería Turno noche</span></td>
+            <td class="nowrap">01/04/2024<span class="sub">→ 12/07/2024</span></td>
+            <td>C.F.P. N° 1 — Aula Taller Móvil (Sede)<span class="sub">CUE 3800001-00</span></td>
+            <td>Jujuy / San Salvador<span class="sub">Av. Gavazzini esq. Av. Tte. Farías</span></td>
+            <td><span class="badge b-grey"><i class="bi bi-slash-circle"></i> Rechazada</span><span class="sub">Sin cupo disponible</span></td>
+            <td><span class="badge b-grey">Sin calificar</span></td>
+            <td><div class="att empty"><div class="t">Sin registros</div></div></td>
+            <td><span class="badge b-grey">Importación</span></td>
+            <td class="nowrap"><a href="#" class="btn btn-ghost btn-sm"><i class="bi bi-box-arrow-up-right"></i></a></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="legend">
+      <div><span class="badge b-blue">Inscripta</span> cursando</div>
+      <div><span class="badge b-green">Completada</span> cumplió el cursado</div>
+      <div><span class="badge b-red">Abandonada</span> abandonó</div>
+      <div><span class="badge b-grey">Sin calificar</span> resultado pendiente de carga</div>
+      <div><i class="bi bi-info-circle"></i> Estado del cursado y resultado final son ejes independientes.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ 3 · ALCANCE LIMITADO (referente de centro) ═══════════ -->
+<section class="screen" id="s3">
+  <div class="crumb">INET / Buscador por Ciudadano / Resultado</div>
+  <div class="hero">
+    <div>
+      <h1>BUSCADOR POR CIUDADANO</h1>
+      <p>Misma búsqueda, vista por un <b>referente de centro</b>: solo se listan las inscripciones de sus centros.</p>
+    </div>
+    <span class="pill" style="background:var(--cgold);color:var(--cnav)">Alcance: 1 centro</span>
+  </div>
+
+  <div class="note gold"><i class="bi bi-shield-lock"></i>
+    <div>Estás viendo únicamente las inscripciones correspondientes a los centros dentro de tu alcance de acceso. Este listado <b>no representa la trayectoria completa</b> del ciudadano en INET.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><i class="bi bi-person-vcard"></i> Ciudadano</div>
+    <div class="card-body">
+      <div class="ficha">
+        <div class="avatar">MP</div>
+        <dl class="dgrid">
+          <div><dt>Apellido y nombre</dt><dd>PÉREZ, María Laura</dd></div>
+          <div><dt>Documento</dt><dd>DNI 30.123.456</dd></div>
+          <div><dt>CUIL / CUIT</dt><dd>27-30123456-4</dd></div>
+          <div><dt>Email</dt><dd>m.perez@example.com</dd></div>
+        </dl>
+      </div>
+    </div>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi"><div class="n">2</div><div class="l">Inscripciones</div></div>
+    <div class="kpi blue"><div class="n">0</div><div class="l">En curso</div></div>
+    <div class="kpi green"><div class="n">0</div><div class="l">Completadas</div></div>
+    <div class="kpi red"><div class="n">1</div><div class="l">Abandonadas</div></div>
+    <div class="kpi grey"><div class="n">1</div><div class="l">Rechazadas</div></div>
+    <div class="kpi teal"><div class="n">24%</div><div class="l">Asistencia</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><i class="bi bi-mortarboard"></i> Trayectoria formativa (alcance limitado)
+      <div class="right">
+        <button class="btn btn-ghost btn-sm"><i class="bi bi-filetype-csv"></i> CSV</button>
+        <button class="btn btn-ghost btn-sm"><i class="bi bi-file-earmark-excel"></i> XLSX</button>
+      </div>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr><th>Fecha insc.</th><th>Curso</th><th>Comisión</th><th>Período</th><th>Centro / CUE</th><th>Ubicación</th><th>Estado</th><th>Resultado</th><th>Asistencia</th><th>Origen</th><th></th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="nowrap">18/04/2025</td>
+            <td>Soldadura — Nivel I<span class="sub">Curso: Finalizado</span></td>
+            <td>C-2025-088<span class="sub">Soldadura Turno mañana</span></td>
+            <td class="nowrap">02/05/2025<span class="sub">→ 29/08/2025</span></td>
+            <td>C.F.P. N° 1 — Aula Taller Móvil (Sede)<span class="sub">CUE 3800001-00</span></td>
+            <td>Jujuy / San Salvador<span class="sub">Av. Gavazzini esq. Av. Tte. Farías</span></td>
+            <td><span class="badge b-red"><i class="bi bi-x-circle"></i> Abandonada</span></td>
+            <td><span class="badge b-grey">Sin calificar</span></td>
+            <td><div class="att"><div class="t">24%</div><div class="n">5 de 21 sesiones</div><div class="bar"><i class="low" style="width:24%"></i></div></div></td>
+            <td><span class="badge b-grey">Front público</span></td>
+            <td class="nowrap"><a href="#" class="btn btn-ghost btn-sm"><i class="bi bi-box-arrow-up-right"></i></a></td>
+          </tr>
+          <tr>
+            <td class="nowrap">14/03/2024</td>
+            <td>Gastronomía — Panadería<span class="sub">Curso: Finalizado</span></td>
+            <td>C-2024-016<span class="sub">Panadería Turno noche</span></td>
+            <td class="nowrap">01/04/2024<span class="sub">→ 12/07/2024</span></td>
+            <td>C.F.P. N° 1 — Aula Taller Móvil (Sede)<span class="sub">CUE 3800001-00</span></td>
+            <td>Jujuy / San Salvador<span class="sub">Av. Gavazzini esq. Av. Tte. Farías</span></td>
+            <td><span class="badge b-grey"><i class="bi bi-slash-circle"></i> Rechazada</span></td>
+            <td><span class="badge b-grey">Sin calificar</span></td>
+            <td><div class="att empty"><div class="t">Sin registros</div></div></td>
+            <td><span class="badge b-grey">Importación</span></td>
+            <td class="nowrap"><a href="#" class="btn btn-ghost btn-sm"><i class="bi bi-box-arrow-up-right"></i></a></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ 4 · SIN RESULTADOS / SIN INSCRIPCIONES ═══════════ -->
+<section class="screen" id="s4">
+  <div class="crumb">INET / Buscador por Ciudadano / Resultado</div>
+  <div class="hero">
+    <div><h1>BUSCADOR POR CIUDADANO</h1><p>Dos estados vacíos distintos: el ciudadano no existe, o existe pero no tiene inscripciones INET.</p></div>
+    <span class="pill">Solo lectura</span>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><i class="bi bi-search"></i> Buscar ciudadano</div>
+    <div class="card-body">
+      <div class="search-row">
+        <div class="f"><label for="q4">DNI o CUIL / CUIT</label><input type="search" id="q4" value="99999999"></div>
+        <button class="btn btn-green"><i class="bi bi-search"></i> Buscar</button>
+        <button class="btn btn-ghost"><i class="bi bi-x-lg"></i> Limpiar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <div class="empty">
+        <i class="bi bi-person-x"></i>
+        <h4>No se encontró un ciudadano con ese documento</h4>
+        <p>Verificá el número ingresado. Si la persona no está registrada en SISOC, primero debe darse de alta desde el módulo de Ciudadanos.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><i class="bi bi-person-vcard"></i> Ciudadano</div>
+    <div class="card-body">
+      <div class="ficha">
+        <div class="avatar">JG</div>
+        <dl class="dgrid">
+          <div><dt>Apellido y nombre</dt><dd>GÓMEZ, Juan Ignacio</dd></div>
+          <div><dt>Documento</dt><dd>DNI 28.987.654</dd></div>
+          <div><dt>CUIL / CUIT</dt><dd>20-28987654-1</dd></div>
+          <div><dt>Email</dt><dd>—</dd></div>
+        </dl>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><i class="bi bi-mortarboard"></i> Trayectoria formativa</div>
+    <div class="card-body">
+      <div class="empty">
+        <i class="bi bi-clipboard-x"></i>
+        <h4>El ciudadano no registra inscripciones en INET</h4>
+        <p>Existe en SISOC pero no tiene inscripciones a cursos o comisiones dentro de tu alcance de acceso.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ 5 · DESAMBIGUACIÓN ═══════════ -->
+<section class="screen" id="s5">
+  <div class="crumb">INET / Buscador por Ciudadano / Resultado</div>
+  <div class="hero">
+    <div><h1>BUSCADOR POR CIUDADANO</h1><p>El número coincide con más de un ciudadano: la unicidad en SISOC es tipo de documento + número, no el número solo.</p></div>
+    <span class="pill">Solo lectura</span>
+  </div>
+
+  <div class="note"><i class="bi bi-people"></i>
+    <div>Se encontraron <b>2 ciudadanos</b> con el número <b>30.123.456</b> en distintos tipos de documento. Elegí cuál querés consultar.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><i class="bi bi-list-check"></i> Coincidencias</div>
+    <div class="card-body">
+      <div class="cand">
+        <div class="avatar" style="width:46px;height:46px;font-size:16px">MP</div>
+        <div class="who"><b>PÉREZ, María Laura</b><span>DNI 30.123.456 · CUIL 27-30123456-4 · 5 inscripciones INET</span></div>
+        <button class="btn btn-gold btn-sm"><i class="bi bi-arrow-right"></i> Ver trayectoria</button>
+      </div>
+      <div class="cand">
+        <div class="avatar" style="width:46px;height:46px;font-size:16px">RS</div>
+        <div class="who"><b>SILVA, Ramón</b><span>LC 30.123.456 · sin CUIL registrado · 1 inscripción INET</span></div>
+        <button class="btn btn-gold btn-sm"><i class="bi bi-arrow-right"></i> Ver trayectoria</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="app-footer">
+  <span>SISOC — Ministerio de Capital Humano · Mockup no funcional</span>
+  <span>INET · Buscador por Ciudadano</span>
+</footer>
+
+<div class="mock-switch">
+  <span>Pantallas del mockup</span>
+  <button class="on" data-s="s1">1 · Inicial</button>
+  <button data-s="s2">2 · Resultado</button>
+  <button data-s="s3">3 · Alcance limitado</button>
+  <button data-s="s4">4 · Vacíos</button>
+  <button data-s="s5">5 · Desambiguación</button>
+</div>
+
+<script>
+function mostrar(id) {
+  document.querySelectorAll('.mock-switch button').forEach(function (x) {
+    x.classList.toggle('on', x.dataset.s === id);
+  });
+  document.querySelectorAll('.screen').forEach(function (x) {
+    x.classList.toggle('on', x.id === id);
+  });
+  window.scrollTo(0, 0);
+}
+
+document.querySelectorAll('.mock-switch button').forEach(function (b) {
+  b.addEventListener('click', function () { mostrar(b.dataset.s); });
+});
+
+// ?s=s2 abre una pantalla concreta (links directos); ?shot=1 oculta la botonera
+// para capturar la pantalla como imagen.
+var params = new URLSearchParams(location.search);
+if (params.get('s') && document.getElementById(params.get('s'))) {
+  mostrar(params.get('s'));
+}
+if (params.get('shot')) {
+  document.querySelector('.mock-switch').style.display = 'none';
+}
+</script>
+</body>
+</html>

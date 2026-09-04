@@ -559,6 +559,13 @@
                                 <p>Reporte Inscriptos y Asistencias</p>
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a href="{% url 'vat_buscador_ciudadano' %}"
+                               class="nav-link {% if 'vat/buscador-ciudadano/' in pagina_actual %}active{% endif %} ms-4">
+                                <i class="nav-icon bi bi-arrow-return-right"></i>
+                                <p>Buscador por Ciudadano</p>
+                            </a>
+                        </li>
                         <!-- Inscripciones (oculto temporalmente) -->
                         {% if False and request.user|has_perm_code:"VAT.view_inscripcion" %}
                             <li class="nav-item">
