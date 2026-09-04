@@ -67,7 +67,7 @@ class Migration(migrations.Migration):
             model_name="coordinadorequipotecnicopwa",
             index=models.Index(
                 fields=["user", "activo"],
-                name="users_coord_user_id_50e688_idx",
+                name="users_coord_user_id_b87430_idx",
             ),
         ),
     ]
