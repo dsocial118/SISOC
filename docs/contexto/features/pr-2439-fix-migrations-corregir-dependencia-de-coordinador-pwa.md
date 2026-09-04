@@ -35,6 +35,7 @@
 - `docs/registro/prs/PR-2439.md`
 - `users/forms.py`
 - `users/migrations/0049_coordinadorequipotecnico_pwa.py`
+- `users/services_pwa.py`
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
