@@ -17,6 +17,7 @@ from django.db.models import Exists, F, OuterRef, Q
 from django.utils import timezone
 
 from core.models import Provincia
+from users.form_catalogs import obtener_queryset_formulario
 from users.models import (
     AccesoComedorPWA,
     AccesoOrganizacionPWA,
@@ -137,9 +138,8 @@ def get_coordinador_pwa_comedor_ids(user) -> list[int]:
         return []
     return list(
         filter_pwa_visible_spaces(
-            Comedor.objects.filter(
-                Q(dupla__in=scope.duplas.all())
-                | Q(coordinadores_pwa_adicionales=scope)
+            obtener_queryset_formulario("comedores_pwa").filter(
+                Q(dupla__in=scope.duplas.all()) | Q(coordinadores_pwa_adicionales=scope)
             )
         )
         .order_by("id")
@@ -276,9 +276,7 @@ def get_pwa_context(user) -> dict:
 
 
 @transaction.atomic
-def sync_coordinador_equipo_tecnico_pwa_access(
-    *, user, duplas, comedores_adicionales
-):
+def sync_coordinador_equipo_tecnico_pwa_access(*, user, duplas, comedores_adicionales):
     """Configura el alcance PWA dinámico de un coordinador exclusivo."""
     if (
         AccesoComedorPWA.objects.filter(user=user, activo=True).exists()

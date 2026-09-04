@@ -16,8 +16,6 @@ from django.utils import timezone
 from core.constants import UserGroups
 from core.models import Provincia
 from core.validators import solo_digitos, validate_cuit
-from duplas.models import Dupla
-from organizaciones.models import Organizacion
 from users.form_catalogs import obtener_queryset_formulario
 from users.models import (
     AccesoComedorPWA,
@@ -322,7 +320,7 @@ class PWAAccessMixin:
             help_text="Acceso PWA exclusivo de solo lectura.",
         )
         self.fields["duplas_coordinador_pwa"] = forms.ModelMultipleChoiceField(
-            queryset=Dupla.objects.activas(),
+            queryset=obtener_queryset_formulario("duplas_asignadas"),
             required=False,
             widget=forms.SelectMultiple(attrs={"class": "select2"}),
             label="Equipos técnicos PWA",
@@ -330,9 +328,7 @@ class PWAAccessMixin:
         )
         self.fields["comedores_adicionales_coordinador_pwa"] = (
             forms.ModelMultipleChoiceField(
-                queryset=Comedor.objects.select_related("organizacion").order_by(
-                    "organizacion__nombre", "nombre"
-                ),
+                queryset=obtener_queryset_formulario("comedores_pwa"),
                 required=False,
                 widget=forms.SelectMultiple(attrs={"class": "select2"}),
                 label="Comedores adicionales PWA",
@@ -423,7 +419,9 @@ class PWAAccessMixin:
         ).first()
         if coordinator_scope:
             self.fields["es_coordinador_equipo_tecnico_pwa"].initial = True
-            self.fields["duplas_coordinador_pwa"].initial = coordinator_scope.duplas.all()
+            self.fields["duplas_coordinador_pwa"].initial = (
+                coordinator_scope.duplas.all()
+            )
             self.fields["comedores_adicionales_coordinador_pwa"].initial = (
                 coordinator_scope.comedores_adicionales.all()
             )
@@ -1011,10 +1009,9 @@ class UserCreationForm(
             return self._save_atomic(commit=commit)
 
     def _configure_created_user(self, user):
-        if (
-            self.cleaned_data.get("es_representante_pwa", False)
-            or self.cleaned_data.get("es_coordinador_equipo_tecnico_pwa", False)
-        ):
+        if self.cleaned_data.get(
+            "es_representante_pwa", False
+        ) or self.cleaned_data.get("es_coordinador_equipo_tecnico_pwa", False):
             self.generated_password = get_random_string(12)
             user.set_password(self.generated_password)
             user.is_staff = False
@@ -1267,7 +1264,10 @@ class CustomUserChangeForm(
         is_pwa_read_only_coordinator = self.cleaned_data.get(
             "es_coordinador_equipo_tecnico_pwa", False
         )
-        if self.cleaned_data.get("es_representante_pwa", False) or is_pwa_read_only_coordinator:
+        if (
+            self.cleaned_data.get("es_representante_pwa", False)
+            or is_pwa_read_only_coordinator
+        ):
             user.is_staff = False
         elif self.cleaned_data.get("es_coordinador", False):
             user.is_staff = True
