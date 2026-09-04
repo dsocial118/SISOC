@@ -139,8 +139,7 @@ def get_coordinador_pwa_comedor_ids(user) -> list[int]:
     return list(
         filter_pwa_visible_spaces(
             obtener_queryset_formulario("comedores_pwa").filter(
-                Q(dupla__in=scope.duplas.all())
-                | Q(coordinadores_pwa_adicionales=scope)
+                Q(dupla__in=scope.duplas.all()) | Q(coordinadores_pwa_adicionales=scope)
             )
         )
         .order_by("id")
@@ -277,9 +276,7 @@ def get_pwa_context(user) -> dict:
 
 
 @transaction.atomic
-def sync_coordinador_equipo_tecnico_pwa_access(
-    *, user, duplas, comedores_adicionales
-):
+def sync_coordinador_equipo_tecnico_pwa_access(*, user, duplas, comedores_adicionales):
     """Configura el alcance PWA dinámico de un coordinador exclusivo."""
     if (
         AccesoComedorPWA.objects.filter(user=user, activo=True).exists()
