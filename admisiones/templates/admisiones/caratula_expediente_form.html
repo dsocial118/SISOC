@@ -1,0 +1,34 @@
+{% comment %}
+Carátula del expediente, reutilizable dentro del formulario de Informe Técnico.
+Contexto esperado: admision y caratular_form (o None si no es editable).
+El bloque es colapsable y lo maneja static/custom/js/informeTecnicoSecciones.js.
+{% endcomment %}
+<div class="card mb-4">
+    <div class="card-header p-0">
+        <button class="btn btn-link w-100 d-flex justify-content-between align-items-center text-decoration-none text-reset px-3 py-2 collapsed"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#informeSeccionCaratula"
+                aria-expanded="false"
+                aria-controls="informeSeccionCaratula">
+            <span class="h5 mb-0 text-start">Carátula del Expediente</span>
+            <i class="fas fa-chevron-down informe-seccion-chevron"
+               aria-hidden="true"></i>
+        </button>
+    </div>
+    <div class="card-body collapse"
+         id="informeSeccionCaratula"
+         data-informe-seccion="1">
+        {% if admision.num_expediente %}
+            <p class="mb-0">
+                Expediente caratulado: <strong>{{ admision.num_expediente }}</strong>
+            </p>
+            <small class="text-muted">Para modificarlo usá la edición del número de expediente en la ficha de la admisión.</small>
+        {% elif caratular_form %}
+            {% include "admisiones/partials/numero_expediente_estructurado.html" with numero_expediente_form=caratular_form %}
+            <small class="text-muted d-block mt-2">Se guarda junto con el informe técnico al confirmar este formulario.</small>
+        {% else %}
+            <p class="text-muted mb-0">La caratulación no está disponible en el estado actual de la admisión.</p>
+        {% endif %}
+    </div>
+</div>

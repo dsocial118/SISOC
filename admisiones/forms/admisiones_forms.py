@@ -9,40 +9,11 @@ from admisiones.models.admisiones import (
     FormularioProyectoDisposicion,
     FormularioProyectoDeConvenio,
     DocumentosExpediente,
-    ArchivoAdmision,
-    NumeroGdeOrganizacion,
 )
-
-
-def _ultimo_numero_gde(admision, documentacion_nombre):
-    if not admision:
-        return None
-
-    candidato_admision = (
-        ArchivoAdmision.objects.filter(
-            admision=admision,
-            documentacion__nombre=documentacion_nombre,
-        )
-        .exclude(numero_gde__isnull=True)
-        .exclude(numero_gde="")
-        .order_by("-modificado", "-id")
-        .values_list("numero_gde", flat=True)
-        .first()
-    )
-    if candidato_admision:
-        return candidato_admision
-
-    return (
-        NumeroGdeOrganizacion.objects.filter(
-            admision=admision,
-            archivo_organizacion__documentacion__nombre=documentacion_nombre,
-        )
-        .exclude(numero_gde__isnull=True)
-        .exclude(numero_gde="")
-        .order_by("-modificado", "-id")
-        .values_list("numero_gde", flat=True)
-        .first()
-    )
+from admisiones.utils import (
+    informe_admite_replica_gde,
+    numeros_gde_por_campo_de_informe,
+)
 
 
 def _configurar_campos_informe_2233(form, admision, tipo_informe):
@@ -183,22 +154,33 @@ def _guardar_antecedentes_informe_2233(form, informe):
     return informe
 
 
-def _if_relevamiento_a_pac(fields, admision):
-    """Setea el último número GDE disponible en los campos de relevamiento."""
+def _prellenar_campos_gde(form, admision, tipo_informe):
+    """Precarga los campos del informe que reflejan el GDE de un documento.
 
-    if not admision or not fields:
-        return fields
+    Mientras el informe está en borrador el documento es la fuente de verdad, así
+    que el valor se escribe en ``form.initial``: ``fields[campo].initial`` no
+    alcanza, porque Django lo ignora cuando el formulario está ligado a una
+    instancia ya guardada (los datos de la instancia tienen prioridad) y el
+    prellenado quedaba sin efecto al editar un informe existente.
 
-    numero_gde = _ultimo_numero_gde(admision, "Relevamiento Programa PAC")
-    if not numero_gde:
-        return fields
+    La relación documento -> campo vive en ``admisiones.utils``; acá solo se
+    aplica sobre los campos que el formulario realmente expone.
+    """
 
-    for field_name in ("if_relevamiento", "IF_relevamiento_territorial"):
-        field = fields.get(field_name)
-        if field:
-            field.initial = numero_gde
+    if not admision or not getattr(form, "fields", None):
+        return form
 
-    return fields
+    if not informe_admite_replica_gde(getattr(form, "instance", None)):
+        return form
+
+    for campo, numero_gde in numeros_gde_por_campo_de_informe(
+        admision, tipo_informe
+    ).items():
+        if campo in form.fields:
+            form.fields[campo].initial = numero_gde
+            form.initial[campo] = numero_gde
+
+    return form
 
 
 def _permite_no_corresponde_fecha_vencimiento(admision):
@@ -445,39 +427,7 @@ class InformeTecnicoJuridicoForm(forms.ModelForm):
             self.fields["tipo_espacio"].initial = getattr(comedor, "tipocomedor", "")
             self.fields["total_acreditaciones"].initial = "6"
             self.fields["plazo_ejecucion"].initial = "6 meses"
-            self.fields["nota_gde_if"].initial = (
-                ArchivoAdmision.objects.filter(
-                    admision=admision,
-                    documentacion__nombre="Nota de solicitud e Inclusión al Programa",
-                )
-                .values_list("numero_gde", flat=True)
-                .first()
-            )
-            self.fields["constancia_subsidios_dnsa"].initial = (
-                ArchivoAdmision.objects.filter(
-                    admision=admision,
-                    documentacion__nombre="Acta Solicitud de Subsidio",
-                )
-                .values_list("numero_gde", flat=True)
-                .first()
-            )
-            self.fields["constancia_subsidios_pnud"].initial = (
-                ArchivoAdmision.objects.filter(
-                    admision=admision, documentacion__nombre="Respuesta Memo PNUD"
-                )
-                .values_list("numero_gde", flat=True)
-                .first()
-            )
-            if "validacion_registro_nacional" in self.fields:
-                self.fields["validacion_registro_nacional"].initial = (
-                    ArchivoAdmision.objects.filter(
-                        admision=admision, documentacion__nombre="Validación RENACOM"
-                    )
-                    .values_list("numero_gde", flat=True)
-                    .first()
-                )
-
-            _if_relevamiento_a_pac(self.fields, admision)
+            _prellenar_campos_gde(self, admision, "juridico")
 
             # ESTO SE COMENTIO POR QUE NO QUIEREN QUE SE PREGARGE EL REFERENTE PERO PUEDE CAMBIAR
             # if referente:
@@ -656,39 +606,7 @@ class InformeTecnicoBaseForm(forms.ModelForm):
             self.fields["tipo_espacio"].initial = getattr(comedor, "tipocomedor", "")
             self.fields["total_acreditaciones"].initial = "6"
             self.fields["plazo_ejecucion"].initial = "6 meses"
-            self.fields["nota_gde_if"].initial = (
-                ArchivoAdmision.objects.filter(
-                    admision=admision,
-                    documentacion__nombre="Nota de solicitud e Inclusión al Programa",
-                )
-                .values_list("numero_gde", flat=True)
-                .first()
-            )
-            self.fields["constancia_subsidios_dnsa"].initial = (
-                ArchivoAdmision.objects.filter(
-                    admision=admision,
-                    documentacion__nombre="Acta Solicitud de Subsidio",
-                )
-                .values_list("numero_gde", flat=True)
-                .first()
-            )
-            self.fields["constancia_subsidios_pnud"].initial = (
-                ArchivoAdmision.objects.filter(
-                    admision=admision, documentacion__nombre="Respuesta Memo PNUD"
-                )
-                .values_list("numero_gde", flat=True)
-                .first()
-            )
-            if "validacion_registro_nacional" in self.fields:
-                self.fields["validacion_registro_nacional"].initial = (
-                    ArchivoAdmision.objects.filter(
-                        admision=admision, documentacion__nombre="Validación RENACOM"
-                    )
-                    .values_list("numero_gde", flat=True)
-                    .first()
-                )
-
-            _if_relevamiento_a_pac(self.fields, admision)
+            _prellenar_campos_gde(self, admision, "base")
 
             # ESTO SE COMENTIO POR QUE NO QUIEREN QUE SE PREGARGE EL REFERENTE PERO PUEDE CAMBIAR
             # if referente:

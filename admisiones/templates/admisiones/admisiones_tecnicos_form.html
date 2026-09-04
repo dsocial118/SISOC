@@ -29,6 +29,8 @@
 {% block content %}
     <link rel="stylesheet"
           href="{% static 'custom/css/numeroExpedienteModal.css' %}" />
+    <link rel="stylesheet"
+          href="{% static 'custom/css/informeTecnicoSecciones.css' %}" />
     <div class="row justify-content-between d-print-none mx-1 mb-3">
         <div class="col-auto">
             <a href="{% url 'admisiones_tecnicos_listar' %}"
@@ -36,7 +38,16 @@
         </div>
         <div class="col-auto">
             {% for boton in botones_disponibles %}
-                {% render_boton_tecnicos boton admision informe_tecnico %}
+                {% if informe_form and boton == "crear_informe_tecnico" %}
+                    <a href="#informe-tecnico-seccion" class="btn btn-primary mr-1">Crear Informe Técnico</a>
+                {% elif informe_form and boton == "editar_informe_tecnico" %}
+                    <a href="#informe-tecnico-seccion" class="btn btn-primary mr-1">Editar Informe Técnico</a>
+                {% else %}
+                    {% render_boton_tecnicos boton admision informe_tecnico %}
+                    {% if informe_form and boton == "caratular_expediente" %}
+                        <a href="#informe-tecnico-seccion" class="btn btn-primary mr-1">Caratular + Informe Técnico</a>
+                    {% endif %}
+                {% endif %}
             {% endfor %}
         </div>
     </div>
@@ -746,6 +757,38 @@
         </div>
     </div>
     </div>
+{% if informe_form %}
+    <!-- INFORME TECNICO + CARATULACION -->
+    <div class="row" id="informe-tecnico-seccion">
+        <div class="col-12">
+            <div class="card card-primary card-outline">
+                <div class="card-header">
+                    <h2 class="card-title fw-bold fs-3 mb-0">Informe Técnico y Carátula del Expediente</h2>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <input type="hidden" name="btnInformeTecnicoCaratula" value="1" />
+                        {% include "admisiones/caratula_expediente_form.html" with caratular_form=caratular_form_informe %}
+                        {% include "admisiones/partials/informe_tecnico_campos.html" with form=informe_form tipo=informe_tipo campos_a_subsanar=informe_campos_a_subsanar observacion=informe_observacion %}
+                        <div class="d-flex justify-content-end gap-2">
+                            <button type="submit"
+                                    name="action"
+                                    value="draft"
+                                    formnovalidate
+                                    class="btn btn-primary">
+                                <i class="fas fa-save"></i> Guardar Borrador
+                            </button>
+                            <button type="submit" name="action" value="submit" class="btn btn-success">
+                                <i class="fas fa-paper-plane"></i> Finalizar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endif %}
 <!-- MODAL OBSERVACIONES RECTIFICAR -->
 <div class="modal fade"
      id="modalObservacionRectificar"
@@ -1244,6 +1287,16 @@
             });
         </script>
     {% endif %}
+    {% if informe_form_con_errores %}
+        <script nonce="{{ request.csp_nonce }}">
+            document.addEventListener("DOMContentLoaded", function() {
+                var seccion = document.getElementById("informe-tecnico-seccion");
+                if (seccion) {
+                    seccion.scrollIntoView({ behavior: "smooth", block: "start" });
+                }
+            });
+        </script>
+    {% endif %}
     <div id="admisiones-tecnicos-config"
          data-csrf-token="{{ csrf_token }}"
          data-url-actualizar-estado="{% url 'actualizar_estado_archivo' %}"
@@ -1304,6 +1357,7 @@
     <script src="{% static 'custom/js/admisionesactualizarestado.js' %}"></script>
     <script src="{% static 'custom/js/admisionesTecnicoCrear.js' %}"></script>
     <script src="{% static 'custom/js/admisionResyncConvenio.js' %}"></script>
+    <script src="{% static 'custom/js/informeTecnicoSecciones.js' %}"></script>
     <script nonce="{{ request.csp_nonce }}">
                         document.addEventListener('DOMContentLoaded', function() {
                             const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));

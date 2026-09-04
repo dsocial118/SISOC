@@ -22,7 +22,11 @@ from docx.oxml.ns import nsdecls, qn
 from docx.shared import Mm, Pt
 from htmldocx import HtmlToDocx
 
-from ...utils import generar_texto_comidas
+from ...utils import (
+    campo_informe_para_numero_gde,
+    generar_texto_comidas,
+    numeros_gde_por_campo_de_informe,
+)
 from ..docx_service import AdmisionesContextService, DocumentTemplateService
 from admisiones.forms.admisiones_forms import (
     InformeTecnicoBaseForm,
@@ -271,6 +275,87 @@ class InformeService:
         return (
             InformeTecnicoJuridicoForm if tipo == "juridico" else InformeTecnicoBaseForm
         )
+
+    @staticmethod
+    def get_campo_informe_para_documento(nombre_documento, tipo_informe):
+        """Campo del Informe Técnico que refleja el GDE de ``nombre_documento``."""
+        return campo_informe_para_numero_gde(nombre_documento, tipo_informe)
+
+    @staticmethod
+    def _informe_admite_sincronizacion_gde(informe):
+        """Solo se toca un informe en borrador o recién iniciado.
+
+        Coincide con la ventana en la que ``AdmisionService`` permite modificar
+        documentos, así que un informe finalizado o validado queda intacto.
+        """
+        if informe is None:
+            return False
+        return informe.estado == "Iniciado" or informe.estado_formulario == "borrador"
+
+    @staticmethod
+    def sincronizar_numero_gde_en_informe(archivo_admision):
+        """Copia el número de GDE de un documento al borrador del Informe Técnico.
+
+        El documento es la fuente de verdad: si el campo del informe ya tenía un
+        valor se reemplaza, y si estaba vacío se carga por primera vez. Devuelve
+        el nombre del campo actualizado, o ``None`` si no hubo nada que hacer.
+        """
+        try:
+            documentacion = getattr(archivo_admision, "documentacion", None)
+            if documentacion is None:
+                # Documento adicional/personalizado: no mapea a ningún campo.
+                return None
+
+            informe = (
+                InformeTecnico.objects.filter(admision=archivo_admision.admision_id)
+                .order_by("-id")
+                .first()
+            )
+            if not InformeService._informe_admite_sincronizacion_gde(informe):
+                return None
+
+            campo = InformeService.get_campo_informe_para_documento(
+                documentacion.nombre, informe.tipo
+            )
+            if not campo:
+                return None
+
+            nuevo_valor = archivo_admision.numero_gde or ""
+            if getattr(informe, campo) == nuevo_valor:
+                return None
+
+            setattr(informe, campo, nuevo_valor)
+            informe.save(update_fields=[campo])
+            logger.info(
+                "Numero GDE replicado al informe tecnico",
+                extra={
+                    "informe_pk": informe.pk,
+                    "campo": campo,
+                    "documento": documentacion.nombre,
+                    "numero_gde": nuevo_valor,
+                },
+            )
+            return campo
+        except Exception:
+            # La actualización del GDE del documento ya se guardó; un fallo acá
+            # no debe hacerla fracasar.
+            logger.exception(
+                "Error en sincronizar_numero_gde_en_informe",
+                extra={"archivo_admision_pk": getattr(archivo_admision, "pk", None)},
+            )
+            return None
+
+    @staticmethod
+    def get_initial_gde_desde_documentos(admision, tipo_informe):
+        """Números de GDE de los documentos indexados por campo del informe."""
+        try:
+            return numeros_gde_por_campo_de_informe(admision, tipo_informe)
+        except Exception:
+            logger.exception(
+                "Error en get_initial_gde_desde_documentos",
+                extra={"admision_pk": getattr(admision, "pk", None)},
+            )
+            return {}
 
     @staticmethod
     def get_tipo_from_kwargs(kwargs):
