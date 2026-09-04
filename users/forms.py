@@ -16,8 +16,6 @@ from django.utils import timezone
 from core.constants import UserGroups
 from core.models import Provincia
 from core.validators import solo_digitos, validate_cuit
-from duplas.models import Dupla
-from organizaciones.models import Organizacion
 from users.form_catalogs import obtener_queryset_formulario
 from users.models import (
     AccesoComedorPWA,
@@ -322,7 +320,7 @@ class PWAAccessMixin:
             help_text="Acceso PWA exclusivo de solo lectura.",
         )
         self.fields["duplas_coordinador_pwa"] = forms.ModelMultipleChoiceField(
-            queryset=Dupla.objects.activas(),
+            queryset=obtener_queryset_formulario("duplas_asignadas"),
             required=False,
             widget=forms.SelectMultiple(attrs={"class": "select2"}),
             label="Equipos técnicos PWA",
