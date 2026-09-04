@@ -855,6 +855,9 @@ def actualizar_numero_gde_archivo(request):
         "success": resultado.get("success"),
         "numero_gde": resultado.get("numero_gde"),
         "valor_anterior": resultado.get("valor_anterior"),
+        # Campo del borrador del informe técnico que quedó sincronizado, para
+        # que el front lo refleje sin recargar la página.
+        "campo_informe_actualizado": resultado.get("campo_informe_actualizado"),
     }
 
     if not resultado.get("success"):
@@ -1126,6 +1129,8 @@ class AdmisionesTecnicosUpdateView(LoginRequiredMixin, UpdateView):
             return
 
         context["informe_tipo"] = tipo
+        # El formulario precarga por su cuenta los campos que reflejan el GDE de
+        # un documento (ver `_prellenar_campos_gde` en admisiones_forms).
         context["informe_form"] = kwargs.get("informe_form") or (
             InformeService.get_form_class_por_tipo(tipo)(
                 instance=informe, admision=admision

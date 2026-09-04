@@ -26,9 +26,8 @@ from admisiones.forms.admisiones_forms import (
     ReinicioExpedienteForm,
     SolicitarInformeComplementarioForm,
     _armar_domicilio,
-    _if_relevamiento_a_pac,
     _permite_no_corresponde_fecha_vencimiento,
-    _ultimo_numero_gde,
+    _prellenar_campos_gde,
 )
 from admisiones.models.admisiones import Admision
 
@@ -70,78 +69,124 @@ def test_monto_decimal_field_parsea_coma_y_miles():
     assert field.to_python("1234.5") == Decimal("1234.5")
 
 
-def test_ultimo_numero_gde_arma_query_y_devuelve_first(mocker):
-    """Construye el queryset esperado y retorna el primer número GDE."""
-    first_mock = mocker.Mock(return_value="GDE-123")
-    values_list_mock = mocker.Mock(return_value=SimpleNamespace(first=first_mock))
-    order_by_mock = mocker.Mock(
-        return_value=SimpleNamespace(values_list=values_list_mock)
-    )
-    exclude_second = SimpleNamespace(order_by=order_by_mock)
-    exclude_first = SimpleNamespace(exclude=mocker.Mock(return_value=exclude_second))
-    filter_mock = mocker.patch(
-        "admisiones.forms.admisiones_forms.ArchivoAdmision.objects.filter",
-        return_value=SimpleNamespace(exclude=mocker.Mock(return_value=exclude_first)),
-    )
+class _FormStub:
+    """Formulario mínimo: lo que `_prellenar_campos_gde` necesita tocar."""
 
-    admision = object()
-    result = _ultimo_numero_gde(admision, "Relevamiento Programa PAC")
-
-    assert result == "GDE-123"
-    filter_mock.assert_called_once_with(
-        admision=admision,
-        documentacion__nombre="Relevamiento Programa PAC",
-    )
+    def __init__(self, fields, initial=None, instance=None):
+        self.fields = fields
+        self.initial = dict(initial or {})
+        self.instance = instance
 
 
-def test_ultimo_numero_gde_devuelve_none_sin_admision():
-    """Retorna None cuando no hay admisión para filtrar."""
-    assert _ultimo_numero_gde(None, "Relevamiento Programa PAC") is None
+def _informe(pk=1, estado="Iniciado", estado_formulario="borrador"):
+    return SimpleNamespace(pk=pk, estado=estado, estado_formulario=estado_formulario)
 
 
-def test_if_relevamiento_a_pac_setea_iniciales(mocker):
-    """Propaga el último GDE a ambos campos de relevamiento cuando existe."""
+def test_prellenar_campos_gde_setea_iniciales(mocker):
+    """Aplica el mapeo documento -> campo sobre los campos expuestos."""
     mocker.patch(
-        "admisiones.forms.admisiones_forms._ultimo_numero_gde",
-        return_value="GDE-XYZ",
+        "admisiones.forms.admisiones_forms.numeros_gde_por_campo_de_informe",
+        return_value={"if_relevamiento": "GDE-XYZ", "nota_gde_if": "GDE-NOTA"},
     )
-    fields = {
-        "if_relevamiento": SimpleNamespace(initial=None),
-        "IF_relevamiento_territorial": SimpleNamespace(initial=None),
-    }
+    form = _FormStub(
+        {
+            "if_relevamiento": SimpleNamespace(initial=None),
+            "nota_gde_if": SimpleNamespace(initial=None),
+        },
+        instance=_informe(),
+    )
 
-    out = _if_relevamiento_a_pac(fields, admision=object())
+    _prellenar_campos_gde(form, admision=object(), tipo_informe="base")
 
-    assert out["if_relevamiento"].initial == "GDE-XYZ"
-    assert out["IF_relevamiento_territorial"].initial == "GDE-XYZ"
+    assert form.fields["if_relevamiento"].initial == "GDE-XYZ"
+    assert form.fields["nota_gde_if"].initial == "GDE-NOTA"
 
 
-def test_if_relevamiento_a_pac_no_modifica_sin_admision(mocker):
-    """No modifica campos cuando no hay admisión válida."""
-    spy = mocker.patch("admisiones.forms.admisiones_forms._ultimo_numero_gde")
-    fields = {"if_relevamiento": SimpleNamespace(initial="ORIGINAL")}
+def test_prellenar_campos_gde_escribe_en_form_initial(mocker):
+    """Regresión: `fields[].initial` no alcanza sobre una instancia guardada.
 
-    out = _if_relevamiento_a_pac(fields, admision=None)
+    Django arma `form.initial` desde la instancia, así que el valor del
+    documento tiene que escribirse ahí para poder ganarle al valor guardado.
+    """
+    mocker.patch(
+        "admisiones.forms.admisiones_forms.numeros_gde_por_campo_de_informe",
+        return_value={"nota_gde_if": "GDE-DOCUMENTO"},
+    )
+    form = _FormStub(
+        {"nota_gde_if": SimpleNamespace(initial=None)},
+        initial={"nota_gde_if": "GDE-GUARDADO-VIEJO"},
+        instance=_informe(),
+    )
 
-    assert out["if_relevamiento"].initial == "ORIGINAL"
+    _prellenar_campos_gde(form, admision=object(), tipo_informe="base")
+
+    assert form.initial["nota_gde_if"] == "GDE-DOCUMENTO"
+
+
+def test_prellenar_campos_gde_no_toca_informe_finalizado(mocker):
+    """Un informe finalizado conserva sus valores."""
+    mocker.patch(
+        "admisiones.forms.admisiones_forms.numeros_gde_por_campo_de_informe",
+        return_value={"nota_gde_if": "GDE-DOCUMENTO"},
+    )
+    form = _FormStub(
+        {"nota_gde_if": SimpleNamespace(initial=None)},
+        initial={"nota_gde_if": "GDE-FINAL"},
+        instance=_informe(estado="Validado", estado_formulario="finalizado"),
+    )
+
+    _prellenar_campos_gde(form, admision=object(), tipo_informe="base")
+
+    assert form.initial["nota_gde_if"] == "GDE-FINAL"
+
+
+def test_prellenar_campos_gde_aplica_a_informe_nuevo(mocker):
+    """Un informe todavía sin guardar también arrastra el GDE."""
+    mocker.patch(
+        "admisiones.forms.admisiones_forms.numeros_gde_por_campo_de_informe",
+        return_value={"nota_gde_if": "GDE-DOCUMENTO"},
+    )
+    form = _FormStub(
+        {"nota_gde_if": SimpleNamespace(initial=None)},
+        instance=SimpleNamespace(pk=None, estado=None, estado_formulario=None),
+    )
+
+    _prellenar_campos_gde(form, admision=object(), tipo_informe="base")
+
+    assert form.initial["nota_gde_if"] == "GDE-DOCUMENTO"
+
+
+def test_prellenar_campos_gde_ignora_campos_no_expuestos(mocker):
+    """Un campo que el formulario no declara no debe romper el prellenado."""
+    mocker.patch(
+        "admisiones.forms.admisiones_forms.numeros_gde_por_campo_de_informe",
+        return_value={"IF_relevamiento_territorial": "GDE-XYZ"},
+    )
+    form = _FormStub(
+        {"if_relevamiento": SimpleNamespace(initial="ORIGINAL")},
+        instance=_informe(),
+    )
+
+    _prellenar_campos_gde(form, admision=object(), tipo_informe="base")
+
+    assert form.fields["if_relevamiento"].initial == "ORIGINAL"
+    assert "IF_relevamiento_territorial" not in form.initial
+
+
+def test_prellenar_campos_gde_no_consulta_sin_admision(mocker):
+    """Sin admisión no toca campos ni consulta la base."""
+    spy = mocker.patch(
+        "admisiones.forms.admisiones_forms.numeros_gde_por_campo_de_informe"
+    )
+    form = _FormStub(
+        {"if_relevamiento": SimpleNamespace(initial="ORIGINAL")},
+        instance=_informe(),
+    )
+
+    _prellenar_campos_gde(form, admision=None, tipo_informe="base")
+
+    assert form.fields["if_relevamiento"].initial == "ORIGINAL"
     spy.assert_not_called()
-
-
-def test_if_relevamiento_a_pac_no_modifica_si_no_hay_numero(mocker):
-    """Mantiene valores cuando no existe GDE previo."""
-    mocker.patch(
-        "admisiones.forms.admisiones_forms._ultimo_numero_gde",
-        return_value=None,
-    )
-    fields = {
-        "if_relevamiento": SimpleNamespace(initial="A"),
-        "IF_relevamiento_territorial": SimpleNamespace(initial="B"),
-    }
-
-    out = _if_relevamiento_a_pac(fields, admision=object())
-
-    assert out["if_relevamiento"].initial == "A"
-    assert out["IF_relevamiento_territorial"].initial == "B"
 
 
 def test_informe_tecnico_juridico_clean_error_si_no_corresponde_invalido(mocker):

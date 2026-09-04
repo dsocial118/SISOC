@@ -2796,6 +2796,10 @@ class AdmisionService:
                 archivo.admision
             )
 
+            from ..informes_service import InformeService
+
+            campo_informe = InformeService.sincronizar_numero_gde_en_informe(archivo)
+
             logger.info(
                 f"Número GDE actualizado: documento_id={documento_id}, "
                 f"valor_anterior='{valor_anterior}', valor_nuevo='{numero_gde}'"
@@ -2805,6 +2809,7 @@ class AdmisionService:
                 "success": True,
                 "numero_gde": archivo.numero_gde,
                 "valor_anterior": valor_anterior,
+                "campo_informe_actualizado": campo_informe,
             }
 
         except Exception as e:
