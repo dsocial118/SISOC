@@ -33,6 +33,8 @@
 - `docs/contexto/features/pr-2439-fix-migrations-corregir-dependencia-de-coordinador-pwa.md`
 - `docs/plans/2026-09-04-hml-migration-graph-fix-design.md`
 - `docs/registro/prs/PR-2439.md`
+- `tests/test_comedores_api_views_unit.py`
+- `tests/test_users_pwa_forms.py`
 - `users/forms.py`
 - `users/migrations/0049_coordinadorequipotecnico_pwa.py`
 - `users/services_pwa.py`
