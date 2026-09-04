@@ -163,8 +163,11 @@ class PrimerSeguimientoApiView(APIView):
     serializer_class = PrimerSeguimientoSerializer
     permission_classes = [HasAPIKeyOrToken]
 
-    @staticmethod
-    def _resolve_seguimiento(data, queryset):
+    # El endpoint /primer-seguimiento resuelve siempre la instancia nº1 del
+    # ciclo; /seguimiento (SeguimientoApiView) resuelve cualquiera por su id.
+    RESOLVE_SOLO_PRIMERA_INSTANCIA = True
+
+    def _resolve_seguimiento(self, data, queryset):
         """Resuelve el PrimerSeguimiento por cualquiera de los identificadores
         que GESTIONAR puede enviar: sisoc_id (PK SISOC), gestionar_id /
         ID_Seguimiento1 / id_seguimiento1 (PK GESTIONAR) o id_relevamiento
@@ -200,10 +203,19 @@ class PrimerSeguimientoApiView(APIView):
             elif gestionar_id:
                 seguimiento = queryset.get(gestionar_id=str(gestionar_id).strip())
             else:
-                seguimiento = queryset.get(id_relevamiento_id=int(id_relevamiento))
+                filtros = {"id_relevamiento_id": int(id_relevamiento)}
+                if self.RESOLVE_SOLO_PRIMERA_INSTANCIA:
+                    filtros["numero_orden"] = 1
+                seguimiento = queryset.get(**filtros)
         except (TypeError, ValueError):
             return None, Response(
                 "Identificador invalido.",
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except PrimerSeguimiento.MultipleObjectsReturned:
+            return None, Response(
+                "El relevamiento tiene varias instancias de seguimiento: "
+                "informe 'sisoc_id' con el id de la instancia.",
                 status=status.HTTP_400_BAD_REQUEST,
             )
         except PrimerSeguimiento.DoesNotExist:
@@ -310,3 +322,14 @@ class PrimerSeguimientoApiView(APIView):
                 f"Error al actualizar el primer seguimiento {seguimiento.pk}",
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+
+
+class SeguimientoApiView(PrimerSeguimientoApiView):
+    """``PATCH /api/relevamiento/seguimiento`` — por instancia del ciclo.
+
+    Mismo contrato de campos que ``/primer-seguimiento``, pero ``sisoc_id`` es el
+    id de la instancia (primer, posterior, virtual o acta de excepcion), asi que
+    no se fuerza ``numero_orden=1``.
+    """
+
+    RESOLVE_SOLO_PRIMERA_INSTANCIA = False

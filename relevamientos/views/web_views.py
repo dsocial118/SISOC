@@ -80,7 +80,7 @@ class RelevamientoListView(LoginRequiredMixin, ListView):
         comedor = self.kwargs["comedor_pk"]
         return (
             Relevamiento.objects.filter(comedor=comedor)
-            .select_related("primer_seguimiento")
+            .prefetch_related("seguimientos")
             .order_by("-estado", "-id")
         )
 
@@ -110,7 +110,11 @@ class RelevamientoListView(LoginRequiredMixin, ListView):
 
         items = []
         for rel in context["relevamientos"]:
-            seguimiento = _get_primer_seguimiento(rel)
+            # Todas las instancias del ciclo, no solo la primera.
+            seguimientos = sorted(
+                rel.seguimientos.all(),
+                key=lambda seguimiento: seguimiento.numero_orden,
+            )
             items.append(
                 {
                     "id": rel.id,
@@ -119,16 +123,18 @@ class RelevamientoListView(LoginRequiredMixin, ListView):
                     "numero_if": rel.numero_if,
                     "is_child": False,
                     "parent_id": None,
-                    "has_seguimiento": seguimiento is not None,
+                    "has_seguimiento": bool(seguimientos),
                     "sincronizado_gestionar": rel.sincronizado_gestionar,
                 }
             )
-            if seguimiento is not None:
+            for seguimiento in seguimientos:
                 items.append(
                     {
                         "id": seguimiento.id,
                         "fecha": seguimiento.fecha_hora,
                         "estado": seguimiento.estado,
+                        "tipo": seguimiento.get_tipo_display(),
+                        "numero_orden": seguimiento.numero_orden,
                         "numero_if": None,
                         "is_child": True,
                         "parent_id": rel.id,
@@ -137,13 +143,6 @@ class RelevamientoListView(LoginRequiredMixin, ListView):
                 )
         context["relevamientos_items"] = items
         return context
-
-
-def _get_primer_seguimiento(relevamiento):
-    try:
-        return relevamiento.primer_seguimiento
-    except PrimerSeguimiento.DoesNotExist:
-        return None
 
 
 class RelevamientoDetailView(LoginRequiredMixin, DetailView):

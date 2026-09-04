@@ -1,4 +1,4 @@
-from django.db.models.signals import post_save, pre_delete
+from django.db.models.signals import post_migrate, post_save, pre_delete
 from django.dispatch import receiver
 
 from relevamientos.models import PrimerSeguimiento, Relevamiento
@@ -48,3 +48,23 @@ def remove_primer_seguimiento_to_gestionar(sender, instance, **kwargs):
     AsyncRemovePrimerSeguimientoToGestionar(
         instance.id, instance.gestionar_id, instance.id_relevamiento_id
     ).start()
+
+
+@receiver(post_migrate)
+def sembrar_motivos_excepcion_seguimiento(sender, **kwargs):
+    """Garantiza el catalogo cerrado del acta de excepcion en todo entorno.
+
+    Va por ``post_migrate`` y no por una migracion de datos porque los tests
+    crean el schema con ``TEST={"MIGRATE": False}``: un ``RunPython`` nunca
+    correria ahi y el catalogo quedaria vacio, rechazando todos los motivos.
+    """
+    if getattr(sender, "name", None) != "relevamientos":
+        return
+
+    from relevamientos.models import (  # pylint: disable=import-outside-toplevel
+        MotivoExcepcionSeguimiento,
+    )
+
+    using = kwargs.get("using") or "default"
+    for nombre in MotivoExcepcionSeguimiento.MOTIVOS_CANONICOS:
+        MotivoExcepcionSeguimiento.objects.using(using).get_or_create(nombre=nombre)

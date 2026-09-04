@@ -5,7 +5,6 @@ sus comedores asignados con scope por las provincias que tiene cargadas en
 ``TerritorialComedorProvincia``. Auth por DRF Token.
 """
 
-from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.storage import default_storage
 from django.db import IntegrityError
 from django.db.models import Prefetch
@@ -16,11 +15,16 @@ from rest_framework.decorators import action
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from comedores.api_serializers import ComedorDetailSerializer, NoSaveSerializer
 from comedores.models import Comedor
 from comedores.services.comedor_service import ComedorService
-from relevamientos.models import PrimerSeguimiento, Relevamiento
+from relevamientos.models import (
+    MotivoExcepcionSeguimiento,
+    PrimerSeguimiento,
+    Relevamiento,
+)
 from users.api_permissions import IsTerritorialComedorUser
 from users.services_pwa import get_territorial_comedor_provincias
 
@@ -86,36 +90,40 @@ class TerritorialComedorSerializer(NoSaveSerializer):
         }
 
     def get_seguimientos(self, obj):
-        # Primer seguimiento por comedor = el `primer_seguimiento` (OneToOne) de
-        # cada relevamiento del comedor. `id` = PK del PrimerSeguimiento (sirve como
-        # `sisoc_id` en PATCH /api/relevamiento/primer-seguimiento).
+        # TODAS las instancias del ciclo de seguimiento de cada relevamiento del
+        # comedor (primer, posteriores, virtual y actas de excepcion), ordenadas
+        # por `numero_orden`. `id` = PK de la instancia: es el `sisoc_id` del
+        # PATCH /api/relevamiento/seguimiento.
         relevamientos = getattr(obj, "relevamientos_territorial", None)
         if relevamientos is None:
             relevamientos = list(
-                obj.relevamiento_set.all().select_related("primer_seguimiento")
+                obj.relevamiento_set.all().prefetch_related("seguimientos")
             )
         items = []
         for relevamiento in relevamientos:
-            try:
-                seguimiento = relevamiento.primer_seguimiento
-            except ObjectDoesNotExist:
-                seguimiento = None
-            if seguimiento is None:
-                continue
-            items.append(
-                {
-                    "id": seguimiento.id,
-                    "estado": seguimiento.estado,
-                    "id_relevamiento": relevamiento.id,
-                    "gestionar_id": seguimiento.gestionar_id,
-                    "fecha": seguimiento.fecha_hora,
-                    "estado_validacion": seguimiento.estado_validacion,
-                    "observaciones_coordinador": seguimiento.observaciones_coordinador,
-                    "fecha_revision_coordinador": (
-                        seguimiento.fecha_revision_coordinador
-                    ),
-                }
+            seguimientos = sorted(
+                relevamiento.seguimientos.all(),
+                key=lambda seguimiento: seguimiento.numero_orden,
             )
+            for seguimiento in seguimientos:
+                items.append(
+                    {
+                        "id": seguimiento.id,
+                        "tipo": seguimiento.tipo,
+                        "numero_orden": seguimiento.numero_orden,
+                        "estado": seguimiento.estado,
+                        "id_relevamiento": relevamiento.id,
+                        "gestionar_id": seguimiento.gestionar_id,
+                        "fecha": seguimiento.fecha_hora,
+                        "estado_validacion": seguimiento.estado_validacion,
+                        "observaciones_coordinador": (
+                            seguimiento.observaciones_coordinador
+                        ),
+                        "fecha_revision_coordinador": (
+                            seguimiento.fecha_revision_coordinador
+                        ),
+                    }
+                )
         return {"total": len(items), "items": items}
 
 
@@ -151,7 +159,7 @@ class TerritorialComedorViewSet(
         # aparecería con ``items: []``.
         relevamientos_asignados = (
             Relevamiento.objects.filter(territorial_user=user)
-            .select_related("primer_seguimiento")
+            .prefetch_related("seguimientos")
             .order_by("-fecha_visita", "-id")
         )
         return (
@@ -357,3 +365,21 @@ class TerritorialComedorViewSet(
         path = default_storage.save(f"firmas/{comedor.id}/{archivo.name}", archivo)
         url = request.build_absolute_uri(default_storage.url(path))
         return Response({"url": url}, status=status.HTTP_201_CREATED)
+
+
+@extend_schema(tags=["Territorial"])
+class MotivosExcepcionSeguimientoView(APIView):
+    """Catalogo de motivos del acta de excepcion de seguimiento (§18.3).
+
+    Es un catalogo cerrado: el PATCH rechaza un motivo que no este en esta
+    lista, asi que la app valida en cliente con estos mismos valores.
+    """
+
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated, IsTerritorialComedorUser]
+
+    def get(self, request):
+        items = list(
+            MotivoExcepcionSeguimiento.objects.order_by("nombre").values("id", "nombre")
+        )
+        return Response({"items": items})

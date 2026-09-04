@@ -1169,6 +1169,21 @@ class Relevamiento(SoftDeleteModelMixin, ValidacionCoordinadorMixin, models.Mode
                     f"Ya existe un relevamiento activo para el comedor '{self.comedor}'."
                 )
 
+    @property
+    def primer_seguimiento(self):
+        """La instancia nº1 del ciclo de seguimientos, o ``None``.
+
+        Antes era el reverse de un OneToOne; ahora hay N instancias
+        (``seguimientos``). Se mantiene el nombre para no romper el backoffice ni
+        los templates. Aprovecha el ``prefetch_related("seguimientos")`` cuando
+        está disponible, para no disparar una query por relevamiento.
+        """
+        cache = getattr(self, "_prefetched_objects_cache", None) or {}
+        prefetched = cache.get("seguimientos")
+        if prefetched is not None:
+            return next((s for s in prefetched if s.numero_orden == 1), None)
+        return self.seguimientos.filter(numero_orden=1).first()
+
     class Meta:
         indexes = [
             models.Index(fields=["comedor"]),
@@ -1625,6 +1640,56 @@ class CierreSeguimiento(models.Model):
         return f"Cierre seguimiento #{self.pk or 'sin id'}"
 
 
+class MotivoExcepcionSeguimiento(models.Model):
+    """Motivos del acta de excepción de seguimiento (§18.3).
+
+    Catálogo propio, distinto de ``MotivoExcepcion`` (que es del relevamiento).
+    Es **cerrado**: el PATCH rechaza cualquier motivo que no esté acá, así que la
+    app valida en cliente con estos mismos valores. Se garantiza en todos los
+    entornos con un receptor de ``post_migrate`` (ver ``relevamientos/signals``),
+    no con una migración de datos: los tests crean el schema con
+    ``TEST={"MIGRATE": False}`` y no ejecutarían el ``RunPython``.
+    """
+
+    MOTIVOS_CANONICOS = (
+        "Espacio cerrado",
+        "Dirección no encontrada",
+        "Abierto sin entrevista",
+        "Otro",
+    )
+
+    nombre = models.CharField(max_length=255, unique=True)
+
+    def __str__(self):
+        return str(self.nombre)
+
+    class Meta:
+        verbose_name = "Motivo de excepcion de seguimiento"
+        verbose_name_plural = "Motivos de excepcion de seguimiento"
+        ordering = ["nombre"]
+
+
+class ActaExcepcionSeguimiento(models.Model):
+    """Acta de excepción: la visita no se pudo hacer (§18.3)."""
+
+    motivo = models.ForeignKey(
+        to=MotivoExcepcionSeguimiento,
+        on_delete=models.PROTECT,
+        blank=True,
+        null=True,
+    )
+    detalle = _nullable_text()
+    firma = _nullable_char(max_length=600)
+
+    class Meta:
+        verbose_name = "Acta de excepcion de seguimiento"
+        verbose_name_plural = "Actas de excepcion de seguimiento"
+
+    def __str__(self):
+        motivo = self.motivo.nombre if self.motivo else "Sin motivo"
+        return f"Acta de excepción: {motivo}"
+
+
 class PrimerSeguimiento(ValidacionCoordinadorMixin, models.Model):
     ESTADO_ASIGNADO = "Asignado"
     ESTADO_EN_PROCESO = "En Proceso"
@@ -1635,11 +1700,37 @@ class PrimerSeguimiento(ValidacionCoordinadorMixin, models.Model):
         (ESTADO_COMPLETO, ESTADO_COMPLETO),
     ]
 
+    # Un comedor tiene un ciclo de visitas, no una sola: el primer seguimiento,
+    # los posteriores, el virtual y el acta de excepción cuando no se pudo hacer.
+    TIPO_PRIMER = "primer"
+    TIPO_POSTERIOR = "posterior"
+    TIPO_VIRTUAL = "virtual"
+    TIPO_ACTA_EXCEPCION = "acta_excepcion"
+    TIPO_CHOICES = [
+        (TIPO_PRIMER, "Primer seguimiento"),
+        (TIPO_POSTERIOR, "Seguimiento posterior"),
+        (TIPO_VIRTUAL, "Seguimiento virtual"),
+        (TIPO_ACTA_EXCEPCION, "Acta de excepción"),
+    ]
+    # Tipos que el territorial puede autoactivar desde la app (N18); "primer"
+    # siempre lo asigna SISOC.
+    TIPOS_CREABLES_DESDE_APP = (TIPO_POSTERIOR, TIPO_VIRTUAL, TIPO_ACTA_EXCEPCION)
+
     fecha_hora = models.DateTimeField(null=True, blank=True)
-    id_relevamiento = models.OneToOneField(
+    id_relevamiento = models.ForeignKey(
         to=Relevamiento,
         on_delete=models.PROTECT,
-        related_name="primer_seguimiento",
+        related_name="seguimientos",
+    )
+    tipo = models.CharField(
+        max_length=32,
+        choices=TIPO_CHOICES,
+        default=TIPO_PRIMER,
+    )
+    numero_orden = models.PositiveSmallIntegerField(
+        default=1,
+        validators=[MinValueValidator(1)],
+        help_text="Orden de la instancia dentro del ciclo (1 = primer seguimiento).",
     )
     tecnico = _nullable_char()
     referente = models.ForeignKey(
@@ -1752,6 +1843,12 @@ class PrimerSeguimiento(ValidacionCoordinadorMixin, models.Model):
         null=True,
         blank=True,
     )
+    acta_excepcion = models.OneToOneField(
+        to=ActaExcepcionSeguimiento,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+    )
 
     BLOQUES_ONE_TO_ONE = (
         "funcionamiento",
@@ -1770,6 +1867,7 @@ class PrimerSeguimiento(ValidacionCoordinadorMixin, models.Model):
         "rendicion_cuentas",
         "asistencia_tecnica",
         "cierre",
+        "acta_excepcion",
     )
 
     @property
@@ -1792,8 +1890,10 @@ class PrimerSeguimiento(ValidacionCoordinadorMixin, models.Model):
         indexes = [
             models.Index(fields=["estado"]),
         ]
-        verbose_name = "Primer seguimiento de relevamiento"
-        verbose_name_plural = "Primeros seguimientos de relevamiento"
+        # Una sola instancia por posicion del ciclo en cada relevamiento.
+        unique_together = [["id_relevamiento", "numero_orden"]]
+        verbose_name = "Seguimiento de relevamiento"
+        verbose_name_plural = "Seguimientos de relevamiento"
 
     def __str__(self):
         return f"Primer seguimiento #{self.pk or 'sin id'}"

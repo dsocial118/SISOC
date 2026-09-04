@@ -12,6 +12,7 @@ from core.validators import validate_unicode_email
 from core.utils import format_fecha_django
 
 from relevamientos.models import (
+    ActaExcepcionSeguimiento,
     ActividadesExtrasSeguimiento,
     AlmacenamientoAlimentosSeguimiento,
     AsistenciaTecnicaSeguimiento,
@@ -24,6 +25,7 @@ from relevamientos.models import (
     FuncionamientoSeguimiento,
     ItemRecetaSeguimiento,
     MenuSeguimiento,
+    MotivoExcepcionSeguimiento,
     PrestacionSeguimiento,
     PrimerSeguimiento,
     Relevamiento,
@@ -579,6 +581,7 @@ class PrimerSeguimientoSerializer(serializers.ModelSerializer):
         "firma_entrevistado",
         "firma_tecnico",
     )
+    ACTA_EXCEPCION_FIELDS = ("motivo", "detalle", "firma")
 
     NESTED_BLOCKS = {
         "frecuencia_compra_alimentos": FRECUENCIA_COMPRA_FIELDS,
@@ -669,6 +672,7 @@ class PrimerSeguimientoSerializer(serializers.ModelSerializer):
             self.ASISTENCIA_FIELDS,
         )
         self._process_simple_block("cierre", CierreSeguimiento, self.CIERRE_FIELDS)
+        self._process_acta_excepcion()
         self._process_prestaciones()
         self._drop_external_fields()
         return self
@@ -923,6 +927,49 @@ class PrimerSeguimientoSerializer(serializers.ModelSerializer):
                     "lookup_field": "id_item_receta",
                 },
             )
+
+    def _process_acta_excepcion(self):
+        """Acta de excepcion: la visita no se pudo hacer (§18.3).
+
+        Viene anidada: ``{"motivo": "Espacio cerrado", "detalle": "...",
+        "firma": "..."}``. El motivo sale de un catalogo cerrado, asi que un
+        valor desconocido es 400 (a diferencia de otros catalogos del
+        seguimiento, que crean la fila si no existe).
+        """
+        data = self.initial_data.pop("acta_excepcion", None)
+        if not isinstance(data, dict):
+            return
+        payload = {name: data.get(name) for name in self.ACTA_EXCEPCION_FIELDS}
+        if payload.get("motivo") not in (None, ""):
+            payload["motivo"] = self._resolve_motivo_excepcion(payload["motivo"])
+        current = (
+            getattr(self.instance, "acta_excepcion", None) if self.instance else None
+        )
+        instancia = self._upsert_block(ActaExcepcionSeguimiento, payload, current)
+        if instancia is not None:
+            self.initial_data["acta_excepcion"] = instancia.id
+
+    def _resolve_motivo_excepcion(self, valor):
+        if isinstance(valor, MotivoExcepcionSeguimiento):
+            return valor
+        texto = str(valor).strip()
+        if texto.isdigit():
+            encontrado = MotivoExcepcionSeguimiento.objects.filter(
+                pk=int(texto)
+            ).first()
+            if encontrado:
+                return encontrado
+        encontrado = MotivoExcepcionSeguimiento.objects.filter(
+            nombre__iexact=texto
+        ).first()
+        if encontrado is None:
+            validos = list(
+                MotivoExcepcionSeguimiento.objects.values_list("nombre", flat=True)
+            )
+            raise serializers.ValidationError(
+                {"acta_excepcion": {"motivo": f"Motivo invalido. Validos: {validos}"}}
+            )
+        return encontrado
 
     def _process_prestaciones(self):
         prestaciones_data = self.initial_data.get("prestaciones_seguimientos")
