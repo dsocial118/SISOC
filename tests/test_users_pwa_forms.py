@@ -158,6 +158,7 @@ def test_user_creation_form_creates_read_only_coordinator_with_dynamic_team_scop
         data={
             "username": "coordinador_forms",
             "email": "coordinador_forms@example.com",
+            "tipo_usuario": "interno",
             "es_coordinador_equipo_tecnico_pwa": True,
             "duplas_coordinador_pwa": [dupla.id],
             "comedores_adicionales_coordinador_pwa": [comedor_extra.id],
