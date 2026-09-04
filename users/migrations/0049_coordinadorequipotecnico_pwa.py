@@ -7,7 +7,10 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ("comedores", "0050_imagencomedor_relevamiento"),
+        (
+            "comedores",
+            "0056_imagencomedor_client_uuid_imagencomedor_relevamiento_and_more",
+        ),
         ("duplas", "0001_squashed_0003"),
         ("users", "0048_merge_pwa_territorial_and_organizacion"),
     ]
