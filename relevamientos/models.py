@@ -1690,6 +1690,29 @@ class ActaExcepcionSeguimiento(models.Model):
         return f"Acta de excepción: {motivo}"
 
 
+# Bloques del seguimiento con su etiqueta legible. Fuente unica: la usan el
+# detalle del backoffice y el snapshot `sections` que consume la app.
+BLOQUES_SEGUIMIENTO = (
+    ("funcionamiento", "Funcionamiento"),
+    ("servicios_basicos", "Servicios básicos"),
+    ("almacenamiento_alimentos", "Almacenamiento de alimentos"),
+    ("condiciones_higiene", "Condiciones de higiene"),
+    ("tareas_comedor", "Tareas en el comedor"),
+    ("recursos", "Recursos"),
+    ("compras", "Compras"),
+    ("frecuencia_compra_alimentos", "Frecuencia de compra de alimentos"),
+    ("menu", "Menú"),
+    ("registro_asistencia", "Registro de asistencia"),
+    ("frecuencia_alimentos", "Frecuencia de alimentos"),
+    ("actividades_extras", "Actividades extras"),
+    ("tarjeta", "Tarjeta"),
+    ("rendicion_cuentas", "Rendición de cuentas"),
+    ("asistencia_tecnica", "Asistencia técnica"),
+    ("cierre", "Cierre"),
+    ("acta_excepcion", "Acta de excepción"),
+)
+
+
 class PrimerSeguimiento(ValidacionCoordinadorMixin, models.Model):
     ESTADO_ASIGNADO = "Asignado"
     ESTADO_EN_PROCESO = "En Proceso"
@@ -1850,25 +1873,7 @@ class PrimerSeguimiento(ValidacionCoordinadorMixin, models.Model):
         blank=True,
     )
 
-    BLOQUES_ONE_TO_ONE = (
-        "funcionamiento",
-        "servicios_basicos",
-        "almacenamiento_alimentos",
-        "condiciones_higiene",
-        "tareas_comedor",
-        "recursos",
-        "compras",
-        "frecuencia_compra_alimentos",
-        "menu",
-        "registro_asistencia",
-        "frecuencia_alimentos",
-        "actividades_extras",
-        "tarjeta",
-        "rendicion_cuentas",
-        "asistencia_tecnica",
-        "cierre",
-        "acta_excepcion",
-    )
+    BLOQUES_ONE_TO_ONE = tuple(attr for attr, _ in BLOQUES_SEGUIMIENTO)
 
     @property
     def cod_pnud(self):

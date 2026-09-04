@@ -198,7 +198,47 @@ class TerritorialComedorViewSet(
         data["relevamiento_actual_mobile"] = (
             detail_serializer.get_relevamiento_actual_mobile(comedor)
         )
+        # Autocompletado en cadena (N17): snapshot del seguimiento inmediato
+        # anterior al que el territorial va a completar, en el mismo formato de
+        # secciones que `relevamiento_actual_mobile`.
+        data["seguimiento_anterior_mobile"] = (
+            detail_serializer.build_seguimiento_mobile(
+                self._seguimiento_anterior(comedor)
+            )
+        )
         return Response(data)
+
+    def _seguimiento_anterior(self, comedor):
+        """La instancia previa a la que está pendiente de completar.
+
+        Se toma la pendiente (la de mayor ``numero_orden`` que todavía no está
+        completa) y se devuelve la anterior a ella. Si no hay ninguna pendiente,
+        se devuelve la última del ciclo, que es de donde conviene prellenar.
+        """
+        seguimientos = sorted(
+            PrimerSeguimiento.objects.filter(
+                id_relevamiento__comedor=comedor
+            ).select_related(*PrimerSeguimiento.BLOQUES_ONE_TO_ONE),
+            key=lambda seguimiento: seguimiento.numero_orden,
+        )
+        if not seguimientos:
+            return None
+
+        pendientes = [
+            seguimiento
+            for seguimiento in seguimientos
+            if seguimiento.estado != PrimerSeguimiento.ESTADO_COMPLETO
+        ]
+        if not pendientes:
+            return seguimientos[-1]
+
+        orden_pendiente = pendientes[-1].numero_orden
+        anteriores = [
+            seguimiento
+            for seguimiento in seguimientos
+            if seguimiento.numero_orden < orden_pendiente
+        ]
+        return anteriores[-1] if anteriores else None
 
     def _serialize_imagenes(self, imagenes, request):
         return [

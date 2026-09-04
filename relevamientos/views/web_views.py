@@ -19,7 +19,11 @@ from comedores.models import Comedor
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
 from relevamientos.form import RelevamientoForm
 from relevamientos.helpers import RelevamientoFormManager
-from relevamientos.models import PrimerSeguimiento, Relevamiento
+from relevamientos.models import (
+    BLOQUES_SEGUIMIENTO,
+    PrimerSeguimiento,
+    Relevamiento,
+)
 from relevamientos.service import RelevamientoService
 
 
@@ -404,24 +408,8 @@ class RelevamientoDeleteView(
         return reverse_lazy("comedor_detalle", kwargs={"pk": comedor.id})
 
 
-PRIMER_SEGUIMIENTO_BLOQUES = (
-    ("funcionamiento", "Funcionamiento"),
-    ("servicios_basicos", "Servicios básicos"),
-    ("almacenamiento_alimentos", "Almacenamiento de alimentos"),
-    ("condiciones_higiene", "Condiciones de higiene"),
-    ("tareas_comedor", "Tareas en el comedor"),
-    ("recursos", "Recursos"),
-    ("compras", "Compras"),
-    ("frecuencia_compra_alimentos", "Frecuencia de compra de alimentos"),
-    ("menu", "Menú"),
-    ("registro_asistencia", "Registro de asistencia"),
-    ("frecuencia_alimentos", "Frecuencia de alimentos"),
-    ("actividades_extras", "Actividades extras"),
-    ("tarjeta", "Tarjeta"),
-    ("rendicion_cuentas", "Rendición de cuentas"),
-    ("asistencia_tecnica", "Asistencia técnica"),
-    ("cierre", "Cierre"),
-)
+# Alias del mapa canonico del modelo (ver BLOQUES_SEGUIMIENTO).
+PRIMER_SEGUIMIENTO_BLOQUES = BLOQUES_SEGUIMIENTO
 
 
 def _display_value(instance, field):
