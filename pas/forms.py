@@ -3,7 +3,7 @@ from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator
 
 from core.models import Municipio, Provincia
-from pas.models import PasAviso, PasEstado
+from pas.models import PasAviso, PasEstado, PasPersona
 
 
 class PasTitularesImportForm(forms.Form):
@@ -18,6 +18,163 @@ class PasTitularesImportForm(forms.Form):
         if archivo.size > 10 * 1024 * 1024:
             raise ValidationError("El archivo CSV no puede superar los 10 MB.")
         return archivo
+
+
+class PasRetornoSintysForm(forms.Form):
+    EXTENSIONES_PERMITIDAS = {".xlsx", ".xls", ".csv"}
+    TAMANIO_MAXIMO = 10 * 1024 * 1024
+
+    archivo = forms.FileField(
+        label="Archivo de retorno SINTyS",
+        widget=forms.FileInput(
+            attrs={"accept": ".xlsx,.xls,.csv", "class": "form-control"}
+        ),
+    )
+
+    def clean_archivo(self):
+        archivo = self.cleaned_data["archivo"]
+        nombre = (archivo.name or "").lower()
+        if not any(
+            nombre.endswith(extension) for extension in self.EXTENSIONES_PERMITIDAS
+        ):
+            raise ValidationError("El retorno debe ser un archivo XLSX, XLS o CSV.")
+        if archivo.size > self.TAMANIO_MAXIMO:
+            raise ValidationError("El archivo no puede superar los 10 MB.")
+        return archivo
+
+
+class PasPersonaBaseForm(forms.ModelForm):
+    class Meta:
+        model = PasPersona
+        fields = [
+            "id_persona",
+            "apellidos",
+            "nombres",
+            "dni",
+            "cuit",
+            "provincia",
+            "municipio",
+            "domicilio",
+            "correo_electronico",
+            "telefono_celular",
+        ]
+        widgets = {
+            "id_persona": forms.NumberInput(attrs={"class": "form-control"}),
+            "apellidos": forms.TextInput(attrs={"class": "form-control"}),
+            "nombres": forms.TextInput(attrs={"class": "form-control"}),
+            "dni": forms.NumberInput(attrs={"class": "form-control"}),
+            "cuit": forms.TextInput(attrs={"class": "form-control"}),
+            "provincia": forms.Select(attrs={"class": "form-select pas-select2"}),
+            "municipio": forms.Select(attrs={"class": "form-select pas-select2"}),
+            "domicilio": forms.TextInput(attrs={"class": "form-control"}),
+            "correo_electronico": forms.EmailInput(attrs={"class": "form-control"}),
+            "telefono_celular": forms.TextInput(attrs={"class": "form-control"}),
+        }
+        labels = {
+            "id_persona": "IdPersona",
+            "apellidos": "Apellidos",
+            "nombres": "Nombres",
+            "dni": "DNI",
+            "cuit": "CUIT",
+            "provincia": "Provincia",
+            "municipio": "Municipio",
+            "domicilio": "Calle, número, piso y departamento",
+            "correo_electronico": "Correo electrónico",
+            "telefono_celular": "Teléfono celular",
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._popular_ubicacion()
+
+    def _get_bound_pk(self, field_name):
+        value = self.data.get(self.add_prefix(field_name)) if self.is_bound else None
+        return int(value) if value and str(value).isdigit() else None
+
+    def _popular_ubicacion(self):
+        self.fields["provincia"].queryset = Provincia.objects.order_by("nombre")
+
+        provincia_id = self._get_bound_pk("provincia")
+        provincia = None
+        if provincia_id:
+            provincia = Provincia.objects.filter(pk=provincia_id).first()
+        if not provincia:
+            provincia = getattr(self.instance, "provincia", None)
+
+        if provincia:
+            self.fields["municipio"].queryset = Municipio.objects.filter(
+                provincia=provincia
+            ).order_by("nombre")
+        else:
+            self.fields["municipio"].queryset = Municipio.objects.none()
+
+    def clean(self):
+        cleaned_data = super().clean()
+        provincia = cleaned_data.get("provincia")
+        municipio = cleaned_data.get("municipio")
+        if provincia and municipio and municipio.provincia_id != provincia.id:
+            self.add_error(
+                "municipio",
+                "El municipio seleccionado no pertenece a la provincia elegida.",
+            )
+        return cleaned_data
+
+
+class PasPersonaCreateForm(PasPersonaBaseForm):
+    estado = forms.ModelChoiceField(
+        label="Estado",
+        queryset=PasEstado.objects.order_by("nombre"),
+        empty_label="Seleccione un estado",
+        widget=forms.Select(attrs={"class": "form-select pas-select2"}),
+    )
+    avisos = forms.ModelMultipleChoiceField(
+        label="Avisos",
+        queryset=PasAviso.objects.none(),
+        widget=forms.SelectMultiple(attrs={"class": "form-select pas-select2"}),
+    )
+
+    class Meta(PasPersonaBaseForm.Meta):
+        fields = PasPersonaBaseForm.Meta.fields + ["estado", "avisos"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._popular_avisos()
+
+    def _popular_avisos(self):
+        estado_id = self._get_bound_pk("estado")
+        estado = None
+        if estado_id:
+            estado = PasEstado.objects.filter(pk=estado_id).first()
+        if not estado:
+            estado = getattr(self.instance, "estado", None)
+
+        if estado:
+            self.fields["avisos"].queryset = PasAviso.objects.filter(
+                estados=estado
+            ).order_by("codigo")
+        else:
+            self.fields["avisos"].queryset = PasAviso.objects.none()
+
+    def clean_avisos(self):
+        avisos = self.cleaned_data.get("avisos")
+        if not avisos:
+            raise ValidationError("Seleccione al menos un aviso.")
+        return avisos
+
+    def clean(self):
+        cleaned_data = super().clean()
+        estado = cleaned_data.get("estado")
+        avisos = cleaned_data.get("avisos")
+        if estado and avisos and avisos.exclude(estados=estado).exists():
+            self.add_error(
+                "avisos",
+                "Hay avisos que no corresponden al estado seleccionado.",
+            )
+        return cleaned_data
+
+
+class PasPersonaUpdateForm(PasPersonaBaseForm):
+    pass
 
 
 class PasDeclaracionJuradaForm(forms.Form):
@@ -191,6 +348,48 @@ class PasDeclaracionJuradaForm(forms.Form):
             data["vacunacion_cumplida"] = ""
             data["regularidad_escolar_acreditada"] = ""
         return data
+
+
+class PasCambioEstadoForm(forms.Form):
+    estado = forms.ModelChoiceField(
+        label="Nuevo estado",
+        queryset=PasEstado.objects.order_by("nombre"),
+        empty_label="Seleccione un estado",
+        widget=forms.Select(attrs={"class": "form-select pas-select2"}),
+    )
+    avisos = forms.ModelMultipleChoiceField(
+        label="Nuevos avisos",
+        queryset=PasAviso.objects.none(),
+        widget=forms.SelectMultiple(attrs={"class": "form-select pas-select2"}),
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        estado_id = None
+        if self.is_bound:
+            value = self.data.get(self.add_prefix("estado"))
+            estado_id = int(value) if value and str(value).isdigit() else None
+        if estado_id:
+            self.fields["avisos"].queryset = PasAviso.objects.filter(
+                estados=estado_id
+            ).order_by("codigo")
+
+    def clean_avisos(self):
+        avisos = self.cleaned_data.get("avisos")
+        if not avisos:
+            raise ValidationError("Seleccione al menos un aviso.")
+        return avisos
+
+    def clean(self):
+        cleaned_data = super().clean()
+        estado = cleaned_data.get("estado")
+        avisos = cleaned_data.get("avisos")
+        if estado and avisos and avisos.exclude(estados=estado).exists():
+            self.add_error(
+                "avisos",
+                "Hay avisos que no corresponden al estado seleccionado.",
+            )
+        return cleaned_data
 
 
 class PasInformeGenerarForm(forms.Form):

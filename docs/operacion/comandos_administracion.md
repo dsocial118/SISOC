@@ -59,5 +59,9 @@
 ## Auditoria
 - `purge_auditlog`: borra registros de auditlog mas antiguos que N dias (soporta `--dry-run`). Evidencia: `audittrail/management/commands/purge_auditlog.py`.
 
+## PAS
+
+- `sincronizar_supervivencia_pas`: consulta diariamente el padrón PAS mediante el cliente RENAPER compartido, registra el resultado por persona y genera incompatibilidades de supervivencia por fallecimiento. Admite `--fecha`, `--limite` y `--forzar`; el cron productivo está documentado en `scripts/crontab`.
+
 ## Nota
 - Los comandos `test_*` presentes en algunas apps se consideran utilitarios de desarrollo/regresion y no forman parte del inventario operativo principal.
