@@ -17,6 +17,7 @@ from django.db.models import Exists, F, OuterRef, Q
 from django.utils import timezone
 
 from core.models import Provincia
+from users.form_catalogs import obtener_queryset_formulario
 from users.models import (
     AccesoComedorPWA,
     AccesoOrganizacionPWA,
@@ -137,7 +138,7 @@ def get_coordinador_pwa_comedor_ids(user) -> list[int]:
         return []
     return list(
         filter_pwa_visible_spaces(
-            Comedor.objects.filter(
+            obtener_queryset_formulario("comedores_pwa").filter(
                 Q(dupla__in=scope.duplas.all())
                 | Q(coordinadores_pwa_adicionales=scope)
             )

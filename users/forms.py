@@ -328,9 +328,7 @@ class PWAAccessMixin:
         )
         self.fields["comedores_adicionales_coordinador_pwa"] = (
             forms.ModelMultipleChoiceField(
-                queryset=Comedor.objects.select_related("organizacion").order_by(
-                    "organizacion__nombre", "nombre"
-                ),
+                queryset=obtener_queryset_formulario("comedores_pwa"),
                 required=False,
                 widget=forms.SelectMultiple(attrs={"class": "select2"}),
                 label="Comedores adicionales PWA",
