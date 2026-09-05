@@ -20,6 +20,10 @@
         <span class="badge bg-success ml-2"
               title="El relevamiento se sincronizó con GESTIONAR">Sincronizado con GESTIONAR</span>
     {% endif %}
+    {% if relevamiento.estado_validacion %}
+        <span class="badge ml-2 {% if relevamiento.estado_validacion == 'Validado' %}bg-success{% elif relevamiento.estado_validacion == 'A subsanar' %}bg-danger{% else %}bg-warning text-dark{% endif %}"
+              title="Estado de validación del coordinador">{{ relevamiento.estado_validacion }}</span>
+    {% endif %}
 {% endblock %}
 
 {% block customJS %}
@@ -68,6 +72,12 @@
                        class="btn btn-info mr-1 d-none d-sm-inline">Ver primer seguimiento</a>
                 {% endif %}
             {% endwith %}
+            {% if perms.relevamientos.review_relevamiento %}
+                <button type="button"
+                        class="btn btn-warning mr-1"
+                        data-bs-toggle="modal"
+                        data-bs-target="#modalRevisionCoordinador">Revisar</button>
+            {% endif %}
             {% if perms.auditlog.view_logentry %}
                 <a href="{% url 'audittrail:log_instance' 'relevamientos' 'relevamiento' relevamiento.pk %}"
                    class="btn btn-outline-light mr-1">Historial</a>
@@ -76,6 +86,66 @@
                class="btn btn-danger">Eliminar</a>
         </div>
     </div>
+    {% if relevamiento.observaciones_coordinador %}
+        <div class="alert {% if relevamiento.estado_validacion == 'A subsanar' %}alert-danger{% else %}alert-info{% endif %} mx-1 d-print-none">
+            <strong>Observaciones del coordinador</strong>
+            {% if relevamiento.coordinador %}
+                <span class="ml-1">({{ relevamiento.coordinador.username }}
+                    {% if relevamiento.fecha_revision_coordinador %}· {{ relevamiento.fecha_revision_coordinador }}{% endif %}
+                )</span>
+            {% endif %}
+            <div class="mt-1">{{ relevamiento.observaciones_coordinador|linebreaksbr }}</div>
+        </div>
+    {% endif %}
+    {% if perms.relevamientos.review_relevamiento %}
+        <div class="modal fade"
+             id="modalRevisionCoordinador"
+             tabindex="-1"
+             aria-labelledby="modalRevisionCoordinadorLabel"
+             aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <form method="post"
+                          action="{% url 'relevamiento_revision_coordinador' relevamiento.comedor.id relevamiento.id %}">
+                        {% csrf_token %}
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="modalRevisionCoordinadorLabel">Revisión del coordinador</h5>
+                            <button type="button"
+                                    class="btn-close"
+                                    data-bs-dismiss="modal"
+                                    aria-label="Cerrar"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-2">
+                                <label for="revision_estado_validacion" class="form-label">Resultado</label>
+                                <select id="revision_estado_validacion"
+                                        name="estado_validacion"
+                                        class="form-select"
+                                        required>
+                                    <option value="" selected disabled>Seleccionar resultado</option>
+                                    <option value="Validado">Validado</option>
+                                    <option value="A subsanar">A subsanar (devolver al territorial)</option>
+                                </select>
+                            </div>
+                            <div class="mb-2">
+                                <label for="revision_observaciones" class="form-label">Observaciones</label>
+                                <textarea id="revision_observaciones"
+                                          name="observaciones_coordinador"
+                                          class="form-control"
+                                          rows="4"
+                                          placeholder="Qué debe corregir el territorial (obligatorio si devuelve el relevamiento)">{{ relevamiento.observaciones_coordinador|default_if_none:"" }}</textarea>
+                            </div>
+                            <small class="text-muted">Si valida, el territorial ya no podrá modificar el relevamiento desde la app.</small>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">Guardar revisión</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    {% endif %}
     {% if relevamiento.estado != "Finalizado" and relevamiento.estado != "Finalizado/Excepciones" and perms.relevamientos.change_relevamiento %}
         <div class="modal fade"
              id="modalAsignarTerritorial"
