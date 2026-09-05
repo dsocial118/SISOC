@@ -312,6 +312,11 @@ server {
         expires 7d;
     }
 
+    # Las DDJJ contienen PII y sólo se descargan por la vista autenticada PAS.
+    location ^~ /media/pas/ddjj/ {
+        return 404;
+    }
+
     location /media/ {
         alias /opt/sisoc/SISOC/media/;
         try_files $uri =404;

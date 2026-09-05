@@ -57,6 +57,7 @@ from celiaquia.views.padron_final_export import ExpedientePadronFinalExportView
 from celiaquia.views.comentarios import (
     LegajoComentarioCreateView,
     LegajoComentarioListView,
+    LegajoMotivoPreviewView,
 )
 
 urlpatterns = [
@@ -351,5 +352,12 @@ urlpatterns = [
             LegajoComentarioCreateView.as_view()
         ),
         name="legajo_comentario_create",
+    ),
+    path(
+        "expedientes/<int:expediente_id>/legajos/<int:legajo_id>/motivo-preview/",
+        permissions_any_required(["celiaquia.view_expediente"])(
+            LegajoMotivoPreviewView.as_view()
+        ),
+        name="legajo_motivo_preview",
     ),
 ]

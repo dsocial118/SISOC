@@ -65,7 +65,7 @@
         </li>
     {% endif %}
 
-    {% if not vat_sidebar_only and request.user|has_any_perm:"auth.view_user,auth.add_user,auth.change_user,auth.delete_user,auth.view_group,auth.add_group,auth.change_group" or perms.auditlog.view_logentry or request.user.is_superuser %}
+    {% if not vat_sidebar_only and request.user|has_any_perm:"auth.view_user,auth.add_user,auth.change_user,auth.delete_user,auth.view_group,auth.add_group,auth.change_group,encuestas.view_encuesta,encuestas.ver_resultados" or perms.auditlog.view_logentry or request.user.is_superuser %}
         <li class="nav-item nav-main-item" style="order: 4;">
             <a href="#" class="nav-link">
                 <img src="{% static 'custom/img/iconos_sidebar/administracion.svg' %}"
@@ -99,6 +99,14 @@
                         <a href="{% url 'audittrail:log_list' %}"
                            class="nav-link nav-dot ms-2 {% if 'auditoria/' in pagina_actual %}active{% endif %}">
                             <p>Auditoría</p>
+                        </a>
+                    </li>
+                {% endif %}
+                {% if request.user|has_any_perm:"encuestas.view_encuesta,encuestas.ver_resultados" %}
+                    <li class="nav-item">
+                        <a href="{% url 'encuestas_listar' %}"
+                           class="nav-link nav-dot ms-2 {% if 'encuestas' in pagina_actual %}active{% endif %}">
+                            <p>Encuestas</p>
                         </a>
                     </li>
                 {% endif %}

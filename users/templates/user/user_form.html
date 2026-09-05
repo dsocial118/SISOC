@@ -120,6 +120,11 @@
                             </div>
                         {% else %}
                             <div id="mobile-toggle-wrapper">{{ form.es_representante_pwa | as_crispy_field }}</div>
+                            <div id="mobile-coordinator-toggle-wrapper">{{ form.es_coordinador_equipo_tecnico_pwa | as_crispy_field }}</div>
+                            <div id="mobile-coordinator-scope-wrapper" style="display: none">
+                                {{ form.duplas_coordinador_pwa | as_crispy_field }}
+                                {{ form.comedores_adicionales_coordinador_pwa | as_crispy_field }}
+                            </div>
                             <div id="mobile-rendicion-permission-wrapper" style="display: none">
                                 {{ form.puede_gestionar_rendiciones_mobile|as_crispy_field }}
                             </div>
@@ -781,6 +786,87 @@
   })();
     </script>
     <script nonce="{{ request.csp_nonce }}">
+        (() => {
+            const coordinatorCheckbox = document.getElementById(
+                'id_es_coordinador_equipo_tecnico_pwa',
+            );
+            const representativeCheckbox = document.getElementById(
+                'id_es_representante_pwa',
+            );
+            const coordinatorScope = document.getElementById(
+                'mobile-coordinator-scope-wrapper',
+            );
+            const representativeScope = document.getElementById(
+                'mobile-association-choice-wrapper',
+            );
+            const representativePermissions = document.getElementById(
+                'mobile-rendicion-permission-wrapper',
+            );
+            const operationPermissions = document.getElementById(
+                'mobile-pwa-permissions-wrapper',
+            );
+            const associationType = document.getElementById(
+                'mobile-association-type-wrapper',
+            );
+            const permissionsCard = document.getElementById(
+                'backoffice-permisos-card',
+            );
+            const configCard = document.getElementById('backoffice-config-card');
+            const passwordWrapper = document.getElementById(
+                'password-field-wrapper',
+            );
+            const passwordHelp = document.getElementById('mobile-password-help');
+
+            if (!coordinatorCheckbox) {
+                return;
+            }
+
+            const syncCoordinatorVisibility = () => {
+                const isCoordinator = coordinatorCheckbox.checked;
+                if (coordinatorScope) {
+                    coordinatorScope.style.display = isCoordinator ? '' : 'none';
+                }
+                if (!isCoordinator) {
+                    representativeCheckbox?.dispatchEvent(
+                        new Event('change', { bubbles: true }),
+                    );
+                    return;
+                }
+                if (representativeScope) representativeScope.style.display = 'none';
+                if (representativePermissions) {
+                    representativePermissions.style.display = 'none';
+                }
+                if (operationPermissions) operationPermissions.style.display = 'none';
+                if (associationType) associationType.style.display = 'none';
+                if (permissionsCard) permissionsCard.style.display = 'none';
+                if (configCard) configCard.style.display = 'none';
+                if (passwordWrapper) passwordWrapper.style.display = 'none';
+                if (passwordHelp) passwordHelp.style.display = '';
+            };
+
+            coordinatorCheckbox.addEventListener('change', () => {
+                if (coordinatorCheckbox.checked && representativeCheckbox?.checked) {
+                    representativeCheckbox.checked = false;
+                    representativeCheckbox.dispatchEvent(
+                        new Event('change', { bubbles: true }),
+                    );
+                }
+                syncCoordinatorVisibility();
+            });
+
+            if (representativeCheckbox) {
+                representativeCheckbox.addEventListener('change', () => {
+                    if (representativeCheckbox.checked && coordinatorCheckbox.checked) {
+                        coordinatorCheckbox.checked = false;
+                        syncCoordinatorVisibility();
+                    }
+                });
+            }
+
+            syncCoordinatorVisibility();
+        })();
+    </script>
+    <script nonce="{{ request.csp_nonce }}">
   (() => {
     const terrCheckbox = document.getElementById('id_es_territorial_comedor');
     if (!terrCheckbox) {
@@ -788,6 +874,7 @@
     }
     const terrProvinciasWrapper = document.getElementById('territorial-comedor-provincias-wrapper');
     const repCheckbox = document.getElementById('id_es_representante_pwa');
+    const coordinatorCheckbox = document.getElementById('id_es_coordinador_equipo_tecnico_pwa');
 
     const syncTerritorialVisibility = () => {
       if (terrProvinciasWrapper) {
@@ -801,12 +888,25 @@
         repCheckbox.checked = false;
         repCheckbox.dispatchEvent(new Event('change', { bubbles: true }));
       }
+      if (terrCheckbox.checked && coordinatorCheckbox && coordinatorCheckbox.checked) {
+        coordinatorCheckbox.checked = false;
+        coordinatorCheckbox.dispatchEvent(new Event('change', { bubbles: true }));
+      }
       syncTerritorialVisibility();
     });
 
     if (repCheckbox) {
       repCheckbox.addEventListener('change', () => {
         if (repCheckbox.checked && terrCheckbox.checked) {
+          terrCheckbox.checked = false;
+          syncTerritorialVisibility();
+        }
+      });
+    }
+
+    if (coordinatorCheckbox) {
+      coordinatorCheckbox.addEventListener('change', () => {
+        if (coordinatorCheckbox.checked && terrCheckbox.checked) {
           terrCheckbox.checked = false;
           syncTerritorialVisibility();
         }
