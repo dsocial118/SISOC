@@ -7,6 +7,7 @@ from relevamientos.views.web_views import (
     RelevamientoDeleteView,
     RelevamientoDetailView,
     RelevamientoListView,
+    RelevamientoRevisionCoordinadorView,
     RelevamientoUpdateView,
 )
 
@@ -59,5 +60,12 @@ urlpatterns = [
             PrimerSeguimientoEliminarView.as_view()
         ),
         name="primer_seguimiento_eliminar",
+    ),
+    path(
+        "comedores/<int:comedor_pk>/relevamiento/<int:pk>/revision",
+        permissions_any_required(["relevamientos.review_relevamiento"])(
+            RelevamientoRevisionCoordinadorView.as_view()
+        ),
+        name="relevamiento_revision_coordinador",
     ),
 ]
