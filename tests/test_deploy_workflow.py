@@ -10,6 +10,34 @@ def _production_deploy_step() -> str:
     return workflow.split("    deploy-produccion:\n", maxsplit=1)[1]
 
 
+def _qa_deploy_step() -> str:
+    workflow = DEPLOY_WORKFLOW.read_text(encoding="utf-8")
+    return workflow.split("    deploy-qa:\n", maxsplit=1)[1].split(
+        "    deploy-homologacion:\n", maxsplit=1
+    )[0]
+
+
+def test_deploy_qa_actualiza_solo_development_antes_del_downtime():
+    """Un ref remoto sin permisos no debe impedir el deploy de QA."""
+
+    qa_step = _qa_deploy_step()
+    scoped_fetch = (
+        'git -C "$APP_ROOT" fetch origin --no-tags '
+        "development:refs/remotes/origin/development"
+    )
+    fast_forward = 'git -C "$APP_ROOT" merge --ff-only origin/development'
+    deploy_versioned = (
+        "./scripts/operacion/deploy_refresh.sh --yes --skip-pull "
+        '--expected-revision "$EXPECTED_SHA"'
+    )
+
+    assert scoped_fetch in qa_step
+    assert fast_forward in qa_step
+    assert deploy_versioned in qa_step
+    assert qa_step.index(scoped_fetch) < qa_step.index(fast_forward)
+    assert qa_step.index(fast_forward) < qa_step.index(deploy_versioned)
+
+
 def _legacy_talla_recovery_job() -> str:
     workflow = DEPLOY_WORKFLOW.read_text(encoding="utf-8")
     return workflow.split("    recuperar-talla-legacy-produccion:\n", maxsplit=1)[1]

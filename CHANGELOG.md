@@ -6,6 +6,9 @@
 - [sin-area] feat(relevamientos): asignación por usuario territorial + corte AppSheet por flag. (PR #2380)
 - [sin-area] fix(relevamientos): feedback QA territoriales (visibilidad, finalizar, estados, permisos). (PR #2386)
 - [sin-area] fix(territorial): excluir relevamientos borrados del scope por asignación. (PR #2389)
+- [sin-area] fix: reparar mojibake en datos y RENAPER. (PR #2415)
+- [sin-area] fix(encoding): reparar mojibake capitalizado histórico. (PR #2421)
+- [sin-area] fix(encoding): reparar mojibake capitalizado restante. (PR #2424)
 <!-- AUTO-GENERATED RELEASE END: 2026-09-02 -->
 
 <!-- AUTO-GENERATED RELEASE START: 2026-08-26 -->

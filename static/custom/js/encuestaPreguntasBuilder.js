@@ -29,6 +29,15 @@
         .map(function (tipo) { return tipo.trim(); })
         .filter(Boolean);
 
+    // Tipos que pueden ponderar para el puntaje total (ver Pregunta.pondera
+    // en encuestas/models.py): Sí/No, opción única/múltiple y escala tienen
+    // un conjunto fijo de valores posibles. Texto libre, numérico y fecha no
+    // muestran el toggle de puntaje.
+    var tiposPonderables = (contextEl ? contextEl.getAttribute("data-tipos-ponderables") : "")
+        .split(",")
+        .map(function (tipo) { return tipo.trim(); })
+        .filter(Boolean);
+
     // Si/No y las preguntas de opción (única o múltiple) tienen un conjunto
     // fijo y conocido de valores posibles: para esas, "Valor esperado" se
     // arma con un <select> en vez de texto libre, para no depender de que
@@ -147,6 +156,74 @@
         refs.opcionesWrap.classList.toggle("d-none", !requiereOpciones);
     }
 
+    /** Renueva las filas de "puntaje por opción" a partir de las líneas
+     * actuales del textarea de opciones, conservando el puntaje ya cargado
+     * por texto de opción (no por posición: reordenar o agregar una línea
+     * en el medio no desarma los puntajes ya cargados de las demás). */
+    function actualizarFilasPuntajeOpciones(refs) {
+        var textos = refs.opciones.value
+            .split("\n")
+            .map(function (linea) { return linea.trim(); })
+            .filter(Boolean);
+
+        refs.puntajeOpcionesList.innerHTML = "";
+        textos.forEach(function (texto) {
+            var fila = document.createElement("div");
+            fila.className = "puntaje-opcion-row";
+
+            var label = document.createElement("span");
+            label.className = "puntaje-opcion-texto";
+            label.textContent = texto;
+            label.title = texto;
+
+            var input = document.createElement("input");
+            input.type = "number";
+            input.min = "0";
+            input.className = "form-control puntaje-opcion-input";
+            input.value = Object.prototype.hasOwnProperty.call(refs._puntajesPorOpcion, texto)
+                ? refs._puntajesPorOpcion[texto]
+                : 0;
+            input.addEventListener("input", function () {
+                refs._puntajesPorOpcion[texto] = input.value;
+            });
+
+            fila.appendChild(label);
+            fila.appendChild(input);
+            refs.puntajeOpcionesList.appendChild(fila);
+        });
+    }
+
+    /** Muestra los campos de puntaje que correspondan según el tipo de
+     * pregunta, solo si el switch "¿Pondera?" está activo. */
+    function actualizarDetallePondera(refs) {
+        var activo = refs.pondera.checked;
+        refs.ponderaDetalle.classList.toggle("d-none", !activo);
+        refs.puntajeSiNoWrap.classList.add("d-none");
+        refs.puntajeOpcionesWrap.classList.add("d-none");
+        refs.puntajeEscalaNota.classList.add("d-none");
+        if (!activo) return;
+
+        if (refs.tipo.value === "si_no") {
+            refs.puntajeSiNoWrap.classList.remove("d-none");
+        } else if (tiposConOpciones.indexOf(refs.tipo.value) !== -1) {
+            refs.puntajeOpcionesWrap.classList.remove("d-none");
+            actualizarFilasPuntajeOpciones(refs);
+        } else if (refs.tipo.value === "escala") {
+            refs.puntajeEscalaNota.classList.remove("d-none");
+        }
+    }
+
+    /** Muestra u oculta el switch "¿Pondera?" según si el tipo de pregunta
+     * tiene un conjunto fijo de valores posibles. */
+    function actualizarVisibilidadPondera(refs) {
+        var esPonderable = tiposPonderables.indexOf(refs.tipo.value) !== -1;
+        refs.ponderaWrap.classList.toggle("d-none", !esPonderable);
+        if (!esPonderable) {
+            refs.pondera.checked = false;
+        }
+        actualizarDetallePondera(refs);
+    }
+
     function crearFila(datosIniciales) {
         var fragmento = template.content.cloneNode(true);
         var fila = fragmento.querySelector(".pregunta-row");
@@ -164,13 +241,30 @@
             condicionOperador: fila.querySelector(".pregunta-condicion-operador"),
             condicionValor: fila.querySelector(".pregunta-condicion-valor"),
             condicionValorSelect: fila.querySelector(".pregunta-condicion-valor-select"),
+            ponderaWrap: fila.querySelector(".pregunta-pondera-wrap"),
+            pondera: fila.querySelector(".pregunta-pondera"),
+            ponderaDetalle: fila.querySelector(".pregunta-puntaje-detalle"),
+            puntajeSiNoWrap: fila.querySelector(".pregunta-puntaje-si-no"),
+            puntajeSi: fila.querySelector(".pregunta-puntaje-si"),
+            puntajeNo: fila.querySelector(".pregunta-puntaje-no"),
+            puntajeOpcionesWrap: fila.querySelector(".pregunta-puntaje-opciones-wrap"),
+            puntajeOpcionesList: fila.querySelector(".pregunta-puntaje-opciones-list"),
+            puntajeEscalaNota: fila.querySelector(".pregunta-puntaje-escala-nota"),
+            _puntajesPorOpcion: {},
         };
 
         refs.tipo.addEventListener("change", function () {
             actualizarVisibilidadOpciones(refs);
+            actualizarVisibilidadPondera(refs);
             refrescarCondicionesValor();
         });
-        refs.opciones.addEventListener("input", refrescarCondicionesValor);
+        refs.opciones.addEventListener("input", function () {
+            actualizarDetallePondera(refs);
+            refrescarCondicionesValor();
+        });
+        refs.pondera.addEventListener("change", function () {
+            actualizarDetallePondera(refs);
+        });
         refs.condicionRef.addEventListener("change", function () {
             actualizarValorCondicion(refs);
         });
@@ -188,9 +282,21 @@
             refs.texto.value = datosIniciales.texto || "";
             refs.tipo.value = datosIniciales.tipo || refs.tipo.value;
             refs.obligatoria.checked = datosIniciales.obligatoria !== false;
-            refs.opciones.value = (datosIniciales.opciones || []).join("\n");
+            var opcionesIniciales = (datosIniciales.opciones || []).map(function (opcion) {
+                return typeof opcion === "object" ? opcion : { texto: opcion, puntaje: 0 };
+            });
+            refs.opciones.value = opcionesIniciales
+                .map(function (opcion) { return opcion.texto; })
+                .join("\n");
+            opcionesIniciales.forEach(function (opcion) {
+                refs._puntajesPorOpcion[opcion.texto] = opcion.puntaje || 0;
+            });
+            refs.pondera.checked = Boolean(datosIniciales.pondera);
+            refs.puntajeSi.value = datosIniciales.puntaje_si || 0;
+            refs.puntajeNo.value = datosIniciales.puntaje_no || 0;
         }
         actualizarVisibilidadOpciones(refs);
+        actualizarVisibilidadPondera(refs);
 
         renumerarFilas();
         actualizarVacioMsg();
@@ -227,7 +333,16 @@
                 opciones: refs.opciones.value
                     .split("\n")
                     .map(function (linea) { return linea.trim(); })
-                    .filter(Boolean),
+                    .filter(Boolean)
+                    .map(function (texto) {
+                        return {
+                            texto: texto,
+                            puntaje: parseInt(refs._puntajesPorOpcion[texto], 10) || 0,
+                        };
+                    }),
+                pondera: refs.pondera.checked,
+                puntaje_si: parseInt(refs.puntajeSi.value, 10) || 0,
+                puntaje_no: parseInt(refs.puntajeNo.value, 10) || 0,
                 condicion: null,
             };
             if (refs.condicionRef.value) {

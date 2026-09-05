@@ -35,11 +35,13 @@ from .services_resultados import (
     build_resultados_csv_rows,
     build_resultados_excel,
     build_resultados_filename,
+    get_puntajes_ronda,
     get_resultados_ronda,
 )
 from .validators import (
     LISTADO_TEMPLATE_FILENAME,
     TIPOS_PREGUNTA_CON_OPCIONES,
+    TIPOS_PREGUNTA_PONDERABLES,
     generar_plantilla_listado,
 )
 
@@ -138,6 +140,7 @@ class EncuestaFormMixin:
         context["tipos_pregunta"] = TipoPregunta.choices
         context["operadores_condicion"] = OperadorCondicion.choices
         context["tipos_pregunta_con_opciones"] = ",".join(TIPOS_PREGUNTA_CON_OPCIONES)
+        context["tipos_pregunta_ponderables"] = ",".join(TIPOS_PREGUNTA_PONDERABLES)
         return context
 
     def get_success_url(self):
@@ -267,6 +270,7 @@ class EncuestaResultadosView(LoginRequiredMixin, DetailView):
         context["rondas"] = rondas
         context["ronda_actual"] = ronda_actual
         context["resultados"] = resultados
+        context["puntajes"] = get_puntajes_ronda(ronda_actual) if ronda_actual else []
         return context
 
 
