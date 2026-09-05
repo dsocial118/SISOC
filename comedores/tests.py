@@ -982,7 +982,7 @@ def test_relevamiento_create_edit_ajax_crea_primer_seguimiento(
     create_mock = mock.Mock(return_value=seguimiento_mock)
 
     monkeypatch.setattr(
-        "comedores.views.relevamientos.PrimerSeguimientoService.create_asignado",
+        "comedores.views.relevamientos.PrimerSeguimientoService.create_instancia",
         create_mock,
     )
 
@@ -1017,7 +1017,7 @@ def test_relevamiento_create_edit_ajax_primer_seguimiento_reenvia_relevamiento_i
     create_mock = mock.Mock(return_value=seguimiento_mock)
 
     monkeypatch.setattr(
-        "comedores.views.relevamientos.PrimerSeguimientoService.create_asignado",
+        "comedores.views.relevamientos.PrimerSeguimientoService.create_instancia",
         create_mock,
     )
 
@@ -1034,24 +1034,48 @@ def test_relevamiento_create_edit_ajax_primer_seguimiento_reenvia_relevamiento_i
 
     assert response.status_code == 200
     assert create_mock.call_args.kwargs["relevamiento_id"] == "777"
+    assert create_mock.call_args.kwargs["tipo"] == "primer"
 
 
 @pytest.mark.django_db
-def test_relevamiento_create_edit_ajax_rechaza_segundo_seguimiento(
-    client_logged_fixture, comedor_fixture
+@pytest.mark.parametrize(
+    "valor_select, tipo_esperado",
+    [
+        ("segundo_seguimiento", "posterior"),  # alias historico
+        ("seguimiento_posterior", "posterior"),
+        ("seguimiento_virtual", "virtual"),
+        ("acta_excepcion", "acta_excepcion"),
+    ],
+)
+def test_relevamiento_create_edit_ajax_crea_otras_instancias_del_ciclo(
+    client_logged_fixture, comedor_fixture, monkeypatch, valor_select, tipo_esperado
 ):
+    """El popup ya no rechaza el 'segundo seguimiento': crea la instancia del
+    ciclo que corresponda (posterior / virtual / acta de excepcion)."""
+    relevamiento_mock = mock.Mock()
+    relevamiento_mock.pk = 1003
+    relevamiento_mock.comedor = mock.Mock()
+    relevamiento_mock.comedor.pk = comedor_fixture.pk
+    seguimiento_mock = mock.Mock()
+    seguimiento_mock.id_relevamiento = relevamiento_mock
+    create_mock = mock.Mock(return_value=seguimiento_mock)
+    monkeypatch.setattr(
+        "comedores.views.relevamientos.PrimerSeguimientoService.create_instancia",
+        create_mock,
+    )
+
     url = reverse("relevamiento_create_edit_ajax", kwargs={"pk": comedor_fixture.pk})
     response = client_logged_fixture.post(
         url,
         {
-            "tipo_relevamiento": "segundo_seguimiento",
+            "tipo_relevamiento": valor_select,
             "territorial": '{"gestionar_uid":"uid-1","nombre":"Territorial Norte"}',
         },
         HTTP_X_REQUESTED_WITH="XMLHttpRequest",
     )
 
-    assert response.status_code == 400
-    assert "Segundo seguimiento" in response.json()["error"]
+    assert response.status_code == 200
+    assert create_mock.call_args.kwargs["tipo"] == tipo_esperado
 
 
 @pytest.mark.django_db

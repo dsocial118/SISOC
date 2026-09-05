@@ -5,7 +5,6 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import models as dj_models
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
-from django.utils import timezone
 from django.views.generic import (
     CreateView,
     DeleteView,
@@ -21,10 +20,16 @@ from relevamientos.form import RelevamientoForm
 from relevamientos.helpers import RelevamientoFormManager
 from relevamientos.models import (
     BLOQUES_SEGUIMIENTO,
+    ActaComplementaria,
     PrimerSeguimiento,
     Relevamiento,
 )
 from relevamientos.service import RelevamientoService
+from relevamientos.views.seguimiento_helpers import (
+    aplicar_revision_coordinador,
+    resolver_seguimiento,
+    seguimiento_queryset,
+)
 
 
 class RelevamientoCreateView(LoginRequiredMixin, CreateView):
@@ -128,6 +133,7 @@ class RelevamientoListView(LoginRequiredMixin, ListView):
                     "is_child": False,
                     "parent_id": None,
                     "has_seguimiento": bool(seguimientos),
+                    "origen": rel.origen,
                     "sincronizado_gestionar": rel.sincronizado_gestionar,
                 }
             )
@@ -139,6 +145,7 @@ class RelevamientoListView(LoginRequiredMixin, ListView):
                         "estado": seguimiento.estado,
                         "tipo": seguimiento.get_tipo_display(),
                         "numero_orden": seguimiento.numero_orden,
+                        "origen": seguimiento.origen,
                         "numero_if": None,
                         "is_child": True,
                         "parent_id": rel.id,
@@ -146,6 +153,11 @@ class RelevamientoListView(LoginRequiredMixin, ListView):
                     }
                 )
         context["relevamientos_items"] = items
+        context["actas_complementarias"] = list(
+            ActaComplementaria.objects.filter(comedor_id=self.kwargs["comedor_pk"])
+            .select_related("tecnico")
+            .prefetch_related("prestaciones")
+        )
         return context
 
 
@@ -274,6 +286,11 @@ class RelevamientoDetailView(LoginRequiredMixin, DetailView):
         # Agregar los datos adicionales al contexto
         context["relevamiento_data"] = relevamiento_data
         context["relevamientos_timeline"] = timeline_items
+        # Todas las instancias del ciclo (primer, posteriores, virtuales, actas).
+        context["seguimientos"] = sorted(
+            relevamiento.seguimientos.all(),
+            key=lambda seguimiento: seguimiento.numero_orden,
+        )
 
         return context
 
@@ -456,42 +473,21 @@ class PrimerSeguimientoDetailView(LoginRequiredMixin, DetailView):
     context_object_name = "seguimiento"
 
     def get_object(self, queryset=None):
-        queryset = PrimerSeguimiento.objects.select_related(
-            "id_relevamiento",
-            "id_relevamiento__comedor",
-            "referente",
-            "funcionamiento",
-            "servicios_basicos",
-            "almacenamiento_alimentos",
-            "condiciones_higiene",
-            "tareas_comedor",
-            "tareas_comedor__tareas_comedor_cant_personas",
-            "recursos",
-            "recursos__fuente_recursos",
-            "compras",
-            "compras__fuente_compras",
-            "frecuencia_compra_alimentos",
-            "menu",
-            "menu__modalidad_prestacion_del_dia",
-            "registro_asistencia",
-            "frecuencia_alimentos",
-            "actividades_extras",
-            "tarjeta",
-            "rendicion_cuentas",
-            "asistencia_tecnica",
-            "cierre",
-        ).prefetch_related("prestaciones", "menu__receta_items")
-        return get_object_or_404(
-            queryset,
-            id_relevamiento_id=self.kwargs["relevamiento_pk"],
-            id_relevamiento__comedor_id=self.kwargs["comedor_pk"],
-        )
+        return resolver_seguimiento(self.kwargs, seguimiento_queryset())
 
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
         seguimiento = self.object
         context["relevamiento"] = seguimiento.id_relevamiento
         context["comedor"] = seguimiento.id_relevamiento.comedor
+        # Navegación entre las instancias del mismo ciclo.
+        context["instancias"] = list(
+            PrimerSeguimiento.objects.filter(
+                id_relevamiento_id=seguimiento.id_relevamiento_id
+            )
+            .only("id", "tipo", "numero_orden", "estado", "id_relevamiento_id")
+            .order_by("numero_orden", "id")
+        )
 
         bloques = []
         for attr, label in PRIMER_SEGUIMIENTO_BLOQUES:
@@ -524,75 +520,45 @@ class RelevamientoRevisionCoordinadorView(LoginRequiredMixin, View):
 
     def post(self, request, comedor_pk, pk):
         relevamiento = get_object_or_404(Relevamiento, pk=pk, comedor_id=comedor_pk)
-        redirect_to = redirect(
-            reverse(
-                "relevamiento_detalle",
-                kwargs={"comedor_pk": comedor_pk, "pk": pk},
-            )
-        )
-
-        estado = (request.POST.get("estado_validacion") or "").strip()
-        observaciones = (request.POST.get("observaciones_coordinador") or "").strip()
-        estados_validos = {
-            Relevamiento.ESTADO_VALIDACION_VALIDADO,
-            Relevamiento.ESTADO_VALIDACION_A_SUBSANAR,
-        }
-        if estado not in estados_validos:
-            messages.error(request, "Seleccione un resultado de revisión válido.")
-            return redirect_to
-
-        # Devolver sin decir qué corregir deja al territorial sin información.
-        if estado == Relevamiento.ESTADO_VALIDACION_A_SUBSANAR and not observaciones:
-            messages.error(
-                request,
-                "Para devolver el relevamiento debe indicar qué corregir.",
-            )
-            return redirect_to
-
-        relevamiento.estado_validacion = estado
-        relevamiento.observaciones_coordinador = observaciones or None
-        relevamiento.coordinador = request.user
-        relevamiento.fecha_revision_coordinador = timezone.now()
-        relevamiento.save(
-            update_fields=[
-                "estado_validacion",
-                "observaciones_coordinador",
-                "coordinador",
-                "fecha_revision_coordinador",
-            ]
-        )
-
-        if estado == Relevamiento.ESTADO_VALIDACION_VALIDADO:
+        error = aplicar_revision_coordinador(request, relevamiento, "el relevamiento")
+        if error:
+            messages.error(request, error)
+        elif relevamiento.estado_validacion == Relevamiento.ESTADO_VALIDACION_VALIDADO:
             messages.success(request, "Relevamiento validado correctamente.")
         else:
             messages.success(
                 request,
                 "Relevamiento devuelto al territorial para subsanar.",
             )
-        return redirect_to
+        return redirect(
+            reverse(
+                "relevamiento_detalle",
+                kwargs={"comedor_pk": comedor_pk, "pk": pk},
+            )
+        )
 
 
 class PrimerSeguimientoEliminarView(LoginRequiredMixin, View):
     """Borrado del primer seguimiento desde la UI.
 
-    La confirmacion se hace via modal en el detalle del relevamiento; por eso
-    no exponemos GET y solo aceptamos POST. El borrado dispara la signal
+    Acepta la ruta nueva (por pk de instancia) y la historica (primera
+    instancia del ciclo). La confirmacion se hace via modal en el detalle del
+    relevamiento; por eso no exponemos GET y solo aceptamos POST. El borrado dispara la signal
     pre_delete que envia la baja al endpoint de GESTIONAR.
     """
 
     http_method_names = ["post"]
 
-    def post(self, request, comedor_pk, relevamiento_pk):
-        seguimiento = get_object_or_404(
-            PrimerSeguimiento.objects.select_related("id_relevamiento"),
-            id_relevamiento_id=relevamiento_pk,
-            id_relevamiento__comedor_id=comedor_pk,
+    def post(self, request, **kwargs):
+        seguimiento = resolver_seguimiento(
+            self.kwargs, PrimerSeguimiento.objects.select_related("id_relevamiento")
         )
+        relevamiento_pk = seguimiento.id_relevamiento_id
         seguimiento.delete()
-        messages.success(request, "Primer seguimiento eliminado correctamente.")
+        messages.success(request, "Seguimiento eliminado correctamente.")
         return redirect(
             reverse(
                 "relevamiento_detalle",
-                kwargs={"comedor_pk": comedor_pk, "pk": relevamiento_pk},
+                kwargs={"comedor_pk": self.kwargs["comedor_pk"], "pk": relevamiento_pk},
             )
         )
