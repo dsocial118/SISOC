@@ -9,7 +9,8 @@
     <span class="ml-2 h5">{{ relevamiento.fecha_visita | default_if_none:"Sin información" }}</span>
 {% endblock %}
 ;
-{% block breadcrumb %}{% endblock %}
+{% block breadcrumb %}
+{% endblock %}
 ;
 {% block content %}
     <link rel="stylesheet"
@@ -49,7 +50,7 @@
                                                         {% if item.is_child %}
                                                             <div style="padding-left: 20px;">
                                                                 <span class="text-muted">└─</span>
-                                                                <a href="{% url 'primer_seguimiento_detalle' comedor.id item.parent_id %}">{{ item.id }} - {{ item.fecha|default_if_none:"Sin fecha" }}</a>
+                                                                <a href="{% url 'seguimiento_detalle' comedor.id item.parent_id item.id %}">{{ item.id }} - {{ item.fecha|default_if_none:"Sin fecha" }}</a>
                                                             </div>
                                                         {% else %}
                                                             <a href="{% url 'relevamiento_detalle' comedor.id item.id %}">{{ item.id }} - {{ item.fecha|default_if_none:"Sin fecha" }}</a>
@@ -63,7 +64,8 @@
                                                     <div class="col-5">
                                                         {% if item.is_child %}
                                                             <div class="d-flex flex-wrap gap-1">
-                                                                <span class="badge bg-info">Primer seguimiento</span>
+                                                                <span class="badge bg-info">{{ item.tipo }} #{{ item.numero_orden }}</span>
+                                                                {% if item.origen == "app" %}<span class="badge bg-primary" title="Cargado desde la app">App</span>{% endif %}
                                                                 {% if item.sincronizado_gestionar %}
                                                                     <span class="badge bg-success">Sincronizado</span>
                                                                 {% else %}
@@ -81,6 +83,9 @@
                                                                     <span class="badge bg-success align-self-start">Sincronizado</span>
                                                                 {% else %}
                                                                     <span class="badge bg-secondary align-self-start">No sincronizado</span>
+                                                                {% endif %}
+                                                                {% if item.origen == "app" %}
+                                                                    <span class="badge bg-primary align-self-start" title="Creado desde la app">App</span>
                                                                 {% endif %}
                                                                 <div id="numero-if-display-{{ item.id }}"
                                                                      class="d-flex align-items-end gap-2">
@@ -122,7 +127,7 @@
                                                         {% endif %}
                                                     </div>
                                                     <div class="col-2 d-flex justify-content-end">
-                                                        {% if not item.is_child and not item.has_seguimiento and perms.relevamientos.add_relevamiento %}
+                                                        {% if not item.is_child and perms.relevamientos.add_relevamiento %}
                                                             <button type="button"
                                                                     class="btn btn-sm btn-primary mb-0 py-1 px-2"
                                                                     data-bs-toggle="modal"
@@ -136,6 +141,61 @@
                                             {% endfor %}
                                         </div>
                                     </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row relevamiento-container mt-3">
+        <div class="col-12">
+            <div class="card card-informacion">
+                <div class="card-header d-flex align-items-center">
+                    <h3 class="card-title font-weight-bold mr-3 pt-1 mb-0">Actas complementarias extraordinarias</h3>
+                    {% if perms.relevamientos.add_actacomplementaria %}
+                        <a href="{% url 'acta_complementaria_crear' comedor.id %}"
+                           class="btn btn-primary btn-sm">Agregar</a>
+                    {% endif %}
+                    <div class="card-tools ml-auto">
+                        <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body card-comments p-0 pb-1">
+                    <div class="nav nav-pills row my-3">
+                        <div class="col-12">
+                            <div class="nav-item d-flex">
+                                <div class="comment-text w-100">
+                                    {% for acta in actas_complementarias %}
+                                        <div class="row align-items-center w-100 mx-0 mb-2">
+                                            <div class="col-3 d-flex">
+                                                <a href="{% url 'acta_complementaria_detalle' comedor.id acta.id %}">{{ acta.id }} - {{ acta.fecha_hora|default_if_none:"Sin fecha" }}</a>
+                                            </div>
+                                            <div class="col-3 d-flex">
+                                                <p class="mb-0">{{ acta.tecnico|default:"Sin técnico" }}</p>
+                                            </div>
+                                            <div class="col-4 d-flex flex-wrap gap-1">
+                                                {% if acta.origen == "app" %}
+                                                    <span class="badge bg-primary" title="Cargada desde la app">App</span>
+                                                {% else %}
+                                                    <span class="badge bg-light text-dark" title="Cargada desde SISOC">SISOC</span>
+                                                {% endif %}
+                                                <span class="badge bg-info">{{ acta.prestaciones.all|length }} prestación{{ acta.prestaciones.all|length|pluralize:"es" }}</span>
+                                            </div>
+                                            <div class="col-2 d-flex justify-content-end">
+                                                {% if perms.relevamientos.change_actacomplementaria %}
+                                                    <a href="{% url 'acta_complementaria_editar' comedor.id acta.id %}"
+                                                       class="btn btn-sm btn-primary mb-0 py-1 px-2">Editar</a>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    {% empty %}
+                                        <p class="text-muted mb-0 px-2">No hay actas complementarias cargadas para este comedor.</p>
+                                    {% endfor %}
                                 </div>
                             </div>
                         </div>
