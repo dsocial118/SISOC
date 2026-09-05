@@ -33,10 +33,14 @@
 
 - Empezar por `docs/registro/prs/PR-2449.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
+- `CHANGELOG.md`
 - `comedores/api_views_territorial.py`
 - `comedores/tests.py`
 - `comedores/views/relevamientos.py`
+- `docs/contexto/features/pr-2449-feat-relevamientos-fase-3-paridad-del-backoffice-con-el-ciclo-de-seguimiento-y-actas-complementarias.md`
 - `docs/registro/cambios/2026-09-05-fase3-backoffice-ciclo-seguimiento-y-actas.md`
+- `docs/registro/prs/PR-2449.md`
+- `docs/registro/releases/pending/2026-09-09-pr-2449.md`
 - `relevamientos/forms_backoffice.py`
 - `relevamientos/primer_seguimiento_service.py`
 - `relevamientos/templates/acta_complementaria_detail.html`
@@ -49,17 +53,16 @@
 - `relevamientos/views/backoffice_views.py`
 - `relevamientos/views/seguimiento_helpers.py`
 - `relevamientos/views/web_views.py`
-- `tests/test_altas_desde_app_n15_n18.py`
-- `tests/test_backoffice_seguimientos_actas.py`
-- `tests/test_relevamientos_web_views_unit.py`
-- `tests/test_seguimiento_instancias_backoffice.py`
-- ... y 1 archivo(s) adicional(es) relacionados.
+- ... y 5 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`
+- `docs/contexto/features/pr-2449-feat-relevamientos-fase-3-paridad-del-backoffice-con-el-ciclo-de-seguimiento-y-actas-complementarias.md`
 - `docs/registro/cambios/2026-09-05-fase3-backoffice-ciclo-seguimiento-y-actas.md`
+- `docs/registro/prs/PR-2449.md`
+- `docs/registro/releases/pending/2026-09-09-pr-2449.md`
 
 ## Trazabilidad
 
