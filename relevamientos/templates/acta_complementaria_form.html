@@ -1,0 +1,110 @@
+{% extends "includes/main.html" %}
+{% load static %}
+{% block title %}
+    {% if acta %}
+        Editar
+    {% else %}
+        Nueva
+    {% endif %}
+    acta complementaria - Comedor: {{ comedor.nombre }}
+{% endblock title %}
+{% block titulo-pagina %}
+    <div class="mb-4">
+        <a href="{% url 'relevamientos' comedor.id %}"
+           class="btn btn-outline-secondary btn-back mr-1">Volver</a>
+    </div>
+    {{ comedor.nombre }}
+    <span class="ml-2 h5">|
+        {% if acta %}
+            Editar
+        {% else %}
+            Nueva
+        {% endif %}
+    acta complementaria extraordinaria</span>
+{% endblock titulo-pagina %}
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <div class="breadcrumb-item">
+            <a href="{% url 'comedores' %}">Comedores</a>
+        </div>
+        <div class="breadcrumb-item">
+            <a href="{% url 'comedor_detalle' comedor.id %}">{{ comedor.nombre }}</a>
+        </div>
+        <div class="breadcrumb-item">
+            <a href="{% url 'relevamientos' comedor.id %}">Relevamientos</a>
+        </div>
+        <div class="breadcrumb-item active">Acta complementaria</div>
+    </ol>
+{% endblock breadcrumb %}
+{% block content %}
+    <link rel="stylesheet"
+          href="{% static 'custom/css/comedorRelevamiento.css' %}" />
+    <form method="post" novalidate>
+        {% csrf_token %}
+        <div class="card mb-3">
+            <div class="card-header">
+                <h3 class="card-title font-weight-bold mr-3 pt-1">Datos del acta</h3>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">Registra, fuera del ciclo de visitas, un cambio en la prestación del comedor.</p>
+                {% if editor.form.non_field_errors %}
+                    <div class="alert alert-danger">{{ editor.form.non_field_errors }}</div>
+                {% endif %}
+                <div class="row">
+                    {% for field in editor.form %}
+                        <div class="{% if field.name == 'observaciones' %}col-12{% else %}col-md-6{% endif %} mb-3">
+                            <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.help_text %}<small class="form-text text-muted">{{ field.help_text }}</small>{% endif %}
+                            {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        <div class="card mb-3" id="bloque-prestaciones">
+            <div class="card-header">
+                <h3 class="card-title font-weight-bold mr-3 pt-1">Prestaciones (día × tipo)</h3>
+            </div>
+            <div class="card-body p-0">
+                {{ editor.prestaciones.management_form }}
+                {% if editor.prestaciones.non_form_errors %}
+                    <div class="alert alert-danger m-3">{{ editor.prestaciones.non_form_errors }}</div>
+                {% endif %}
+                <div class="table-responsive">
+                    <table class="table table-striped mb-0">
+                        <thead>
+                            <tr>
+                                <th>Días</th>
+                                <th>Tipo</th>
+                                <th>Cantidad actual</th>
+                                <th>Cantidad en espera</th>
+                                <th>Eliminar</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for form in editor.prestaciones %}
+                                <tr>
+                                    {% for hidden in form.hidden_fields %}{{ hidden }}{% endfor %}
+                                    {% for field in form.visible_fields %}
+                                        <td>
+                                            {{ field }}
+                                            {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                                        </td>
+                                    {% endfor %}
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <p class="text-muted small m-3 mb-2">
+                    La última fila vacía permite agregar una prestación. Guarde y vuelva a editar para agregar más.
+                </p>
+            </div>
+        </div>
+        <div class="d-flex justify-content-end gap-2 mb-4">
+            <a href="{% url 'relevamientos' comedor.id %}" class="btn btn-secondary">Cancelar</a>
+            <button type="submit" class="btn btn-primary">Guardar</button>
+        </div>
+    </form>
+{% endblock content %}
