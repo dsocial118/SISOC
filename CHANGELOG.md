@@ -4,6 +4,7 @@
 ## Actualizaciones
 
 - [sin-area] feat: fase 2 del contrato territorial — lote N14–N19 completo (coordinador, huecos E2, instancias, prefill, zona y actas). (PR #2432)
+- [sin-area] feat(relevamientos): fase 3 - paridad del backoffice con el ciclo de seguimiento y actas complementarias. (PR #2449)
 <!-- AUTO-GENERATED RELEASE END: 2026-09-09 -->
 
 <!-- AUTO-GENERATED RELEASE START: 2026-09-02 -->

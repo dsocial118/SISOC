@@ -24,6 +24,10 @@
         <span class="badge ml-2 {% if relevamiento.estado_validacion == 'Validado' %}bg-success{% elif relevamiento.estado_validacion == 'A subsanar' %}bg-danger{% else %}bg-warning text-dark{% endif %}"
               title="Estado de validación del coordinador">{{ relevamiento.estado_validacion }}</span>
     {% endif %}
+    {% if relevamiento.origen == "app" %}
+        <span class="badge bg-primary ml-2"
+              title="Creado por el territorial desde la app">App</span>
+    {% endif %}
 {% endblock %}
 
 {% block customJS %}
@@ -66,12 +70,10 @@
                    target="_blank"
                    class="btn btn-secondary mr-1 d-none d-sm-inline">Imprimir</a>
             {% endif %}
-            {% with ps=relevamiento.primer_seguimiento %}
-                {% if ps %}
-                    <a href="#section-primer-seguimiento"
-                       class="btn btn-info mr-1 d-none d-sm-inline">Ver primer seguimiento</a>
-                {% endif %}
-            {% endwith %}
+            {% if seguimientos %}
+                <a href="#section-seguimientos"
+                   class="btn btn-info mr-1 d-none d-sm-inline">Ver seguimientos</a>
+            {% endif %}
             {% if perms.relevamientos.review_relevamiento %}
                 <button type="button"
                         class="btn btn-warning mr-1"
@@ -1465,55 +1467,97 @@
             </div>
         </div>
     </div>
-    {% with seguimiento=relevamiento.primer_seguimiento %}
-        {% if seguimiento %}
-            <div class="card mt-4" id="section-primer-seguimiento">
-                <div class="card-header d-flex align-items-center justify-content-between">
-                    <h5 class="mb-0">Primer seguimiento</h5>
-                    <div class="d-flex gap-2">
-                        {% if seguimiento.estado == "Completo" %}
-                            <span class="badge bg-success">Completado</span>
-                        {% else %}
-                            <span class="badge bg-secondary">No completado</span>
-                        {% endif %}
-                        {% if seguimiento.sincronizado_gestionar %}
-                            <span class="badge bg-success"
-                                  title="El primer seguimiento se sincronizó con GESTIONAR">Sincronizado con GESTIONAR</span>
-                        {% else %}
-                            <span class="badge bg-secondary"
-                                  title="Todavía no se sincronizó con GESTIONAR">Pendiente sincronización</span>
-                        {% endif %}
-                    </div>
-                </div>
-                <div class="card-body d-flex align-items-center justify-content-between flex-wrap gap-2">
-                    <span class="text-muted">Ver el detalle completo del primer seguimiento cargado para este relevamiento.</span>
-                    <div class="d-flex gap-2">
-                        <a href="{% url 'primer_seguimiento_detalle' relevamiento.comedor.id relevamiento.id %}"
-                           class="btn btn-primary">Ver primer seguimiento</a>
-                        {% if perms.relevamientos.delete_primerseguimiento %}
-                            <button type="button"
-                                    class="btn btn-danger"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#modalEliminarPrimerSeguimiento">
-                                Eliminar primer seguimiento
-                            </button>
-                        {% endif %}
-                    </div>
+    {% if seguimientos %}
+        <div class="card mt-4" id="section-seguimientos">
+            <div class="card-header d-flex align-items-center justify-content-between">
+                <h5 class="mb-0">Ciclo de seguimiento</h5>
+                <span class="text-muted small">{{ seguimientos|length }} instancia{{ seguimientos|length|pluralize }}</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-striped mb-0">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Tipo</th>
+                                <th>Fecha</th>
+                                <th>Estado</th>
+                                <th>Validación</th>
+                                <th>Origen</th>
+                                <th>GESTIONAR</th>
+                                <th class="text-right">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for seguimiento in seguimientos %}
+                                <tr>
+                                    <td>{{ seguimiento.numero_orden }}</td>
+                                    <td>{{ seguimiento.get_tipo_display }}</td>
+                                    <td>{{ seguimiento.fecha_hora|default_if_none:"Sin fecha" }}</td>
+                                    <td>
+                                        {% if seguimiento.estado == "Completo" %}
+                                            <span class="badge bg-success">Completado</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ seguimiento.estado|default:"No completado" }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if seguimiento.estado_validacion %}
+                                            <span class="badge {% if seguimiento.estado_validacion == 'Validado' %}bg-success{% elif seguimiento.estado_validacion == 'A subsanar' %}bg-danger{% else %}bg-warning text-dark{% endif %}">{{ seguimiento.estado_validacion }}</span>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if seguimiento.origen == "app" %}
+                                            <span class="badge bg-primary" title="Cargado desde la app">App</span>
+                                        {% else %}
+                                            <span class="badge bg-light text-dark" title="Cargado desde SISOC">SISOC</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if seguimiento.sincronizado_gestionar %}
+                                            <span class="badge bg-success">Sincronizado</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Pendiente</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-right text-nowrap">
+                                        <a href="{% url 'seguimiento_detalle' relevamiento.comedor.id relevamiento.id seguimiento.id %}"
+                                           class="btn btn-sm btn-primary">Ver</a>
+                                        {% if perms.relevamientos.change_primerseguimiento %}
+                                            <a href="{% url 'seguimiento_editar' relevamiento.comedor.id relevamiento.id seguimiento.id %}"
+                                               class="btn btn-sm btn-outline-primary">Editar</a>
+                                        {% endif %}
+                                        {% if perms.relevamientos.delete_primerseguimiento %}
+                                            <button type="button"
+                                                    class="btn btn-sm btn-danger"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#modalEliminarSeguimiento{{ seguimiento.id }}">Eliminar</button>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
             </div>
-            {% if perms.relevamientos.delete_primerseguimiento %}
+        </div>
+        {% if perms.relevamientos.delete_primerseguimiento %}
+            {% for seguimiento in seguimientos %}
                 <div class="modal fade"
-                     id="modalEliminarPrimerSeguimiento"
+                     id="modalEliminarSeguimiento{{ seguimiento.id }}"
                      tabindex="-1"
-                     aria-labelledby="modalEliminarPrimerSeguimientoLabel"
+                     aria-labelledby="modalEliminarSeguimientoLabel{{ seguimiento.id }}"
                      aria-hidden="true">
                     <div class="modal-dialog modal-dialog-centered">
                         <div class="modal-content">
                             <form method="post"
-                                  action="{% url 'primer_seguimiento_eliminar' relevamiento.comedor.id relevamiento.id %}">
+                                  action="{% url 'seguimiento_eliminar' relevamiento.comedor.id relevamiento.id seguimiento.id %}">
                                 {% csrf_token %}
                                 <div class="modal-header">
-                                    <h5 class="modal-title" id="modalEliminarPrimerSeguimientoLabel">Eliminar primer seguimiento</h5>
+                                    <h5 class="modal-title"
+                                        id="modalEliminarSeguimientoLabel{{ seguimiento.id }}">Eliminar {{ seguimiento.get_tipo_display|lower }} #{{ seguimiento.numero_orden }}</h5>
                                     <button type="button"
                                             class="btn-close"
                                             data-bs-dismiss="modal"
@@ -1521,7 +1565,7 @@
                                 </div>
                                 <div class="modal-body">
                                     <p class="mb-2">
-                                        Esta accion eliminara el primer seguimiento del relevamiento
+                                        Esta accion eliminara la instancia del ciclo de seguimiento
                                         y dara de baja el registro asociado en GESTIONAR.
                                     </p>
                                     <p class="mb-0 text-muted">No se puede deshacer.</p>
@@ -1534,7 +1578,7 @@
                         </div>
                     </div>
                 </div>
-            {% endif %}
+            {% endfor %}
         {% endif %}
-    {% endwith %}
+    {% endif %}
 {% endblock %}
