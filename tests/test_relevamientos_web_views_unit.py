@@ -118,6 +118,8 @@ def test_create_view_form_valid_muestra_errores_si_forms_invalidos(mocker):
 def test_list_view_get_queryset_filtra_y_ordena(mocker):
     view = RelevamientoListView()
     view.kwargs = {"comedor_pk": 5}
+    # El listado tambien carga las actas complementarias del comedor (sin DB aca).
+    mocker.patch("relevamientos.views.web_views.ActaComplementaria.objects")
     order_by_mock = mocker.Mock(return_value="QS")
     prefetch_related_mock = mocker.Mock(
         return_value=SimpleNamespace(order_by=order_by_mock)
@@ -140,6 +142,8 @@ def test_list_view_get_queryset_filtra_y_ordena(mocker):
 def test_list_view_get_context_data_agrega_comedor(mocker):
     view = RelevamientoListView()
     view.kwargs = {"comedor_pk": 5}
+    # El listado tambien carga las actas complementarias del comedor (sin DB aca).
+    mocker.patch("relevamientos.views.web_views.ActaComplementaria.objects")
     mocker.patch(
         "django.views.generic.list.MultipleObjectMixin.get_context_data",
         return_value={"relevamientos": []},
@@ -178,6 +182,7 @@ def _make_relevamiento_stub(
         numero_if=numero_if,
         sincronizado_gestionar=sincronizado_gestionar,
         seguimientos=SimpleNamespace(all=lambda: list(seguimientos or [])),
+        origen="sisoc",
     )
 
 
@@ -197,12 +202,15 @@ def _make_seguimiento_stub(
         estado=estado,
         sincronizado_gestionar=sincronizado_gestionar,
         get_tipo_display=lambda: tipo,
+        origen="sisoc",
     )
 
 
 def test_list_view_construye_items_solo_padre_sin_seguimiento(mocker):
     view = RelevamientoListView()
     view.kwargs = {"comedor_pk": 5}
+    # El listado tambien carga las actas complementarias del comedor (sin DB aca).
+    mocker.patch("relevamientos.views.web_views.ActaComplementaria.objects")
     rel = _make_relevamiento_stub(11, numero_if="IF-11")
     mocker.patch(
         "django.views.generic.list.MultipleObjectMixin.get_context_data",
@@ -225,6 +233,7 @@ def test_list_view_construye_items_solo_padre_sin_seguimiento(mocker):
             "is_child": False,
             "parent_id": None,
             "has_seguimiento": False,
+            "origen": "sisoc",
             "sincronizado_gestionar": False,
         }
     ]
@@ -233,6 +242,8 @@ def test_list_view_construye_items_solo_padre_sin_seguimiento(mocker):
 def test_list_view_construye_items_padre_seguido_de_hijo(mocker):
     view = RelevamientoListView()
     view.kwargs = {"comedor_pk": 5}
+    # El listado tambien carga las actas complementarias del comedor (sin DB aca).
+    mocker.patch("relevamientos.views.web_views.ActaComplementaria.objects")
     seguimiento = _make_seguimiento_stub(900)
     rel = _make_relevamiento_stub(42, numero_if="IF-42", seguimientos=[seguimiento])
     mocker.patch(
@@ -345,6 +356,7 @@ def test_update_view_form_valid_redirige_y_error_message(mocker):
 def test_detail_view_get_context_data_sin_relaciones_retorna_none(mocker):
     view = RelevamientoDetailView()
     relevamiento = SimpleNamespace(
+        seguimientos=SimpleNamespace(all=list),
         id=4,
         comedor=SimpleNamespace(id=50),
         prestacion=None,
@@ -375,6 +387,7 @@ def test_detail_view_get_context_data_sin_relaciones_retorna_none(mocker):
 def test_detail_view_get_context_data_limita_timeline_y_agrega_datos(mocker):
     view = RelevamientoDetailView()
     relevamiento = SimpleNamespace(
+        seguimientos=SimpleNamespace(all=list),
         id=2,
         comedor=SimpleNamespace(id=99),
         prestacion="PREST",

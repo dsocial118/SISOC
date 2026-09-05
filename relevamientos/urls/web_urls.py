@@ -1,5 +1,12 @@
 from django.urls import path
 from core.decorators import permissions_any_required
+from relevamientos.views.backoffice_views import (
+    ActaComplementariaDetailView,
+    ActaComplementariaEliminarView,
+    ActaComplementariaFormView,
+    SeguimientoRevisionCoordinadorView,
+    SeguimientoUpdateView,
+)
 from relevamientos.views.web_views import (
     PrimerSeguimientoDetailView,
     PrimerSeguimientoEliminarView,
@@ -67,5 +74,63 @@ urlpatterns = [
             RelevamientoRevisionCoordinadorView.as_view()
         ),
         name="relevamiento_revision_coordinador",
+    ),
+    # --- Instancias del ciclo de seguimiento (por pk de instancia) ---
+    path(
+        "comedores/<int:comedor_pk>/relevamiento/<int:relevamiento_pk>/seguimiento/<int:pk>/",
+        permissions_any_required(["relevamientos.view_relevamiento"])(
+            PrimerSeguimientoDetailView.as_view()
+        ),
+        name="seguimiento_detalle",
+    ),
+    path(
+        "comedores/<int:comedor_pk>/relevamiento/<int:relevamiento_pk>/seguimiento/<int:pk>/editar",
+        permissions_any_required(["relevamientos.change_primerseguimiento"])(
+            SeguimientoUpdateView.as_view()
+        ),
+        name="seguimiento_editar",
+    ),
+    path(
+        "comedores/<int:comedor_pk>/relevamiento/<int:relevamiento_pk>/seguimiento/<int:pk>/eliminar",
+        permissions_any_required(["relevamientos.delete_primerseguimiento"])(
+            PrimerSeguimientoEliminarView.as_view()
+        ),
+        name="seguimiento_eliminar",
+    ),
+    path(
+        "comedores/<int:comedor_pk>/relevamiento/<int:relevamiento_pk>/seguimiento/<int:pk>/revision",
+        permissions_any_required(["relevamientos.review_relevamiento"])(
+            SeguimientoRevisionCoordinadorView.as_view()
+        ),
+        name="seguimiento_revision_coordinador",
+    ),
+    # --- Actas complementarias extraordinarias ---
+    path(
+        "comedores/<int:comedor_pk>/acta-complementaria/crear",
+        permissions_any_required(["relevamientos.add_actacomplementaria"])(
+            ActaComplementariaFormView.as_view()
+        ),
+        name="acta_complementaria_crear",
+    ),
+    path(
+        "comedores/<int:comedor_pk>/acta-complementaria/<int:pk>",
+        permissions_any_required(["relevamientos.view_relevamiento"])(
+            ActaComplementariaDetailView.as_view()
+        ),
+        name="acta_complementaria_detalle",
+    ),
+    path(
+        "comedores/<int:comedor_pk>/acta-complementaria/<int:pk>/editar",
+        permissions_any_required(["relevamientos.change_actacomplementaria"])(
+            ActaComplementariaFormView.as_view()
+        ),
+        name="acta_complementaria_editar",
+    ),
+    path(
+        "comedores/<int:comedor_pk>/acta-complementaria/<int:pk>/eliminar",
+        permissions_any_required(["relevamientos.delete_actacomplementaria"])(
+            ActaComplementariaEliminarView.as_view()
+        ),
+        name="acta_complementaria_eliminar",
     ),
 ]
