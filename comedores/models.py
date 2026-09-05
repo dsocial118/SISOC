@@ -1296,6 +1296,18 @@ class ImagenComedor(models.Model):
             "la foto es a nivel comedor (compatibilidad)."
         ),
     )
+    seguimiento = models.ForeignKey(
+        "relevamientos.PrimerSeguimiento",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+        help_text=(
+            "Seguimiento al que pertenece la foto. Opcional y excluyente con "
+            "`relevamiento`: el registro fotográfico del seguimiento cuelga de "
+            "acá."
+        ),
+    )
     imagen = models.ImageField(upload_to="comedor/")
     origen = models.CharField(
         max_length=10,

@@ -5,6 +5,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import models as dj_models
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
+from django.utils import timezone
 from django.views.generic import (
     CreateView,
     DeleteView,
@@ -18,7 +19,11 @@ from comedores.models import Comedor
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
 from relevamientos.form import RelevamientoForm
 from relevamientos.helpers import RelevamientoFormManager
-from relevamientos.models import PrimerSeguimiento, Relevamiento
+from relevamientos.models import (
+    BLOQUES_SEGUIMIENTO,
+    PrimerSeguimiento,
+    Relevamiento,
+)
 from relevamientos.service import RelevamientoService
 
 
@@ -79,7 +84,7 @@ class RelevamientoListView(LoginRequiredMixin, ListView):
         comedor = self.kwargs["comedor_pk"]
         return (
             Relevamiento.objects.filter(comedor=comedor)
-            .select_related("primer_seguimiento")
+            .prefetch_related("seguimientos")
             .order_by("-estado", "-id")
         )
 
@@ -109,7 +114,11 @@ class RelevamientoListView(LoginRequiredMixin, ListView):
 
         items = []
         for rel in context["relevamientos"]:
-            seguimiento = _get_primer_seguimiento(rel)
+            # Todas las instancias del ciclo, no solo la primera.
+            seguimientos = sorted(
+                rel.seguimientos.all(),
+                key=lambda seguimiento: seguimiento.numero_orden,
+            )
             items.append(
                 {
                     "id": rel.id,
@@ -118,16 +127,18 @@ class RelevamientoListView(LoginRequiredMixin, ListView):
                     "numero_if": rel.numero_if,
                     "is_child": False,
                     "parent_id": None,
-                    "has_seguimiento": seguimiento is not None,
+                    "has_seguimiento": bool(seguimientos),
                     "sincronizado_gestionar": rel.sincronizado_gestionar,
                 }
             )
-            if seguimiento is not None:
+            for seguimiento in seguimientos:
                 items.append(
                     {
                         "id": seguimiento.id,
                         "fecha": seguimiento.fecha_hora,
                         "estado": seguimiento.estado,
+                        "tipo": seguimiento.get_tipo_display(),
+                        "numero_orden": seguimiento.numero_orden,
                         "numero_if": None,
                         "is_child": True,
                         "parent_id": rel.id,
@@ -136,13 +147,6 @@ class RelevamientoListView(LoginRequiredMixin, ListView):
                 )
         context["relevamientos_items"] = items
         return context
-
-
-def _get_primer_seguimiento(relevamiento):
-    try:
-        return relevamiento.primer_seguimiento
-    except PrimerSeguimiento.DoesNotExist:
-        return None
 
 
 class RelevamientoDetailView(LoginRequiredMixin, DetailView):
@@ -404,24 +408,8 @@ class RelevamientoDeleteView(
         return reverse_lazy("comedor_detalle", kwargs={"pk": comedor.id})
 
 
-PRIMER_SEGUIMIENTO_BLOQUES = (
-    ("funcionamiento", "Funcionamiento"),
-    ("servicios_basicos", "Servicios básicos"),
-    ("almacenamiento_alimentos", "Almacenamiento de alimentos"),
-    ("condiciones_higiene", "Condiciones de higiene"),
-    ("tareas_comedor", "Tareas en el comedor"),
-    ("recursos", "Recursos"),
-    ("compras", "Compras"),
-    ("frecuencia_compra_alimentos", "Frecuencia de compra de alimentos"),
-    ("menu", "Menú"),
-    ("registro_asistencia", "Registro de asistencia"),
-    ("frecuencia_alimentos", "Frecuencia de alimentos"),
-    ("actividades_extras", "Actividades extras"),
-    ("tarjeta", "Tarjeta"),
-    ("rendicion_cuentas", "Rendición de cuentas"),
-    ("asistencia_tecnica", "Asistencia técnica"),
-    ("cierre", "Cierre"),
-)
+# Alias del mapa canonico del modelo (ver BLOQUES_SEGUIMIENTO).
+PRIMER_SEGUIMIENTO_BLOQUES = BLOQUES_SEGUIMIENTO
 
 
 def _display_value(instance, field):
@@ -522,6 +510,66 @@ class PrimerSeguimientoDetailView(LoginRequiredMixin, DetailView):
             list(menu.receta_items.all()) if menu is not None else []
         )
         return context
+
+
+class RelevamientoRevisionCoordinadorView(LoginRequiredMixin, View):
+    """Revisión del coordinador sobre un relevamiento (N16).
+
+    El coordinador aprueba (``Validado``) o devuelve el registro
+    (``A subsanar``) con observaciones para que el territorial lo corrija desde
+    la app. Solo POST: la confirmación se hace desde un modal del detalle.
+    """
+
+    http_method_names = ["post"]
+
+    def post(self, request, comedor_pk, pk):
+        relevamiento = get_object_or_404(Relevamiento, pk=pk, comedor_id=comedor_pk)
+        redirect_to = redirect(
+            reverse(
+                "relevamiento_detalle",
+                kwargs={"comedor_pk": comedor_pk, "pk": pk},
+            )
+        )
+
+        estado = (request.POST.get("estado_validacion") or "").strip()
+        observaciones = (request.POST.get("observaciones_coordinador") or "").strip()
+        estados_validos = {
+            Relevamiento.ESTADO_VALIDACION_VALIDADO,
+            Relevamiento.ESTADO_VALIDACION_A_SUBSANAR,
+        }
+        if estado not in estados_validos:
+            messages.error(request, "Seleccione un resultado de revisión válido.")
+            return redirect_to
+
+        # Devolver sin decir qué corregir deja al territorial sin información.
+        if estado == Relevamiento.ESTADO_VALIDACION_A_SUBSANAR and not observaciones:
+            messages.error(
+                request,
+                "Para devolver el relevamiento debe indicar qué corregir.",
+            )
+            return redirect_to
+
+        relevamiento.estado_validacion = estado
+        relevamiento.observaciones_coordinador = observaciones or None
+        relevamiento.coordinador = request.user
+        relevamiento.fecha_revision_coordinador = timezone.now()
+        relevamiento.save(
+            update_fields=[
+                "estado_validacion",
+                "observaciones_coordinador",
+                "coordinador",
+                "fecha_revision_coordinador",
+            ]
+        )
+
+        if estado == Relevamiento.ESTADO_VALIDACION_VALIDADO:
+            messages.success(request, "Relevamiento validado correctamente.")
+        else:
+            messages.success(
+                request,
+                "Relevamiento devuelto al territorial para subsanar.",
+            )
+        return redirect_to
 
 
 class PrimerSeguimientoEliminarView(LoginRequiredMixin, View):
