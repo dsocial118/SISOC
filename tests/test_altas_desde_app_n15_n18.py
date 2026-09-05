@@ -91,6 +91,23 @@ def test_zona_lista_comedores_de_mis_provincias_sin_asignacion():
 
 
 @pytest.mark.django_db
+def test_zona_busca_por_nombre_localidad_o_municipio():
+    """``?search=`` filtra en el servidor: con miles de comedores por provincia
+    el filtro solo sobre lo ya paginado en la app no alcanza."""
+    user, comedor, provincia = _escenario("zona_search")
+    otro = Comedor.objects.create(nombre="Merendero Sur", provincia=provincia)
+    client = _token_client(user)
+
+    por_nombre = client.get(ZONA_URL, {"search": "merendero"})
+    todos = client.get(ZONA_URL, {"search": ""})
+    sin_match = client.get(ZONA_URL, {"search": "inexistente-xyz"})
+
+    assert [row["id"] for row in por_nombre.data["results"]] == [otro.id]
+    assert {row["id"] for row in todos.data["results"]} == {comedor.id, otro.id}
+    assert sin_match.data["results"] == []
+
+
+@pytest.mark.django_db
 def test_zona_vacia_para_territorial_sin_provincias():
     user = _territorial("zona_sin_prov", [])
 
