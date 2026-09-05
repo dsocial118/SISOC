@@ -35,6 +35,98 @@ def _scale_field(max_value):
     )
 
 
+class ValidacionCoordinadorMixin(models.Model):
+    """Ciclo de validación del coordinador sobre lo que envía el territorial.
+
+    El territorial completa y envía; el coordinador aprueba (``Validado``) o lo
+    devuelve (``A subsanar``) con observaciones para que se corrija y reenvíe.
+    ``estado_validacion`` en ``None`` significa que todavía no se envió a
+    validación. Un registro ``Validado`` no admite más modificaciones del
+    territorial.
+    """
+
+    ESTADO_VALIDACION_PENDIENTE = "Pendiente validación coordinador"
+    ESTADO_VALIDACION_A_SUBSANAR = "A subsanar"
+    ESTADO_VALIDACION_VALIDADO = "Validado"
+    ESTADO_VALIDACION_CHOICES = [
+        (ESTADO_VALIDACION_PENDIENTE, ESTADO_VALIDACION_PENDIENTE),
+        (ESTADO_VALIDACION_A_SUBSANAR, ESTADO_VALIDACION_A_SUBSANAR),
+        (ESTADO_VALIDACION_VALIDADO, ESTADO_VALIDACION_VALIDADO),
+    ]
+    # Estados desde los que un envío del territorial vuelve a pedir validación.
+    ESTADOS_VALIDACION_REENVIABLES = (None, "", ESTADO_VALIDACION_A_SUBSANAR)
+
+    estado_validacion = models.CharField(
+        max_length=64,
+        choices=ESTADO_VALIDACION_CHOICES,
+        blank=True,
+        null=True,
+        help_text="Vacío = todavía no se envió a validación del coordinador.",
+    )
+    observaciones_coordinador = models.TextField(
+        blank=True,
+        null=True,
+        help_text="Qué debe corregir el territorial cuando queda 'A subsanar'.",
+    )
+    coordinador = models.ForeignKey(
+        to=settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="%(class)ss_revisados",
+        help_text="Coordinador que hizo la última revisión.",
+    )
+    fecha_revision_coordinador = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        abstract = True
+
+    @property
+    def esta_validado(self):
+        return self.estado_validacion == self.ESTADO_VALIDACION_VALIDADO
+
+
+class OrigenRegistroMixin(models.Model):
+    """De dónde salió el registro: asignado por SISOC o autoactivado en la app.
+
+    El territorial puede activar trabajo desde su zona sin esperar asignación
+    (N18); esos registros quedan marcados para poder distinguir/priorizar los
+    que SISOC asignó explícitamente. ``client_uuid`` hace idempotente el alta:
+    la cola offline reintenta y no debe duplicar.
+    """
+
+    ORIGEN_SISOC = "sisoc"
+    ORIGEN_APP = "app"
+    ORIGEN_CHOICES = [
+        (ORIGEN_SISOC, "SISOC"),
+        (ORIGEN_APP, "App territorial"),
+    ]
+
+    origen = models.CharField(
+        max_length=16,
+        choices=ORIGEN_CHOICES,
+        default=ORIGEN_SISOC,
+    )
+    asignado_desde_sisoc = models.BooleanField(
+        default=True,
+        help_text="False cuando lo autoactivó el territorial desde la app.",
+    )
+    client_uuid = models.CharField(
+        max_length=64,
+        blank=True,
+        null=True,
+        unique=True,
+        help_text=(
+            "Identificador estable del cliente para deduplicar reintentos "
+            "offline del alta. En MySQL los NULL son distintos, así que solo "
+            "enforcea cuando viene informado."
+        ),
+    )
+
+    class Meta:
+        abstract = True
+
+
 class TipoInsumos(models.Model):
     """
     Opciones de tipos de insumos recibidos por un Comedor/Merendero
@@ -1021,7 +1113,9 @@ class PuntoEntregas(models.Model):
         return f"Punto de entregas ({tipo})"
 
 
-class Relevamiento(SoftDeleteModelMixin, models.Model):
+class Relevamiento(
+    SoftDeleteModelMixin, ValidacionCoordinadorMixin, OrigenRegistroMixin, models.Model
+):
 
     estado = models.CharField(max_length=255, blank=True, null=True)
     comedor = models.ForeignKey(
@@ -1118,6 +1212,21 @@ class Relevamiento(SoftDeleteModelMixin, models.Model):
                     f"Ya existe un relevamiento activo para el comedor '{self.comedor}'."
                 )
 
+    @property
+    def primer_seguimiento(self):
+        """La instancia nº1 del ciclo de seguimientos, o ``None``.
+
+        Antes era el reverse de un OneToOne; ahora hay N instancias
+        (``seguimientos``). Se mantiene el nombre para no romper el backoffice ni
+        los templates. Aprovecha el ``prefetch_related("seguimientos")`` cuando
+        está disponible, para no disparar una query por relevamiento.
+        """
+        cache = getattr(self, "_prefetched_objects_cache", None) or {}
+        prefetched = cache.get("seguimientos")
+        if prefetched is not None:
+            return next((s for s in prefetched if s.numero_orden == 1), None)
+        return self.seguimientos.filter(numero_orden=1).first()
+
     class Meta:
         indexes = [
             models.Index(fields=["comedor"]),
@@ -1153,6 +1262,9 @@ class FuncionamientoSeguimiento(models.Model):
     ]
 
     funcionamiento = _nullable_char(choices=FUNCIONAMIENTO_CHOICES)
+    funcionamiento_motivo = _nullable_char(
+        verbose_name="Motivo del estado de funcionamiento",
+    )
 
     class Meta:
         verbose_name = "Funcionamiento de primer seguimiento"
@@ -1252,6 +1364,18 @@ class TareasComedorSeguimiento(models.Model):
     )
     tareas_capacitacion = _nullable_char()
     tareas_capacitacion_especificar = _nullable_char()
+    tareas_capacitacion_anio = models.PositiveSmallIntegerField(
+        blank=True,
+        null=True,
+        validators=[MinValueValidator(1900), MaxValueValidator(2100)],
+        verbose_name="Año de la capacitación",
+    )
+    tareas_capacitacion_dictada_por = _nullable_char(
+        verbose_name="Quién dictó la capacitación",
+    )
+    tareas_capacitacion_temas_interes = _nullable_text(
+        verbose_name="Temas en los que quiere capacitarse",
+    )
 
     class Meta:
         verbose_name = "Tareas de comedor de primer seguimiento"
@@ -1360,6 +1484,12 @@ class MenuSeguimiento(models.Model):
         on_delete=models.PROTECT,
         blank=True,
         null=True,
+    )
+    cantidad_presencial_dia = _nullable_positive_int(
+        verbose_name="Cantidad de prestaciones presenciales del día",
+    )
+    cantidad_vianda_dia = _nullable_positive_int(
+        verbose_name="Cantidad de viandas del día",
     )
     considera_menu_variado = _nullable_bool()
     considera_menu_saludable = _nullable_bool()
@@ -1497,9 +1627,11 @@ class RendicionCuentasSeguimiento(models.Model):
     id_rendicion = _nullable_char(unique=True)
     persona_encargada = _nullable_bool()
     recibio_capacitacion = _nullable_bool()
-    norecibio_porque = _nullable_bool()
+    # "¿Por qué?" del papel (9.2.3.1 / 9.2.4.1): son texto, no booleanos. Estaban
+    # mal modelados como bool y la app no podía mandarlos.
+    norecibio_porque = _nullable_char()
     sencilla_plataforma = _nullable_bool()
-    nosencilla_porque = _nullable_bool()
+    nosencilla_porque = _nullable_char()
     inconvenientes_carga = _nullable_bool()
     incovenientes_porque = _nullable_char()
 
@@ -1551,7 +1683,80 @@ class CierreSeguimiento(models.Model):
         return f"Cierre seguimiento #{self.pk or 'sin id'}"
 
 
-class PrimerSeguimiento(models.Model):
+class MotivoExcepcionSeguimiento(models.Model):
+    """Motivos del acta de excepción de seguimiento (§18.3).
+
+    Catálogo propio, distinto de ``MotivoExcepcion`` (que es del relevamiento).
+    Es **cerrado**: el PATCH rechaza cualquier motivo que no esté acá, así que la
+    app valida en cliente con estos mismos valores. Se garantiza en todos los
+    entornos con un receptor de ``post_migrate`` (ver ``relevamientos/signals``),
+    no con una migración de datos: los tests crean el schema con
+    ``TEST={"MIGRATE": False}`` y no ejecutarían el ``RunPython``.
+    """
+
+    MOTIVOS_CANONICOS = (
+        "Espacio cerrado",
+        "Dirección no encontrada",
+        "Abierto sin entrevista",
+        "Otro",
+    )
+
+    nombre = models.CharField(max_length=255, unique=True)
+
+    def __str__(self):
+        return str(self.nombre)
+
+    class Meta:
+        verbose_name = "Motivo de excepcion de seguimiento"
+        verbose_name_plural = "Motivos de excepcion de seguimiento"
+        ordering = ["nombre"]
+
+
+class ActaExcepcionSeguimiento(models.Model):
+    """Acta de excepción: la visita no se pudo hacer (§18.3)."""
+
+    motivo = models.ForeignKey(
+        to=MotivoExcepcionSeguimiento,
+        on_delete=models.PROTECT,
+        blank=True,
+        null=True,
+    )
+    detalle = _nullable_text()
+    firma = _nullable_char(max_length=600)
+
+    class Meta:
+        verbose_name = "Acta de excepcion de seguimiento"
+        verbose_name_plural = "Actas de excepcion de seguimiento"
+
+    def __str__(self):
+        motivo = self.motivo.nombre if self.motivo else "Sin motivo"
+        return f"Acta de excepción: {motivo}"
+
+
+# Bloques del seguimiento con su etiqueta legible. Fuente unica: la usan el
+# detalle del backoffice y el snapshot `sections` que consume la app.
+BLOQUES_SEGUIMIENTO = (
+    ("funcionamiento", "Funcionamiento"),
+    ("servicios_basicos", "Servicios básicos"),
+    ("almacenamiento_alimentos", "Almacenamiento de alimentos"),
+    ("condiciones_higiene", "Condiciones de higiene"),
+    ("tareas_comedor", "Tareas en el comedor"),
+    ("recursos", "Recursos"),
+    ("compras", "Compras"),
+    ("frecuencia_compra_alimentos", "Frecuencia de compra de alimentos"),
+    ("menu", "Menú"),
+    ("registro_asistencia", "Registro de asistencia"),
+    ("frecuencia_alimentos", "Frecuencia de alimentos"),
+    ("actividades_extras", "Actividades extras"),
+    ("tarjeta", "Tarjeta"),
+    ("rendicion_cuentas", "Rendición de cuentas"),
+    ("asistencia_tecnica", "Asistencia técnica"),
+    ("cierre", "Cierre"),
+    ("acta_excepcion", "Acta de excepción"),
+)
+
+
+class PrimerSeguimiento(ValidacionCoordinadorMixin, OrigenRegistroMixin, models.Model):
     ESTADO_ASIGNADO = "Asignado"
     ESTADO_EN_PROCESO = "En Proceso"
     ESTADO_COMPLETO = "Completo"
@@ -1561,11 +1766,37 @@ class PrimerSeguimiento(models.Model):
         (ESTADO_COMPLETO, ESTADO_COMPLETO),
     ]
 
+    # Un comedor tiene un ciclo de visitas, no una sola: el primer seguimiento,
+    # los posteriores, el virtual y el acta de excepción cuando no se pudo hacer.
+    TIPO_PRIMER = "primer"
+    TIPO_POSTERIOR = "posterior"
+    TIPO_VIRTUAL = "virtual"
+    TIPO_ACTA_EXCEPCION = "acta_excepcion"
+    TIPO_CHOICES = [
+        (TIPO_PRIMER, "Primer seguimiento"),
+        (TIPO_POSTERIOR, "Seguimiento posterior"),
+        (TIPO_VIRTUAL, "Seguimiento virtual"),
+        (TIPO_ACTA_EXCEPCION, "Acta de excepción"),
+    ]
+    # Tipos que el territorial puede autoactivar desde la app (N18); "primer"
+    # siempre lo asigna SISOC.
+    TIPOS_CREABLES_DESDE_APP = (TIPO_POSTERIOR, TIPO_VIRTUAL, TIPO_ACTA_EXCEPCION)
+
     fecha_hora = models.DateTimeField(null=True, blank=True)
-    id_relevamiento = models.OneToOneField(
+    id_relevamiento = models.ForeignKey(
         to=Relevamiento,
         on_delete=models.PROTECT,
-        related_name="primer_seguimiento",
+        related_name="seguimientos",
+    )
+    tipo = models.CharField(
+        max_length=32,
+        choices=TIPO_CHOICES,
+        default=TIPO_PRIMER,
+    )
+    numero_orden = models.PositiveSmallIntegerField(
+        default=1,
+        validators=[MinValueValidator(1)],
+        help_text="Orden de la instancia dentro del ciclo (1 = primer seguimiento).",
     )
     tecnico = _nullable_char()
     referente = models.ForeignKey(
@@ -1577,6 +1808,11 @@ class PrimerSeguimiento(models.Model):
     estado = _nullable_char(choices=ESTADO_CHOICES)
     gestionar_id = _nullable_char(max_length=64)
     sincronizado_gestionar = models.BooleanField(default=False)
+    motivo_diferencia_aprobado_declarado = _nullable_text(
+        verbose_name=(
+            "Motivo cuando lo aprobado difiere de lo declarado (prestaciones)"
+        ),
+    )
     funcionamiento = models.OneToOneField(
         to=FuncionamientoSeguimiento,
         on_delete=models.PROTECT,
@@ -1673,25 +1909,14 @@ class PrimerSeguimiento(models.Model):
         null=True,
         blank=True,
     )
-
-    BLOQUES_ONE_TO_ONE = (
-        "funcionamiento",
-        "servicios_basicos",
-        "almacenamiento_alimentos",
-        "condiciones_higiene",
-        "tareas_comedor",
-        "recursos",
-        "compras",
-        "frecuencia_compra_alimentos",
-        "menu",
-        "registro_asistencia",
-        "frecuencia_alimentos",
-        "actividades_extras",
-        "tarjeta",
-        "rendicion_cuentas",
-        "asistencia_tecnica",
-        "cierre",
+    acta_excepcion = models.OneToOneField(
+        to=ActaExcepcionSeguimiento,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
     )
+
+    BLOQUES_ONE_TO_ONE = tuple(attr for attr, _ in BLOQUES_SEGUIMIENTO)
 
     @property
     def cod_pnud(self):
@@ -1713,8 +1938,10 @@ class PrimerSeguimiento(models.Model):
         indexes = [
             models.Index(fields=["estado"]),
         ]
-        verbose_name = "Primer seguimiento de relevamiento"
-        verbose_name_plural = "Primeros seguimientos de relevamiento"
+        # Una sola instancia por posicion del ciclo en cada relevamiento.
+        unique_together = [["id_relevamiento", "numero_orden"]]
+        verbose_name = "Seguimiento de relevamiento"
+        verbose_name_plural = "Seguimientos de relevamiento"
 
     def __str__(self):
         return f"Primer seguimiento #{self.pk or 'sin id'}"
@@ -1780,3 +2007,61 @@ class ClasificacionComedor(models.Model):
     class Meta:
         verbose_name = "Clasificacion de Comedor"
         verbose_name_plural = "Clasificaciones de Comedor"
+
+
+class ActaComplementaria(OrigenRegistroMixin, models.Model):
+    """Acta complementaria extraordinaria (§12 / §18.5).
+
+    Registra, **fuera del ciclo de visitas**, un cambio en la prestación del
+    comedor. Es espontánea: no hay asignación previa desde SISOC, la crea el
+    territorial desde la app sobre un comedor de su zona.
+    """
+
+    comedor = models.ForeignKey(
+        to=Comedor,
+        on_delete=models.CASCADE,
+        related_name="actas_complementarias",
+    )
+    tecnico = models.ForeignKey(
+        to=settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="actas_complementarias",
+    )
+    fecha_hora = models.DateTimeField(blank=True, null=True)
+    observaciones = _nullable_text(
+        verbose_name="Motivo / observaciones del cambio de prestación",
+    )
+    firma = _nullable_char(max_length=600)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Acta complementaria extraordinaria"
+        verbose_name_plural = "Actas complementarias extraordinarias"
+        ordering = ["-fecha_hora", "-id"]
+
+    def __str__(self):
+        comedor = self.comedor.nombre if self.comedor_id else "Sin comedor"
+        return f"Acta complementaria ({comedor})"
+
+
+class PrestacionActaComplementaria(models.Model):
+    """Fila de la tabla día x tipo del acta: cantidades actuales y en espera."""
+
+    acta = models.ForeignKey(
+        to=ActaComplementaria,
+        on_delete=models.CASCADE,
+        related_name="prestaciones",
+    )
+    dias_prestacion = _nullable_char()
+    tipo_prestacion = _nullable_char()
+    cantidad_actual = _nullable_positive_int()
+    cantidad_espera = _nullable_positive_int()
+
+    class Meta:
+        verbose_name = "Prestacion de acta complementaria"
+        verbose_name_plural = "Prestaciones de actas complementarias"
+
+    def __str__(self):
+        return f"{self.dias_prestacion or '-'} / {self.tipo_prestacion or '-'}"

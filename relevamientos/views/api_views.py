@@ -44,6 +44,42 @@ def _scope_relevamientos_for_authenticated_user(
     )
 
 
+def _validado_bloquea_edicion(request, instance):
+    """409 si el coordinador ya validó el registro.
+
+    Solo aplica a solicitudes de usuario (token DRF o sesión): las API keys de
+    integración conservan el acceso de escritura que necesita GESTIONAR.
+    """
+    user = request.user
+    if not user or not user.is_authenticated:
+        return None
+    if not getattr(instance, "esta_validado", False):
+        return None
+    return Response(
+        {
+            "detail": (
+                "El registro está validado por el coordinador y no admite "
+                "modificaciones."
+            ),
+            "estado_validacion": instance.estado_validacion,
+        },
+        status=status.HTTP_409_CONFLICT,
+    )
+
+
+def _reenviar_a_validacion(model, pk, estado_validacion_actual):
+    """Un envío del territorial vuelve a pedir validación del coordinador.
+
+    Se aplica cuando el registro no fue enviado todavía o volvió ``A subsanar``;
+    un registro ya ``Pendiente validación coordinador`` no cambia.
+    """
+    if estado_validacion_actual not in model.ESTADOS_VALIDACION_REENVIABLES:
+        return
+    model.objects.filter(pk=pk).update(
+        estado_validacion=model.ESTADO_VALIDACION_PENDIENTE
+    )
+
+
 class RelevamientoApiView(APIView):
     serializer_class = RelevamientoSerializer
     permission_classes = [HasAPIKeyOrToken]
@@ -63,6 +99,10 @@ class RelevamientoApiView(APIView):
             ).get(
                 id=sisoc_id,
             )
+            bloqueo = _validado_bloquea_edicion(request, relevamiento)
+            if bloqueo is not None:
+                return bloqueo
+            estado_validacion_previo = relevamiento.estado_validacion
             try:
                 relevamiento_serializer = RelevamientoSerializer(
                     relevamiento, data=request.data, partial=True
@@ -85,6 +125,9 @@ class RelevamientoApiView(APIView):
                     relevamiento = relevamiento_serializer.instance
                     Relevamiento.objects.filter(pk=relevamiento.pk).update(
                         sincronizado_gestionar=True
+                    )
+                    _reenviar_a_validacion(
+                        Relevamiento, relevamiento.pk, estado_validacion_previo
                     )
             except ValidationError as exc:
                 error_message_str = format_error_detail(getattr(exc, "detail", exc))
@@ -120,8 +163,11 @@ class PrimerSeguimientoApiView(APIView):
     serializer_class = PrimerSeguimientoSerializer
     permission_classes = [HasAPIKeyOrToken]
 
-    @staticmethod
-    def _resolve_seguimiento(data, queryset):
+    # El endpoint /primer-seguimiento resuelve siempre la instancia nº1 del
+    # ciclo; /seguimiento (SeguimientoApiView) resuelve cualquiera por su id.
+    RESOLVE_SOLO_PRIMERA_INSTANCIA = True
+
+    def _resolve_seguimiento(self, data, queryset):
         """Resuelve el PrimerSeguimiento por cualquiera de los identificadores
         que GESTIONAR puede enviar: sisoc_id (PK SISOC), gestionar_id /
         ID_Seguimiento1 / id_seguimiento1 (PK GESTIONAR) o id_relevamiento
@@ -157,10 +203,19 @@ class PrimerSeguimientoApiView(APIView):
             elif gestionar_id:
                 seguimiento = queryset.get(gestionar_id=str(gestionar_id).strip())
             else:
-                seguimiento = queryset.get(id_relevamiento_id=int(id_relevamiento))
+                filtros = {"id_relevamiento_id": int(id_relevamiento)}
+                if self.RESOLVE_SOLO_PRIMERA_INSTANCIA:
+                    filtros["numero_orden"] = 1
+                seguimiento = queryset.get(**filtros)
         except (TypeError, ValueError):
             return None, Response(
                 "Identificador invalido.",
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except PrimerSeguimiento.MultipleObjectsReturned:
+            return None, Response(
+                "El relevamiento tiene varias instancias de seguimiento: "
+                "informe 'sisoc_id' con el id de la instancia.",
                 status=status.HTTP_400_BAD_REQUEST,
             )
         except PrimerSeguimiento.DoesNotExist:
@@ -202,6 +257,11 @@ class PrimerSeguimientoApiView(APIView):
         if error_response is not None:
             return error_response
 
+        bloqueo = _validado_bloquea_edicion(request, seguimiento)
+        if bloqueo is not None:
+            return bloqueo
+        estado_validacion_previo = seguimiento.estado_validacion
+
         seguimiento_serializer = PrimerSeguimientoSerializer(
             seguimiento,
             data=request.data,
@@ -230,6 +290,11 @@ class PrimerSeguimientoApiView(APIView):
                     PrimerSeguimiento.objects.filter(
                         pk=seguimiento_serializer.instance.pk
                     ).update(sincronizado_gestionar=True)
+                    _reenviar_a_validacion(
+                        PrimerSeguimiento,
+                        seguimiento_serializer.instance.pk,
+                        estado_validacion_previo,
+                    )
             except ValidationError as exc:
                 error_message_str = format_error_detail(getattr(exc, "detail", exc))
                 return Response(
@@ -257,3 +322,14 @@ class PrimerSeguimientoApiView(APIView):
                 f"Error al actualizar el primer seguimiento {seguimiento.pk}",
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+
+
+class SeguimientoApiView(PrimerSeguimientoApiView):
+    """``PATCH /api/relevamiento/seguimiento`` — por instancia del ciclo.
+
+    Mismo contrato de campos que ``/primer-seguimiento``, pero ``sisoc_id`` es el
+    id de la instancia (primer, posterior, virtual o acta de excepcion), asi que
+    no se fuerza ``numero_orden=1``.
+    """
+
+    RESOLVE_SOLO_PRIMERA_INSTANCIA = False
