@@ -106,4 +106,13 @@ class Migration(migrations.Migration):
             name="nosencilla_porque",
             field=models.CharField(blank=True, max_length=255, null=True),
         ),
+        # Reversa segura: al revertir, las operaciones corren al reves, asi que
+        # este RunPython (noop hacia adelante) vacia los campos ANTES de que el
+        # AlterField inverso intente volver varchar -> bool. Sin esto, con texto
+        # real cargado, MySQL (STRICT_TRANS_TABLES) fallaria a mitad de camino y,
+        # como su DDL no es transaccional, dejaria el schema a medias.
+        migrations.RunPython(
+            migrations.RunPython.noop,
+            _limpiar_porques_booleanos,
+        ),
     ]

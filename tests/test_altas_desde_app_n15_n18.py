@@ -422,3 +422,26 @@ def test_las_actas_aparecen_en_el_detalle_del_comedor():
     assert actas["total"] == 1
     assert actas["items"][0]["observaciones"] == "Cambio de prestación"
     assert len(actas["items"][0]["prestaciones"]) == 1
+
+
+@pytest.mark.django_db
+def test_reintento_con_uuid_de_relevamiento_soft_deleted_no_da_500():
+    """El UNIQUE de client_uuid incluye los soft-deleted; la idempotencia tambien.
+
+    Escenario real: la app crea, SISOC lo borra logicamente, la cola offline
+    reintenta el mismo uuid. Antes: IntegrityError -> 500 en cada reintento.
+    """
+    user, comedor, _ = _escenario("alta_rel_borrado")
+    client = _token_client(user)
+    payload = {"client_uuid": "uuid-rel-borrado"}
+
+    primera = client.post(_url_relevamientos(comedor), payload, format="json")
+    assert primera.status_code == 201
+    Relevamiento.objects.get(pk=primera.data["id"]).delete()  # soft-delete
+
+    reintento = client.post(_url_relevamientos(comedor), payload, format="json")
+
+    assert reintento.status_code == 200
+    assert reintento.data["id"] == primera.data["id"]
+    # No se creo un segundo registro con el mismo uuid.
+    assert Relevamiento.all_objects.filter(client_uuid="uuid-rel-borrado").count() == 1

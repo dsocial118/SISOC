@@ -307,8 +307,12 @@ class TerritorialComedorViewSet(
         if not client_uuid:
             return self._falta_client_uuid()
 
-        # Idempotencia: el mismo uuid devuelve el registro ya creado.
-        existente = Relevamiento.objects.filter(client_uuid=client_uuid).first()
+        # Idempotencia: el mismo uuid devuelve el registro ya creado. Se busca con
+        # `all_objects` porque el indice UNIQUE de client_uuid incluye a los
+        # soft-deleted: si SISOC borro logicamente el relevamiento y la cola
+        # offline reintenta el mismo uuid, con `objects` no lo encontrariamos,
+        # el INSERT chocaria contra el UNIQUE y el reintento daria 500 para siempre.
+        existente = Relevamiento.all_objects.filter(client_uuid=client_uuid).first()
         if existente is not None:
             return Response(
                 self._serialize_relevamiento_creado(existente),
@@ -347,8 +351,8 @@ class TerritorialComedorViewSet(
         try:
             relevamiento.save()
         except IntegrityError:
-            # Carrera con otro reintento del mismo uuid.
-            existente = Relevamiento.objects.filter(client_uuid=client_uuid).first()
+            # Carrera con otro reintento del mismo uuid (o uuid de uno borrado).
+            existente = Relevamiento.all_objects.filter(client_uuid=client_uuid).first()
             if existente is None:
                 raise
             return Response(
