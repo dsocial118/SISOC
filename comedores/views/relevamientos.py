@@ -10,7 +10,7 @@ from django.urls import reverse
 from django.views.decorators.http import require_POST
 
 from comedores.services.comedor_service import ComedorService
-from relevamientos.models import Relevamiento
+from relevamientos.models import PrimerSeguimiento, Relevamiento
 from relevamientos.primer_seguimiento_service import PrimerSeguimientoService
 from relevamientos.service import RelevamientoService
 
@@ -18,7 +18,22 @@ logger = logging.getLogger("django")
 
 TIPO_RELEVAMIENTO_INICIAL = "relevamiento_inicial"
 TIPO_PRIMER_SEGUIMIENTO = "primer_seguimiento"
-TIPO_SEGUNDO_SEGUIMIENTO = "segundo_seguimiento"
+TIPO_SEGUNDO_SEGUIMIENTO = "segundo_seguimiento"  # alias historico de "posterior"
+
+# Valor del <select> del popup -> tipo de instancia del ciclo de seguimiento.
+TIPOS_SEGUIMIENTO_POPUP = {
+    TIPO_PRIMER_SEGUIMIENTO: PrimerSeguimiento.TIPO_PRIMER,
+    TIPO_SEGUNDO_SEGUIMIENTO: PrimerSeguimiento.TIPO_POSTERIOR,
+    "seguimiento_posterior": PrimerSeguimiento.TIPO_POSTERIOR,
+    "seguimiento_virtual": PrimerSeguimiento.TIPO_VIRTUAL,
+    "acta_excepcion": PrimerSeguimiento.TIPO_ACTA_EXCEPCION,
+}
+MENSAJES_ALTA_SEGUIMIENTO = {
+    PrimerSeguimiento.TIPO_PRIMER: "Primer seguimiento creado correctamente.",
+    PrimerSeguimiento.TIPO_POSTERIOR: "Seguimiento posterior creado correctamente.",
+    PrimerSeguimiento.TIPO_VIRTUAL: "Seguimiento virtual creado correctamente.",
+    PrimerSeguimiento.TIPO_ACTA_EXCEPCION: "Acta de excepcion creada correctamente.",
+}
 
 
 def _resolve_scoped_comedor_from_pk(pk, user):
@@ -72,16 +87,17 @@ def _handle_create_pendiente(request, comedor, is_ajax):
     )
 
 
-def _handle_create_primer_seguimiento(request, comedor, is_ajax):
-    seguimiento = PrimerSeguimientoService.create_asignado(
+def _handle_create_seguimiento(request, comedor, is_ajax, tipo):
+    seguimiento = PrimerSeguimientoService.create_instancia(
         comedor.id,
         request.POST.get("territorial"),
         relevamiento_id=request.POST.get("relevamiento_id"),
+        tipo=tipo,
     )
     return _success_response(
         request,
         is_ajax,
-        "Primer seguimiento creado correctamente.",
+        MENSAJES_ALTA_SEGUIMIENTO[tipo],
         seguimiento.id_relevamiento,
     )
 
@@ -93,17 +109,9 @@ def _handle_create_with_tipo(request, comedor, is_ajax):
     )
     if tipo_relevamiento == TIPO_RELEVAMIENTO_INICIAL:
         return _handle_create_pendiente(request, comedor, is_ajax)
-    if tipo_relevamiento == TIPO_PRIMER_SEGUIMIENTO:
-        return _handle_create_primer_seguimiento(request, comedor, is_ajax)
-    if tipo_relevamiento == TIPO_SEGUNDO_SEGUIMIENTO:
-        return _error_response(
-            request,
-            is_ajax,
-            "Segundo seguimiento aun no disponible.",
-            400,
-            "relevamientos",
-            comedor_pk=comedor.pk,
-        )
+    tipo_seguimiento = TIPOS_SEGUIMIENTO_POPUP.get(tipo_relevamiento)
+    if tipo_seguimiento is not None:
+        return _handle_create_seguimiento(request, comedor, is_ajax, tipo_seguimiento)
     return _error_response(
         request,
         is_ajax,
