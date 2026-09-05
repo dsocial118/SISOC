@@ -297,7 +297,9 @@ class TerritorialComedorViewSet(
         )
 
     @action(detail=True, methods=["post"], url_path="relevamientos")
-    def crear_relevamiento(self, request, pk=None):
+    def crear_relevamiento(  # pylint: disable=too-many-return-statements
+        self, request, pk=None
+    ):
         """Autoactivacion de un relevamiento sobre un comedor de la zona."""
         comedor = self._comedor_de_mi_zona()
         if comedor is None:
@@ -379,7 +381,9 @@ class TerritorialComedorViewSet(
         }
 
     @action(detail=True, methods=["post"], url_path="seguimientos")
-    def crear_seguimiento(self, request, pk=None):
+    def crear_seguimiento(  # pylint: disable=too-many-return-statements
+        self, request, pk=None
+    ):
         """Autoactivacion de una instancia del ciclo de seguimiento."""
         comedor = self._comedor_de_mi_zona()
         if comedor is None:
@@ -473,7 +477,9 @@ class TerritorialComedorViewSet(
         }
 
     @action(detail=True, methods=["post"], url_path="actas-complementarias")
-    def crear_acta_complementaria(self, request, pk=None):
+    def crear_acta_complementaria(  # pylint: disable=too-many-return-statements
+        self, request, pk=None
+    ):
         """Acta complementaria extraordinaria (N15): cambio de prestacion."""
         comedor = self._comedor_de_mi_zona()
         if comedor is None:
@@ -571,6 +577,74 @@ class TerritorialComedorViewSet(
             for imagen in imagenes
         ]
 
+    @staticmethod
+    def _resolver_destino_foto(request, comedor):
+        """A que cuelga la foto: relevamiento (`sisoc_id`) o seguimiento
+        (`seguimiento_id`), excluyentes. Devuelve (relevamiento_id,
+        seguimiento_id, error_response)."""
+        relevamiento_id = (request.data.get("sisoc_id") or "").strip() or None
+        seguimiento_id = (request.data.get("seguimiento_id") or "").strip() or None
+        if relevamiento_id is not None and seguimiento_id is not None:
+            return (
+                None,
+                None,
+                Response(
+                    {
+                        "detail": (
+                            "Informe 'sisoc_id' (relevamiento) o 'seguimiento_id', "
+                            "no ambos."
+                        )
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                ),
+            )
+        if (
+            relevamiento_id is not None
+            and not Relevamiento.objects.filter(
+                id=relevamiento_id, comedor=comedor
+            ).exists()
+        ):
+            return (
+                None,
+                None,
+                Response(
+                    {
+                        "detail": "El sisoc_id no corresponde a un relevamiento de este comedor."
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                ),
+            )
+        if (
+            seguimiento_id is not None
+            and not PrimerSeguimiento.objects.filter(
+                id=seguimiento_id, id_relevamiento__comedor=comedor
+            ).exists()
+        ):
+            return (
+                None,
+                None,
+                Response(
+                    {
+                        "detail": (
+                            "El seguimiento_id no corresponde a un seguimiento "
+                            "de este comedor."
+                        )
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                ),
+            )
+        return relevamiento_id, seguimiento_id, None
+
+    @staticmethod
+    def _scope_fotos(comedor, relevamiento_id, seguimiento_id):
+        """Fotos sobre las que se cuenta el tope de 15 y se responde."""
+        scope = comedor.imagenes.all()
+        if relevamiento_id is not None:
+            return scope.filter(relevamiento_id=relevamiento_id)
+        if seguimiento_id is not None:
+            return scope.filter(seguimiento_id=seguimiento_id)
+        return scope
+
     @action(
         detail=True,
         methods=["post"],
@@ -578,7 +652,7 @@ class TerritorialComedorViewSet(
         parser_classes=[MultiPartParser, FormParser],
     )
     def imagenes(self, request, pk=None):
-        # get_object() aplica el scope por provincia: 404 si el comedor no es del
+        # get_object() aplica el scope de lectura: 404 si el comedor no es del
         # territorial. Reutiliza el modelo ImagenComedor (origen="mobile").
         comedor = self.get_object()
         imagen = request.FILES.get("imagen")
@@ -588,53 +662,12 @@ class TerritorialComedorViewSet(
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # `sisoc_id` (opcional) = id del relevamiento (visita) al que se asocia la
-        # foto. Si viene, el límite de 15 se cuenta por relevamiento; si no, es
-        # comedor-level (compatibilidad).
-        relevamiento_id = (request.data.get("sisoc_id") or "").strip() or None
-        # `seguimiento_id` (opcional) = registro fotográfico del seguimiento.
-        # Excluyente con `sisoc_id`: una foto cuelga del relevamiento o del
-        # seguimiento, no de los dos.
-        seguimiento_id = (request.data.get("seguimiento_id") or "").strip() or None
-        if relevamiento_id is not None and seguimiento_id is not None:
-            return Response(
-                {
-                    "detail": (
-                        "Informe 'sisoc_id' (relevamiento) o 'seguimiento_id', "
-                        "no ambos."
-                    )
-                },
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        if relevamiento_id is not None:
-            if not Relevamiento.objects.filter(
-                id=relevamiento_id, comedor=comedor
-            ).exists():
-                return Response(
-                    {
-                        "detail": "El sisoc_id no corresponde a un relevamiento de este comedor."
-                    },
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-        if seguimiento_id is not None:
-            if not PrimerSeguimiento.objects.filter(
-                id=seguimiento_id, id_relevamiento__comedor=comedor
-            ).exists():
-                return Response(
-                    {
-                        "detail": (
-                            "El seguimiento_id no corresponde a un seguimiento "
-                            "de este comedor."
-                        )
-                    },
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-
-        scope = comedor.imagenes.all()
-        if relevamiento_id is not None:
-            scope = scope.filter(relevamiento_id=relevamiento_id)
-        elif seguimiento_id is not None:
-            scope = scope.filter(seguimiento_id=seguimiento_id)
+        relevamiento_id, seguimiento_id, error = self._resolver_destino_foto(
+            request, comedor
+        )
+        if error is not None:
+            return error
+        scope = self._scope_fotos(comedor, relevamiento_id, seguimiento_id)
 
         # Idempotencia offline: si la PWA reintenta con el mismo client_uuid, no se
         # duplica; se devuelve el estado actual del scope.
@@ -645,12 +678,11 @@ class TerritorialComedorViewSet(
                 status=status.HTTP_200_OK,
             )
         if scope.count() >= MAX_IMAGENES_COMEDOR:
+            destino = "el espacio"
             if relevamiento_id:
                 destino = "este relevamiento"
             elif seguimiento_id:
                 destino = "este seguimiento"
-            else:
-                destino = "el espacio"
             return Response(
                 {
                     "detail": (
@@ -680,11 +712,7 @@ class TerritorialComedorViewSet(
                 # Carrera con otro reintento del mismo client_uuid: descarto el
                 # duplicado recién creado y devuelvo lo que ya existe.
                 creado.delete()
-        scope = comedor.imagenes.all()
-        if relevamiento_id is not None:
-            scope = scope.filter(relevamiento_id=relevamiento_id)
-        elif seguimiento_id is not None:
-            scope = scope.filter(seguimiento_id=seguimiento_id)
+        scope = self._scope_fotos(comedor, relevamiento_id, seguimiento_id)
         return Response(
             {"imagenes": self._serialize_imagenes(scope, request)},
             status=status.HTTP_201_CREATED,
