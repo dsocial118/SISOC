@@ -1,7 +1,7 @@
 {% extends "includes/main.html" %}
 {% load static %}
 {% block title %}
-    Primer seguimiento - Comedor: {{ comedor.nombre }}
+    {{ seguimiento.get_tipo_display }} - Comedor: {{ comedor.nombre }}
 {% endblock title %}
 {% block titulo-pagina %}
     <div class="mb-4">
@@ -9,7 +9,7 @@
            class="btn btn-outline-secondary btn-back mr-1">Volver</a>
     </div>
     {{ comedor.nombre }}
-    <span class="ml-2 h5">| Primer seguimiento</span>
+    <span class="ml-2 h5">| {{ seguimiento.get_tipo_display }} #{{ seguimiento.numero_orden }}</span>
     <span class="ml-2 h5">|
         {{ seguimiento.fecha_hora | default_if_none:"Sin información" }} |
     </span>
@@ -18,9 +18,17 @@
     {% else %}
         <span class="badge bg-secondary ml-2">No completado</span>
     {% endif %}
+    {% if seguimiento.estado_validacion %}
+        <span class="badge ml-2 {% if seguimiento.estado_validacion == 'Validado' %}bg-success{% elif seguimiento.estado_validacion == 'A subsanar' %}bg-danger{% else %}bg-warning text-dark{% endif %}"
+              title="Estado de validación del coordinador">{{ seguimiento.estado_validacion }}</span>
+    {% endif %}
+    {% if seguimiento.origen == "app" %}
+        <span class="badge bg-primary ml-2"
+              title="Cargado por el territorial desde la app">App</span>
+    {% endif %}
     {% if seguimiento.sincronizado_gestionar %}
         <span class="badge bg-success ml-2"
-              title="El primer seguimiento se sincronizó con GESTIONAR">Sincronizado con GESTIONAR</span>
+              title="El seguimiento se sincronizó con GESTIONAR">Sincronizado con GESTIONAR</span>
     {% else %}
         <span class="badge bg-secondary ml-2"
               title="Todavía no se sincronizó con GESTIONAR">Pendiente sincronización</span>
@@ -37,18 +45,95 @@
         <div class="breadcrumb-item">
             <a href="{% url 'relevamiento_detalle' comedor.id relevamiento.id %}">Relevamiento {{ relevamiento.fecha_visita | default_if_none:"Sin información" }}</a>
         </div>
-        <div class="breadcrumb-item active">Primer seguimiento</div>
+        <div class="breadcrumb-item active">{{ seguimiento.get_tipo_display }}</div>
     </ol>
 {% endblock breadcrumb %}
 {% block content %}
     <link rel="stylesheet"
           href="{% static 'custom/css/comedorRelevamiento.css' %}" />
     <div class="row justify-content-between d-print-none mx-1 mb-3">
-        <div class="col-auto"></div>
         <div class="col-auto">
-            <button type="button" class="btn btn-primary" disabled>Editar</button>
+            {% if instancias|length > 1 %}
+                <div class="btn-group" role="group" aria-label="Instancias del ciclo">
+                    {% for instancia in instancias %}
+                        <a href="{% url 'seguimiento_detalle' comedor.id relevamiento.id instancia.id %}"
+                           class="btn btn-sm {% if instancia.id == seguimiento.id %}btn-info{% else %}btn-outline-info{% endif %}"
+                           title="{{ instancia.get_tipo_display }}">#{{ instancia.numero_orden }} {{ instancia.get_tipo_display }}</a>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+        <div class="col-auto">
+            {% if perms.relevamientos.change_primerseguimiento %}
+                <a href="{% url 'seguimiento_editar' comedor.id relevamiento.id seguimiento.id %}"
+                   class="btn btn-primary mr-1">Editar</a>
+            {% endif %}
+            {% if perms.relevamientos.review_relevamiento %}
+                <button type="button"
+                        class="btn btn-warning mr-1"
+                        data-bs-toggle="modal"
+                        data-bs-target="#modalRevisionSeguimiento">Revisar</button>
+            {% endif %}
         </div>
     </div>
+    {% if seguimiento.observaciones_coordinador %}
+        <div class="alert {% if seguimiento.estado_validacion == 'A subsanar' %}alert-danger{% else %}alert-info{% endif %} mx-1 d-print-none">
+            <strong>Observaciones del coordinador</strong>
+            {% if seguimiento.coordinador %}
+                <span class="ml-1">({{ seguimiento.coordinador.username }}
+                    {% if seguimiento.fecha_revision_coordinador %}· {{ seguimiento.fecha_revision_coordinador }}{% endif %}
+                )</span>
+            {% endif %}
+            <div class="mt-1">{{ seguimiento.observaciones_coordinador|linebreaksbr }}</div>
+        </div>
+    {% endif %}
+    {% if perms.relevamientos.review_relevamiento %}
+        <div class="modal fade"
+             id="modalRevisionSeguimiento"
+             tabindex="-1"
+             aria-labelledby="modalRevisionSeguimientoLabel"
+             aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <form method="post"
+                          action="{% url 'seguimiento_revision_coordinador' comedor.id relevamiento.id seguimiento.id %}">
+                        {% csrf_token %}
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="modalRevisionSeguimientoLabel">Revisión del coordinador</h5>
+                            <button type="button"
+                                    class="btn-close"
+                                    data-bs-dismiss="modal"
+                                    aria-label="Cerrar"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label for="revision_seguimiento_estado" class="form-label">Resultado</label>
+                                <select id="revision_seguimiento_estado"
+                                        name="estado_validacion"
+                                        class="form-select"
+                                        required>
+                                    <option value="Validado">Validado</option>
+                                    <option value="A subsanar">A subsanar (devolver al territorial)</option>
+                                </select>
+                            </div>
+                            <div class="mb-0">
+                                <label for="revision_seguimiento_observaciones" class="form-label">Observaciones</label>
+                                <textarea id="revision_seguimiento_observaciones"
+                                          name="observaciones_coordinador"
+                                          class="form-control"
+                                          rows="4"
+                                          placeholder="Qué debe corregir el territorial (obligatorio si devuelve el seguimiento)">{{ seguimiento.observaciones_coordinador|default_if_none:"" }}</textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-warning">Guardar revisión</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    {% endif %}
     <div class="card mb-4">
         <div class="card-header">
             <h3 class="card-title font-weight-bold mr-3 pt-1">Resumen</h3>
@@ -79,6 +164,14 @@
                         <span class="username fw-bold fs-5">{{ seguimiento.referente | default:"Sin asignar" }}</span>
                     </div>
                 </div>
+                {% if seguimiento.motivo_diferencia_aprobado_declarado %}
+                    <div class="nav-item col-12 d-flex mt-3">
+                        <div class="comment-text d-flex flex-column text-sm">
+                            Motivo de la diferencia entre lo aprobado y lo declarado
+                            <span class="username fw-bold fs-5">{{ seguimiento.motivo_diferencia_aprobado_declarado|linebreaksbr }}</span>
+                        </div>
+                    </div>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -103,7 +196,7 @@
             </div>
         {% endfor %}
     {% else %}
-        <div class="alert alert-info">Todavía no se cargaron bloques del primer seguimiento desde GESTIONAR.</div>
+        <div class="alert alert-info">Todavía no se cargaron bloques para este seguimiento.</div>
     {% endif %}
     {% if prestaciones %}
         <div class="card mb-3" id="bloque-prestaciones">
