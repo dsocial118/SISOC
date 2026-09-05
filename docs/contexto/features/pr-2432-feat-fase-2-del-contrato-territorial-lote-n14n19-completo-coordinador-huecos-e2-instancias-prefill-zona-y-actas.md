@@ -34,11 +34,15 @@
 
 - Empezar por `docs/registro/prs/PR-2432.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
+- `CHANGELOG.md`
 - `comedores/api_serializers.py`
 - `comedores/api_urls_territorial.py`
 - `comedores/api_views_territorial.py`
 - `comedores/migrations/0057_huecos_seguimiento_n19.py`
 - `comedores/models.py`
+- `docs/contexto/features/pr-2432-feat-fase-2-del-contrato-territorial-lote-n14n19-completo-coordinador-huecos-e2-instancias-prefill-zona-y-actas.md`
+- `docs/registro/prs/PR-2432.md`
+- `docs/registro/releases/pending/2026-09-09-pr-2432.md`
 - `relevamientos/migrations/0014_validacion_coordinador.py`
 - `relevamientos/migrations/0015_huecos_seguimiento_n19.py`
 - `relevamientos/migrations/0016_instancias_seguimiento_n14.py`
@@ -50,16 +54,15 @@
 - `relevamientos/urls/api_urls.py`
 - `relevamientos/urls/web_urls.py`
 - `relevamientos/views/api_views.py`
-- `relevamientos/views/web_views.py`
-- `tests/test_altas_desde_app_n15_n18.py`
-- `tests/test_huecos_seguimiento_n19.py`
-- `tests/test_instancias_seguimiento_n14.py`
-- ... y 3 archivo(s) adicional(es) relacionados.
+- ... y 8 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`
+- `docs/contexto/features/pr-2432-feat-fase-2-del-contrato-territorial-lote-n14n19-completo-coordinador-huecos-e2-instancias-prefill-zona-y-actas.md`
+- `docs/registro/prs/PR-2432.md`
+- `docs/registro/releases/pending/2026-09-09-pr-2432.md`
 
 ## Trazabilidad
 
