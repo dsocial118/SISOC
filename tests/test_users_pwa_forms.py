@@ -15,6 +15,7 @@ from users.models import (
     AccesoComedorPWA,
     AccesoOrganizacionPWA,
     AuditAccesoComedorPWA,
+    RelevadorCalleProvincia,
     TerritorialComedorProvincia,
 )
 from users.services_pwa import get_access_rows
@@ -609,3 +610,196 @@ def test_backoffice_authentication_form_rejects_mobile_user(comedor):
 
     assert login_form.is_valid() is False
     assert "solo puede ingresar desde la PWA" in str(login_form.errors)
+
+
+@pytest.mark.django_db
+def test_user_creation_form_creates_relevador_calle_with_provincia():
+    provincia = Provincia.objects.create(nombre="DataCalle Prov")
+    form = UserCreationForm(
+        data={
+            "username": "relevador_ok",
+            "email": "relevador_ok@example.com",
+            "password": "Sisoc12345!",
+            "tipo_usuario": "interno",
+            "es_relevador_calle": True,
+            "datacalle_rol": "entrevistador",
+            "provincias_datacalle": [provincia.id],
+        }
+    )
+
+    assert form.is_valid(), form.errors
+    user = form.save()
+
+    assert user.profile.es_relevador_calle is True
+    assert (
+        RelevadorCalleProvincia.objects.filter(
+            profile=user.profile,
+            provincia=provincia,
+        ).exists()
+        is True
+    )
+    # Flag simple: el relevador es un usuario normal, no un mobile-only.
+    assert user.check_password("Sisoc12345!") is True
+
+
+@pytest.mark.django_db
+def test_user_creation_form_relevador_calle_requires_provincia():
+    form = UserCreationForm(
+        data={
+            "username": "relevador_sin_prov",
+            "email": "relevador_sin_prov@example.com",
+            "password": "Sisoc12345!",
+            "tipo_usuario": "interno",
+            "es_relevador_calle": True,
+            "datacalle_rol": "entrevistador",
+        }
+    )
+
+    assert form.is_valid() is False
+    assert "provincias_datacalle" in form.errors
+
+
+@pytest.mark.django_db
+def test_user_creation_form_relevador_calle_requiere_rol():
+    provincia = Provincia.objects.create(nombre="DataCalle Sin Rol Prov")
+    form = UserCreationForm(
+        data={
+            "username": "relevador_sin_rol",
+            "email": "relevador_sin_rol@example.com",
+            "password": "Sisoc12345!",
+            "tipo_usuario": "interno",
+            "es_relevador_calle": True,
+            "provincias_datacalle": [provincia.id],
+        }
+    )
+
+    assert form.is_valid() is False
+    assert "datacalle_rol" in form.errors
+
+
+@pytest.mark.django_db
+def test_user_creation_form_relevador_calle_excluye_territorial():
+    provincia = Provincia.objects.create(nombre="DataCalle Y Comedor Prov")
+    form = UserCreationForm(
+        data={
+            "username": "relevador_y_territorial",
+            "email": "relevador_y_territorial@example.com",
+            "password": "Sisoc12345!",
+            "tipo_usuario": "interno",
+            "es_territorial_comedor": True,
+            "provincias_territorial": [provincia.id],
+            "es_relevador_calle": True,
+            "datacalle_rol": "entrevistador",
+            "provincias_datacalle": [provincia.id],
+        }
+    )
+
+    assert form.is_valid() is False
+    assert "es_relevador_calle" in form.errors
+
+
+@pytest.mark.django_db
+def test_user_creation_form_relevador_calle_excluye_representante(comedor):
+    form = UserCreationForm(
+        data={
+            "username": "relevador_y_rep",
+            "email": "relevador_y_rep@example.com",
+            "es_representante_pwa": True,
+            "comedores_pwa": [comedor.id],
+            "es_relevador_calle": True,
+            "datacalle_rol": "entrevistador",
+            "provincias_datacalle": [comedor.provincia_id],
+        }
+    )
+
+    assert form.is_valid() is False
+    assert "es_relevador_calle" in form.errors
+
+
+@pytest.mark.django_db
+def test_user_creation_form_relevador_calle_no_entra_al_backoffice():
+    provincia = Provincia.objects.create(nombre="DataCalle Backoffice Prov")
+    form = UserCreationForm(
+        data={
+            "username": "relevador_backoffice",
+            "email": "relevador_backoffice@example.com",
+            "password": "Sisoc12345!",
+            "tipo_usuario": "interno",
+            "es_relevador_calle": True,
+            "datacalle_rol": "entrevistador",
+            "provincias_datacalle": [provincia.id],
+        }
+    )
+    assert form.is_valid(), form.errors
+    user = form.save()
+
+    assert user.is_staff is False
+
+    login_form = BackofficeAuthenticationForm(
+        data={"username": "relevador_backoffice", "password": "Sisoc12345!"}
+    )
+
+    assert login_form.is_valid() is False
+    assert "solo puede ingresar desde SISOC - Mobile DataCalle" in str(
+        login_form.errors
+    )
+
+
+@pytest.mark.django_db
+def test_custom_user_change_form_disables_relevador_calle_clears_provincias():
+    provincia = Provincia.objects.create(nombre="DataCalle Edit Prov")
+    create_form = UserCreationForm(
+        data={
+            "username": "relevador_edit",
+            "email": "relevador_edit@example.com",
+            "password": "Sisoc12345!",
+            "tipo_usuario": "interno",
+            "es_relevador_calle": True,
+            "datacalle_rol": "entrevistador",
+            "provincias_datacalle": [provincia.id],
+        }
+    )
+    assert create_form.is_valid(), create_form.errors
+    user = create_form.save()
+
+    edit_form = CustomUserChangeForm(
+        instance=user,
+        data={
+            "username": user.username,
+            "email": user.email,
+            "password": "",
+            "tipo_usuario": "interno",
+            "es_relevador_calle": False,
+        },
+    )
+    assert edit_form.is_valid(), edit_form.errors
+    edit_form.save()
+
+    user.profile.refresh_from_db()
+    assert user.profile.es_relevador_calle is False
+    assert (
+        RelevadorCalleProvincia.objects.filter(profile=user.profile).exists() is False
+    )
+
+
+@pytest.mark.django_db
+def test_custom_user_change_form_precarga_provincias_datacalle():
+    provincia = Provincia.objects.create(nombre="DataCalle Initial Prov")
+    create_form = UserCreationForm(
+        data={
+            "username": "relevador_initial",
+            "email": "relevador_initial@example.com",
+            "password": "Sisoc12345!",
+            "tipo_usuario": "interno",
+            "es_relevador_calle": True,
+            "datacalle_rol": "entrevistador",
+            "provincias_datacalle": [provincia.id],
+        }
+    )
+    assert create_form.is_valid(), create_form.errors
+    user = create_form.save()
+
+    edit_form = CustomUserChangeForm(instance=user)
+
+    assert edit_form.fields["es_relevador_calle"].initial is True
+    assert edit_form.fields["provincias_datacalle"].initial == [provincia.id]

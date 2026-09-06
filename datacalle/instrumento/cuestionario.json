@@ -1,0 +1,744 @@
+{
+  "id": "datacalle-encuesta",
+  "version": "2.0.0",
+  "origen": "Instrumento de recolección de datos — Propuesta 2026 (Nación + CABA)",
+  "entidad": "encuesta",
+  "paginas": [
+    {
+      "id": "identificacion",
+      "titulo": "Identificación",
+      "legacy": "Bloque I",
+      "descripcion": "Se completa solo con los datos del operativo y del encuestador. La fecha es editable (carga desde papel).",
+      "campos": [
+        {
+          "id": "id",
+          "etiqueta": "Identificador",
+          "tipo": "texto",
+          "clave": true,
+          "soloExportacion": true
+        },
+        {
+          "id": "relevamientoId",
+          "etiqueta": "Operativo",
+          "tipo": "ref",
+          "ref": "relevamiento",
+          "origen": "contexto",
+          "soloLectura": true,
+          "requerido": true,
+          "nota": "Provincia, localidad, área operativa y fase vienen del operativo planificado en SISOC (Bloque I del papel)."
+        },
+        {
+          "id": "fechaInicio",
+          "etiqueta": "Fecha y hora de la encuesta",
+          "tipo": "fechaHora",
+          "origen": "ahora",
+          "requerido": true
+        },
+        {
+          "id": "encuestadorId",
+          "etiqueta": "Encuestador/a",
+          "tipo": "ref",
+          "ref": "usuario",
+          "origen": "sesion",
+          "soloLectura": true,
+          "requerido": true
+        },
+        {
+          "id": "encuestadorDni",
+          "tipo": "texto",
+          "derivadoDe": "encuestadorId.dni",
+          "soloExportacion": true
+        },
+        {
+          "id": "encuestadorNombre",
+          "tipo": "texto",
+          "derivadoDe": "encuestadorId.nombreApellido",
+          "soloExportacion": true
+        },
+        {
+          "id": "variante",
+          "tipo": "enum",
+          "catalogo": "varianteCuestionario",
+          "valorInicial": "completo",
+          "soloExportacion": true,
+          "nota": "El instrumento 2026 no define variantes; siempre 'completo'."
+        },
+        {
+          "id": "grupoId",
+          "etiqueta": "Grupo observado",
+          "tipo": "texto",
+          "soloExportacion": true,
+          "nota": "UUID del grupo/punto observado: comparten grupoId todos los casos (personas) relevados en el mismo lugar y momento."
+        },
+        {
+          "id": "esCabeceraGrupo",
+          "etiqueta": "Primer caso del grupo",
+          "tipo": "siNo",
+          "soloExportacion": true,
+          "nota": "Marca el caso donde se cargó el módulo observacional. Para contar personas observadas sin duplicar, sumar `personasObservadas` SOLO de los casos con esCabeceraGrupo = si."
+        }
+      ]
+    },
+    {
+      "id": "observacional",
+      "titulo": "Módulo observacional",
+      "legacy": "Bloque II",
+      "descripcion": "Sin contacto: lo que ve el/la encuestador/a en este punto. Se carga UNA vez por grupo observado; las personas siguientes del mismo grupo lo heredan.",
+      "campos": [
+        {
+          "id": "lugarHallazgo",
+          "etiqueta": "¿Dónde se encuentra la persona o el grupo?",
+          "tipo": "enum",
+          "catalogo": "faseRelevamiento",
+          "requerido": true,
+          "ayuda": "Viene precargado con la fase del operativo; corregilo si este punto no coincide.",
+          "nota": "Decisión 2026-09-03: de esta respuesta depende que se pregunte o no el cuadro de características del lugar de asentamiento (solo aplica en espacio público)."
+        },
+        {
+          "id": "ubicacionGrupo",
+          "etiqueta": "Ubicación del punto observado",
+          "tipo": "geo",
+          "requerido": true,
+          "ayuda": "Se toma con el GPS parado en el lugar. Queda asociada a ESTE grupo, no al recorrido completo.",
+          "nota": "Decisión 2026-09-03: la geolocalización pasa a tomarse por grupo observado. El punto de cierre del recorrido (relevamiento.cierre_lat/lon) se mantiene como referencia general."
+        },
+        {
+          "id": "grupoObservado",
+          "etiqueta": "Composición etaria y de género del grupo observado",
+          "tipo": "matrizGrupo",
+          "matriz": {
+            "filas": "rangoEtario2026",
+            "columnas": "generoObservado"
+          },
+          "requerido": true,
+          "nota": "Categorías etarias de CABA: niñez 0–14, adolescencia 15–18, población activa 19–59, población pasiva 60 y más."
+        },
+        {
+          "id": "personasObservadas",
+          "etiqueta": "Total de personas observadas",
+          "tipo": "numero",
+          "calculo": {
+            "tipo": "totalMatriz",
+            "campo": "grupoObservado"
+          }
+        },
+        {
+          "id": "asentamientoMuebles",
+          "etiqueta": "Muebles / enseres",
+          "tipo": "siNo",
+          "seccion": "Características observadas en el lugar de asentamiento",
+          "visibleSi": {
+            "campo": "lugarHallazgo",
+            "es": "espacioPublico"
+          }
+        },
+        {
+          "id": "asentamientoMascotas",
+          "etiqueta": "Mascotas",
+          "tipo": "siNo",
+          "visibleSi": {
+            "campo": "lugarHallazgo",
+            "es": "espacioPublico"
+          }
+        },
+        {
+          "id": "asentamientoMaterialTrabajo",
+          "etiqueta": "Material de trabajo (carro, artículos para la venta, etc.)",
+          "tipo": "siNo",
+          "visibleSi": {
+            "campo": "lugarHallazgo",
+            "es": "espacioPublico"
+          }
+        },
+        {
+          "id": "asentamientoConstruccionPrecaria",
+          "etiqueta": "Construcción precaria (habitáculo de cartón, carpa, etc.)",
+          "tipo": "siNo",
+          "visibleSi": {
+            "campo": "lugarHallazgo",
+            "es": "espacioPublico"
+          }
+        },
+        {
+          "id": "asentamientoOtros",
+          "etiqueta": "Otros",
+          "tipo": "siNo",
+          "visibleSi": {
+            "campo": "lugarHallazgo",
+            "es": "espacioPublico"
+          },
+          "nota": "Se eliminan del cuadro nacional 'indicios de consumo problemático' y 'de alteraciones en la salud mental' (alineado con CABA)."
+        },
+        {
+          "id": "asentamientoOtrosDetalle",
+          "etiqueta": "Especificar otros",
+          "tipo": "texto",
+          "visibleSi": {
+            "todas": [
+              {
+                "campo": "lugarHallazgo",
+                "es": "espacioPublico"
+              },
+              {
+                "campo": "asentamientoOtros",
+                "es": "si"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "consentimiento",
+      "titulo": "Consentimiento",
+      "legacy": "Bloque III",
+      "descripcion": "Se pide a UNA persona del grupo observado. Si el grupo tiene varias personas, se carga un caso por cada una. A los menores de edad no se les hacen preguntas.",
+      "campos": [
+        {
+          "id": "personaEntrevistada",
+          "etiqueta": "¿A quién le estás pidiendo el consentimiento?",
+          "tipo": "celdaGrupo",
+          "matriz": {
+            "filas": "rangoEtario2026",
+            "columnas": "generoObservado"
+          },
+          "requerido": true,
+          "ayuda": "Elegí la persona del grupo que observaste. Equivale al sexo aparente y la edad estimada del formulario anterior.",
+          "nota": "El valor es la celda de la matriz (p. ej. r19a59_varon): identifica género aparente y rango etario de la persona entrevistada."
+        },
+        {
+          "id": "esMayorDeEdad",
+          "etiqueta": "¿La persona tiene 18 años o más?",
+          "tipo": "siNo",
+          "requerido": true,
+          "visibleSi": {
+            "campo": "personaEntrevistada",
+            "prefijoEn": [
+              "r15a18"
+            ]
+          },
+          "ayuda": "El rango 15 a 18 mezcla adolescentes menores de edad con personas ya mayores: hay que precisarlo antes de pedir el consentimiento.",
+          "nota": "Decisión 2026-09-03: única forma de resolver el límite de los 18 con las categorías etarias de CABA."
+        },
+        {
+          "id": "avisoMenorDeEdad",
+          "etiqueta": "No corresponde entrevistar a esta persona",
+          "tipo": "aviso",
+          "tono": "alerta",
+          "icono": "shield-outline",
+          "texto": "Es menor de edad: queda registrada como persona observada, sin entrevista. Si está sola, o ves una situación de riesgo, dar aviso a la línea de niñez (102) o al 911 y registrarlo en las observaciones del cierre del operativo.",
+          "visibleSi": {
+            "alguna": [
+              {
+                "campo": "personaEntrevistada",
+                "prefijoEn": [
+                  "r0a14"
+                ]
+              },
+              {
+                "todas": [
+                  {
+                    "campo": "personaEntrevistada",
+                    "prefijoEn": [
+                      "r15a18"
+                    ]
+                  },
+                  {
+                    "campo": "esMayorDeEdad",
+                    "es": "no"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "id": "esMenorDeEdad",
+          "etiqueta": "Persona menor de edad",
+          "tipo": "siNo",
+          "soloExportacion": true,
+          "calculo": {
+            "tipo": "esMenorDeEdad"
+          },
+          "nota": "Se calcula con el rango etario observado y, en el rango 15–18, con `esMayorDeEdad`. Explica por qué el caso quedó sin entrevista."
+        },
+        {
+          "id": "realizaEntrevista",
+          "etiqueta": "1. ¿La persona realiza la entrevista?",
+          "tipo": "enum",
+          "catalogo": "realizaEntrevista",
+          "requerido": true,
+          "visibleSi": {
+            "alguna": [
+              {
+                "campo": "personaEntrevistada",
+                "prefijoEn": [
+                  "r19a59",
+                  "r60mas"
+                ]
+              },
+              {
+                "todas": [
+                  {
+                    "campo": "personaEntrevistada",
+                    "prefijoEn": [
+                      "r15a18"
+                    ]
+                  },
+                  {
+                    "campo": "esMayorDeEdad",
+                    "es": "si"
+                  }
+                ]
+              }
+            ]
+          },
+          "nota": "Decisión 2026-09-03: solo se pregunta si la persona es mayor de edad. Si no está orientada en tiempo/espacio: avisar a emergencias o 911."
+        },
+        {
+          "id": "yaEntrevistadaDatos",
+          "etiqueta": "Nombre o apodo y DNI que declara (ya entrevistada en esta ronda)",
+          "tipo": "texto",
+          "visibleSi": {
+            "campo": "realizaEntrevista",
+            "es": "yaEntrevistada"
+          }
+        },
+        {
+          "id": "otroMotivoNoEntrevista",
+          "etiqueta": "Especificar otro motivo",
+          "tipo": "texto",
+          "visibleSi": {
+            "campo": "realizaEntrevista",
+            "es": "otro"
+          }
+        }
+      ]
+    },
+    {
+      "id": "codigoIdentificacion",
+      "titulo": "Código de identificación",
+      "legacy": "Bloque III.2",
+      "visibleSi": {
+        "campo": "realizaEntrevista",
+        "es": "si"
+      },
+      "descripcion": "2. Código alfanumérico del/de la entrevistado/a y de su grupo familiar presente. Reemplaza nombre y apellido: no se registran datos identificatorios directos.",
+      "campos": [
+        {
+          "id": "inicialesNombre",
+          "etiqueta": "2 primeras iniciales del nombre",
+          "tipo": "iniciales",
+          "requerido": true
+        },
+        {
+          "id": "inicialesApellido",
+          "etiqueta": "2 primeras iniciales del apellido",
+          "tipo": "iniciales",
+          "requerido": true
+        },
+        {
+          "id": "fechaNacimiento",
+          "etiqueta": "Fecha de nacimiento",
+          "tipo": "fecha",
+          "requerido": true,
+          "nota": "Día (2 dígitos), mes (2) y año (4) componen el código."
+        },
+        {
+          "id": "codigoEntrevistado",
+          "etiqueta": "Código de identificación personal",
+          "tipo": "texto",
+          "calculo": {
+            "tipo": "codigoDesdeIniciales"
+          }
+        },
+        {
+          "id": "grupoFamiliar",
+          "etiqueta": "Grupo familiar presente en este momento",
+          "tipo": "grupoFamiliar",
+          "catalogo": "parentesco",
+          "nota": "Un código por integrante presente, con su parentesco. Reemplaza a los vínculos entre encuestas y a las preguntas de hijos/convivencia del formulario anterior."
+        }
+      ]
+    },
+    {
+      "id": "datosPersonales",
+      "titulo": "Datos personales y sociales",
+      "legacy": "Bloque IV",
+      "visibleSi": {
+        "campo": "realizaEntrevista",
+        "es": "si"
+      },
+      "campos": [
+        {
+          "id": "documentoTipo",
+          "etiqueta": "3. ¿Qué documentación identificatoria tiene (o está tramitando)?",
+          "tipo": "enum",
+          "catalogo": "tipoDocumento",
+          "requerido": true,
+          "nota": "El instrumento agrega 'DNI en trámite', 'no tiene documento' y 'residencia precaria'; elimina 'pasaporte' (queda en 'documento extranjero')."
+        },
+        {
+          "id": "paisEmisor",
+          "etiqueta": "4. País emisor",
+          "tipo": "texto",
+          "visibleSi": {
+            "campo": "documentoTipo",
+            "es": "documentoExtranjero"
+          },
+          "nota": "Para estimar población migrante en situación de calle."
+        },
+        {
+          "id": "numeroDocumento",
+          "etiqueta": "5. ¿Desea compartirnos el número de documento?",
+          "tipo": "numero",
+          "nota": "Opcional: si no desea, se deja vacío."
+        },
+        {
+          "id": "motivoNoTieneDocumento",
+          "etiqueta": "6. ¿Por qué no tiene documento?",
+          "tipo": "enum",
+          "catalogo": "motivoNoTieneDni",
+          "visibleSi": {
+            "campo": "documentoTipo",
+            "es": "noTiene"
+          }
+        },
+        {
+          "id": "identidadGenero",
+          "etiqueta": "7. De acuerdo a la identidad de género, ¿se considera…?",
+          "tipo": "enum",
+          "catalogo": "identidadGenero"
+        },
+        {
+          "id": "dondeNacio",
+          "etiqueta": "8. ¿Dónde nació?",
+          "tipo": "enum",
+          "catalogo": "dondeNacio"
+        },
+        {
+          "id": "dondeViviaAntes",
+          "etiqueta": "9. ¿Dónde vivía antes de estar en situación de calle por primera vez?",
+          "tipo": "enum",
+          "catalogo": "lugarProviene",
+          "ayuda": "Solo si no vivió siempre en la localidad actual; si vivió siempre acá, dejar sin responder.",
+          "nota": "Decisión 2026-09-01: sin condición automática — la guía '(si no vivió siempre en la localidad actual)' se muestra al encuestador, igual que en el papel. 'De otra localidad de esta provincia' no aplica a CABA."
+        },
+        {
+          "id": "nivelEducativo",
+          "etiqueta": "10. ¿Cuál es el máximo nivel educativo que cursa o cursó?",
+          "tipo": "enum",
+          "catalogo": "nivelEducativo"
+        },
+        {
+          "id": "cuadroDificultades",
+          "etiqueta": "11. ¿Tiene alguna de las siguientes dificultades? ¿En qué grado?",
+          "tipo": "cuadroEnum",
+          "catalogo": "gradoDificultad",
+          "filas": [
+            "dificultadVer",
+            "dificultadOir",
+            "dificultadCaminar",
+            "dificultadCuidadoPersonal",
+            "dificultadComunicarse"
+          ],
+          "ayuda": "Set corto del Grupo de Washington: se lee cada dificultad y se marca el grado en la misma fila, como en el papel.",
+          "nota": "Decisión 2026-09-03: se muestra como CUADRO (filas = dificultades, columnas = grados) para replicar el papel y evitar cinco listas de cuatro opciones. Cada fila sigue siendo un campo propio (`enCuadro`), así que el dato exportado no cambia: quitando este campo y los `enCuadro` se vuelve al listado sin tocar más nada."
+        },
+        {
+          "id": "dificultadVer",
+          "etiqueta": "a. Ver, incluso usando lentes",
+          "tipo": "enum",
+          "catalogo": "gradoDificultad",
+          "enCuadro": "cuadroDificultades"
+        },
+        {
+          "id": "dificultadOir",
+          "etiqueta": "b. Oír, incluso usando audífono",
+          "tipo": "enum",
+          "catalogo": "gradoDificultad",
+          "enCuadro": "cuadroDificultades"
+        },
+        {
+          "id": "dificultadCaminar",
+          "etiqueta": "c. Caminar o subir escalones",
+          "tipo": "enum",
+          "catalogo": "gradoDificultad",
+          "enCuadro": "cuadroDificultades"
+        },
+        {
+          "id": "dificultadCuidadoPersonal",
+          "etiqueta": "d. Lavarse o vestirse solo/a",
+          "tipo": "enum",
+          "catalogo": "gradoDificultad",
+          "enCuadro": "cuadroDificultades"
+        },
+        {
+          "id": "dificultadComunicarse",
+          "etiqueta": "e. Comunicarse en su lenguaje habitual",
+          "tipo": "enum",
+          "catalogo": "gradoDificultad",
+          "enCuadro": "cuadroDificultades"
+        },
+        {
+          "id": "certificadoDiscapacidad",
+          "etiqueta": "12. ¿Tiene certificado de discapacidad vigente?",
+          "tipo": "enum",
+          "catalogo": "siNoNsnc",
+          "visibleSi": {
+            "alguna": [
+              {
+                "campo": "dificultadVer",
+                "en": [
+                  "cierta",
+                  "mucha",
+                  "noPuede"
+                ]
+              },
+              {
+                "campo": "dificultadOir",
+                "en": [
+                  "cierta",
+                  "mucha",
+                  "noPuede"
+                ]
+              },
+              {
+                "campo": "dificultadCaminar",
+                "en": [
+                  "cierta",
+                  "mucha",
+                  "noPuede"
+                ]
+              },
+              {
+                "campo": "dificultadCuidadoPersonal",
+                "en": [
+                  "cierta",
+                  "mucha",
+                  "noPuede"
+                ]
+              },
+              {
+                "campo": "dificultadComunicarse",
+                "en": [
+                  "cierta",
+                  "mucha",
+                  "noPuede"
+                ]
+              }
+            ]
+          },
+          "nota": "Decisión 2026-09-01: se pregunta cuando declara al menos cierta dificultad en algún dominio — equivale al formulario anterior, donde el certificado solo se preguntaba con discapacidad declarada (regla validada con los datos históricos)."
+        },
+        {
+          "id": "motivoNoTieneCertificado",
+          "etiqueta": "13. ¿Por qué no lo tiene? (certificado de discapacidad)",
+          "tipo": "enum",
+          "catalogo": "motivoNoTieneCertificado",
+          "visibleSi": {
+            "campo": "certificadoDiscapacidad",
+            "es": "no"
+          }
+        }
+      ]
+    },
+    {
+      "id": "trayectoriaCalle",
+      "titulo": "Trayectoria en calle",
+      "legacy": "Bloque V",
+      "visibleSi": {
+        "campo": "realizaEntrevista",
+        "es": "si"
+      },
+      "campos": [
+        {
+          "id": "tiempoEnCalle",
+          "etiqueta": "15. Actualmente, ¿cuánto tiempo hace que vive en situación de calle?",
+          "tipo": "enum",
+          "catalogo": "tiempoEnCalle2026"
+        },
+        {
+          "id": "diasDurmioCalleSemana",
+          "etiqueta": "16. La semana pasada, ¿cuántos días durmió en la calle?",
+          "tipo": "enum",
+          "catalogo": "diasDurmioSemana"
+        },
+        {
+          "id": "dondePasoNoche",
+          "etiqueta": "17. En esa semana, cuando no durmió en la calle, ¿dónde pasó la noche?",
+          "tipo": "enum",
+          "catalogo": "dondePasoNoche",
+          "visibleSi": {
+            "campo": "diasDurmioCalleSemana",
+            "en": [
+              "soloHabiles",
+              "soloFinDeSemana",
+              "algunosDias",
+              "ningunDia",
+              "soloUnDia"
+            ]
+          },
+          "nota": "Decisión 2026-09-01: literal del enunciado ('cuando NO durmió en la calle') — oculta si respondió 'Todos los días' o NS/NC."
+        },
+        {
+          "id": "desdeQueNacioEnCalle",
+          "etiqueta": "18. ¿Está en situación de calle desde que nació?",
+          "tipo": "siNo"
+        },
+        {
+          "id": "edadPrimeraVezCalle",
+          "etiqueta": "18.b ¿Qué edad tenía la primera vez que estuvo en situación de calle? (años)",
+          "tipo": "numero",
+          "visibleSi": {
+            "campo": "desdeQueNacioEnCalle",
+            "es": "no"
+          },
+          "nota": "CABA: si la diferencia con la edad actual es ≤ 1 año, se considera primera vez en situación de calle."
+        },
+        {
+          "id": "motivoPrincipalCalle",
+          "etiqueta": "19. ¿Cuál es el principal motivo por el que se encuentra durmiendo en la calle?",
+          "tipo": "enum",
+          "catalogo": "motivoPrincipalCalle",
+          "nota": "Una sola opción (antes era multi): categorías agrupadas de CABA (sc30)."
+        },
+        {
+          "id": "otroMotivoCalle",
+          "etiqueta": "Especificar otro motivo",
+          "tipo": "texto",
+          "visibleSi": {
+            "campo": "motivoPrincipalCalle",
+            "es": "otro"
+          }
+        },
+        {
+          "id": "contactoFamiliares",
+          "etiqueta": "20. En el último año, ¿con qué frecuencia mantuvo contacto (personalmente, por teléfono, etc.) con familiares que no viven con usted?",
+          "tipo": "enum",
+          "catalogo": "frecuenciaContactoFamiliar"
+        },
+        {
+          "id": "asisteComedor",
+          "etiqueta": "21. ¿Asiste actualmente a algún comedor comunitario o popular?",
+          "tipo": "enum",
+          "catalogo": "asisteComedor"
+        }
+      ]
+    },
+    {
+      "id": "actividadEconomica",
+      "titulo": "Ingresos y actividad económica",
+      "legacy": "Bloque VI",
+      "visibleSi": {
+        "campo": "realizaEntrevista",
+        "es": "si"
+      },
+      "campos": [
+        {
+          "id": "actividadDineroUltimoMes",
+          "etiqueta": "22. ¿Realizó alguna actividad para obtener dinero en el último mes?",
+          "tipo": "enum",
+          "catalogo": "siNoNsnc",
+          "nota": "Población de 13 años y más."
+        },
+        {
+          "id": "queActividad",
+          "etiqueta": "23. ¿Qué actividad realizó?",
+          "tipo": "enumMulti",
+          "catalogo": "actividadEconomica",
+          "visibleSi": {
+            "campo": "actividadDineroUltimoMes",
+            "es": "si"
+          },
+          "requerido": true
+        },
+        {
+          "id": "otraActividad",
+          "etiqueta": "Especificar otra actividad",
+          "tipo": "texto",
+          "visibleSi": {
+            "campo": "queActividad",
+            "incluye": "otra"
+          }
+        },
+        {
+          "id": "ingresosUltimoMes",
+          "etiqueta": "24. En el último mes, ¿recibió ingresos por…?",
+          "tipo": "enumMulti",
+          "catalogo": "ingresoUltimoMes",
+          "nota": "Unifica el filtro '¿tiene algún ingreso adicional?' + '¿cuál?' del formulario anterior."
+        }
+      ]
+    },
+    {
+      "id": "cierre",
+      "titulo": "Cierre",
+      "descripcion": "Registro de la app (no está en el instrumento papel).",
+      "campos": [
+        {
+          "id": "fechaHoraFin",
+          "etiqueta": "Fecha y hora de cierre",
+          "tipo": "fechaHora",
+          "origen": "alGuardar",
+          "requerido": true
+        },
+        {
+          "id": "firmaEncuestador",
+          "etiqueta": "Firma del encuestador/a",
+          "tipo": "firma",
+          "requerido": true
+        }
+      ]
+    }
+  ],
+  "variantes": {
+    "$comentario": "El instrumento 2026 no define variantes: siempre el cuestionario completo.",
+    "completo": {
+      "todos": true
+    }
+  },
+  "estados": {
+    "$comentario": "Se evalúan en orden: 'rechazada' primero. Un caso de persona menor de edad se cierra sin entrevista y cuenta como observado, no como respondido.",
+    "rechazada": {
+      "alguna": [
+        {
+          "campo": "realizaEntrevista",
+          "en": [
+            "noRotundo",
+            "dormida",
+            "lugarInaccesible",
+            "seguridad",
+            "yaEntrevistada",
+            "noOrientada",
+            "otro"
+          ]
+        },
+        {
+          "campo": "personaEntrevistada",
+          "prefijoEn": [
+            "r0a14"
+          ]
+        },
+        {
+          "todas": [
+            {
+              "campo": "personaEntrevistada",
+              "prefijoEn": [
+                "r15a18"
+              ]
+            },
+            {
+              "campo": "esMayorDeEdad",
+              "es": "no"
+            }
+          ]
+        }
+      ]
+    },
+    "completa": {
+      "campo": "realizaEntrevista",
+      "es": "si"
+    }
+  }
+}

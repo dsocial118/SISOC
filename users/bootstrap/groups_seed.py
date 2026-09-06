@@ -1079,6 +1079,27 @@ LISTADO_DEFINED_GROUPS = (
             "relevamientos.view_relevamiento",
         ),
     ),
+    BootstrapGroupSeed(
+        "Coordinador DataCalle",
+        (
+            # Planifica los operativos de situación de calle de su provincia y
+            # ve los casos que llegan desde la app (D2.1 del canal DataCalle).
+            "datacalle.view_relevamiento",
+            "datacalle.add_relevamiento",
+            "datacalle.change_relevamiento",
+            "datacalle.delete_relevamiento",
+            "datacalle.view_encuesta",
+            "datacalle.add_encuesta",
+            "datacalle.change_encuesta",
+            "datacalle.delete_encuesta",
+            # Da de alta y de baja a sus entrevistadores. El alcance sale de la
+            # delegación del perfil (grupos_asignables / roles_asignables), que
+            # configura un administrador al crear al coordinador.
+            "auth.view_user",
+            "auth.add_user",
+            "auth.change_user",
+        ),
+    ),
 )
 
 BOOTSTRAP_GROUPS = LISTADO_DEFINED_GROUPS
