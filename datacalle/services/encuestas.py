@@ -135,11 +135,42 @@ def cerrar_relevamiento(*, relevamiento, user, datos=None):
     return relevamiento, True
 
 
+# Columnas que alcanzan para listar casos. Ordenar filas que arrastran el JSON
+# del instrumento agota el sort buffer de MySQL (error 1038) incluso sin filas:
+# el motor decide por el ancho de la fila, no por la cantidad.
+CAMPOS_LISTADO = (
+    "id",
+    "relevamiento_id",
+    "estado",
+    "fecha_inicio",
+    "codigo_entrevistado",
+    "persona_entrevistada",
+    "lugar_hallazgo",
+    "es_menor_de_edad",
+    "realiza_entrevista",
+)
+
+
 def get_encuestas_queryset(relevamiento=None):
-    queryset = Encuesta.objects.select_related("relevamiento", "relevador")
+    """Casos completos, con `respuestas`.
+
+    Sin ``select_related``: los serializers usan ``relevamiento_id`` y
+    ``relevador_id``, que son columnas locales, y traer el relevamiento entero
+    sólo engorda la fila del ``ORDER BY``.
+    """
+    queryset = Encuesta.objects.all()
     if relevamiento is not None:
         queryset = queryset.filter(relevamiento=relevamiento)
     return queryset
+
+
+def get_encuestas_para_listado(relevamiento):
+    """Queryset liviano para las tablas del backoffice: sin el JSON."""
+    return (
+        Encuesta.objects.filter(relevamiento=relevamiento)
+        .only(*CAMPOS_LISTADO)
+        .order_by("-fecha_inicio")
+    )
 
 
 def resumen_de_casos(relevamiento):
