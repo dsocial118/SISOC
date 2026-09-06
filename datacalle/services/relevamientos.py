@@ -18,11 +18,11 @@ from users.territorial_scope import (
 
 
 def get_relevamientos_queryset():
-    return Relevamiento.objects.select_related(
-        "provincia",
-        "municipio",
-        "dispositivo",
-    ).prefetch_related("equipo", "localidades")
+    return (
+        Relevamiento.objects.select_related("provincia", "municipio", "dispositivo")
+        .prefetch_related("equipo", "localidades")
+        .annotate(cantidad_encuestas=Count("encuestas", distinct=True))
+    )
 
 
 def _provincia_ids_del_usuario(user):

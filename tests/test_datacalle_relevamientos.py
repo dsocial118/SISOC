@@ -452,3 +452,77 @@ def test_localidad_de_otro_municipio_es_rechazada(provincias):
 
     assert form.is_valid() is False
     assert "localidades" in form.errors
+
+
+def _caso(relevamiento, **extra):
+    from datacalle.models import Encuesta
+    from datacalle.services import aplicar_columnas_indexadas
+
+    datos = {
+        "relevamiento": relevamiento,
+        "estado": Encuesta.Estado.COMPLETA,
+        "respuestas": {
+            "codigoEntrevistado": "LURO15031980",
+            "realizaEntrevista": "si",
+            "esCabeceraGrupo": "si",
+            "personasObservadas": 2,
+            "lugarHallazgo": "espacioPublico",
+        },
+    }
+    datos.update(extra)
+    caso = Encuesta(**datos)
+    aplicar_columnas_indexadas(caso)
+    caso.save()
+    return caso
+
+
+@pytest.mark.django_db
+def test_el_operativo_lista_sus_casos(client, provincias):
+    cordoba, _ = provincias
+    coordinador = _dar_permisos(
+        _crear_coordinador(cordoba), ["view_relevamiento", "view_encuesta"]
+    )
+    relevamiento = _crear_relevamiento(cordoba, "Con casos")
+    _caso(relevamiento)
+    client.force_login(coordinador)
+
+    respuesta = client.get(f"/datacalle/relevamientos/{relevamiento.pk}/")
+
+    assert respuesta.status_code == 200
+    html = respuesta.content.decode()
+    assert "LURO15031980" in html
+    assert "Casos relevados" in html
+    # Personas observadas sale de los casos cabecera, no de contar casos.
+    assert "Personas observadas" in html
+
+
+@pytest.mark.django_db
+def test_detalle_del_caso_muestra_etiquetas_legibles(client, provincias):
+    cordoba, _ = provincias
+    coordinador = _dar_permisos(
+        _crear_coordinador(cordoba), ["view_relevamiento", "view_encuesta"]
+    )
+    relevamiento = _crear_relevamiento(cordoba, "Con casos")
+    caso = _caso(relevamiento)
+    client.force_login(coordinador)
+
+    respuesta = client.get(f"/datacalle/casos/{caso.pk}/")
+
+    assert respuesta.status_code == 200
+    html = respuesta.content.decode()
+    # El código de catálogo se muestra con su etiqueta, no crudo.
+    assert "Espacio público" in html
+
+
+@pytest.mark.django_db
+def test_no_veo_casos_de_otra_provincia(client, provincias):
+    cordoba, salta = provincias
+    coordinador = _dar_permisos(
+        _crear_coordinador(cordoba), ["view_relevamiento", "view_encuesta"]
+    )
+    ajeno = _caso(_crear_relevamiento(salta, "De Salta"))
+    client.force_login(coordinador)
+
+    respuesta = client.get(f"/datacalle/casos/{ajeno.pk}/")
+
+    assert respuesta.status_code == 404

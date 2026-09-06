@@ -2,6 +2,7 @@ from django.urls import path
 
 from core.decorators import permissions_any_required
 from datacalle.views import (
+    EncuestaDetailView,
     RelevamientoCreateView,
     RelevamientoDeleteView,
     RelevamientoDetailView,
@@ -44,5 +45,12 @@ urlpatterns = [
             RelevamientoDeleteView.as_view()
         ),
         name="datacalle_relevamientos_eliminar",
+    ),
+    path(
+        "datacalle/casos/<uuid:pk>/",
+        permissions_any_required(["datacalle.view_encuesta"])(
+            EncuestaDetailView.as_view()
+        ),
+        name="datacalle_casos_detalle",
     ),
 ]

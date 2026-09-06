@@ -182,3 +182,73 @@ class Relevamiento(SoftDeleteModelMixin, models.Model):
 
         if errores:
             raise ValidationError(errores)
+
+
+class Encuesta(SoftDeleteModelMixin, models.Model):
+    """Caso relevado: una persona observada dentro de un relevamiento.
+
+    La app la crea en campo con su propio UUID y la sube con upsert idempotente
+    (D2.5). El instrumento vive en ``respuestas`` como JSON, con las claves del
+    cuestionario; algunas se copian a columnas indexadas para tableros y
+    filtros, sin que eso condicione el contrato.
+    """
+
+    class Estado(models.TextChoices):
+        COMPLETA = "completa", "Completa"
+        RECHAZADA = "rechazada", "Rechazada"
+
+    class Origen(models.TextChoices):
+        APP = "app", "App"
+        BACKOFFICE = "backoffice", "Backoffice"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    relevamiento = models.ForeignKey(
+        Relevamiento,
+        on_delete=models.CASCADE,
+        related_name="encuestas",
+    )
+    relevador = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="encuestas_datacalle",
+    )
+    origen = models.CharField(max_length=16, choices=Origen.choices, default=Origen.APP)
+    variante = models.CharField(max_length=32, blank=True, default="completo")
+    estado = models.CharField(max_length=16, choices=Estado.choices)
+    fecha_inicio = models.DateTimeField(null=True, blank=True)
+    fecha_hora_fin = models.DateTimeField(null=True, blank=True)
+    respuestas = models.JSONField(default=dict, blank=True)
+
+    # Columnas indexadas: copia de `respuestas` al guardar. Ver D2.9.
+    grupo_id = models.CharField(max_length=64, blank=True, db_index=True)
+    es_cabecera_grupo = models.BooleanField(default=False, db_index=True)
+    persona_entrevistada = models.CharField(max_length=64, blank=True)
+    personas_observadas = models.PositiveIntegerField(null=True, blank=True)
+    realiza_entrevista = models.CharField(max_length=32, blank=True, db_index=True)
+    codigo_entrevistado = models.CharField(max_length=64, blank=True, db_index=True)
+    lugar_hallazgo = models.CharField(max_length=32, blank=True, db_index=True)
+    es_menor_de_edad = models.BooleanField(null=True, blank=True, db_index=True)
+    lat = models.FloatField(null=True, blank=True)
+    lon = models.FloatField(null=True, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Caso DataCalle"
+        verbose_name_plural = "Casos DataCalle"
+        ordering = ["-fecha_inicio", "-created_at"]
+        indexes = [
+            models.Index(fields=["relevamiento", "estado"]),
+            models.Index(fields=["relevamiento", "grupo_id"]),
+        ]
+
+    def __str__(self):
+        return self.codigo_entrevistado or str(self.id)
+
+    @property
+    def sin_entrevista_por_menor(self) -> bool:
+        """Separa al menor de edad de quien se negó o no pudo responder (D2.9)."""
+        return bool(self.es_menor_de_edad) and not self.realiza_entrevista

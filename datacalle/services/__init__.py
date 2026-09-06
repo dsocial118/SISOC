@@ -9,3 +9,17 @@ from datacalle.services.relevamientos import (  # noqa: F401
     resumen_por_estado,
     save_relevamiento_from_form,
 )
+from datacalle.services.encuestas import (  # noqa: F401
+    RelevamientoCerrado,
+    aplicar_columnas_indexadas,
+    cerrar_relevamiento,
+    get_encuestas_queryset,
+    resumen_de_casos,
+    upsert_encuesta,
+)
+from datacalle.services.instrumento import (  # noqa: F401
+    get_catalogos,
+    get_cuestionario,
+    get_version,
+    respuestas_legibles,
+)

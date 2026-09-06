@@ -1,6 +1,66 @@
 {% extends "includes/main.html" %}
 {% load static %}
-{% block title %}{{ relevamiento.denominacion }}{% endblock %}
+{% block title %}{{ relevamiento.denominacion }}
+    <div class="dc-seccion mb-4">
+        <div class="dc-seccion__header">
+            <i class="fas fa-clipboard-list"></i> Casos relevados
+            <span class="dc-seccion__ayuda ms-auto text-lowercase">se cargan desde la app</span>
+        </div>
+        <div class="dc-seccion__body">
+            <div class="table-responsive-lg">
+                <table class="table table-comedor-moderno">
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Persona</th>
+                            <th>Lugar</th>
+                            <th>Estado</th>
+                            <th>Cargado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for caso in encuestas %}
+                            <tr>
+                                <td>{{ caso.codigo_entrevistado|default:"—" }}</td>
+                                <td>{{ caso.persona_entrevistada|default:"—" }}</td>
+                                <td>{{ caso.lugar_hallazgo|default:"—" }}</td>
+                                <td>
+                                    {% if caso.sin_entrevista_por_menor %}
+                                        <span class="dc-chip dc-chip--zona">Menor de edad</span>
+                                    {% else %}
+                                        <span class="dc-chip dc-chip--{% if caso.estado == 'completa' %}finalizado{% else %}planificado{% endif %}">
+                                            {{ caso.get_estado_display }}
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ caso.fecha_inicio|date:"d/m/y H:i"|default:"—" }}</td>
+                                <td>
+                                    <div class="comedor-actions">
+                                        <a href="{% url 'datacalle_casos_detalle' caso.pk %}"
+                                           class="btn btn-ver">
+                                            <i class="fas fa-eye"></i> Ver
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="6">
+                                    <div class="dc-vacio">
+                                        <i class="fas fa-clipboard"></i>
+                                        <h3>Todavía no llegaron casos</h3>
+                                        <p>Aparecen acá a medida que el equipo sincroniza desde la app.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endblock %}
 {% block breadcrumb %}
     {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
 {% endblock %}
@@ -113,6 +173,29 @@
         </div>
     </div>
 
+    <div class="dc-stats">
+        <div class="dc-stat dc-stat--total">
+            <span class="dc-stat__valor">{{ resumen_casos.casos }}</span>
+            <span class="dc-stat__label">Casos</span>
+        </div>
+        <div class="dc-stat dc-stat--planificado">
+            <span class="dc-stat__valor">{{ resumen_casos.personas_observadas }}</span>
+            <span class="dc-stat__label">Personas observadas</span>
+        </div>
+        <div class="dc-stat dc-stat--finalizado">
+            <span class="dc-stat__valor">{{ resumen_casos.entrevistas }}</span>
+            <span class="dc-stat__label">Entrevistas</span>
+        </div>
+        <div class="dc-stat dc-stat--en_curso">
+            <span class="dc-stat__valor">{{ resumen_casos.sin_entrevista }}</span>
+            <span class="dc-stat__label">Sin entrevista</span>
+        </div>
+        <div class="dc-stat dc-stat--en_curso">
+            <span class="dc-stat__valor">{{ resumen_casos.menores }}</span>
+            <span class="dc-stat__label">Menores</span>
+        </div>
+    </div>
+
     <div class="dc-seccion mb-3">
         <div class="dc-seccion__header">
             <i class="fas fa-users"></i> Equipo asignado
@@ -195,6 +278,65 @@
                     <p>El equipo cierra el operativo desde la app y ahí llegan el punto GPS y la observación del asentamiento.</p>
                 </div>
             {% endif %}
+        </div>
+    </div>
+    <div class="dc-seccion mb-4">
+        <div class="dc-seccion__header">
+            <i class="fas fa-clipboard-list"></i> Casos relevados
+            <span class="dc-seccion__ayuda ms-auto text-lowercase">se cargan desde la app</span>
+        </div>
+        <div class="dc-seccion__body">
+            <div class="table-responsive-lg">
+                <table class="table table-comedor-moderno">
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Persona</th>
+                            <th>Lugar</th>
+                            <th>Estado</th>
+                            <th>Cargado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for caso in encuestas %}
+                            <tr>
+                                <td>{{ caso.codigo_entrevistado|default:"—" }}</td>
+                                <td>{{ caso.persona_entrevistada|default:"—" }}</td>
+                                <td>{{ caso.lugar_hallazgo|default:"—" }}</td>
+                                <td>
+                                    {% if caso.sin_entrevista_por_menor %}
+                                        <span class="dc-chip dc-chip--zona">Menor de edad</span>
+                                    {% else %}
+                                        <span class="dc-chip dc-chip--{% if caso.estado == 'completa' %}finalizado{% else %}planificado{% endif %}">
+                                            {{ caso.get_estado_display }}
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ caso.fecha_inicio|date:"d/m/y H:i"|default:"—" }}</td>
+                                <td>
+                                    <div class="comedor-actions">
+                                        <a href="{% url 'datacalle_casos_detalle' caso.pk %}"
+                                           class="btn btn-ver">
+                                            <i class="fas fa-eye"></i> Ver
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="6">
+                                    <div class="dc-vacio">
+                                        <i class="fas fa-clipboard"></i>
+                                        <h3>Todavía no llegaron casos</h3>
+                                        <p>Aparecen acá a medida que el equipo sincroniza desde la app.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 {% endblock %}

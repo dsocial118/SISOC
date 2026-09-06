@@ -11,11 +11,14 @@ from django.views.generic import (
 )
 
 from datacalle.forms import RelevamientoForm
-from datacalle.models import Relevamiento
+from datacalle.models import Encuesta, Relevamiento
 from datacalle.services import (
     apply_relevamientos_scope,
     delete_relevamiento,
+    get_encuestas_queryset,
     get_relevamientos_queryset,
+    respuestas_legibles,
+    resumen_de_casos,
     resumen_por_estado,
     save_relevamiento_from_form,
 )
@@ -79,6 +82,10 @@ class RelevamientoDetailView(RelevamientoScopeMixin, DetailView):
             {"text": "Relevamientos", "url": reverse("datacalle_relevamientos_listar")},
             {"text": self.object.denominacion},
         ]
+        context["encuestas"] = get_encuestas_queryset(self.object).order_by(
+            "-fecha_inicio"
+        )[:50]
+        context["resumen_casos"] = resumen_de_casos(self.object)
         return context
 
 
@@ -123,3 +130,33 @@ class RelevamientoDeleteView(RelevamientoScopeMixin, DeleteView):
     def form_valid(self, form):
         delete_relevamiento(self.get_object(), user=self.request.user)
         return HttpResponseRedirect(self.success_url)
+
+
+class EncuestaDetailView(LoginRequiredMixin, DetailView):
+    """Detalle de un caso: el instrumento se muestra tal como llegó."""
+
+    model = Encuesta
+    template_name = "datacalle/encuesta_detail.html"
+    context_object_name = "encuesta"
+
+    def get_queryset(self):
+        relevamientos = apply_relevamientos_scope(
+            get_relevamientos_queryset(), self.request.user
+        )
+        return get_encuestas_queryset().filter(relevamiento__in=relevamientos)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        relevamiento = self.object.relevamiento
+        context["breadcrumb_items"] = [
+            {"text": "Relevamientos", "url": reverse("datacalle_relevamientos_listar")},
+            {
+                "text": relevamiento.denominacion,
+                "url": reverse(
+                    "datacalle_relevamientos_detalle", kwargs={"pk": relevamiento.pk}
+                ),
+            },
+            {"text": str(self.object)},
+        ]
+        context["respuestas"] = respuestas_legibles(self.object)
+        return context
