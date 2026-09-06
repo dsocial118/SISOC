@@ -119,6 +119,8 @@ class Relevamiento(SoftDeleteModelMixin, models.Model):
         indexes = [
             models.Index(fields=["provincia", "estado"]),
             models.Index(fields=["fecha_inicio"]),
+            # Soporta el orden por defecto del listado sin filesort.
+            models.Index(fields=["-fecha_inicio", "denominacion"]),
         ]
 
     def __str__(self):
@@ -243,6 +245,11 @@ class Encuesta(SoftDeleteModelMixin, models.Model):
         indexes = [
             models.Index(fields=["relevamiento", "estado"]),
             models.Index(fields=["relevamiento", "grupo_id"]),
+            # Los listados ordenan por fecha dentro de un operativo. Sin estos
+            # índices MySQL hace filesort de filas que arrastran el JSON del
+            # instrumento y se queda sin sort buffer (error 1038).
+            models.Index(fields=["relevamiento", "-fecha_inicio"]),
+            models.Index(fields=["relevamiento", "-updated_at"]),
         ]
 
     def __str__(self):
