@@ -46,3 +46,25 @@ tarea baja al entrevistador y vuelve el trabajo de campo.
   lugar de perder el dato.
 - Un caso reenviado después de borrarlo se restaura: la app es la fuente de
   verdad de lo que se relevó en campo.
+
+## Corrección: MySQL "Out of sort memory" en el detalle (2026-09-06)
+
+El detalle de un relevamiento devolvía **500 en producción**, incluso sin casos
+cargados: `MySQLdb.OperationalError (1038, 'Out of sort memory')`.
+
+MySQL rechaza un `ORDER BY` cuando **el ancho de una sola fila** no entra en el
+`sort_buffer`; decide por el ancho, no por la cantidad de filas, así que fallaba
+con la tabla vacía. La consulta de casos ordenaba filas que arrastraban el JSON
+del instrumento (`respuestas`, LONGTEXT) más el relevamiento entero por
+`select_related`, que suma su propio JSON y dos campos de texto.
+
+- El listado del backoffice usa ahora un queryset con las columnas mínimas.
+- El queryset completo dejó de hacer `select_related`: los serializers usan
+  `relevamiento_id` y `relevador_id`, que son columnas locales.
+- Se agregaron índices `(relevamiento, -fecha_inicio)` y
+  `(relevamiento, -updated_at)` en casos, y `(-fecha_inicio, denominacion)` en
+  relevamientos, para que el motor resuelva el orden por índice.
+
+**No es reproducible con SQLite**, que no tiene sort buffer: por eso la suite no
+lo detectó. Los tests de regresión verifican lo que sí es verificable —que las
+consultas queden angostas— en `tests/test_datacalle_repro_500.py`.

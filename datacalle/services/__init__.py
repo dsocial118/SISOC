@@ -13,6 +13,7 @@ from datacalle.services.encuestas import (  # noqa: F401
     RelevamientoCerrado,
     aplicar_columnas_indexadas,
     cerrar_relevamiento,
+    get_encuestas_para_listado,
     get_encuestas_queryset,
     resumen_de_casos,
     upsert_encuesta,

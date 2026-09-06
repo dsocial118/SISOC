@@ -15,6 +15,7 @@ from datacalle.models import Encuesta, Relevamiento
 from datacalle.services import (
     apply_relevamientos_scope,
     delete_relevamiento,
+    get_encuestas_para_listado,
     get_encuestas_queryset,
     get_relevamientos_queryset,
     respuestas_legibles,
@@ -82,9 +83,7 @@ class RelevamientoDetailView(RelevamientoScopeMixin, DetailView):
             {"text": "Relevamientos", "url": reverse("datacalle_relevamientos_listar")},
             {"text": self.object.denominacion},
         ]
-        context["encuestas"] = get_encuestas_queryset(self.object).order_by(
-            "-fecha_inicio"
-        )[:50]
+        context["encuestas"] = get_encuestas_para_listado(self.object)[:50]
         context["resumen_casos"] = resumen_de_casos(self.object)
         return context
 
