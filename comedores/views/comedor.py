@@ -29,7 +29,11 @@ from django.views.generic import (
 from django.views.decorators.csrf import ensure_csrf_cookie
 
 from admisiones.models.admisiones import Admision, EstadoAdmision, InformeTecnico
-from comedores.forms.comedor_form import ComedorForm, ReferenteForm
+from comedores.forms.comedor_form import (
+    ComedorForm,
+    ReferenteForm,
+    ResponsableTarjetaComedorForm,
+)
 from comedores.forms.convenio_pnud_form import ComedorDatosConvenioPnudForm
 from comedores.forms.observacion_form import ObservacionForm
 from comedores.models import (
@@ -1565,6 +1569,10 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
                     for item in list_capacitaciones_certificados(self.object)
                 ],
                 "es_programa_pnud": es_programa_pnud,
+                "puede_gestionar_responsable_tarjeta": (
+                    is_alimentar_comunidad_program(self.object)
+                    and self.request.user.groups.filter(name="Tecnico Comedor").exists()
+                ),
                 "usa_convenio_pnud": usa_convenio_pnud,
                 "puede_gestionar_actividades_espacio": puede_gestionar_actividades_espacio,
                 "mostrar_relevamientos_header": mostrar_relevamientos_header,
@@ -1606,6 +1614,26 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             )
 
         return context
+
+
+class ResponsableTarjetaComedorUpdateView(LoginRequiredMixin, UpdateView):
+    model = Comedor
+    form_class = ResponsableTarjetaComedorForm
+    template_name = "comedor/responsable_tarjeta_form.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        comedor = self.get_object()
+        if not is_alimentar_comunidad_program(comedor):
+            raise Http404
+        if not request.user.groups.filter(name="Tecnico Comedor").exists():
+            raise Http404
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_queryset(self):
+        return ComedorService.get_scoped_comedor_queryset(self.request.user)
+
+    def get_success_url(self):
+        return reverse("comedor_detalle", kwargs={"pk": self.object.pk})
 
 
 class ComedorDatosConvenioPnudUpdateView(LoginRequiredMixin, UpdateView):
