@@ -73,14 +73,24 @@ def render_boton_legales(boton, admision=None):
             "modal": "#modalConvenioNumIF",
             "clase": "btn-primary",
         },
-        "formulario_disposicion": {
-            "texto": "Formulario Proyecto Disposición",
-            "modal": "#modalFormReso",
+        "primera_providencia": {
+            "texto": "Generar Primera Providencia",
+            "modal": "#modalPrimeraProvidencia",
             "clase": "btn-primary",
         },
-        "if_disposicion": {
-            "texto": "IF Proyecto Disposición",
-            "modal": "#modalDispoNumIF",
+        "gde_pv_primera": {
+            "texto": "Cargar número de GDE PV",
+            "modal": "#modalGDEPVPrimera",
+            "clase": "btn-primary",
+        },
+        "segunda_providencia": {
+            "texto": "Generar Segunda Providencia",
+            "modal": "#modalSegundaProvidencia",
+            "clase": "btn-primary",
+        },
+        "gde_pv_segunda": {
+            "texto": "Cargar número de GDE Segunda PV",
+            "modal": "#modalGDEPVSegunda",
             "clase": "btn-primary",
         },
         "intervencion_juridicos": {
@@ -96,11 +106,6 @@ def render_boton_legales(boton, admision=None):
         "convenio": {
             "texto": "Convenio",
             "modal": "#modalConvenio",
-            "clase": "btn-primary",
-        },
-        "disposicion": {
-            "texto": "Disposición",
-            "modal": "#modalDisposicion",
             "clase": "btn-primary",
         },
         "reinicio_expediente": {

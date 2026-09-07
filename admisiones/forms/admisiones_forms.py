@@ -6,11 +6,11 @@ from django import forms
 from admisiones.models.admisiones import (
     Admision,
     InformeTecnico,
-    FormularioProyectoDisposicion,
     FormularioProyectoDeConvenio,
     DocumentosExpediente,
     ArchivoAdmision,
     NumeroGdeOrganizacion,
+    Providencia,
 )
 
 
@@ -932,22 +932,192 @@ class LegalesRectificarForm(forms.ModelForm):
             field.required = True
 
 
-class ProyectoDisposicionForm(forms.ModelForm):
+class PrimeraProvidenciaForm(forms.ModelForm):
+    """Datos que carga el usuario para generar la Primera Providencia.
+
+    `orden`, `tipo` y `es_judicializado` no se editan: los resuelve el service
+    a partir de la admisión y del legajo del comedor.
+    """
+
+    CAMPOS_JUDICIALIZADO = ("caratula_causa", "juzgado", "memo")
+
     class Meta:
-        model = FormularioProyectoDisposicion
-        exclude = [
-            "admision",
-            "creado",
-            "creado_por",
-            "archivo",
-            "numero_if",
-            "archivo_docx",
-        ]
+        model = Providencia
+        fields = ["cantidad_espacios", "caratula_causa", "juzgado", "memo"]
+
+    def __init__(self, *args, es_judicializado=False, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.es_judicializado = es_judicializado
+        self.fields["cantidad_espacios"].required = True
+        for nombre in self.CAMPOS_JUDICIALIZADO:
+            self.fields[nombre].required = es_judicializado
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if not self.es_judicializado:
+            # El comedor no es judicializado: los datos de la causa no aplican.
+            for nombre in self.CAMPOS_JUDICIALIZADO:
+                cleaned_data[nombre] = None
+        return cleaned_data
+
+
+class NumeroPVMixin:
+    """Carga estructurada de un número de GDE PV.
+
+    Formato: ``PV-<año>-<número>-APN-<repartición>#<organismo>``
+    (por ejemplo ``PV-2025-103008562-APN-DPS#MCH``).
+
+    Se pide en cuatro campos separados, igual que el número de expediente, para
+    que el usuario no tipee los guiones y no pueda meter espacios de más.
+
+    Dos diferencias con el expediente: el número admite de 1 a 9 dígitos en vez
+    de exactamente 9, y NO se completa con ceros a la izquierda — se guarda tal
+    como lo cargó el usuario.
+    """
+
+    PV_REGEX = r"PV-(\d{4})-(\d{1,9})-APN-([A-Z0-9]+)#([A-Z0-9]+)"
+    PV_CAMPOS = ("pv_anio", "pv_numero", "pv_reparticion", "pv_organismo")
+
+    @staticmethod
+    def _campos_numero_pv():
+        attrs_base = {"class": "form-control", "autocomplete": "off"}
+        return {
+            "pv_anio": forms.CharField(
+                label="Año",
+                min_length=4,
+                max_length=4,
+                widget=forms.TextInput(
+                    attrs={
+                        **attrs_base,
+                        "inputmode": "numeric",
+                        "placeholder": "2025",
+                    }
+                ),
+            ),
+            "pv_numero": forms.CharField(
+                label="Número",
+                min_length=1,
+                max_length=9,
+                widget=forms.TextInput(
+                    attrs={
+                        **attrs_base,
+                        "inputmode": "numeric",
+                        "placeholder": "103008562",
+                    }
+                ),
+            ),
+            "pv_reparticion": forms.CharField(
+                label="Repartición",
+                max_length=50,
+                widget=forms.TextInput(
+                    attrs={
+                        **attrs_base,
+                        "class": "form-control text-uppercase",
+                        "placeholder": "DPS",
+                    }
+                ),
+            ),
+            "pv_organismo": forms.CharField(
+                label="Organismo",
+                max_length=50,
+                initial="MCH",
+                widget=forms.TextInput(
+                    attrs={
+                        **attrs_base,
+                        "class": "form-control text-uppercase",
+                        "placeholder": "MCH",
+                    }
+                ),
+            ),
+        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        for field in self.fields.values():
-            field.required = True
+        self.fields.update(self._campos_numero_pv())
+        match = re.fullmatch(
+            self.PV_REGEX, self._numero_pv_actual() or "", re.IGNORECASE
+        )
+        if match:
+            for campo, dato in zip(self.PV_CAMPOS, match.groups()):
+                self.initial[campo] = dato
+
+    def _numero_pv_actual(self):
+        """Número de PV ya cargado, para precargar los campos."""
+        return ""
+
+    def _compilar_numero_pv(self):
+        """Valida los cuatro campos y devuelve el número armado, o None."""
+        anio = (self.cleaned_data.get("pv_anio") or "").strip()
+        numero = (self.cleaned_data.get("pv_numero") or "").strip()
+        reparticion = (self.cleaned_data.get("pv_reparticion") or "").strip().upper()
+        organismo = (self.cleaned_data.get("pv_organismo") or "").strip().upper()
+
+        if anio and not (anio.isdigit() and len(anio) == 4):
+            self.add_error("pv_anio", "Debe contener exactamente 4 dígitos.")
+        if numero and not numero.isdigit():
+            self.add_error("pv_numero", "Use solamente dígitos, hasta 9.")
+        if reparticion and not re.fullmatch(r"[A-Z0-9]+", reparticion):
+            self.add_error("pv_reparticion", "Use solamente letras y números.")
+        if organismo and not re.fullmatch(r"[A-Z0-9]+", organismo):
+            self.add_error("pv_organismo", "Use solamente letras y números.")
+        if self.errors:
+            return None
+
+        # El número se guarda tal cual: no se rellena con ceros a la izquierda.
+        return f"PV-{anio}-{numero}-APN-{reparticion}#{organismo}"
+
+
+class SegundaProvidenciaForm(NumeroPVMixin, forms.ModelForm):
+    """Datos que carga el usuario para generar la Segunda Providencia.
+
+    El número de PV de la Primera viene precargado pero es editable.
+    """
+
+    class Meta:
+        model = Providencia
+        fields = []
+
+    def __init__(self, *args, numero_pv_inicial=None, **kwargs):
+        self._numero_pv_inicial = numero_pv_inicial
+        super().__init__(*args, **kwargs)
+
+    def _numero_pv_actual(self):
+        if getattr(self.instance, "pk", None) and self.instance.numero_pv_primera:
+            return self.instance.numero_pv_primera
+        return self._numero_pv_inicial or ""
+
+    def clean(self):
+        cleaned_data = super().clean()
+        numero = self._compilar_numero_pv()
+        if numero:
+            cleaned_data["numero_pv_compilado"] = numero
+        return cleaned_data
+
+    def save(self, commit=True):
+        self.instance.numero_pv_primera = self.cleaned_data["numero_pv_compilado"]
+        return super().save(commit=commit)
+
+
+class ProvidenciaGDEPVForm(NumeroPVMixin, forms.ModelForm):
+    """Carga del número de GDE PV de una providencia ya generada."""
+
+    class Meta:
+        model = Providencia
+        fields = []
+
+    def _numero_pv_actual(self):
+        return getattr(self.instance, "numero_gde_pv", "") or ""
+
+    def clean(self):
+        cleaned_data = super().clean()
+        numero = self._compilar_numero_pv()
+        if numero:
+            cleaned_data["numero_gde_pv_compilado"] = numero
+        return cleaned_data
+
+    def save(self, commit=True):
+        self.instance.numero_gde_pv = self.cleaned_data["numero_gde_pv_compilado"]
+        return super().save(commit=commit)
 
 
 class ProyectoConvenioForm(forms.ModelForm):
@@ -1019,20 +1189,6 @@ class ConvenioNumIFFORM(forms.ModelForm):
             field.required = True
 
 
-class DisposicionNumIFFORM(forms.ModelForm):
-    class Meta:
-        model = FormularioProyectoDisposicion
-        fields = ["numero_if"]
-        labels = {
-            "numero_if": "Número de IF de Proyecto Disposición",
-        }
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        for field in self.fields.values():
-            field.required = True
-
-
 class IntervencionJuridicosForm(forms.ModelForm):
     class Meta:
         model = Admision
@@ -1084,17 +1240,6 @@ class ConvenioForm(forms.ModelForm):
     class Meta:
         model = Admision
         fields = ["numero_convenio", "archivo_convenio"]
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        for field in self.fields.values():
-            field.required = True
-
-
-class DisposicionForm(forms.ModelForm):
-    class Meta:
-        model = Admision
-        fields = ["numero_disposicion", "archivo_disposicion"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
