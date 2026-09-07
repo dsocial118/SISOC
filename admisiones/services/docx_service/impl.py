@@ -230,9 +230,13 @@ class AdmisionesContextService:
                 "get_criterio_seleccionado_display",
                 lambda: getattr(informe, "criterio_seleccionado", ""),
             )(),
-            "antecedentes_renovaciones": getattr(
-                informe, "antecedentes_renovaciones", ""
-            ),
+            "antecedentes_renovaciones": [
+                antecedente
+                for antecedente in (
+                    getattr(informe, "antecedentes_renovaciones", None) or []
+                )
+                if antecedente.get("incluida", True)
+            ],
             "finalizacion_convenio_pnud_vigente": getattr(
                 informe, "finalizacion_convenio_pnud_vigente", None
             ),
