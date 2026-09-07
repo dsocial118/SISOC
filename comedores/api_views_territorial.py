@@ -9,7 +9,7 @@ from django.core.files.storage import default_storage
 from django.db import IntegrityError, transaction
 from django.db.models import Prefetch
 from drf_spectacular.utils import extend_schema
-from rest_framework import generics, mixins, serializers, status, viewsets
+from rest_framework import filters, generics, mixins, serializers, status, viewsets
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
 from rest_framework.parsers import FormParser, MultiPartParser
@@ -806,6 +806,10 @@ class TerritorialComedorZonaListView(generics.ListAPIView):
     serializer_class = TerritorialComedorZonaSerializer
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated, IsTerritorialComedorUser]
+    # ``?search=`` por nombre / localidad / municipio: con miles de comedores por
+    # provincia el filtro solo sobre lo ya paginado en la app es insuficiente.
+    filter_backends = [filters.SearchFilter]
+    search_fields = ["nombre", "localidad__nombre", "municipio__nombre"]
 
     def get_queryset(self):
         provincia_ids = get_territorial_comedor_provincia_ids(self.request.user)
