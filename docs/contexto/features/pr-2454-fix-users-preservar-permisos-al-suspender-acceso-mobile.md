@@ -9,7 +9,7 @@
 
 ## Contexto funcional
 
-- No informado explícitamente; inferir desde el título del PR y el diff.
+- El alta y edición de usuarios trataban el acceso a SISOC Mobile y el rol Coordinador de Equipo Técnico PWA como excluyentes. Al suspender el acceso mobile podían perderse las selecciones de permisos y ámbitos al guardar.
 
 ## Arquitectura tocada
 
@@ -18,10 +18,10 @@
 
 ## Decisiones y supuestos detectados
 
-- Tipo de cambio declarado: No informado
-- Área principal declarada: No informada
-- Impacto usuario declarado: No informado
-- Riesgos / rollback: No informado
+- Tipo de cambio declarado: fix
+- Área principal declarada: Usuarios / permisos PWA y SISOC Mobile
+- Impacto usuario declarado: Los permisos secundarios mobile se ocultan cuando se deshabilita el acceso mobile, conservan su valor después de guardar y reabrir, y se restauran al habilitarlo otra vez. El rol Coordinador de Equipo Técnico queda limitado a la PWA y puede asignarse también al editar un usuario existente.
+- Riesgos / rollback: Incluye la migración users.0050 que agrega un JSON de configuración sin otorgar permisos. Para revertir el código después de aplicarla, la columna puede permanecer: los permisos efectivos siguen siendo roles y permisos existentes. Verificar en HML con MySQL usuarios suspendidos y coordinadores ya existentes antes de promover.
 
 ## Design system y UI
 
@@ -33,7 +33,9 @@
 - Empezar por `docs/registro/prs/PR-2454.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
 - `AGENT_REPO_MAP.md`
+- `docs/contexto/features/pr-2454-fix-users-preservar-permisos-al-suspender-acceso-mobile.md`
 - `docs/registro/cambios/2026-09-07-2316-acceso-mobile-y-selecciones.md`
+- `docs/registro/prs/PR-2454.md`
 - `static/custom/js/user_mobile_access.js`
 - `tests/js/user_mobile_access.test.js`
 - `tests/test_users_pwa_forms.py`
@@ -46,7 +48,9 @@
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`
+- `docs/contexto/features/pr-2454-fix-users-preservar-permisos-al-suspender-acceso-mobile.md`
 - `docs/registro/cambios/2026-09-07-2316-acceso-mobile-y-selecciones.md`
+- `docs/registro/prs/PR-2454.md`
 
 ## Trazabilidad
 
