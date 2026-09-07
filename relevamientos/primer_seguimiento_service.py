@@ -9,7 +9,10 @@ from django.shortcuts import get_object_or_404
 
 from comedores.models import Comedor
 from relevamientos.models import PrimerSeguimiento, Relevamiento
-from relevamientos.service import _parse_territorial_payload
+from relevamientos.service import (
+    _parse_territorial_payload,
+    _territorial_user_id_from_uid,
+)
 from relevamientos.tasks import (
     AsyncSendPrimerSeguimientoToGestionar,
     AsyncSendRelevamientoToGestionar,
@@ -54,6 +57,9 @@ class PrimerSeguimientoService:
             estado="Visita pendiente",
             territorial_uid=territorial_uid,
             territorial_nombre=territorial_nombre,
+            # Sin esto el ancla no le aparecia al territorial en la app (el scope
+            # de la API es por `territorial_user`, no por uid).
+            territorial_user_id=_territorial_user_id_from_uid(territorial_uid),
         )
         relevamiento._skip_gestionar_sync = True  # pylint: disable=protected-access
         relevamiento.save()
@@ -91,22 +97,50 @@ class PrimerSeguimientoService:
         return relevamiento, territorial_uid, True
 
     @classmethod
-    def create_asignado(cls, comedor_id, raw_territorial_data, relevamiento_id=None):
+    def create_instancia(
+        cls,
+        comedor_id,
+        raw_territorial_data,
+        relevamiento_id=None,
+        tipo=PrimerSeguimiento.TIPO_PRIMER,
+    ):
+        """Crea una instancia del ciclo (primer, posterior, virtual o acta de
+        excepcion) desde el backoffice, con ``origen=sisoc``.
+
+        El primer seguimiento es unico por relevamiento (``numero_orden=1``);
+        las demas instancias toman el siguiente ``numero_orden`` libre.
+        """
+        tipos_validos = dict(PrimerSeguimiento.TIPO_CHOICES)
+        if tipo not in tipos_validos:
+            raise ValidationError("Tipo de seguimiento no reconocido.")
+
         comedor = get_object_or_404(Comedor, id=comedor_id)
 
         with transaction.atomic():
             relevamiento, tecnico, ancla_nueva = cls._resolver_relevamiento_y_tecnico(
                 comedor, relevamiento_id, raw_territorial_data
             )
-            if PrimerSeguimiento.objects.filter(id_relevamiento=relevamiento).exists():
-                raise ValidationError(
-                    "Ya existe un primer seguimiento para este relevamiento."
-                )
+            existentes = PrimerSeguimiento.objects.filter(id_relevamiento=relevamiento)
+            if tipo == PrimerSeguimiento.TIPO_PRIMER:
+                if existentes.filter(numero_orden=1).exists():
+                    raise ValidationError(
+                        "Ya existe un primer seguimiento para este relevamiento."
+                    )
+                numero_orden = 1
+            else:
+                ultimo = (
+                    existentes.order_by("-numero_orden")
+                    .values_list("numero_orden", flat=True)
+                    .first()
+                ) or 0
+                numero_orden = ultimo + 1
 
             seguimiento = PrimerSeguimiento.objects.create(
                 id_relevamiento=relevamiento,
                 tecnico=tecnico,
                 estado=PrimerSeguimiento.ESTADO_ASIGNADO,
+                tipo=tipo,
+                numero_orden=numero_orden,
             )
 
         # Si se creo un ancla nueva, primero aseguramos que el relevamiento exista
@@ -121,3 +155,13 @@ class PrimerSeguimientoService:
             seguimiento.id, build_primer_seguimiento_payload(seguimiento)
         ).start()
         return seguimiento
+
+    @classmethod
+    def create_asignado(cls, comedor_id, raw_territorial_data, relevamiento_id=None):
+        """Compatibilidad: alta del primer seguimiento."""
+        return cls.create_instancia(
+            comedor_id,
+            raw_territorial_data,
+            relevamiento_id=relevamiento_id,
+            tipo=PrimerSeguimiento.TIPO_PRIMER,
+        )
