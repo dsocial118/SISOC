@@ -50,6 +50,13 @@
                             <i class="bi bi-pencil me-1"></i>Editar
                         </a>
                     </li>
+                    {% if puede_gestionar_responsable_tarjeta %}
+                        <li>
+                            <a class="dropdown-item" href="{% url 'comedor_responsable_tarjeta_editar' comedor.id %}">
+                                <i class="bi bi-credit-card me-1"></i>Responsable de la tarjeta
+                            </a>
+                        </li>
+                    {% endif %}
                     <li>
                         <a class="dropdown-item text-danger"
                            href="{% url 'comedor_eliminar' comedor.id %}">
@@ -1373,6 +1380,53 @@
                             {% include "comedor/comedor_mes_ejecucion_card.html" %}
                         </div>
                     {% endif %}
+                </div>
+            {% endif %}
+            {% if puede_gestionar_responsable_tarjeta %}
+                <div class="card bg-card mt-3" id="card-responsable-tarjeta">
+                    <div class="card-header py-1">
+                        <h6 class="fw-bold my-1 text-center">
+                            <i class="bi bi-credit-card me-1"></i>Responsable de la tarjeta
+                        </h6>
+                    </div>
+                    <div class="card-body d-flex flex-column">
+                        {% if comedor.responsable_tarjeta_nombre or comedor.responsable_tarjeta_mail or comedor.responsable_tarjeta_dni or comedor.responsable_tarjeta_cuit or comedor.responsable_tarjeta_domicilio or comedor.responsable_tarjeta_localidad or comedor.responsable_tarjeta_provincia or comedor.responsable_tarjeta_telefono %}
+                            <div class="row gy-2">
+                                <p class="col-12 col-md-6 mb-0 fs-7">
+                                    <strong>Nombre:</strong> {{ comedor.responsable_tarjeta_nombre|default:"-" }}
+                                </p>
+                                <p class="col-12 col-md-6 mb-0 fs-7">
+                                    <strong>DNI:</strong> {{ comedor.responsable_tarjeta_dni|default:"-" }}
+                                </p>
+                                <p class="col-12 col-md-6 mb-0 fs-7">
+                                    <strong>Domicilio:</strong> {{ comedor.responsable_tarjeta_domicilio|default:"-" }}
+                                </p>
+                                <p class="col-12 col-md-6 mb-0 fs-7">
+                                    <strong>CUIT:</strong> {{ comedor.responsable_tarjeta_cuit|default:"-" }}
+                                </p>
+                                <p class="col-12 col-md-6 mb-0 fs-7">
+                                    <strong>Correo electrónico:</strong> {{ comedor.responsable_tarjeta_mail|default:"-" }}
+                                </p>
+                                <p class="col-12 col-md-6 mb-0 fs-7">
+                                    <strong>Teléfono:</strong> {{ comedor.responsable_tarjeta_telefono|default:"-" }}
+                                </p>
+                                <p class="col-12 col-md-6 mb-0 fs-7">
+                                    <strong>Localidad:</strong> {{ comedor.responsable_tarjeta_localidad.nombre|default:"-" }}
+                                </p>
+                                <p class="col-12 col-md-6 mb-0 fs-7">
+                                    <strong>Provincia:</strong> {{ comedor.responsable_tarjeta_provincia.nombre|default:"-" }}
+                                </p>
+                            </div>
+                        {% else %}
+                            <p class="mb-0 fs-7 text-center">Sin datos cargados.</p>
+                        {% endif %}
+                        <div class="mt-auto pt-3 d-flex justify-content-center">
+                            <a class="btn btn-primary px-2 py-1 fs-7 w-100 w-sm-auto"
+                               href="{% url 'comedor_responsable_tarjeta_editar' comedor.id %}">
+                                <i class="bi bi-pencil me-1"></i>Editar datos
+                            </a>
+                        </div>
+                    </div>
                 </div>
             {% endif %}
         </div>

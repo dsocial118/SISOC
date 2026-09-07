@@ -418,6 +418,30 @@ class Comedor(SoftDeleteModelMixin, models.Model):
     localidad = models.ForeignKey(
         to=Localidad, on_delete=models.SET_NULL, null=True, blank=True
     )
+    responsable_tarjeta_nombre = models.CharField(max_length=255, blank=True, null=True)
+    responsable_tarjeta_mail = models.EmailField(blank=True, null=True)
+    responsable_tarjeta_dni = models.CharField(max_length=20, blank=True, null=True)
+    responsable_tarjeta_cuit = models.CharField(max_length=20, blank=True, null=True)
+    responsable_tarjeta_domicilio = models.CharField(
+        max_length=255, blank=True, null=True
+    )
+    responsable_tarjeta_localidad = models.ForeignKey(
+        to=Localidad,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="comedores_responsable_tarjeta",
+    )
+    responsable_tarjeta_provincia = models.ForeignKey(
+        to=Provincia,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="comedores_responsable_tarjeta",
+    )
+    responsable_tarjeta_telefono = models.CharField(
+        max_length=50, blank=True, null=True
+    )
     partido = models.CharField(max_length=255, null=True, blank=True)
     barrio = models.CharField(max_length=255, null=True, blank=True)
     codigo_postal = models.IntegerField(

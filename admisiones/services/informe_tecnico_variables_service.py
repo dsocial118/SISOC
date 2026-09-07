@@ -58,7 +58,7 @@ class InformeTecnicoVariablesDocumentalesService:
                     getattr(ultima_incorporacion, "numero_disposicion", "")
                 ),
                 "renovaciones_anteriores_detalladas": cls._formatear_renovaciones(
-                    renovaciones_anteriores
+                    informe, renovaciones_anteriores
                 ),
                 "referencia_itcomp_modificacion_prestaciones": cls._texto(
                     getattr(informe, "if_it_complementario", "")
@@ -142,7 +142,22 @@ class InformeTecnicoVariablesDocumentalesService:
         return str(valor or "")
 
     @classmethod
-    def _formatear_renovaciones(cls, renovaciones):
+    def _formatear_renovaciones(cls, informe, renovaciones):
+        antecedentes_guardados = getattr(informe, "antecedentes_renovaciones", None)
+        if antecedentes_guardados:
+            return format_html_join(
+                "<br>",
+                "Resolución / Disposición: {}; Convenio: {}; Expediente: {}",
+                (
+                    (
+                        cls._texto(antecedente.get("resolucion")),
+                        cls._texto(antecedente.get("convenio")),
+                        cls._texto(antecedente.get("expediente")),
+                    )
+                    for antecedente in antecedentes_guardados
+                    if antecedente.get("incluida", True)
+                ),
+            )
         return format_html_join(
             "<br>",
             "Resolución / Disposición: {}; Convenio: {}; Expediente: {}",
