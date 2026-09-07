@@ -51,7 +51,7 @@ def _create_comedor_with_dupla(*, abogado, tecnico=None, estado_dupla="Activo"):
 
 def _admision(**overrides):
     base = {
-        "numero_disposicion": None,
+        "numero_convenio": None,
         "enviado_acompaniamiento": False,
         "estado_legales": "",
         "estado_admision": "",
@@ -180,7 +180,7 @@ def test_get_botones_disponibles_abogado_docx_editado_puede_ver_informe():
 def test_get_botones_disponibles_preserva_orden_en_combinacion_tecnica():
     tecnico = _create_user_with_group("tecnico_orden", UserGroups.TECNICO_COMEDOR)
     admision = _admision(
-        numero_disposicion="DI-1",
+        numero_convenio="CONV-1",
         enviado_acompaniamiento=False,
         estado_legales="A Rectificar",
         estado_admision="if_informe_tecnico_cargado",
@@ -211,7 +211,7 @@ def test_get_botones_disponibles_sin_roles_no_expone_acciones_tecnicas_ni_abogad
         password="testpass123",
     )
     admision = _admision(
-        numero_disposicion="DI-2",
+        numero_convenio="CONV-2",
         estado_legales="A Rectificar",
         estado_admision="if_informe_tecnico_cargado",
         num_expediente="EXP-44",
@@ -234,7 +234,7 @@ def test_get_botones_disponibles_abogado_no_ve_comenzar_acompanamiento():
         UserGroups.ABOGADO_DUPLA,
     )
     admision = _admision(
-        numero_disposicion="DI-3",
+        numero_convenio="CONV-3",
         enviado_acompaniamiento=False,
         estado_legales="A Rectificar",
     )

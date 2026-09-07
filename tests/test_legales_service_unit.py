@@ -41,6 +41,11 @@ def _build_formulario_fake(mocker):
     return SimpleNamespace(
         admision=None,
         tipo=None,
+        orden="primera",
+        get_orden_display=lambda: "Primera Providencia",
+        cantidad_espacios="hasta_5",
+        es_judicializado=False,
+        numero_pv_primera=None,
         creado_por=None,
         archivo=SimpleNamespace(delete=mocker.Mock(), save=mocker.Mock()),
         archivo_docx=SimpleNamespace(delete=mocker.Mock(), save=mocker.Mock()),
@@ -92,7 +97,7 @@ def test_reset_dictamen_flow_variants(mocker):
         "admisiones.services.legales_service.FormularioProyectoDeConvenio.objects.filter"
     )
     del_disp = mocker.patch(
-        "admisiones.services.legales_service.FormularioProyectoDisposicion.objects.filter"
+        "admisiones.services.legales_service.Providencia.objects.filter"
     )
     del_conv.return_value.delete.return_value = None
     del_disp.return_value.delete.return_value = None
@@ -120,9 +125,7 @@ def test_get_botones_disponibles_core_branches():
         enviado_legales=True,
         estado_legales="Enviado a Legales",
         admisiones_proyecto_convenio=SimpleNamespace(first=lambda: SimpleNamespace()),
-        admisiones_proyecto_disposicion=SimpleNamespace(
-            first=lambda: SimpleNamespace()
-        ),
+        providencias=SimpleNamespace(all=lambda: []),
         rechazo_juridicos_motivo=None,
         dictamen_motivo=None,
         complementario_solicitado=False,
@@ -156,8 +159,8 @@ def test_actualizar_estado_por_accion(mocker):
     assert adm2.estado_legales == "Juridicos: Rechazado"
 
     adm3 = SimpleNamespace(save=mocker.Mock())
-    module.LegalesService.actualizar_estado_por_accion(adm3, "if_disposicion")
-    assert adm3.estado_legales == "IF Disposición Asignado"
+    module.LegalesService.actualizar_estado_por_accion(adm3, "gde_pv_primera")
+    assert adm3.estado_legales == "IF Primera Providencia Asignado"
 
 
 def test_enviar_a_rectificar_success_error_and_exception(mocker):
@@ -208,9 +211,7 @@ def test_guardar_actions_common_flows(mocker):
         numero_disposicion=None,
         numero_convenio=None,
         admisiones_proyecto_convenio=SimpleNamespace(first=lambda: SimpleNamespace()),
-        admisiones_proyecto_disposicion=SimpleNamespace(
-            first=lambda: SimpleNamespace()
-        ),
+        providencias=SimpleNamespace(all=lambda: []),
         save=mocker.Mock(),
     )
 
@@ -244,33 +245,30 @@ def test_guardar_actions_common_flows(mocker):
     # guardar_informe_sga toggles boolean
     assert module.LegalesService.guardar_informe_sga(req, adm) == "r"
 
-    # guardar_convenio / guardar_disposicion
+    # guardar_convenio
     form3 = mocker.Mock(
         is_valid=mocker.Mock(return_value=True), save=mocker.Mock(), errors={}
     )
     mocker.patch("admisiones.services.legales_service.ConvenioForm", return_value=form3)
     assert module.LegalesService.guardar_convenio(req, adm) == "r"
 
-    form4 = mocker.Mock(
-        is_valid=mocker.Mock(return_value=True), save=mocker.Mock(), errors={}
-    )
-    mocker.patch(
-        "admisiones.services.legales_service.DisposicionForm", return_value=form4
-    )
-    assert module.LegalesService.guardar_disposicion(req, adm) == "r"
-
-    # guardar_convenio_num_if / guardar_dispo_num_if
+    # guardar_convenio_num_if / guardar_gde_pv_primera
     form5 = mocker.Mock(is_valid=mocker.Mock(return_value=True))
     mocker.patch(
         "admisiones.services.legales_service.ConvenioNumIFFORM", return_value=form5
     )
     assert module.LegalesService.guardar_convenio_num_if(req, adm) == "sr"
 
-    form6 = mocker.Mock(is_valid=mocker.Mock(return_value=True))
+    form6 = mocker.Mock(is_valid=mocker.Mock(return_value=True), save=mocker.Mock())
     mocker.patch(
-        "admisiones.services.legales_service.DisposicionNumIFFORM", return_value=form6
+        "admisiones.services.legales_service.Providencia.objects.filter",
+        return_value=SimpleNamespace(first=lambda: SimpleNamespace(pk=1)),
     )
-    assert module.LegalesService.guardar_dispo_num_if(req, adm) == "sr"
+    mocker.patch(
+        "admisiones.services.legales_service.ProvidenciaGDEPVForm",
+        return_value=form6,
+    )
+    assert module.LegalesService.guardar_gde_pv_primera(req, adm) == "sr"
 
     # guardar_reinicio_expediente
     reinicio_obj = SimpleNamespace(enviada_a_archivo=False, save=mocker.Mock())
@@ -363,9 +361,11 @@ def test_revisar_if_limpiar_observaciones_and_validar(mocker):
     assert upd.called
 
     # validar juridicos
+    providencia_qs = SimpleNamespace(exists=lambda: True)
+    providencia_qs.exclude = lambda **_: providencia_qs
     mocker.patch(
-        "admisiones.services.legales_service.FormularioProyectoDisposicion.objects.filter",
-        return_value=SimpleNamespace(exists=lambda: True),
+        "admisiones.services.legales_service.Providencia.objects.filter",
+        return_value=providencia_qs,
     )
     mocker.patch(
         "admisiones.services.legales_service.FormularioProyectoDeConvenio.objects.filter",
@@ -391,7 +391,7 @@ def test_limpiar_flujo_anterior_resets_fields(mocker):
         return_value=SimpleNamespace(delete=mocker.Mock()),
     )
     mocker.patch(
-        "admisiones.services.legales_service.FormularioProyectoDisposicion.objects.filter",
+        "admisiones.services.legales_service.Providencia.objects.filter",
         return_value=SimpleNamespace(delete=mocker.Mock()),
     )
 
@@ -467,15 +467,16 @@ def test_procesar_post_legales_cubre_botones_restantes(mocker):
     handlers = {
         "btnLegalesNumIF": "guardar_legales_num_if",
         "BtnIntervencionJuridicos": "guardar_intervencion_juridicos",
-        "btnDisposicion": "guardar_disposicion",
         "btnConvenioNumIF": "guardar_convenio_num_if",
-        "btnDispoNumIF": "guardar_dispo_num_if",
+        "btnGDEPVPrimera": "guardar_gde_pv_primera",
+        "btnGDEPVSegunda": "guardar_gde_pv_segunda",
         "btnReinicioExpediente": "guardar_reinicio_expediente",
         "btnInformeComplementario": "guardar_observaciones_informe_complementario",
         "btnRevisarInformeComplementario": "revisar_informe_complementario",
         "btnIFInformeComplementario": "guardar_if_informe_complementario",
         "ValidacionJuridicos": "validar_juridicos",
-        "btnRESO": "guardar_formulario_reso",
+        "btnPrimeraProvidencia": "guardar_primera_providencia",
+        "btnSegundaProvidencia": "guardar_segunda_providencia",
         "btnProyectoConvenio": "guardar_formulario_proyecto_convenio",
         "btnObservaciones": "enviar_a_rectificar",
     }
@@ -617,13 +618,13 @@ def test_guardar_formulario_proyecto_convenio_invalid_and_exception(mocker):
     assert module.LegalesService.guardar_formulario_proyecto_convenio(req, adm) == "sr"
 
 
-def test_guardar_formulario_reso_success_and_invalid(mocker):
-    """Guarda formulario de disposición con generación de PDF/DOCX y cubre inválido."""
+def test_guardar_primera_providencia_success_and_invalid(mocker):
+    """Genera la Primera Providencia con PDF/DOCX y cubre el caso inválido."""
     req = SimpleNamespace(POST={}, user=SimpleNamespace(is_authenticated=True))
     adm = SimpleNamespace(
         pk=12,
         tipo="renovacion",
-        comedor=SimpleNamespace(nombre="Comedor Dos"),
+        comedor=SimpleNamespace(nombre="Comedor Dos", es_judicializado=False),
         admisiones_proyecto_convenio=SimpleNamespace(
             first=lambda: SimpleNamespace(numero_if="IF-9")
         ),
@@ -638,11 +639,12 @@ def test_guardar_formulario_reso_success_and_invalid(mocker):
         return_value=nullcontext(),
     )
     mocker.patch(
-        "admisiones.services.legales_service.FormularioProyectoDisposicion.objects.filter",
+        "admisiones.services.legales_service.Providencia.objects.filter",
         return_value=SimpleNamespace(first=lambda: None),
     )
     mocker.patch(
-        "admisiones.services.legales_service.ProyectoDisposicionForm", return_value=form
+        "admisiones.services.legales_service.PrimeraProvidenciaForm",
+        return_value=form,
     )
     mocker.patch(
         "admisiones.services.legales_service.InformeTecnico.objects.filter",
@@ -673,17 +675,17 @@ def test_guardar_formulario_reso_success_and_invalid(mocker):
     mocker.patch("admisiones.services.legales_service.messages.success")
     mocker.patch("admisiones.services.legales_service.messages.error")
     red = mocker.patch("admisiones.services.legales_service.redirect", return_value="r")
-    assert module.LegalesService.guardar_formulario_reso(req, adm) == "r"
+    assert module.LegalesService.guardar_primera_providencia(req, adm) == "r"
     assert form_obj.archivo.save.called
     assert form_obj.archivo_docx.save.called
     assert red.called
 
-    invalid = mocker.Mock(is_valid=mocker.Mock(return_value=False))
+    invalid = mocker.Mock(is_valid=mocker.Mock(return_value=False), errors={})
     mocker.patch(
-        "admisiones.services.legales_service.ProyectoDisposicionForm",
+        "admisiones.services.legales_service.PrimeraProvidenciaForm",
         return_value=invalid,
     )
-    assert module.LegalesService.guardar_formulario_reso(req, adm) == "r"
+    assert module.LegalesService.guardar_primera_providencia(req, adm) == "r"
 
 
 def test_get_legales_context_and_helpers(mocker):
@@ -715,7 +717,8 @@ def test_get_legales_context_and_helpers(mocker):
                 ]
             )
         ),
-        admisiones_proyecto_disposicion=SimpleNamespace(first=lambda: None),
+        providencias=SimpleNamespace(all=lambda: []),
+        comedor=SimpleNamespace(es_judicializado=False),
         admisiones_proyecto_convenio=SimpleNamespace(first=lambda: None),
         informe_pdf=None,
         tipo_informe="base",
@@ -770,12 +773,16 @@ def test_get_legales_context_and_helpers(mocker):
         return_value=expedientes,
     )
     mocker.patch(
-        "admisiones.services.legales_service.ProyectoDisposicionForm",
-        return_value="fdis",
+        "admisiones.services.legales_service.PrimeraProvidenciaForm",
+        return_value="fprim",
     )
     mocker.patch(
-        "admisiones.services.legales_service.DisposicionNumIFFORM",
-        return_value="fdisif",
+        "admisiones.services.legales_service.SegundaProvidenciaForm",
+        return_value="fseg",
+    )
+    mocker.patch(
+        "admisiones.services.legales_service.ProvidenciaGDEPVForm",
+        return_value="fpv",
     )
     mocker.patch(
         "admisiones.services.legales_service.ProyectoConvenioForm", return_value="fconv"
@@ -799,9 +806,6 @@ def test_get_legales_context_and_helpers(mocker):
     )
     mocker.patch("admisiones.services.legales_service.ConvenioForm", return_value="fco")
     mocker.patch(
-        "admisiones.services.legales_service.DisposicionForm", return_value="fdi"
-    )
-    mocker.patch(
         "admisiones.services.legales_service.ReinicioExpedienteForm", return_value="fre"
     )
     mocker.patch(
@@ -818,7 +822,7 @@ def test_get_legales_context_and_helpers(mocker):
 
 
 def test_legales_informe_y_documentos_helpers(mocker):
-    """Resuelve helper de informe por tipo y genera DOCX de convenio/disposición."""
+    """Resuelve helper de informe por tipo y genera el DOCX de convenio."""
     adm = SimpleNamespace(pk=30, tipo_informe="base")
 
     mocker.patch(
@@ -843,12 +847,3 @@ def test_legales_informe_y_documentos_helpers(mocker):
     )
     out_doc = module.LegalesService.generar_documento_convenio(SimpleNamespace(id=1))
     assert out_doc is not None
-
-    mocker.patch(
-        "admisiones.services.legales_service.TextFormatterService.preparar_contexto_proyecto_disposicion",
-        return_value={},
-    )
-    out_doc2 = module.LegalesService.generar_documento_disposicion(
-        SimpleNamespace(id=2)
-    )
-    assert out_doc2 is not None
