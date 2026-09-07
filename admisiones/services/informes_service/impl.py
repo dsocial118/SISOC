@@ -374,7 +374,6 @@ class InformeService:
             "Prestaciones Aprobadas": [],
             "Información Adicional": [],
             titulo_campos_especificos: [],
-            "Resolución de pago": [],
         }
         valores = dict(InformeService.get_campos_visibles_informe(informe))
         es_renovacion = getattr(getattr(informe, "admision", None), "tipo", None) == (
@@ -391,12 +390,12 @@ class InformeService:
             "IF_relevamiento_territorial",
         }
         for field in informe._meta.fields:
+            if field.name.startswith(("resolucion_de_pago_", "monto_")):
+                continue
             nombre = str(field.verbose_name)
             if nombre not in valores:
                 continue
-            es_campo_renovacion = field.name.startswith(
-                ("aprobadas_ultimo_convenio_", "resolucion_de_pago_", "monto_")
-            )
+            es_campo_renovacion = field.name.startswith("aprobadas_ultimo_convenio_")
             if es_campo_renovacion and not es_renovacion:
                 continue
             if field.name in campos_especificos:
@@ -413,8 +412,6 @@ class InformeService:
                 grupo = "Solicitudes"
             elif field.name.startswith("aprobadas_"):
                 grupo = "Prestaciones Aprobadas"
-            elif field.name.startswith(("resolucion_de_pago_", "monto_")):
-                grupo = "Resolución de pago"
             elif field.name.endswith("_espacio") or field.name in {
                 "tipo_espacio",
                 "nombre_espacio",

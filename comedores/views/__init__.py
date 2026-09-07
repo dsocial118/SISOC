@@ -6,6 +6,7 @@ from .comedor import (
     ComedorListView,
     ComedorTransaccionesDetailView,
     ComedorUpdateView,
+    ResponsableTarjetaComedorUpdateView,
     CertificacionesPrestacionesHistorialView,
     descargar_certificacion_prestaciones_web,
 )
@@ -72,6 +73,7 @@ __all__ = [
     "ComedorListView",
     "ComedorTransaccionesDetailView",
     "ComedorUpdateView",
+    "ResponsableTarjetaComedorUpdateView",
     "CertificacionesPrestacionesHistorialView",
     "descargar_certificacion_prestaciones_web",
     "NominaCreateView",
