@@ -363,6 +363,12 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - `users/bootstrap/groups_seed.py`
 - `users/management/commands/create_groups.py`
 - templates en `users/templates/`
+- En el ABM de usuarios, `es_representante_pwa` es el interruptor general de
+  acceso mobile, incluido el coordinador PWA. `Profile.configuracion_mobile`
+  conserva las selecciones al suspender el acceso; no otorga permisos.
+  La migración es `users.0050` y la visibilidad vive en
+  `static/custom/js/user_mobile_access.js`. Validar con
+  `tests/test_users_pwa_forms.py` y `node tests/js/user_mobile_access.test.js`.
 - La autogestión vive en `MiCuentaForm`, `MiCuentaView` y la ruta `/mi-cuenta/`.
   La confirmación inicial usa `/mi-cuenta/confirmar/` y
   `ProfileConfirmationMiddleware`, registrado después del cambio de contraseña.

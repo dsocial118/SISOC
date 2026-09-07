@@ -105,6 +105,12 @@ class Profile(models.Model):
         blank=True,
     )
     dark_mode = models.BooleanField(default=True)
+    configuracion_mobile = models.JSONField(
+        default=dict,
+        blank=True,
+        editable=False,
+        help_text="Selecciones del formulario mobile; no otorga permisos ni acceso.",
+    )
     es_usuario_provincial = models.BooleanField(default=False)
     provincia = models.ForeignKey(
         Provincia, on_delete=models.SET_NULL, null=True, blank=True
