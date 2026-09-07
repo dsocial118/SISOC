@@ -58,6 +58,18 @@ class Admision(models.Model):
         ("Expediente Agregado", "Expediente Agregado"),
         ("Formulario Convenio Creado", "Formulario Convenio Creado"),
         ("IF Convenio Asignado", "IF Convenio Asignado"),
+        (
+            "Formulario Primera Providencia Creado",
+            "Formulario Primera Providencia Creado",
+        ),
+        ("IF Primera Providencia Asignado", "IF Primera Providencia Asignado"),
+        (
+            "Formulario Segunda Providencia Creado",
+            "Formulario Segunda Providencia Creado",
+        ),
+        ("IF Segunda Providencia Asignado", "IF Segunda Providencia Asignado"),
+        # Estados del circuito de Disposición, reemplazado por Providencias.
+        # Se conservan para no romper las admisiones que ya los tienen guardados.
         ("Formulario Disposición Creado", "Formulario Disposición Creado"),
         ("IF Disposición Asignado", "IF Disposición Asignado"),
         ("Juridicos: Validado", "Juridicos: Validado"),
@@ -93,8 +105,9 @@ class Admision(models.Model):
         ("observacion en informe técnico", "Observación en informe técnico"),
         ("observacion en proyecto de convenio", "Observación en proyecto de convenio"),
         (
+            # El valor guardado no cambia: hay rechazos históricos con este texto.
             "observacion en proyecto de disposicion",
-            "Observación en proyecto de disposición",
+            "Observación en providencia",
         ),
     ]
 
@@ -1244,6 +1257,103 @@ class FormularioProyectoDisposicion(models.Model):
 
     def __str__(self):
         return f"Formulario Proyecto de Disposicion de {self.admision} por {self.creado_por}"
+
+
+class Providencia(models.Model):
+    """Providencia de Legales que reemplaza al Proyecto de Disposición."""
+
+    ORDEN_PROVIDENCIA = [
+        ("primera", "Primera Providencia"),
+        ("segunda", "Segunda Providencia"),
+    ]
+
+    CANTIDAD_ESPACIOS = [
+        ("hasta_5", "Hasta 5 Espacios"),
+        ("mas_de_5", "Más de 5 Espacios"),
+    ]
+
+    admision = models.ForeignKey(
+        "Admision",
+        on_delete=models.CASCADE,
+        related_name="providencias",
+    )
+    orden = models.CharField(
+        max_length=10,
+        choices=ORDEN_PROVIDENCIA,
+        verbose_name="Número de Providencia",
+    )
+    tipo = models.CharField(
+        max_length=20,
+        choices=Admision.TIPO_ADMISION,
+        verbose_name="Tipo de Admisión",
+    )
+    cantidad_espacios = models.CharField(
+        max_length=10,
+        choices=CANTIDAD_ESPACIOS,
+        null=True,
+        blank=True,
+        verbose_name="Cantidad de Espacios",
+    )
+    es_judicializado = models.BooleanField(
+        default=False,
+        verbose_name="¿Es Judicializado?",
+    )
+    caratula_causa = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        verbose_name="Carátula de la Causa",
+    )
+    juzgado = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        verbose_name="Juzgado",
+    )
+    memo = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        verbose_name="Memo",
+    )
+    numero_pv_primera = models.CharField(
+        max_length=100,
+        null=True,
+        blank=True,
+        verbose_name="Número de PV Primera Providencia",
+    )
+    archivo = models.FileField(
+        upload_to="admisiones/providencias/pdf", null=True, blank=True
+    )
+    archivo_docx = models.FileField(
+        upload_to="admisiones/providencias/docx", null=True, blank=True
+    )
+    numero_gde_pv = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        verbose_name="Número de GDE PV",
+    )
+    creado = models.DateTimeField(auto_now_add=True)
+    creado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="admisiones_providencias",
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["admision", "orden"],
+                name="unique_providencia_por_admision_y_orden",
+            )
+        ]
+        verbose_name = "providencia"
+        verbose_name_plural = "providencias"
+
+    def __str__(self):
+        return f"{self.get_orden_display()} de {self.admision}"
 
 
 class FormularioProyectoDeConvenio(models.Model):
