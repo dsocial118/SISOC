@@ -1,16 +1,18 @@
 """Tests del endpoint mobile de territoriales de comedores."""
 
 import io
+from concurrent.futures import ThreadPoolExecutor
 
 import pytest
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.db import close_old_connections, connection
 from PIL import Image
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APIClient
 
-from comedores.models import Comedor, ImagenComedor
-from core.models import Provincia
+from comedores.models import Comedor, ImagenComedor, Programas, TipoDeComedor
+from core.models import Localidad, Municipio, Provincia
 from relevamientos.models import Relevamiento
 from users.models import TerritorialComedorProvincia
 
@@ -43,6 +45,291 @@ def _auth_client(user):
     client = APIClient()
     client.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
     return client
+
+
+def _create_comedor_payload(provincia, **overrides):
+    payload = {
+        "client_uuid": "loc_comedor_creacion_1",
+        "nombre": "Comedor creado desde Gestionar",
+        "tipo": "Comedor",
+        "programa": "Alimentar comunidad",
+        "provincia": provincia.nombre,
+        "municipio": "Municipio de prueba",
+        "localidad": "Localidad de prueba",
+        "calle": "Calle 123",
+        "numero": 45,
+        "codigo_postal": 1000,
+        "latitud": -34.6,
+        "longitud": -58.4,
+    }
+    payload.update(overrides)
+    return payload
+
+
+def _create_comedor_catalogos(provincia):
+    municipio = Municipio.objects.create(
+        nombre="Municipio de prueba", provincia=provincia
+    )
+    Localidad.objects.create(nombre="Localidad de prueba", municipio=municipio)
+    TipoDeComedor.objects.create(nombre="Comedor")
+    Programas.objects.create(nombre="Alimentar comunidad")
+
+
+@pytest.mark.django_db
+def test_territorial_crea_comedor_y_devuelve_contrato_territorial():
+    provincia = Provincia.objects.create(nombre="Provincia alta")
+    _create_comedor_catalogos(provincia)
+    user = _make_territorial("terr_create", [provincia])
+
+    response = _auth_client(user).post(
+        "/api/territorial/comedores/",
+        _create_comedor_payload(provincia),
+        format="json",
+    )
+
+    assert response.status_code == 201
+    assert response.data["id"]
+    assert response.data["nombre"] == "Comedor creado desde Gestionar"
+    assert response.data["provincia"] == provincia.nombre
+    assert response.data["municipio"] == "Municipio de prueba"
+    assert response.data["localidad"] == "Localidad de prueba"
+    assert response.data["tipo"] == "Comedor"
+    assert response.data["programa"] == "Alimentar comunidad"
+    assert Comedor.objects.filter(nombre="Comedor creado desde Gestionar").count() == 1
+
+
+@pytest.mark.django_db
+def test_territorial_alta_requiere_token_rol_y_payload_relacionado_valido():
+    provincia = Provincia.objects.create(nombre="Provincia validacion")
+    _create_comedor_catalogos(provincia)
+    payload = _create_comedor_payload(provincia)
+    anonimo = APIClient()
+    usuario_comun = get_user_model().objects.create_user(
+        username="sin_rol_territorial",
+        password="testpass123",
+    )
+    territorial = _auth_client(_make_territorial("terr_invalid", [provincia]))
+
+    missing_token = anonimo.post("/api/territorial/comedores/", payload, format="json")
+    missing_role = _auth_client(usuario_comun).post(
+        "/api/territorial/comedores/", payload, format="json"
+    )
+    invalid_relation = territorial.post(
+        "/api/territorial/comedores/",
+        {**payload, "municipio": "Municipio inexistente"},
+        format="json",
+    )
+
+    assert missing_token.status_code == 401
+    assert missing_role.status_code == 403
+    assert invalid_relation.status_code == 400
+    assert Comedor.objects.filter(provincia=provincia).count() == 0
+
+
+@pytest.mark.django_db
+def test_territorial_reintento_de_alta_es_idempotente_y_rechaza_otro_payload():
+    provincia = Provincia.objects.create(nombre="Provincia idem")
+    _create_comedor_catalogos(provincia)
+    client = _auth_client(_make_territorial("terr_idem", [provincia]))
+    payload = _create_comedor_payload(provincia)
+
+    first = client.post("/api/territorial/comedores/", payload, format="json")
+    retry = client.post("/api/territorial/comedores/", payload, format="json")
+    conflict = client.post(
+        "/api/territorial/comedores/",
+        {**payload, "nombre": "Payload distinto"},
+        format="json",
+    )
+
+    assert first.status_code == 201
+    assert retry.status_code == 200
+    assert retry.data["id"] == first.data["id"]
+    assert conflict.status_code == 409
+    assert Comedor.objects.filter(provincia=provincia).count() == 1
+
+
+@pytest.mark.django_db
+def test_territorial_reintento_no_depende_de_catalogos_renombrados():
+    provincia = Provincia.objects.create(nombre="Provincia catálogo mutable")
+    _create_comedor_catalogos(provincia)
+    client = _auth_client(_make_territorial("terr_catalogo_replay", [provincia]))
+    payload = _create_comedor_payload(provincia)
+
+    first = client.post("/api/territorial/comedores/", payload, format="json")
+    TipoDeComedor.objects.filter(nombre="Comedor").update(nombre="Comedor renombrado")
+    replay = client.post("/api/territorial/comedores/", payload, format="json")
+
+    assert first.status_code == 201
+    assert replay.status_code == 200
+    assert replay.data["id"] == first.data["id"]
+
+
+@pytest.mark.django_db
+def test_territorial_revalida_alcance_en_reintento_y_aisla_claves_por_usuario():
+    provincia = Provincia.objects.create(nombre="Provincia aislamiento")
+    _create_comedor_catalogos(provincia)
+    user_a = _make_territorial("terr_idem_a", [provincia])
+    user_b = _make_territorial("terr_idem_b", [provincia])
+    payload = _create_comedor_payload(provincia)
+
+    first = _auth_client(user_a).post(
+        "/api/territorial/comedores/", payload, format="json"
+    )
+    same_key_other_user = _auth_client(user_b).post(
+        "/api/territorial/comedores/",
+        {**payload, "nombre": "Comedor de otro usuario"},
+        format="json",
+    )
+    user_a.profile.territorial_comedor_provincias.all().delete()
+    replay_without_scope = _auth_client(user_a).post(
+        "/api/territorial/comedores/", payload, format="json"
+    )
+
+    assert first.status_code == 201
+    assert same_key_other_user.status_code == 201
+    assert same_key_other_user.data["id"] != first.data["id"]
+    assert replay_without_scope.status_code == 403
+
+
+@pytest.mark.django_db
+def test_territorial_rechaza_alta_fuera_del_alcance_y_edita_solo_su_provincia():
+    provincia_permitida = Provincia.objects.create(nombre="Provincia permitida")
+    provincia_ajena = Provincia.objects.create(nombre="Provincia ajena")
+    _create_comedor_catalogos(provincia_permitida)
+    _create_comedor_catalogos(provincia_ajena)
+    user = _make_territorial("terr_write_scope", [provincia_permitida])
+    client = _auth_client(user)
+    propio = Comedor.objects.create(nombre="Propio", provincia=provincia_permitida)
+    ajeno = Comedor.objects.create(nombre="Ajeno", provincia=provincia_ajena)
+
+    outside = client.post(
+        "/api/territorial/comedores/",
+        _create_comedor_payload(provincia_ajena),
+        format="json",
+    )
+    updated = client.patch(
+        f"/api/territorial/comedores/{propio.id}/",
+        {"nombre": "Propio editado"},
+        format="json",
+    )
+    forbidden_update = client.patch(
+        f"/api/territorial/comedores/{ajeno.id}/",
+        {"nombre": "No debe editarse"},
+        format="json",
+    )
+
+    assert outside.status_code == 403
+    assert updated.status_code == 200
+    assert updated.data["nombre"] == "Propio editado"
+    assert forbidden_update.status_code == 404
+    ajeno.refresh_from_db()
+    assert ajeno.nombre == "Ajeno"
+
+
+@pytest.mark.django_db
+def test_territorial_patch_conserva_jerarquia_geografica():
+    provincia_a = Provincia.objects.create(nombre="Provincia jerarquía A")
+    provincia_b = Provincia.objects.create(nombre="Provincia jerarquía B")
+    _create_comedor_catalogos(provincia_a)
+    _create_comedor_catalogos(provincia_b)
+    municipio_a = Municipio.objects.get(
+        provincia=provincia_a, nombre="Municipio de prueba"
+    )
+    localidad_a = Localidad.objects.get(
+        municipio=municipio_a, nombre="Localidad de prueba"
+    )
+    municipio_alterno = Municipio.objects.create(
+        nombre="Municipio alterno", provincia=provincia_a
+    )
+    localidad_alterna = Localidad.objects.create(
+        nombre="Localidad alterna", municipio=municipio_alterno
+    )
+    comedor = Comedor.objects.create(
+        nombre="Comedor geográfico",
+        provincia=provincia_a,
+        municipio=municipio_a,
+        localidad=localidad_a,
+    )
+    client = _auth_client(
+        _make_territorial("terr_geografia", [provincia_a, provincia_b])
+    )
+
+    incomplete_province = client.patch(
+        f"/api/territorial/comedores/{comedor.id}/",
+        {"provincia": provincia_b.nombre},
+        format="json",
+    )
+    incomplete_municipio = client.patch(
+        f"/api/territorial/comedores/{comedor.id}/",
+        {"municipio": municipio_alterno.nombre},
+        format="json",
+    )
+    completed_municipio = client.patch(
+        f"/api/territorial/comedores/{comedor.id}/",
+        {
+            "municipio": municipio_alterno.nombre,
+            "localidad": localidad_alterna.nombre,
+        },
+        format="json",
+    )
+
+    comedor.refresh_from_db()
+    assert incomplete_province.status_code == 400
+    assert incomplete_municipio.status_code == 400
+    assert completed_municipio.status_code == 200
+    assert comedor.provincia_id == provincia_a.id
+    assert comedor.municipio_id == municipio_alterno.id
+    assert comedor.localidad_id == localidad_alterna.id
+
+
+@pytest.mark.django_db
+def test_territorial_rechaza_fecha_iso_invalida():
+    provincia = Provincia.objects.create(nombre="Provincia fecha")
+    _create_comedor_catalogos(provincia)
+    client = _auth_client(_make_territorial("terr_fecha", [provincia]))
+
+    response = client.post(
+        "/api/territorial/comedores/",
+        _create_comedor_payload(provincia, comienzo="2020-99-99"),
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert "comienzo" in response.data
+
+
+@pytest.mark.mysql_compat
+@pytest.mark.django_db(transaction=True)
+def test_territorial_alta_concurrente_con_misma_clave_crea_un_solo_comedor():
+    if connection.vendor != "mysql":
+        pytest.skip(
+            "La garantía de concurrencia se valida contra MySQL, como producción."
+        )
+
+    provincia = Provincia.objects.create(nombre="Provincia concurrente")
+    _create_comedor_catalogos(provincia)
+    user = _make_territorial("terr_concurrent", [provincia])
+    token, _ = Token.objects.get_or_create(user=user)
+    payload = _create_comedor_payload(provincia)
+
+    def post_same_operation():
+        close_old_connections()
+        try:
+            client = APIClient()
+            client.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
+            response = client.post(
+                "/api/territorial/comedores/", payload, format="json"
+            )
+            return response.status_code, response.data["id"]
+        finally:
+            close_old_connections()
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        results = list(executor.map(lambda _: post_same_operation(), range(2)))
+
+    assert sorted(status for status, _ in results) == [200, 201]
+    assert len({remote_id for _, remote_id in results}) == 1
+    assert Comedor.objects.filter(provincia=provincia).count() == 1
 
 
 @pytest.mark.django_db
