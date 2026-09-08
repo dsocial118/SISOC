@@ -1,0 +1,73 @@
+{% extends "includes/main.html" %}
+{% load static %}
+{% block title %}Caso {{ encuesta }}{% endblock %}
+{% block breadcrumb %}
+    {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
+{% endblock %}
+{% block content %}
+    <link rel="stylesheet" href="{% static 'custom/css/datacalle.css' %}" />
+
+    <div class="dc-header">
+        <div>
+            <h1 class="dc-header__title">Caso {{ encuesta }}</h1>
+            <div class="dc-header__meta">
+                <span class="dc-chip dc-chip--{% if encuesta.estado == 'completa' %}finalizado{% else %}planificado{% endif %}">
+                    {{ encuesta.get_estado_display }}
+                </span>
+                <span>&middot;</span>
+                <span><i class="fas fa-mobile-alt"></i>{{ encuesta.get_origen_display }}</span>
+                {% if encuesta.relevador %}
+                    <span>&middot;</span>
+                    <span>{{ encuesta.relevador.get_full_name|default:encuesta.relevador.username }}</span>
+                {% endif %}
+                {% if encuesta.fecha_inicio %}
+                    <span>&middot;</span><span>{{ encuesta.fecha_inicio|date:"d/m/Y H:i" }}</span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="dc-header__actions">
+            <a href="{% url 'datacalle_relevamientos_detalle' encuesta.relevamiento.pk %}"
+               class="btn btn-secondary btn-sm">
+                <i class="fas fa-arrow-left mr-1"></i> Volver al operativo
+            </a>
+        </div>
+    </div>
+
+    {% if encuesta.sin_entrevista_por_menor %}
+        <div class="dc-seccion mb-3">
+            <div class="dc-seccion__body">
+                <p class="dc-dato__valor mb-0">
+                    <i class="fas fa-info-circle"></i>
+                    Persona menor de edad: fue observada y cuenta en el grupo, pero no
+                    correspondía entrevistarla.
+                </p>
+            </div>
+        </div>
+    {% endif %}
+
+    {% for pagina in respuestas %}
+        <div class="dc-seccion mb-3">
+            <div class="dc-seccion__header">
+                <i class="fas fa-clipboard-list"></i> {{ pagina.titulo }}
+            </div>
+            <div class="dc-seccion__body">
+                {% for item in pagina.items %}
+                    <div class="dc-dato">
+                        <div class="dc-dato__label">{{ item.etiqueta }}</div>
+                        <div class="dc-dato__valor {% if not item.valor %}dc-dato__valor--vacio{% endif %}">{{ item.valor|default:"—" }}</div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% empty %}
+        <div class="dc-seccion mb-3">
+            <div class="dc-seccion__body">
+                <div class="dc-vacio">
+                    <i class="fas fa-clipboard"></i>
+                    <h3>El caso no trae respuestas</h3>
+                    <p>Llegó desde la app sin contenido en el instrumento.</p>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+{% endblock %}

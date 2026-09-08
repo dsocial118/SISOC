@@ -3,6 +3,7 @@
   const mobile = document.getElementById('id_es_representante_pwa');
   const coordinator = document.getElementById('id_es_coordinador_equipo_tecnico_pwa');
   const territorial = document.getElementById('id_es_territorial_comedor');
+  const relevador = document.getElementById('id_es_relevador_calle');
 
   const show = (id, visible) => {
     const element = document.getElementById(id);
@@ -29,9 +30,15 @@
     show('territorial-comedor-provincias-wrapper', Boolean(territorial?.checked));
   };
 
+  const syncRelevadorVisibility = () => {
+    show('relevador-calle-detalle-wrapper', Boolean(relevador?.checked));
+  };
+
   mobile?.addEventListener('change', syncMobileVisibility);
   coordinator?.addEventListener('change', syncMobileVisibility);
   territorial?.addEventListener('change', syncTerritorialVisibility);
+  relevador?.addEventListener('change', syncRelevadorVisibility);
   syncMobileVisibility();
   syncTerritorialVisibility();
+  syncRelevadorVisibility();
 })();
