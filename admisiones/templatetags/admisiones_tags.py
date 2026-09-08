@@ -190,6 +190,11 @@ def render_boton_tecnicos(boton, admision=None, informe_tecnico=None):
             "url": True,
             "clase": "btn-primary",
         },
+        "descargar_informe_tecnico_gde": {
+            "texto": "Descargar para GDE",
+            "url": True,
+            "clase": "btn-outline-success",
+        },
         "if_informe_tecnico": {
             "texto": "Cargar Informe Técnico -GDE",
             "modal": "#modalIFInformeTecnico",

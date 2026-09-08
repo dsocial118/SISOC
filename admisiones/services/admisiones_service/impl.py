@@ -3365,6 +3365,9 @@ class AdmisionService:
             if boton_informe:
                 botones.append(boton_informe)
 
+        if informe_tecnico and informe_tecnico.estado == "Validado":
+            botones.append("descargar_informe_tecnico_gde")
+
         if (
             admision.estado_admision == "informe_tecnico_aprobado"
             and not admision.numero_if_tecnico
