@@ -150,7 +150,10 @@ jobs:
                   echo "Estado PWA para recuperacion: $PWA_STATE" >> "$GITHUB_STEP_SUMMARY"
                   python3 "$PWA_STATE/deploy_pwas.py" prepare --config "$PWA_STATE/pwas.json" --root "$APP_ROOT/.." --state "$PWA_STATE" --environment hml
                   echo "Commit previo al deploy para rollback: $(git rev-parse HEAD)"
-                  SISOC_ROOT_DIR="$APP_ROOT" bash "$PWA_STATE/backend.sh" --yes --expected-revision "$EXPECTED_SHA" --without-mobile
+                  (
+                      umask 022
+                      SISOC_ROOT_DIR="$APP_ROOT" bash "$PWA_STATE/backend.sh" --yes --expected-revision "$EXPECTED_SHA" --without-mobile
+                  )
                   wait_for() {
                       local description="$1"
                       local attempts="$2"
@@ -245,7 +248,10 @@ jobs:
                   echo "Estado PWA para recuperacion: $PWA_STATE" >> "$GITHUB_STEP_SUMMARY"
                   python3 "$PWA_STATE/deploy_pwas.py" prepare --config "$PWA_STATE/pwas.json" --root "$APP_ROOT/.." --state "$PWA_STATE" --environment prd
                   echo "Commit previo al deploy para rollback: $(git rev-parse HEAD)"
-                  SISOC_ROOT_DIR="$APP_ROOT" bash "$PWA_STATE/backend.sh" --yes --expected-revision "$EXPECTED_SHA" --without-mobile
+                  (
+                      umask 022
+                      SISOC_ROOT_DIR="$APP_ROOT" bash "$PWA_STATE/backend.sh" --yes --expected-revision "$EXPECTED_SHA" --without-mobile
+                  )
                   wait_for() {
                       local description="$1"
                       local attempts="$2"
