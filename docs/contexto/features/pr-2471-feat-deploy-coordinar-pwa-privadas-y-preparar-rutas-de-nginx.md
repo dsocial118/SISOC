@@ -19,7 +19,7 @@
 
 - Tipo de cambio declarado: infraestructura y documentación.
 - Área principal declarada: despliegue HML/PRD y Nginx.
-- Impacto usuario declarado: sin cambios de rutas instalados en esta entrega.
+- Impacto usuario declarado: Nginx inicial conserva /mobile/; rutas de apps nuevas todavia deshabilitadas.
 - Riesgos / rollback: fallos parciales explícitos, recuperación de imágenes por app; sin rollback de migraciones. Conservar releases e imágenes y controlar espacio en disco.
 
 ## Design system y UI
