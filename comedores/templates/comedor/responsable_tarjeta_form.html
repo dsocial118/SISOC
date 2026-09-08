@@ -1,11 +1,18 @@
 {% extends "includes/main.html" %}
 {% load static crispy_forms_tags %}
 {% block content %}
-<div class="card"><div class="card-header"><h3>Responsable de la Tarjeta</h3></div><div class="card-body">
-  <form method="post" data-localidades-url="{% url 'ajax_load_localidades' %}">{% csrf_token %}{{ form|crispy }}<button class="btn btn-primary" type="submit">Guardar</button>
-  <a class="btn btn-secondary" href="{% url 'comedor_detalle' object.pk %}">Cancelar</a></form>
-</div></div>
+    <div class="card">
+        <div class="card-header">
+            <h3>Responsable de la Tarjeta</h3>
+        </div>
+        <div class="card-body">
+            <form method="post"
+                  data-localidades-url="{% url 'ajax_load_localidades' %}">{% csrf_token %}{{ form|crispy }}<button class="btn btn-primary" type="submit">Guardar</button>
+                <a class="btn btn-secondary"
+                   href="{% url 'comedor_detalle' object.pk %}">Cancelar</a></form>
+        </div>
+    </div>
 {% endblock %}
 {% block extra_js %}
-<script src="{% static 'custom/js/geografiaProvinciaLocalidad.js' %}"></script>
+    <script src="{% static 'custom/js/geografiaProvinciaLocalidad.js' %}"></script>
 {% endblock %}

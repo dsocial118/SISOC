@@ -18,6 +18,9 @@ Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrollador
   `docs/operacion/deploy_pwas.md`. `render_pwa_nginx.py` genera un include de servidor
   y una vista previa que no debe instalarse. No mover `/sisoc/SISOC-Mobile` ni
   asumir acceso publico de Git. Estado privado de releases: `SISOC/.deploy/pwa/`.
+  El helper de backend corre con umask 022 en un subshell; el estado PWA conserva
+  077. Verificar tambien estabilidad de workers tras desplegar: el healthcheck
+  HTTP no detecta errores de lectura de codigo en otros UID de contenedores.
 
 - `Hecho observado`: confirmado leyendo codigo, config, workflows o docs del repo.
 - `Inferencia`: deduccion razonable por nombres, estructura o convenciones, pero no validada en profundidad.
@@ -602,7 +605,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - `encuestas/context_processors.py`: expone la ronda pendiente al modal global (`templates/includes/base.html` + `encuestas/templates/encuestas/partials/responder_modal.html`); comparte cache de request con el middleware para no duplicar la consulta.
 - `encuestas/management/commands/process_encuestas_rondas.py` + servicio `encuestas_worker` en `docker-compose.yml`: abre/cierra rondas por fecha, sin Celery.
 - `users/bootstrap/groups_seed.py`: grupos `Gestor de Encuestas` y `Encuestas Resultados`.
-- Doc funcional completa (modelo, reglas de negocio, permisos, decisiones y desvios respecto del plan original): `docs/registro/analisis/2026-08-28-modulo-encuestas.md`.
+- Guía funcional canónica: `docs/implementaciones/encuestas.md`. El análisis histórico y sus decisiones de diseño quedan en `docs/registro/analisis/2026-08-28-modulo-encuestas.md`.
 - Limite conocido: la segmentacion por CUIT nunca matchea a un usuario individual (`users.Profile` no tiene CUIT propio, solo DNI/CUIL).
 ### Si necesitas auditar o reparar mojibake en datos
 

@@ -1,9 +1,72 @@
 from pathlib import Path
+import os
 import re
+import shutil
+import stat
+import subprocess
+
+import pytest
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEPLOY_WORKFLOW = REPO_ROOT / ".github" / "workflows" / "deploy.yml"
+
+
+@pytest.mark.skipif(os.name != "posix", reason="Verifica permisos POSIX del deploy")
+@pytest.mark.parametrize("job", ["deploy-homologacion", "deploy-produccion"])
+def test_backend_code_readable_without_exposing_private_pwa_state(tmp_path, job):
+    """La umask privada de las PWA no debe impedir leer codigo a los workers."""
+    workflow = DEPLOY_WORKFLOW.read_text(encoding="utf-8")
+    job_source = workflow.split(f"    {job}:\n", 1)[1]
+    setup = (
+        "umask 077" + job_source.split("umask 077", 1)[1].split("wait_for() {", 1)[0]
+    )
+    mock_bin = tmp_path / "bin"
+    mock_bin.mkdir()
+    scripts = {
+        "git": (
+            "#!/bin/sh\n"
+            'case "$*" in\n'
+            '*deploy_refresh.sh*) printf \'touch "$SISOC_ROOT_DIR/backend-code"\\n'
+            'mkdir "$SISOC_ROOT_DIR/backend-directory"\\n\' ;;\n'
+            "*) printf '{}\\n' ;;\nesac\n"
+        ),
+        "python3": "#!/bin/sh\nexit 0\n",
+    }
+    for name, source in scripts.items():
+        executable = mock_bin / name
+        executable.write_text(source, encoding="utf-8")
+        executable.chmod(0o755)
+    app_root = tmp_path / "app"
+    app_root.mkdir()
+    env = {
+        **os.environ,
+        "APP_ROOT": str(app_root),
+        "EXPECTED_SHA": "a" * 40,
+        "GITHUB_STEP_SUMMARY": str(tmp_path / "summary"),
+        "PATH": str(mock_bin) + os.pathsep + os.environ["PATH"],
+    }
+    subprocess.run(
+        [
+            shutil.which("bash"),
+            "-c",
+            "set -eu\n" + setup + '\ntouch "$APP_ROOT/private-after"',
+        ],
+        env=env,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    def mode(path):
+        return stat.S_IMODE(path.stat().st_mode)
+
+    assert mode(app_root / "backend-code") == 0o644
+    assert mode(app_root / "backend-directory") == 0o755
+    assert mode(app_root / "private-after") == 0o600
+    state = next((app_root / ".deploy/pwa").iterdir())
+    assert mode(state) == 0o700
+    assert mode(state / "backend.sh") == 0o600
 
 
 def _production_deploy_step() -> str:

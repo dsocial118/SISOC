@@ -1,3 +1,11 @@
+<!-- AUTO-GENERATED RELEASE START: 2026-09-08 -->
+# Versión SISOC 08.09.2026
+
+## Nuevas Funcionalidades
+
+- [despliegue PWA] Desplegar DataCalle, Gestionar y Espacios Comunitarios junto con SISOC con configuración independiente por entorno. (PR #2477)
+<!-- AUTO-GENERATED RELEASE END: 2026-09-08 -->
+
 <!-- AUTO-GENERATED RELEASE START: 2026-09-09 -->
 # Versión SISOC 09.09.2026
 
