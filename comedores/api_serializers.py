@@ -1797,11 +1797,7 @@ class TerritorialComedorWriteSerializer(serializers.Serializer):
             and "localidad" not in attrs
         ):
             raise serializers.ValidationError(
-                {
-                    "localidad": (
-                        "Debe indicarla o limpiarla al cambiar el municipio."
-                    )
-                }
+                {"localidad": ("Debe indicarla o limpiarla al cambiar el municipio.")}
             )
 
     @staticmethod
