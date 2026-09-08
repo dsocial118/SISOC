@@ -1318,7 +1318,7 @@ class Providencia(models.Model):
         verbose_name="Memo",
     )
     numero_pv_primera = models.CharField(
-        max_length=100,
+        max_length=255,
         null=True,
         blank=True,
         verbose_name="Número de PV Primera Providencia",
@@ -1330,7 +1330,7 @@ class Providencia(models.Model):
         upload_to="admisiones/providencias/docx", null=True, blank=True
     )
     numero_gde_pv = models.CharField(
-        max_length=100,
+        max_length=255,
         blank=True,
         null=True,
         verbose_name="Número de GDE PV",
