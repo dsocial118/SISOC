@@ -1,3 +1,4 @@
+from pas.services.supervivencia_jobs import request_run, run_summary
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import ValidationError
@@ -70,7 +71,6 @@ from pas.services.titulares_import_service import (
 )
 from pas.services.supervivencia_service import (
     resumen_supervivencia,
-    sincronizar_supervivencia_pas,
 )
 
 
@@ -482,6 +482,7 @@ class PasCrucesView(LoginRequiredMixin, TemplateView):
                 "etapas_circuito": construir_etapas(circuito),
                 "retorno_sintys_form": PasRetornoSintysForm(),
                 "resumen_renaper": resumen_supervivencia(),
+                "corrida_renaper": run_summary(),
                 "incompatibilidades": list(
                     PasIncompatibilidad.objects.select_related("persona")
                     .filter(estado=PasIncompatibilidad.Estado.PENDIENTE)
@@ -632,24 +633,11 @@ class PasCrucesImportarSintysView(LoginRequiredMixin, View):
 
 class PasCrucesActualizarRenaperView(LoginRequiredMixin, View):
     def post(self, request):
-        resumen = sincronizar_supervivencia_pas(forzar=True)
-        if resumen["errores"]:
-            messages.warning(
-                request,
-                "Control RENAPER finalizado con errores: "
-                f"{resumen['vigentes']} personas vivas, "
-                f"{resumen['fallecidas']} fallecidas, "
-                f"{resumen['no_encontradas']} sin coincidencia y "
-                f"{resumen['errores']} errores.",
-            )
-        else:
-            messages.success(
-                request,
-                "Control RENAPER actualizado: "
-                f"{resumen['vigentes']} personas vivas, "
-                f"{resumen['fallecidas']} fallecidas y "
-                f"{resumen['no_encontradas']} sin coincidencia.",
-            )
+        run = request_run(actor=request.user)
+        messages.success(
+            request,
+            f"Control mensual #{run.pk} registrado. Consulte el avance en esta pantalla.",
+        )
         return redirect("pas_cruces")
 
 

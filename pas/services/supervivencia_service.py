@@ -21,12 +21,14 @@ def primer_dia_mes_siguiente(fecha):
     return fecha.replace(day=ultimo_dia) + timedelta(days=1)
 
 
-def _consultar_persona(persona):
+def _consultar_persona(persona, *, client=None):
     ultimo_resultado = None
     ultimo_sexo = ""
     for sexo in ("M", "F"):
         ultimo_sexo = sexo
-        resultado = consultar_datos_renaper(str(persona.dni), sexo)
+        resultado = consultar_datos_renaper(
+            str(persona.dni), sexo, **({"client": client} if client else {})
+        )
         ultimo_resultado = resultado
         if resultado.get("success") or resultado.get("fallecido"):
             return resultado, sexo

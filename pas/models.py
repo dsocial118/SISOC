@@ -351,6 +351,37 @@ class PasCircuitoMensual(models.Model):
         return f"Circuito PAS {self.periodo:%m/%Y}"
 
 
+class PasSupervivenciaRun(models.Model):
+    """Corrida mensual persistente; active_slot serializa las ejecuciones PAS."""
+
+    period = models.DateField(unique=True)
+    cutoff = models.DateField()
+    status = models.CharField(max_length=24, default="pending")
+    active_slot = models.PositiveSmallIntegerField(null=True, unique=True)
+    requested_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL
+    )
+    origin = models.CharField(max_length=16, default="manual")
+    created_at = models.DateTimeField(auto_now_add=True)
+    finished_at = models.DateTimeField(null=True)
+
+
+class PasSupervivenciaBatch(models.Model):
+    """Padrón inmutable y acotado con punto de control persistente."""
+
+    run = models.ForeignKey(
+        PasSupervivenciaRun, on_delete=models.CASCADE, related_name="batches"
+    )
+    persona_ids = models.JSONField(default=list)
+    size = models.PositiveIntegerField(default=0)
+    position = models.PositiveIntegerField(default=0)
+    status = models.CharField(max_length=24, default="pending", db_index=True)
+    heartbeat = models.DateTimeField(null=True)
+    dispatched_at = models.DateTimeField(null=True)
+    attempts = models.PositiveIntegerField(default=0)
+    counts = models.JSONField(default=dict)
+
+
 class PasControlRenaper(models.Model):
     class Resultado(models.TextChoices):
         VIGENTE = "vigente", "Persona viva"
@@ -366,6 +397,7 @@ class PasControlRenaper(models.Model):
     resultado = models.CharField(max_length=20, choices=Resultado.choices)
     sexo_consulta = models.CharField(max_length=1, blank=True)
     error_tipo = models.CharField(max_length=40, blank=True)
+    run = models.ForeignKey(PasSupervivenciaRun, null=True, on_delete=models.SET_NULL)
 
     class Meta:
         ordering = ["-fecha_consulta", "persona_id"]
@@ -397,6 +429,7 @@ class PasIncompatibilidad(models.Model):
     periodo_impacto = models.DateField()
     fecha_deteccion = models.DateTimeField(auto_now_add=True)
     detalle = models.CharField(max_length=255)
+    run = models.ForeignKey(PasSupervivenciaRun, null=True, on_delete=models.SET_NULL)
     estado = models.CharField(
         max_length=20, choices=Estado.choices, default=Estado.PENDIENTE
     )

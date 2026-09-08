@@ -16,7 +16,7 @@ Fuentes complementarias:
 - Persistencia con ORM Django sobre MySQL.
 - Cache local (`LocMemCache`) configurada en settings.
 - Logging custom configurado en `config/settings.py` con utilidades en `core/utils.py`.
-- No se usa Celery actualmente (no asumir workers/colas salvo pedido explícito).
+- PAS usa Celery/Redis para control mensual: `docker-compose.celery.yml`. Los demás workers conservan su mecanismo propio.
 - Integraciones externas (p. ej. RENAPER/GESTIONAR) en servicios/tasks, no en templates.
 
 ## Capas y boundaries (regla de ubicación)

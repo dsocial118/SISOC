@@ -37,6 +37,9 @@ def _backend_checkout(tmp_path: Path) -> Path:
     script = checkout / "scripts" / "operacion" / "deploy_refresh.sh"
     script.parent.mkdir(parents=True)
     script.write_bytes(DEPLOY_SCRIPT.read_bytes().replace(b"\r\n", b"\n"))
+    (checkout / "docker-compose.celery.yml").write_text(
+        "services: {}\n", encoding="utf-8"
+    )
     (checkout / "docker-compose.deploy.yml").write_text(
         "services: {}\n",
         encoding="utf-8",

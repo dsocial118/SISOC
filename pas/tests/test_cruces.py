@@ -104,22 +104,11 @@ def test_actualizacion_manual_renaper_fuerza_control_y_redirige(
     usuario_pas,
 ):
     client.force_login(usuario_pas)
-    with patch(
-        "pas.views.sincronizar_supervivencia_pas",
-        return_value={
-            "total": 3,
-            "vigentes": 2,
-            "fallecidas": 1,
-            "no_encontradas": 0,
-            "errores": 0,
-            "omitidas": 0,
-        },
-    ) as sincronizar:
+    with patch("pas.views.request_run") as solicitar:
         response = client.post(reverse("pas_cruces_actualizar_renaper"))
-
     assert response.status_code == 302
     assert response.url == reverse("pas_cruces")
-    sincronizar.assert_called_once_with(forzar=True)
+    solicitar.assert_called_once_with(actor=usuario_pas)
 
 
 @pytest.mark.django_db

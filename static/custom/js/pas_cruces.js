@@ -6,7 +6,7 @@
         }
         form.addEventListener("submit", function (event) {
             const confirmado = window.confirm(
-                "Se volverá a consultar RENAPER para todo el padrón PAS. ¿Desea continuar?"
+                "Se solicitará el control mensual RENAPER. Si ya existe, se conservará esa corrida. ¿Desea continuar?"
             );
             if (!confirmado) {
                 event.preventDefault();

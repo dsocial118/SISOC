@@ -66,6 +66,13 @@
             <div class="pas-cruces-heading">
                 <div>
                     <h2>Supervivencia RENAPER</h2>
+                    <p>Control mensual: último día del mes a las 02:00 (Argentina).</p>
+                    {% if corrida_renaper %}
+                        <p>
+                            Corrida #{{ corrida_renaper.id }} · {{ corrida_renaper.status }} · {{ corrida_renaper.processed }}/{{ corrida_renaper.total }} procesados. Actualice la página para consultar el avance.
+                        </p>
+                        <p>Última actividad: {{ corrida_renaper.heartbeat|date:"d/m/Y H:i"|default:"Pendiente de inicio" }}</p>
+                    {% endif %}
                     {% if resumen_renaper.fecha %}
                         <p>
                             Actualizado {{ resumen_renaper.fecha|date:"d/m/Y" }} · {{ resumen_renaper.total }} controles · {{ resumen_renaper.errores }} errores

@@ -61,7 +61,7 @@
 
 ## PAS
 
-- `sincronizar_supervivencia_pas`: consulta diariamente el padrón PAS mediante el cliente RENAPER compartido, registra el resultado por persona y genera incompatibilidades de supervivencia por fallecimiento. Admite `--fecha`, `--limite` y `--forzar`; el cron productivo está documentado en `scripts/crontab`.
+- `sincronizar_supervivencia_pas`: solicita una corrida mensual en Celery; admite `--fecha` y `--reanudar ID`. Ver `docs/implementaciones/pas_control_mensual_celery.md`.
 
 ## Nota
 - Los comandos `test_*` presentes en algunas apps se consideran utilitarios de desarrollo/regresion y no forman parte del inventario operativo principal.

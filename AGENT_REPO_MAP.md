@@ -168,8 +168,9 @@ SISOC/
 
 ### Hechos observados
 
-- No hay Celery ni broker declarado.
-- La asincronia es "simple":
+- PAS usa Celery/Redis mediante `docker-compose.celery.yml`; mantiene un solo
+  lote activo global y paralelismo acotado dentro del lote.
+- El resto de la asincronia sigue siendo "simple":
   - hilos / `ThreadPoolExecutor` en syncs (`comedores/tasks.py`, `relevamientos/tasks.py`);
   - workers dedicados por `DJANGO_SERVICE_ROLE` en `docker/django/entrypoint.py`.
 
@@ -201,11 +202,11 @@ SISOC/
 | Docker/puertos | `DOCKER_MYSQL_PORT_FORWARD`, `DOCKER_DJANGO_PORT_FORWARD`, `DOCKER_DEBUGGER_PORT_FORWARD`, `RUN_UID`, `RUN_GID` |
 | Runtime | `RUN_MAKEMIGRATIONS_ON_START`, `GUNICORN_WORKERS`, `GUNICORN_THREADS` |
 | Seguridad/CSP | `ENABLE_CSP`, `CSP_REPORT_ONLY`, `CSP_ALLOW_UNSAFE_INLINE_SCRIPTS`, `CSP_ALLOW_UNSAFE_EVAL` |
-| Async | `DISABLE_ASYNC_THREADS` |
+| Async | `DISABLE_ASYNC_THREADS`, `CELERY_BROKER_URL`, `PAS_MONTHLY_ENABLED`, `PAS_BATCH_SIZE`, `PAS_BATCH_SECONDS`, `PAS_REQUESTS_PER_SECOND`, `PAS_CONCURRENCY`, `PAS_CIRCUIT_BREAKER_TIMEOUTS` |
 | Testing | `USE_SQLITE_FOR_TESTS`, `PYTEST_RUNNING` |
 | Integracion GESTIONAR | `GESTIONAR_INTEGRATION_ENABLED` (corte total de envíos, pulls y comandos), `GESTIONAR_API_KEY`, endpoints `GESTIONAR_API_*`, workers `GESTIONAR_*`, `DOMINIO` |
 | Ticketera | `TICKETERA_ENABLED` |
-| RENAPER | `RENAPER_API_USERNAME`, `RENAPER_API_PASSWORD`, `RENAPER_REQUEST_TIMEOUT_SECONDS`, retries/backoff; sin cache ni TTL de token |
+| RENAPER | `RENAPER_API_USERNAME`, `RENAPER_API_PASSWORD`, `RENAPER_REQUEST_TIMEOUT_SECONDS`, reintentos/espera incremental; el cliente permite reutilización en memoria por worker, sin cache compartida ni TTL |
 | Google Maps | `GOOGLE_MAPS_API_KEY` |
 | Sentry | `SENTRY_ENABLED`, `SENTRY_DSN`, `SENTRY_RELEASE` |
 | Email/password reset | `EMAIL_*`, `DEFAULT_FROM_EMAIL`, `PASSWORD_RESET_TIMEOUT`, `INITIAL_PASSWORD_MAX_AGE_HOURS` |
@@ -890,3 +891,8 @@ Marcar esas zonas como `A inferir` hasta relevarlas cuando una tarea real las to
 - `.codex/environments/environment.toml`
 - inventario de archivos con `git ls-files`
 - inventario estructural de apps y scripts via shell
+
+## PAS Celery mensual
+- `config/celery.py`, `pas/tasks.py`, `pas/services/supervivencia_jobs.py`: programación, reconciliación y un lote exclusivo por MySQL GET_LOCK; dentro del lote, ventanas transaccionales, dos clientes por hilo y límite agregado inicial de 16 solicitudes/s.
+- `docker-compose.celery.yml` se incorpora desde deploy_refresh; Redis persistente, Beat único y worker PAS.
+- Runbook funcional: `docs/implementaciones/pas_control_mensual_celery.md`; retirada cron: `scripts/infra/remove_pas_cron.sh`.
