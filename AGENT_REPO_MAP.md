@@ -454,6 +454,8 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - `comedores/services/`
 - `comedores/api_views.py`
 - `comedores/api_views_territorial.py` (scope provincial PWA, altas idempotentes y edición)
+- `comedores/api_serializers.py::TerritorialComedorWriteSerializer` (validacion de
+  altas/ediciones territoriales, catalogos y jerarquia geografica)
 - tests del root `tests/test_comedor*`, `tests/test_comedores*`
 - docs de flujo: `docs/flujos/comedor_sync.md`
 - certificaciones mensuales de prestaciones: regla de pendiente en

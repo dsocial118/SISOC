@@ -13,7 +13,7 @@
 
 ## Arquitectura tocada
 
-- No se detectó un patrón arquitectónico dominante más allá del diff observado.
+- Existen cambios de persistencia o migraciones que requieren revisión de datos.
 
 ## Decisiones y supuestos detectados
 
@@ -31,6 +31,7 @@
 - Empezar por `docs/registro/prs/PR-2474.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
 - `AGENT_REPO_MAP.md`
+- `comedores/models.py`
 - `docs/contexto/features/pr-2474-feat-deploy-preparar-activacion-web-de-datacalle-y-gestionar.md`
 - `docs/operacion/deploy_pwas.md`
 - `docs/operacion/nginx/sisoc-pwas.conf`
