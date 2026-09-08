@@ -23,8 +23,10 @@ historicas ni los proyectos Compose al cambiar un nombre en GitHub.
 
 Estado del aprovisionamiento del 2026-09-08: acceso privado a los tres repos
 verificado en HML/PRD, include inicial de Nginx instalado y build de Espacios
-preparado en HML sin activacion. Los checkouts de las apps nuevas esperan la
-creacion de sus directorios por root. Ver evidencia y pendientes en
+preparado en HML sin activacion. DataCalle y Gestionar ya estan clonados en
+`/sisoc/DataCalle` y `/sisoc/Gestionar` en ambos hosts, rama main y propietario
+sisoc-deploy. El permiso sudo temporal fue retirado y su revocacion verificada.
+Las apps nuevas siguen deshabilitadas. Ver evidencia y pendientes en
 [registro operativo](../registro/cambios/2026-09-08-coordinacion-pwa-privadas.md).
 
 ## Aprovisionamiento previo a fusionar/desplegar

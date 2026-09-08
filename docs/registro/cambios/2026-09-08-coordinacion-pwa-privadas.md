@@ -82,7 +82,24 @@ Ver [operacion y contrato de build](../../operacion/deploy_pwas.md).
   [documentacion oficial](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/githubs-ssh-key-fingerprints),
   conservando StrictHostKeyChecking=yes.
 
-Pendiente: root debe crear `/sisoc/DataCalle` y `/sisoc/Gestionar` con owner
-sisoc-deploy y modo 0750 para completar los checkouts. El permiso temporal debe
-retirarse al terminar ese aprovisionamiento. El PR sigue sin fusionarse; la
-activacion del nuevo workflow y las pruebas funcionales son pasos separados.
+## Cierre del aprovisionamiento
+
+Tras la creacion de directorios por root, se clonaron en HML y PRD:
+
+- `/sisoc/DataCalle`: main en `27140ae5bb5b4a3b119847c4924d387c6b9949ec`.
+- `/sisoc/Gestionar`: main en `d249a7105f0a73ca33c00ff6a599d8f03ccdb00c`.
+
+Los cuatro checkouts quedaron limpios, con owner sisoc-deploy:sisoc-deploy,
+modo 0750 y `core.sshCommand` apuntando a su clave dedicada. Se comprobo igualdad
+entre HEAD y main remoto mediante acceso autenticado, y modo 600 de los `.env`
+originales resguardados fuera de los checkouts.
+
+`nginx -t` volvio a pasar en ambos hosts. Se elimino
+`/etc/sudoers.d/sisoc-pwa-temporal` y se verifico que jportilla ya no puede ejecutar
+el comando autorizado como sisoc-deploy sin autenticacion. Las claves de lectura
+del runner permanecen instaladas; su uso por Actions no depende de este sudo.
+
+El PR sigue sin fusionarse. DataCalle/Gestionar permanecen deshabilitadas hasta
+completar sus builds web y configuraciones de entorno. La activacion del nuevo
+workflow, la migracion de la ruta de Espacios y las pruebas funcionales siguen
+siendo pasos separados.
