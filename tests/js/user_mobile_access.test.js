@@ -100,3 +100,15 @@ test('reopening a suspended coordinator hides retained selections', () => {
   assert.equal(elements['mobile-coordinator-scope-wrapper'].style.display, 'none');
   assert.equal(elements['mobile-rendicion-permission-wrapper'].style.display, 'none');
 });
+
+test('DataCalle details follow its own checkbox and preserve mobile access', () => {
+  const { elements, change } = loadForm({
+    es_representante_pwa: true, es_relevador_calle: true,
+  });
+  assert.equal(elements['relevador-calle-detalle-wrapper'].style.display, '');
+  change('es_relevador_calle', false);
+  assert.equal(elements['relevador-calle-detalle-wrapper'].style.display, 'none');
+  change('es_relevador_calle', true);
+  assert.equal(elements['relevador-calle-detalle-wrapper'].style.display, '');
+  assert.equal(elements.id_es_representante_pwa.checked, true);
+});

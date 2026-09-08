@@ -589,12 +589,11 @@
                 {% endif %}
                 <div class="card mb-4">
                     <div class="card-header">
-                        <h5>Acreditaciones del último convenio</h5>
+                        <h5>Monto total conveniado</h5>
                     </div>
                     <div class="card-body">
                         <div class="row">
-                            {% if form.acreditaciones_ultimo_convenio %}
-                                <div class="col-md-6 mb-3">{{ form.acreditaciones_ultimo_convenio|as_crispy_field }}</div>
+                            {% if form.monto_total_conveniado_informe %}
                                 <div class="col-md-6 mb-3">{{ form.monto_total_conveniado_informe|as_crispy_field }}</div>
                             {% else %}
                                 <div class="col-md-6 mb-3">{{ form.monto_total_conveniado|as_crispy_field }}</div>

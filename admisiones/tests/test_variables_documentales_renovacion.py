@@ -2,13 +2,18 @@ from decimal import Decimal
 from importlib import import_module
 
 import pytest
+from django import forms
 from django.apps import apps
 from django.db import models
 from django.template import Context, Engine
 from django.utils import timezone
 
 from core.models import Localidad, Municipio, Provincia
-from admisiones.forms.admisiones_forms import InformeTecnicoBaseForm
+from admisiones.forms.admisiones_forms import (
+    InformeTecnicoBaseForm,
+    InformeTecnicoJuridicoForm,
+    _configurar_selectores_geograficos,
+)
 from admisiones.models.admisiones import (
     Admision,
     InformeTecnico,
@@ -165,6 +170,7 @@ def test_renderiza_las_variables_documentales_desde_el_contexto(comedor):
     )
 
     assert contenido == "DI-INC-1|IF-2026-123"
+    assert "acreditaciones_ultimo_convenio" not in contexto
 
 
 @pytest.mark.django_db
@@ -212,6 +218,59 @@ def test_informe_tecnico_usa_selects_del_catalogo_y_preserva_el_snapshot(comedor
     assert form.fields["localidad_espacio"].widget.input_type == "select"
     assert form.initial["provincia_espacio"] == str(provincia.pk)
     assert form.initial["localidad_espacio"] == str(localidad.pk)
+
+
+@pytest.mark.django_db
+def test_selectores_geograficos_listan_provincias_y_validan_localidades_dinamicas():
+    provincia = Provincia.objects.create(nombre="Provincia catálogo")
+    municipio = Municipio.objects.create(
+        nombre="Municipio catálogo", provincia=provincia
+    )
+    localidad = Localidad.objects.create(
+        nombre="Localidad catálogo", municipio=municipio
+    )
+
+    class FormularioGeografico(forms.Form):
+        responsable_tarjeta_provincia = forms.CharField(required=True)
+        responsable_tarjeta_localidad = forms.CharField(required=True)
+        provincia_poblacion_destinataria = forms.CharField(required=True)
+
+    form = FormularioGeografico(
+        data={
+            "responsable_tarjeta_provincia": provincia.pk,
+            "responsable_tarjeta_localidad": localidad.pk,
+            "provincia_poblacion_destinataria": provincia.pk,
+        }
+    )
+    _configurar_selectores_geograficos(form)
+
+    assert (str(provincia.pk), provincia.nombre) in list(
+        form.fields["responsable_tarjeta_provincia"].choices
+    )
+    assert (str(provincia.pk), provincia.nombre) in list(
+        form.fields["provincia_poblacion_destinataria"].choices
+    )
+    assert form.is_valid()
+    assert form.cleaned_data["responsable_tarjeta_provincia"] == provincia.nombre
+    assert form.cleaned_data["responsable_tarjeta_localidad"] == localidad.nombre
+
+
+@pytest.mark.django_db
+def test_informe_tecnico_no_muestra_acreditaciones_del_ultimo_convenio(comedor):
+    admision = Admision.objects.create(
+        comedor=comedor,
+        tipo="renovacion",
+        estado_financiamiento="vigente",
+    )
+
+    formularios = (
+        InformeTecnicoBaseForm(admision=admision),
+        InformeTecnicoJuridicoForm(admision=admision),
+    )
+
+    for form in formularios:
+        assert "acreditaciones_ultimo_convenio" not in form.fields
+        assert "monto_total_conveniado_informe" in form.fields
 
 
 @pytest.mark.django_db

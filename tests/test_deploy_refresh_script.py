@@ -60,6 +60,10 @@ case "$1 ${2:-} ${3:-}" in
   "remote get-url origin") cat "$repo/.origin" ;;
   "remote set-url origin") printf '%s\\n' "$4" > "$repo/.origin" ;;
   "fetch origin --prune") exit 0 ;;
+  "fetch origin --no-tags") exit "${FAKE_FETCH_ERROR:-0}" ;;
+  "rev-parse FETCH_HEAD^{commit} ") printf '%s\\n' aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa ;;
+  "merge-base --is-ancestor HEAD") exit 0 ;;
+  "merge --ff-only aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa") exit 0 ;;
   "rev-parse origin/development ") printf '%s\\n' "${FAKE_ORIGIN_SHA:-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}" ;;
   "rev-parse HEAD ") printf '%s\\n' "${FAKE_HEAD_SHA:-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}" ;;
   "merge --ff-only origin/development") exit 0 ;;
@@ -78,6 +82,7 @@ def _run_deploy(
     dry_run: bool = True,
     expected_revision: str | None = None,
     origin_revision: str | None = None,
+    backend_only: bool = False,
 ) -> subprocess.CompletedProcess[str]:
     backend_checkout = _backend_checkout(tmp_path)
     env_file = tmp_path / ".env"
@@ -99,6 +104,8 @@ def _run_deploy(
         env["FAKE_ORIGIN_SHA"] = origin_revision
     if dry_run:
         args.append("--dry-run")
+    if backend_only:
+        args.append("--without-mobile")
     if expected_revision:
         args.extend(["--expected-revision", expected_revision])
     args.extend(
@@ -122,19 +129,33 @@ def _run_deploy(
     )
 
 
-def test_mobile_ssh_origin_se_normaliza_a_https(tmp_path):
+def test_mobile_ssh_origin_conserva_autenticacion(tmp_path):
     checkout = _mobile_checkout(
         tmp_path,
-        "git@github.com:dsocial118/SISOC-Mobile.git",
+        "git@github.com:dsocial118/Espacios-Comunitarios.git",
     )
 
     result = _run_deploy(tmp_path, checkout, dry_run=False)
 
     assert result.returncode == 0, result.stderr
-    assert "Normalizando origin de SISOC-Mobile a HTTPS publica." in result.stdout
+    assert "remote set-url" not in result.stdout
     assert (checkout / ".origin").read_text(encoding="utf-8").strip() == (
-        HTTPS_MOBILE_REMOTE
+        "git@github.com:dsocial118/Espacios-Comunitarios.git"
     )
+
+
+def test_mobile_fetch_fallido_bloquea_backend(tmp_path, monkeypatch):
+    checkout = _mobile_checkout(tmp_path, HTTPS_MOBILE_REMOTE)
+    monkeypatch.setenv("FAKE_FETCH_ERROR", "1")
+    result = _run_deploy(tmp_path, checkout, dry_run=False)
+    assert result.returncode != 0
+    assert "docker compose" not in result.stdout
+
+
+def test_backend_only_no_inspecciona_mobile(tmp_path):
+    result = _run_deploy(tmp_path, tmp_path / "mobile-inexistente", backend_only=True)
+    assert result.returncode == 0, result.stderr
+    assert "fetch origin --no-tags main" not in result.stdout
 
 
 def test_mobile_https_origin_no_necesita_cambio(tmp_path):

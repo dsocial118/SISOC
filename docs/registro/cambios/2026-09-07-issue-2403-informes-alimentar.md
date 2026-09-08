@@ -14,7 +14,9 @@ exponer la sección histórica de resolución de pago.
   esos datos y acceso directo a su edición.
 - Los siete campos geográficos del Informe Técnico ahora usan el catálogo
   territorial; los valores históricos que ya no existan en el catálogo se
-  mantienen explícitamente al editar el informe.
+  mantienen explícitamente al editar el informe. Las provincias se entregan
+  desde el servidor y las localidades se cargan según la provincia elegida,
+  incluyendo su validación al guardar.
 - Los informes de renovación nuevos precargan responsable y prestaciones de la
   última admisión anterior activa con informe finalizado, aplicando el
   complementario validado cuando corresponde.
@@ -23,6 +25,9 @@ exponer la sección histórica de resolución de pago.
 - Se agregó el criterio `D - Equivalencias` y se ocultaron los campos de
   resolución de pago en formularios, visualización, PDF y ambas plantillas
   DOCX, sin borrar las columnas históricas.
+- Se removió Acreditaciones del último convenio de los formularios y del
+  contexto DOCX de Informe Técnico; el monto total conveniado permanece como
+  dato aplicable.
 
 ## Validación
 

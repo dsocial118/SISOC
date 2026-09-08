@@ -1,0 +1,192 @@
+{% extends "includes/main.html" %}
+{% load static %}
+{% load crispy_forms_tags %}
+{% block title %}{{ titulo }}{% endblock %}
+{% block content %}
+    <link rel="stylesheet" href="{% static 'custom/css/datacalle.css' %}" />
+
+    <div class="dc-header">
+        <div>
+            <h1 class="dc-header__title">{{ titulo }}</h1>
+            <div class="dc-header__meta">
+                <span><i class="fas fa-mobile-alt"></i>El operativo le llega como tarea a los entrevistadores del equipo</span>
+            </div>
+        </div>
+        <div class="dc-header__actions">
+            <a href="{% url 'datacalle_relevamientos_listar' %}"
+               class="btn btn-secondary btn-sm">
+                <i class="fas fa-arrow-left mr-1"></i> Volver
+            </a>
+        </div>
+    </div>
+
+    <form method="post" novalidate>
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+
+        <div class="dc-form-seccion">
+            <div class="dc-form-seccion__header">
+                <h2 class="dc-form-seccion__titulo">
+                    <i class="fas fa-tag"></i>Identificación
+                </h2>
+            </div>
+            <div class="dc-form-seccion__body">
+                <div class="row">
+                    <div class="col-12">{{ form.denominacion|as_crispy_field }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="dc-form-seccion">
+            <div class="dc-form-seccion__header">
+                <h2 class="dc-form-seccion__titulo">
+                    <i class="fas fa-map-marked-alt"></i>Dónde se releva
+                </h2>
+                <span class="dc-form-seccion__ayuda">La fase define si el lugar es un área del espacio público o un dispositivo de alojamiento.</span>
+            </div>
+            <div class="dc-form-seccion__body">
+                <div class="row">
+                    <div class="col-md-4">{{ form.provincia|as_crispy_field }}</div>
+                    <div class="col-md-4">{{ form.municipio|as_crispy_field }}</div>
+                    <div class="col-md-4">{{ form.localidades|as_crispy_field }}</div>
+                    <div class="col-md-4">{{ form.fase|as_crispy_field }}</div>
+                    <div class="col-md-8" id="campo-area-operativa">{{ form.area_operativa|as_crispy_field }}</div>
+                    <div class="col-md-8" id="campo-dispositivo">{{ form.dispositivo|as_crispy_field }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="dc-form-seccion">
+            <div class="dc-form-seccion__header">
+                <h2 class="dc-form-seccion__titulo">
+                    <i class="fas fa-calendar-alt"></i>Cuándo
+                </h2>
+                <span class="dc-form-seccion__ayuda">Puede durar un día o varios.</span>
+            </div>
+            <div class="dc-form-seccion__body">
+                <div class="row align-items-center">
+                    <div class="col-md-4">{{ form.fecha_inicio|as_crispy_field }}</div>
+                    <div class="col-md-4">{{ form.fecha_fin|as_crispy_field }}</div>
+                    <div class="col-md-4">{{ form.modalidad_papel|as_crispy_field }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="dc-form-seccion">
+            <div class="dc-form-seccion__header">
+                <h2 class="dc-form-seccion__titulo">
+                    <i class="fas fa-users"></i>Equipo
+                </h2>
+                <span class="dc-form-seccion__ayuda">Sólo los entrevistadores elegidos ven el operativo en la app.</span>
+            </div>
+            <div class="dc-form-seccion__body">
+                <div class="row">
+                    <div class="col-12">{{ form.equipo|as_crispy_field }}</div>
+                    <div class="col-12">{{ form.observaciones|as_crispy_field }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="dc-form-acciones">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save mr-1"></i> Guardar
+            </button>
+            <a href="{% url 'datacalle_relevamientos_listar' %}"
+               class="btn btn-secondary">Cancelar</a>
+        </div>
+    </form>
+{% endblock %}
+{% block customJS %}
+    <script nonce="{{ request.csp_nonce }}">
+  (() => {
+    const fase = document.getElementById('id_fase');
+    const campoArea = document.getElementById('campo-area-operativa');
+    const campoDispositivo = document.getElementById('campo-dispositivo');
+    if (!fase) {
+      return;
+    }
+    const sincronizarFase = () => {
+      const esEspacioPublico = fase.value === 'espacio_publico';
+      if (campoArea) {
+        campoArea.style.display = esEspacioPublico ? '' : 'none';
+      }
+      if (campoDispositivo) {
+        campoDispositivo.style.display = esEspacioPublico ? 'none' : '';
+      }
+    };
+    fase.addEventListener('change', sincronizarFase);
+    sincronizarFase();
+  })();
+
+  (() => {
+    // Cascada provincia -> municipio -> localidades con los endpoints de core.
+    const provincia = document.getElementById('id_provincia');
+    const municipio = document.getElementById('id_municipio');
+    const localidades = document.getElementById('id_localidades');
+    if (!provincia || !municipio || !localidades) {
+      return;
+    }
+    const urlMunicipios = '{% url "ajax_load_municipios" %}';
+    const urlLocalidades = '{% url "ajax_load_localidades" %}';
+
+    // select2 emite "change" de jQuery, que no ejecuta listeners nativos: hay
+    // que bindear por jQuery cuando existe (mismo criterio que centro_create_form.js).
+    const alCambiar = (select, handler) => {
+      if (window.jQuery) {
+        window.jQuery(select).on('change', handler);
+        return;
+      }
+      select.addEventListener('change', handler);
+    };
+
+    // Y tras reemplazar las <option> hay que reinicializar select2, o sigue
+    // mostrando la lista vieja.
+    const refrescar = (select) => {
+      if (window.refreshSelect2Element) {
+        window.refreshSelect2Element(select);
+      }
+    };
+
+    const reemplazar = (select, filas, etiquetaVacia) => {
+      select.innerHTML = '';
+      if (etiquetaVacia !== null) {
+        const vacia = document.createElement('option');
+        vacia.value = '';
+        vacia.textContent = etiquetaVacia;
+        select.appendChild(vacia);
+      }
+      filas.forEach((fila) => {
+        const option = document.createElement('option');
+        option.value = fila.id;
+        option.textContent = fila.nombre;
+        select.appendChild(option);
+      });
+      refrescar(select);
+    };
+
+    const cargar = async (url, params, select, etiquetaVacia) => {
+      const valor = Object.values(params)[0];
+      if (!valor) {
+        reemplazar(select, [], etiquetaVacia);
+        return;
+      }
+      reemplazar(select, [], 'Cargando...');
+      try {
+        const res = await fetch(url + '?' + new URLSearchParams(params));
+        reemplazar(select, await res.json(), etiquetaVacia);
+      } catch (e) {
+        reemplazar(select, [], etiquetaVacia);
+      }
+    };
+
+    alCambiar(provincia, () => {
+      cargar(urlMunicipios, { provincia_id: provincia.value }, municipio, 'Seleccionar municipio...');
+      reemplazar(localidades, [], null);
+    });
+
+    alCambiar(municipio, () => {
+      cargar(urlLocalidades, { municipio_id: municipio.value }, localidades, null);
+    });
+  })();
+    </script>
+{% endblock %}
