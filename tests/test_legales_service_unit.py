@@ -219,6 +219,11 @@ def test_guardar_actions_common_flows(mocker):
     mocker.patch("admisiones.services.legales_service.messages.error")
     mocker.patch("admisiones.services.legales_service.redirect", return_value="r")
     mocker.patch.object(module.LegalesService, "_safe_redirect", return_value="sr")
+    mocker.patch.object(
+        module.LegalesService,
+        "get_botones_disponibles",
+        return_value=["gde_pv_primera"],
+    )
     upd = mocker.patch.object(module.LegalesService, "actualizar_estado_por_accion")
     save_with_user = mocker.patch.object(
         module.LegalesService, "_save_formulario_with_user"
@@ -672,6 +677,11 @@ def test_guardar_primera_providencia_success_and_invalid(mocker):
         "admisiones.services.legales_service.slugify", return_value="dispo-test"
     )
     mocker.patch.object(module.LegalesService, "actualizar_estado_por_accion")
+    mocker.patch.object(
+        module.LegalesService,
+        "get_botones_disponibles",
+        return_value=["primera_providencia"],
+    )
     mocker.patch("admisiones.services.legales_service.messages.success")
     mocker.patch("admisiones.services.legales_service.messages.error")
     red = mocker.patch("admisiones.services.legales_service.redirect", return_value="r")
@@ -686,6 +696,51 @@ def test_guardar_primera_providencia_success_and_invalid(mocker):
         return_value=invalid,
     )
     assert module.LegalesService.guardar_primera_providencia(req, adm) == "r"
+
+
+def test_acciones_de_providencia_rechazan_post_fuera_de_secuencia(mocker):
+    """Un POST directo no debe reemitir una providencia ni pisar el GDE.
+
+    La UI oculta el botón, pero el servidor tiene que cortarlo igual: sin esto
+    se podía cambiar un número de GDE o regenerar el documento después de
+    avanzar a Jurídicos.
+    """
+    req = SimpleNamespace(
+        POST={},
+        FILES={},
+        user=SimpleNamespace(is_authenticated=True),
+        get_full_path=lambda: "/x",
+    )
+    adm = SimpleNamespace(
+        pk=77, estado_legales="Juridicos: Validado", tipo="incorporacion"
+    )
+
+    mocker.patch("admisiones.services.legales_service.messages.error")
+    mocker.patch.object(module.LegalesService, "_safe_redirect", return_value="sr")
+    mocker.patch.object(
+        module.LegalesService, "get_botones_disponibles", return_value=[]
+    )
+    form_primera = mocker.patch(
+        "admisiones.services.legales_service.PrimeraProvidenciaForm"
+    )
+    form_segunda = mocker.patch(
+        "admisiones.services.legales_service.SegundaProvidenciaForm"
+    )
+    form_gde = mocker.patch("admisiones.services.legales_service.ProvidenciaGDEPVForm")
+    providencias = mocker.patch(
+        "admisiones.services.legales_service.Providencia.objects.filter"
+    )
+
+    assert module.LegalesService.guardar_primera_providencia(req, adm) == "sr"
+    assert module.LegalesService.guardar_segunda_providencia(req, adm) == "sr"
+    assert module.LegalesService.guardar_gde_pv_primera(req, adm) == "sr"
+    assert module.LegalesService.guardar_gde_pv_segunda(req, adm) == "sr"
+
+    # Ninguna accion debe haber tocado datos.
+    assert not form_primera.called
+    assert not form_segunda.called
+    assert not form_gde.called
+    assert not providencias.called
 
 
 def test_get_legales_context_and_helpers(mocker):

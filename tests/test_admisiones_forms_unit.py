@@ -6,6 +6,7 @@ from types import SimpleNamespace
 
 import pytest
 
+from admisiones.models.admisiones import Providencia
 from admisiones.forms.admisiones_forms import (
     ConvenioForm,
     ConvenioNumIFFORM,
@@ -404,6 +405,28 @@ def test_numero_gde_pv_se_compila_sin_rellenar_ceros():
     assert form.is_valid(), form.errors
     # A diferencia del expediente, no se completa a 9 dígitos.
     assert form.cleaned_data["numero_gde_pv_compilado"] == "PV-2025-103-APN-DPS#MCH"
+
+
+def test_numero_gde_pv_entra_en_el_campo_con_reparticion_y_organismo_maximas():
+    """El número armado con los máximos del formulario debe entrar en el modelo.
+
+    Repartición y organismo aceptan 50 caracteres cada uno, así que el número
+    compilado puede llegar a 123 caracteres.
+    """
+    form = ProvidenciaGDEPVForm(
+        data={
+            "pv_anio": "2025",
+            "pv_numero": "103008562",
+            "pv_reparticion": "R" * 50,
+            "pv_organismo": "O" * 50,
+        }
+    )
+
+    assert form.is_valid(), form.errors
+    numero = form.cleaned_data["numero_gde_pv_compilado"]
+    assert len(numero) == 123
+    for campo in ("numero_gde_pv", "numero_pv_primera"):
+        assert len(numero) <= Providencia._meta.get_field(campo).max_length
 
 
 @pytest.mark.parametrize("anio", ["25", "20255"])
