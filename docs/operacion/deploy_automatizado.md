@@ -2,7 +2,9 @@
 
 Estado: runbook operativo para automatizar el deploy de SISOC en QA, homologacion y produccion usando GitHub Actions con runners self-hosted instalados en cada servidor de aplicacion.
 
-El workflow no usa runners cloud ni `actions/checkout`: cada runner ejecuta el script local `scripts/operacion/deploy_refresh.sh` dentro del checkout ya provisionado en el servidor.
+El workflow no usa runners cloud ni `actions/checkout`: opera sobre el checkout
+provisionado en el servidor. HML y PRD extraen el helper de backend y el
+coordinador PWA desde el SHA del evento aprobado; QA conserva el helper local.
 
 ## Flujo operativo
 
@@ -19,25 +21,28 @@ correspondiente. El runner local:
 2. entra al checkout provisionado en el servidor;
 3. verifica que `origin/<branch>` siga siendo el SHA exacto que disparó el
    workflow, antes de bajar Docker;
-4. registra `git rev-parse HEAD` como referencia previa de rollback y ejecuta
-   `deploy_refresh.sh --expected-revision <SHA>`;
+4. en HML/PRD prepara las imagenes de main de las PWA habilitadas antes de
+   interrumpir servicios; registra `git rev-parse HEAD` como referencia previa
+   de rollback y ejecuta `deploy_refresh.sh --expected-revision <SHA>`;
 5. prueba `migrate --check`, el healthcheck específico del entorno y registra
-   el SHA realmente desplegado en el summary del job.
+   el SHA realmente desplegado en el summary del job; en HML/PRD activa luego
+   las imagenes PWA preparadas y comprueba su salud.
 
 Como el entrypoint del contenedor aplica migraciones durante el arranque, QA,
 homologación y producción consultan ambos checks mediante sondeo acotado: continúan apenas
 las migraciones y el healthcheck responden, o publican el último error después
-del límite. Para homologación, si el checkout local aún no admite
-`--expected-revision`, el workflow hace primero un `merge --ff-only` de la
-revisión ya verificada; así conserva la validación de SHA sin requerir una
-intervención manual de bootstrap.
+del límite. HML y PRD usan el helper extraido del SHA verificado, con
+`SISOC_ROOT_DIR` apuntando al checkout real y `--without-mobile` para separar
+la preparacion/activacion de las PWA del reinicio del backend.
 
 El script existente conserva las validaciones operativas: lee `ENVIRONMENT`
 desde `.env`, valida branch esperada, ejecuta `docker compose config -q`, baja
 el stack sin volumenes, hace `git fetch` y un `merge --ff-only` de la referencia
 ya verificada, y levanta con `up -d --build`.
-Cuando incluye SISOC-Mobile, valida que `origin` sea el repositorio publico
-esperado y normaliza las variantes SSH conocidas a HTTPS antes del downtime.
+El modo manual legacy `--with-mobile` conserva el transporte autenticado de
+Espacios Comunitarios y comprueba el fetch antes del downtime. Los repositorios
+PWA son privados. El acceso, contrato de build, registro de apps habilitadas,
+recuperacion y transicion de Nginx se detallan en [deploy PWA](deploy_pwas.md).
 
 ## Inspeccion de talla legacy en produccion
 
@@ -154,8 +159,9 @@ El usuario del runner debe tener:
 - pertenencia al grupo `docker` o permisos equivalentes para ejecutar `docker compose`;
 - permisos de lectura/escritura sobre `APP_ROOT`;
 - acceso Git al remoto de SISOC con la deploy key `github-sisoc`;
-- para SISOC-Mobile no hace falta una clave SSH: el repositorio publico usa
-  `https://github.com/dsocial118/SISOC-Mobile.git`;
+- acceso de solo lectura a las PWA privadas habilitadas, con identidades
+  dedicadas segun [deploy PWA](deploy_pwas.md); Espacios Comunitarios conserva
+  la carpeta historica `/sisoc/SISOC-Mobile`;
 - `.env` real del entorno presente en `APP_ROOT` con permisos `600`;
 - branch correcta para el entorno (`development`, `homologacion` o `main`).
 

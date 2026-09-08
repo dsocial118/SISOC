@@ -4,6 +4,14 @@ Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrollador
 
 ## Como leer este documento
 
+- PWA privadas: `scripts/operacion/pwas.json` declara Espacios Comunitarios,
+  DataCalle y Gestionar. `deploy_pwas.py` prepara snapshots/imagenes antes del
+  downtime y activa despues del health del backend; las apps nuevas estan
+  deshabilitadas hasta completar su conversion web. Operacion y contrato de build:
+  `docs/operacion/deploy_pwas.md`. `render_pwa_nginx.py` genera un include de servidor
+  y una vista previa que no debe instalarse. No mover `/sisoc/SISOC-Mobile` ni
+  asumir acceso publico de Git. Estado privado de releases: `SISOC/.deploy/pwa/`.
+
 - `Hecho observado`: confirmado leyendo codigo, config, workflows o docs del repo.
 - `Inferencia`: deduccion razonable por nombres, estructura o convenciones, pero no validada en profundidad.
 - `No confirmado`: no encontre evidencia suficiente en esta exploracion acotada.
