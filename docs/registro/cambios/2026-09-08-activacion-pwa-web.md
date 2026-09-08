@@ -40,7 +40,7 @@ mantienen snapshots de main, gates, runtime, aislamiento y rollback existentes.
 - Navegador local: ambas pantallas de ingreso cargan sin errores de consola.
 - Gestionar emite aviso Fontconfig al compilar; el icono PNG generado fue
   inspeccionado y conserva el simbolo del producto.
-- Pendientes: build/activacion en hosts, TLS/rutas publicas finales, sesion real,
+- Pendientes: activacion en hosts, TLS/rutas publicas finales, sesion real,
   permisos, instalacion, persistencia y sincronizacion, actualizacion desde una
   version instalada. El health HTTP no acredita estos flujos.
 
@@ -61,3 +61,37 @@ la configuracion propuesta del estado efectivamente instalado.
   No se eliminaron caches, imagenes ni volumenes.
 - Revalidacion publica de DataCalle: API HML 404 HTML, PRD 401 JSON.
 - No hubo activacion de contenedores ni cambios/reloads de Nginx.
+
+## Builds en servidores despues de recuperar espacio
+
+El usuario recupero espacio y DataCalle #1 fue incorporado. Se ejecuto prepare
+del coordinador con el registro completo en HML y luego PRD. Cada entorno
+construyo desde main: Espacios f4f61ee61ce2ce7fe9e21475234ecf943c8227a0,
+DataCalle 56436c67a319140ccada38c862eba6f65fcf188a y Gestionar
+df4bce1a267e486326a2d3dd068268d7b618f8f0. Ambos estados terminaron prepared.
+
+- HML: `/home/sisoc-deploy/.local/state/sisoc-pwa-ready-hml-20260908T202244Z`.
+- PRD: `/home/sisoc-deploy/.local/state/sisoc-pwa-ready-prd-20260908T202540Z`.
+
+Cada carpeta conserva herramientas usadas, release/state.json y los runtime.json
+con imagenes fijadas por ID. Se probo cada imagen con la configuracion de runtime
+del coordinador, en un proyecto Compose temporal sin red ni puertos publicados:
+health correcto, UID 101 y filesystem read-only. Los seis contenedores de prueba
+se retiraron. Se compararon los contenedores en servicio con el estado anterior
+capturado por prepare: no cambiaron. Nginx -t paso en ambos hosts.
+
+Espacio posterior: HML 20 GB libres, 79% de uso; PRD 576 GB libres, 24% de uso.
+No se activo la release ni se instalo el snippet nuevo. El permiso temporal sigue
+pendiente de retiro al finalizar la intervencion.
+
+La API faltante de HML esta versionada en main mediante SISOC #2452 y #2453,
+pero no aparece en config/urls.py de development ni homologacion al verificar.
+El endpoint de HML sigue devolviendo 404. Falta esa incorporacion y despliegue
+antes de validar autenticacion/sincronizacion.
+
+CI general del PR #2474, ejecucion 34272694992: 4784 tests pasan y fallan tres de
+tests/test_admisiones_forms_unit.py. El constructor de InformeTecnicoJuridicoForm
+consulta catalogos geograficos sin marca django_db/fixture de base en esos tests.
+Este PR no modifica esos archivos; deploy_guard falla como consecuencia del job
+pytest. Los 29 tests operativos pasan. No se mezclo una correccion de Admisiones
+en la integracion de infraestructura.

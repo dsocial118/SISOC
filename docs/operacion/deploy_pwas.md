@@ -54,18 +54,34 @@ versionado no equivale a un despliegue. Ver evidencia inicial en
    desconexion/reconexion. Despues repetir la promocion habitual y la instalacion
    del snippet en PRD, manteniendo su gate de autorizacion.
 
-Los builds locales HML/PRD y el arranque HTTP estan verificados; esos resultados
-no sustituyen el build en los hosts ni los flujos autenticados.
+Los builds locales y los builds/arranques aislados en los hosts HML/PRD estan
+verificados. Estos resultados no sustituyen activacion ni flujos autenticados.
 
 Actualizacion operativa del 2026-09-08: el usuario restablecio el permiso temporal
 y se verifico acceso como sisoc-deploy en ambos hosts. Se crearon los `.env` de
 DataCalle y Gestionar en la raiz de sus checkouts, propietario sisoc-deploy y modo
-600, con un comentario y sin secretos. Gestionar ya incorpora el empaquetado en
-main (`df4bce1a267e486326a2d3dd068268d7b618f8f0`); DataCalle sigue pendiente del PR #1.
-No se iniciaron builds ni se modifico Nginx: HML tiene 2,6 GB libres y 98% de uso.
-Docker informa 9,896 GB de cache de build recuperable; no se elimino cache,
-imagenes ni volumenes. Resolver capacidad antes de construir. El acceso temporal
-queda pendiente de retiro al completar la instalacion o cerrar la intervencion.
+600, con un comentario y sin secretos. Gestionar incorpora el empaquetado en
+main (`df4bce1a267e486326a2d3dd068268d7b618f8f0`) y DataCalle tambien
+(`56436c67a319140ccada38c862eba6f65fcf188a`). El usuario recupero espacio en HML;
+despues de los builds quedan 20 GB libres (79% de uso). PRD conserva 576 GB.
+Las tres imagenes por entorno estan preparadas y pasaron health aislado, usuario
+101 y filesystem read-only, sin puertos publicos. Se retiraron los contenedores
+de prueba; los servicios en uso no cambiaron. Nginx vigente pasa nginx -t.
+
+Estados privados de esta preparacion (no son una activacion ni reemplazan al
+prepare del proximo workflow):
+
+- HML: `~/.local/state/sisoc-pwa-ready-hml-20260908T202244Z/release/state.json`.
+- PRD: `~/.local/state/sisoc-pwa-ready-prd-20260908T202540Z/release/state.json`.
+
+Falta incorporar la API de DataCalle de los PRs SISOC #2452/#2453 a development
+y luego a homologacion: config/urls.py solo expone api/datacalle en main y el
+endpoint publico de HML sigue en 404. El PR #2474 ademas registra tres fallos de
+tests de Admisiones en la ejecucion 34272694992, sin cambios en esos formularios
+en este diff. Resolver esos gates antes de promover; los 29 tests operativos
+acotados pasan. No se modifico Nginx ni se activaron las apps nuevas.
+El acceso temporal queda pendiente de retiro al completar la instalacion o
+cerrar la intervencion.
 
 ### Restablecer acceso temporal para la instalacion
 
