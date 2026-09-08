@@ -34,6 +34,9 @@ las migraciones y el healthcheck responden, o publican el último error después
 del límite. HML y PRD usan el helper extraido del SHA verificado, con
 `SISOC_ROOT_DIR` apuntando al checkout real y `--without-mobile` para separar
 la preparacion/activacion de las PWA del reinicio del backend.
+El estado privado PWA se crea con umask 077. Solo el helper del backend usa
+umask 022 en un subshell para que el checkout actualizado sea legible por los
+workers con otros UID. Verificar su estabilidad ademas del healthcheck HTTP.
 
 El script existente conserva las validaciones operativas: lee `ENVIRONMENT`
 desde `.env`, valida branch esperada, ejecuta `docker compose config -q`, baja

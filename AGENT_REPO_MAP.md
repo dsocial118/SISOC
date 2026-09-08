@@ -18,6 +18,9 @@ Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrollador
   `docs/operacion/deploy_pwas.md`. `render_pwa_nginx.py` genera un include de servidor
   y una vista previa que no debe instalarse. No mover `/sisoc/SISOC-Mobile` ni
   asumir acceso publico de Git. Estado privado de releases: `SISOC/.deploy/pwa/`.
+  El helper de backend corre con umask 022 en un subshell; el estado PWA conserva
+  077. Verificar tambien estabilidad de workers tras desplegar: el healthcheck
+  HTTP no detecta errores de lectura de codigo en otros UID de contenedores.
 
 - `Hecho observado`: confirmado leyendo codigo, config, workflows o docs del repo.
 - `Inferencia`: deduccion razonable por nombres, estructura o convenciones, pero no validada en profundidad.
