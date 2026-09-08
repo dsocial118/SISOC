@@ -363,6 +363,12 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - `users/bootstrap/groups_seed.py`
 - `users/management/commands/create_groups.py`
 - templates en `users/templates/`
+- En el ABM de usuarios, `es_representante_pwa` es el interruptor general de
+  acceso mobile, incluido el coordinador PWA. `Profile.configuracion_mobile`
+  conserva las selecciones al suspender el acceso; no otorga permisos.
+  La migración es `users.0050` y la visibilidad vive en
+  `static/custom/js/user_mobile_access.js`. Validar con
+  `tests/test_users_pwa_forms.py` y `node tests/js/user_mobile_access.test.js`.
 - La autogestión vive en `MiCuentaForm`, `MiCuentaView` y la ruta `/mi-cuenta/`.
   La confirmación inicial usa `/mi-cuenta/confirmar/` y
   `ProfileConfirmationMiddleware`, registrado después del cambio de contraseña.
@@ -511,6 +517,11 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - `pwa/models.py`
 - `pwa/api_urls.py`
 - `pwa/api_views.py`
+- `users/services_pwa.py`: alcance PWA, accesos y coordinador de equipo técnico PWA.
+- `users/api_permissions.py`: permisos de lectura y veto transversal de escritura
+  para roles PWA de solo lectura.
+- Toda mutación PWA debe incluir `IsPWAWriteAllowed`, excepto las acciones
+  personales expresamente permitidas (contraseña y suscripciones push).
 - `pwa/services/`
 - alcance de nómina por admisión vigente o comedor directo:
   `pwa/services/nomina_queryset_service.py`
@@ -575,6 +586,28 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - `users/bootstrap/groups_seed.py`: grupos `Gestor de Encuestas` y `Encuestas Resultados`.
 - Doc funcional completa (modelo, reglas de negocio, permisos, decisiones y desvios respecto del plan original): `docs/registro/analisis/2026-08-28-modulo-encuestas.md`.
 - Limite conocido: la segmentacion por CUIT nunca matchea a un usuario individual (`users.Profile` no tiene CUIT propio, solo DNI/CUIL).
+### Si necesitas auditar o reparar mojibake en datos
+
+- Reparación conservadora compartida: `core/services/text_encoding.py`.
+- Prevención en RENAPER: `core/integrations/renaper.py`; el JSON se decodifica
+  desde bytes UTF-8 y el payload se normaliza antes de persistirse.
+- Auditoría read-only de campos explícitos: `python manage.py
+  audit_utf8_mojibake --field app.Model.campo`.
+- Reparación focalizada de nombres y apellidos: `python manage.py
+  repair_utf8_mojibake`; es dry-run por defecto y `--apply` requiere backup,
+  ventana y autorización operativa.
+- Diseño y runbook: `docs/plans/2026-09-01-reparacion-mojibake-datos-design.md`
+  y `docs/registro/cambios/2026-09-01-reparacion-mojibake-datos.md`.
+- La variante capitalizada (`ã` más una continuación que reconstruye una letra
+  mayúscula) usa el mismo comando y requiere un nuevo dry-run después de
+  desplegar el correctivo; ver
+  `docs/plans/2026-09-01-reparacion-mojibake-capitalizado-design.md` y
+  `docs/registro/cambios/2026-09-01-reparacion-mojibake-capitalizado.md`.
+- Las variantes restantes que reconstruyen minúsculas requieren además una
+  mayúscula artificial posterior y normalizan sólo el token afectado. El mismo
+  flujo corrige fronteras persistidas como `ÁNabelle`; ver
+  `docs/plans/2026-09-01-reparacion-mojibake-capitalizado-minusculas-design.md`
+  y `docs/registro/cambios/2026-09-01-reparacion-mojibake-capitalizado-minusculas.md`.
 
 ### Si necesitas cambiar OCR / procesamiento documental
 

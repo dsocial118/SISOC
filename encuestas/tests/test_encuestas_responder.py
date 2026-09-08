@@ -383,6 +383,26 @@ def test_escala_fuera_de_rango_no_se_guarda(usuario_creador, respondiente):
 
 
 @pytest.mark.django_db
+def test_escala_decimal_no_se_guarda(usuario_creador, respondiente):
+    encuesta = crear_encuesta(
+        usuario=usuario_creador,
+        titulo="Escala entera",
+        es_obligatoria=True,
+        duracion_ronda_dias=7,
+    )
+    pregunta = Pregunta.objects.create(
+        encuesta=encuesta, texto="Puntuá", tipo=TipoPregunta.ESCALA, orden=1
+    )
+    actualizar_segmentacion(encuesta, tipo=TipoSegmentacion.TODOS_LOS_USUARIOS)
+    ronda = publicar(encuesta, usuario=usuario_creador)
+
+    with pytest.raises(ValidationError):
+        registrar_respuesta(ronda, respondiente, {f"respuesta-{pregunta.pk}": "7.5"})
+
+    assert not RespuestaRonda.objects.filter(ronda=ronda).exists()
+
+
+@pytest.mark.django_db
 def test_registrar_respuesta_ronda_cerrada_falla(usuario_creador, respondiente):
     _, ronda = _publicar_con_pregunta_si_no(usuario_creador)
     ronda.estado = EstadoRonda.CERRADA

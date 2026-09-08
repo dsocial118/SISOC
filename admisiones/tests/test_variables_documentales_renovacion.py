@@ -7,6 +7,7 @@ from django.db import models
 from django.template import Context, Engine
 from django.utils import timezone
 
+from core.models import Localidad, Municipio, Provincia
 from admisiones.forms.admisiones_forms import InformeTecnicoBaseForm
 from admisiones.models.admisiones import (
     Admision,
@@ -188,6 +189,80 @@ def test_muestra_if_it_complementario_solo_para_renovacion_con_modificacion(come
     assert "if_it_complementario" in form_con_modificacion.fields
     assert not form_con_modificacion.fields["if_it_complementario"].required
     assert "if_it_complementario" not in form_sin_modificacion.fields
+
+
+@pytest.mark.django_db
+def test_informe_tecnico_usa_selects_del_catalogo_y_preserva_el_snapshot(comedor):
+    provincia = Provincia.objects.create(nombre="Provincia catálogo")
+    municipio = Municipio.objects.create(
+        nombre="Municipio catálogo", provincia=provincia
+    )
+    localidad = Localidad.objects.create(
+        nombre="Localidad catálogo", municipio=municipio
+    )
+    comedor.provincia = provincia
+    comedor.municipio = municipio
+    comedor.localidad = localidad
+    comedor.save(update_fields=["provincia", "municipio", "localidad"])
+    admision = Admision.objects.create(comedor=comedor, tipo="renovacion")
+
+    form = InformeTecnicoBaseForm(admision=admision)
+
+    assert form.fields["provincia_espacio"].widget.input_type == "select"
+    assert form.fields["localidad_espacio"].widget.input_type == "select"
+    assert form.initial["provincia_espacio"] == str(provincia.pk)
+    assert form.initial["localidad_espacio"] == str(localidad.pk)
+
+
+@pytest.mark.django_db
+def test_informe_nuevo_copia_el_ultimo_antecedente_activo_con_informe_finalizado(
+    comedor,
+):
+    anterior_valido = Admision.objects.create(
+        comedor=comedor,
+        tipo="renovacion",
+        activa=True,
+    )
+    crear_informe(
+        anterior_valido,
+        aprobadas_desayuno_lunes=31,
+        aprobadas_cena_domingo=17,
+    )
+    Admision.objects.create(comedor=comedor, tipo="renovacion", activa=True)
+    actual = Admision.objects.create(comedor=comedor, tipo="renovacion", activa=True)
+
+    form = InformeTecnicoBaseForm(admision=actual)
+
+    assert form.fields["aprobadas_ultimo_convenio_desayuno_lunes"].initial == 31
+    assert form.fields["aprobadas_ultimo_convenio_cena_domingo"].initial == 17
+
+
+@pytest.mark.django_db
+def test_exclusion_de_antecedente_no_llega_a_las_variables_documentales(comedor):
+    actual = Admision.objects.create(comedor=comedor, tipo="renovacion")
+    informe = crear_informe(
+        actual,
+        antecedentes_renovaciones=[
+            {
+                "incluida": True,
+                "resolucion": "INCLUIDA",
+                "convenio": "CONV-INCLUIDO",
+                "expediente": "EXP-INCLUIDO",
+            },
+            {
+                "incluida": False,
+                "resolucion": "EXCLUIDA",
+                "convenio": "CONV-EXCLUIDO",
+                "expediente": "EXP-EXCLUIDO",
+            },
+        ],
+    )
+
+    valores = InformeTecnicoVariablesDocumentalesService.obtener_valores(informe)
+    antecedentes = str(valores["renovaciones_anteriores_detalladas"])
+
+    assert "INCLUIDA" in antecedentes
+    assert "EXCLUIDA" not in antecedentes
 
 
 @pytest.mark.django_db

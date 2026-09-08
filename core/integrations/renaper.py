@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+import json
 import logging
 from typing import Any
 
 import requests
 from django.conf import settings
+
+from core.services.text_encoding import repair_utf8_mojibake_values
 
 
 logger = logging.getLogger("django")
@@ -33,6 +36,16 @@ def _log_failure(
     if status_code is not None:
         data["status_code"] = status_code
     logger.warning("renaper.integration.failure", extra={"data": data})
+
+
+def _response_json_utf8(response: requests.Response) -> Any:
+    """Decodifica JSON desde bytes UTF-8 sin confiar en el charset HTTP."""
+
+    content = getattr(response, "content", None)
+    if content is None:
+        # Compatibilidad con dobles de prueba que exponen únicamente ``json``.
+        return response.json()
+    return json.loads(bytes(content).decode("utf-8-sig", errors="strict"))
 
 
 class APIClient:
@@ -85,8 +98,8 @@ class APIClient:
             ) from exc
 
         try:
-            data = response.json()
-        except ValueError as exc:
+            data = _response_json_utf8(response)
+        except (UnicodeDecodeError, ValueError) as exc:
             _log_failure("authenticate", "invalid_response")
             raise RenaperServiceError(
                 "RENAPER devolvio una respuesta invalida durante la autenticacion.",
@@ -141,8 +154,8 @@ class APIClient:
         """Normaliza la respuesta HTTP sin exponer el payload ante un error."""
 
         try:
-            data = response.json()
-        except ValueError:
+            data = _response_json_utf8(response)
+        except (UnicodeDecodeError, ValueError):
             _log_failure("consult", "invalid_response")
             return _error_result(
                 "RENAPER devolvio una respuesta invalida durante la consulta.",
@@ -164,4 +177,7 @@ class APIClient:
             return _error_result(
                 "RENAPER devolvio una respuesta invalida.", "invalid_response"
             )
-        return {"success": True, "data": result}
+        return {
+            "success": True,
+            "data": repair_utf8_mojibake_values(result),
+        }

@@ -25,7 +25,11 @@ from rendicioncuentasmensual.services import (
     RendicionCuentaMensualService,
     RendicionProcesoService,
 )
-from users.models import AccesoComedorPWA, AccesoOrganizacionPWA
+from users.models import (
+    AccesoComedorPWA,
+    AccesoOrganizacionPWA,
+    CoordinadorEquipoTecnicoPWA,
+)
 
 
 @pytest.fixture
@@ -74,6 +78,18 @@ def _grant_mobile_rendicion_permission(user):
         codename="manage_mobile_rendicion",
     )
     user.user_permissions.add(permission)
+
+
+def _create_coordinador_pwa(*, comedor, username="coord_mensajes"):
+    user_model = get_user_model()
+    user = user_model.objects.create_user(
+        username=username,
+        email=f"{username}@example.com",
+        password="testpass123",
+    )
+    scope = CoordinadorEquipoTecnicoPWA.objects.create(user=user, activo=True)
+    scope.comedores_adicionales.add(comedor)
+    return user
 
 
 def _create_comunicado(
@@ -951,3 +967,32 @@ def test_detalle_mensaje_incluye_fecha_creacion_y_datos_de_adjuntos(
     assert response.data["adjuntos"][0]["nombre_original"] == adjunto.nombre_original
     assert response.data["adjuntos"][0]["fecha_subida"] is not None
     assert response.data["adjuntos"][0]["url"] is not None
+
+
+@pytest.mark.django_db
+def test_coordinador_ve_mensajes_de_rendicion_sin_poder_marcar_visto(espacios):
+    espacio_1, _ = espacios
+    coordinador = _create_coordinador_pwa(comedor=espacio_1)
+    client = _auth_client_for_user(coordinador)
+    mensaje = _create_comunicado(
+        creador=coordinador,
+        titulo="Rendición pendiente",
+        comedor=espacio_1,
+        cuerpo="[SISOC_ACCION]rendicion_detalle:999999",
+    )
+
+    list_response = client.get(f"/api/pwa/espacios/{espacio_1.id}/mensajes/")
+    mark_response = client.patch(
+        f"/api/pwa/espacios/{espacio_1.id}/mensajes/{mensaje.id}/marcar-visto/",
+        {},
+        format="json",
+    )
+
+    assert list_response.status_code == 200
+    assert [item["id"] for item in list_response.data["results"]] == [mensaje.id]
+    assert mark_response.status_code == 403
+    assert not LecturaMensajePWA.objects.filter(
+        comunicado=mensaje,
+        comedor=espacio_1,
+        user=coordinador,
+    ).exists()

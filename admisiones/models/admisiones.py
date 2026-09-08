@@ -466,6 +466,7 @@ class InformeTecnico(models.Model):
         ("A", "A - Coincidencia"),
         ("B", "B - Solicitud Menor"),
         ("C", "C - Solicitud Mayor"),
+        ("D", "D - Equivalencias"),
     ]
     ESTADOS = [
         ("Iniciado", "Iniciado"),

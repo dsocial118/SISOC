@@ -464,7 +464,10 @@ def test_serializar_preguntas_coincide_con_lo_persistido(encuesta):
     serializado = serializar_preguntas(encuesta)
 
     assert serializado[0]["texto"] == "¿Usás el módulo X?"
-    assert serializado[0]["opciones"] == ["Sí", "No"]
+    assert serializado[0]["opciones"] == [
+        {"texto": "Sí", "puntaje": 0},
+        {"texto": "No", "puntaje": 0},
+    ]
     assert serializado[1]["condicion"] == {
         "orden": 1,
         "operador": "igual",
