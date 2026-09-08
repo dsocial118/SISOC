@@ -9,14 +9,15 @@ por si solo un despliegue.
 
 Esta entrega implementa la coordinacion y genera configuraciones Nginx; no
 aprovisiona credenciales, fusiona ramas ni modifica servidores automaticamente.
-DataCalle y Gestionar estan deshabilitadas: el usuario convierte esas apps por
-separado. Espacios conserva `/mobile/` hasta validar la migracion de sus clientes.
+DataCalle y Gestionar estan habilitadas en el registro de esta entrega; su
+activacion depende del empaquetado Compose en main y del orden indicado abajo.
+Espacios conserva `/mobile/` hasta validar la migracion de sus clientes.
 
 | ID | Repositorio privado | Checkout hermano de SISOC | Proyecto / puerto | Estado |
 | --- | --- | --- | --- | --- |
 | espacios | dsocial118/Espacios-Comunitarios | SISOC-Mobile | sisoc-mobile / 8080 | habilitada, base /mobile/ |
-| datacalle | dsocial118/DataCalle | DataCalle | sisoc-pwa-datacalle / 8081 | deshabilitada |
-| gestionar | dsocial118/Gestionar | Gestionar | sisoc-pwa-gestionar / 8082 | deshabilitada |
+| datacalle | dsocial118/DataCalle | DataCalle | sisoc-pwa-datacalle / 8081 | habilitada, base /pwa/datacalle/ |
+| gestionar | dsocial118/Gestionar | Gestionar | sisoc-pwa-gestionar / 8082 | habilitada, base /pwa/gestionar/ |
 
 Fuente de configuracion: `scripts/operacion/pwas.json`. No renombrar las carpetas
 historicas ni los proyectos Compose al cambiar un nombre en GitHub.
@@ -26,8 +27,87 @@ verificado en HML/PRD, include inicial de Nginx instalado y build de Espacios
 preparado en HML sin activacion. DataCalle y Gestionar ya estan clonados en
 `/sisoc/DataCalle` y `/sisoc/Gestionar` en ambos hosts, rama main y propietario
 sisoc-deploy. El permiso sudo temporal fue retirado y su revocacion verificada.
-Las apps nuevas siguen deshabilitadas. Ver evidencia y pendientes en
+Los servidores todavia conservan el include inicial de Espacios; este cambio
+versionado no equivale a un despliegue. Ver evidencia inicial en
 [registro operativo](../registro/cambios/2026-09-08-coordinacion-pwa-privadas.md).
+
+## Orden de primera activacion de DataCalle y Gestionar
+
+1. Incorporar el empaquetado de ambas apps en sus ramas main: Dockerfile y
+   Compose en la raiz, servicio frontend y build con API especifica del entorno.
+   No promover esta activacion de SISOC a HML/PRD antes: prepare requiere esos
+   archivos en main y falla si faltan.
+2. Como sisoc-deploy, crear un `.env` modo 600 en `/sisoc/DataCalle` y
+   `/sisoc/Gestionar`, sin sobrescribir uno existente. Basta un comentario: las
+   variables publicas necesarias las fija SISOC. Los originales privados en
+   `~/.config/sisoc-pwa/*/original.env` no se usan en estas PWA; no copiar las
+   credenciales AppSheet al frontend.
+3. Resolver o validar el backend de HML: el 2026-09-08 el endpoint publico
+   `/api/datacalle/relevamientos/` devolvio 404 HTML en HML y 401 JSON en PRD.
+   Publicar el frontend no crea esa API. Validar tambien contratos, permisos y
+   login de Gestionar; un 401 sin autenticar no prueba funcionalidad.
+4. Preparar las imagenes y desplegar primero SISOC homologacion en HML con sus
+   gates habituales. Cuando los tres upstreams respondan, respaldar el snippet
+   vigente e instalar el candidato con las tres apps. Ejecutar nginx -t y reload.
+   Hasta instalar el snippet nuevo, las nuevas rutas no son accesibles.
+5. Probar en HTTPS real login, permisos, instalacion y sincronizacion, incluyendo
+   desconexion/reconexion. Despues repetir la promocion habitual y la instalacion
+   del snippet en PRD, manteniendo su gate de autorizacion.
+
+Los builds locales y los builds/arranques aislados en los hosts HML/PRD estan
+verificados. Estos resultados no sustituyen activacion ni flujos autenticados.
+
+Actualizacion operativa del 2026-09-08: el usuario restablecio el permiso temporal
+y se verifico acceso como sisoc-deploy en ambos hosts. Se crearon los `.env` de
+DataCalle y Gestionar en la raiz de sus checkouts, propietario sisoc-deploy y modo
+600, con un comentario y sin secretos. Gestionar incorpora el empaquetado en
+main (`df4bce1a267e486326a2d3dd068268d7b618f8f0`) y DataCalle tambien
+(`56436c67a319140ccada38c862eba6f65fcf188a`). El usuario recupero espacio en HML;
+despues de los builds quedan 20 GB libres (79% de uso). PRD conserva 576 GB.
+Las tres imagenes por entorno estan preparadas y pasaron health aislado, usuario
+101 y filesystem read-only, sin puertos publicos. Se retiraron los contenedores
+de prueba; los servicios en uso no cambiaron. Nginx vigente pasa nginx -t.
+
+Estados privados de esta preparacion (no son una activacion ni reemplazan al
+prepare del proximo workflow):
+
+- HML: `~/.local/state/sisoc-pwa-ready-hml-20260908T202244Z/release/state.json`.
+- PRD: `~/.local/state/sisoc-pwa-ready-prd-20260908T202540Z/release/state.json`.
+
+Falta incorporar la API de DataCalle de los PRs SISOC #2452/#2453 a development
+y luego a homologacion: config/urls.py solo expone api/datacalle en main y el
+endpoint publico de HML sigue en 404. El PR #2474 ademas registra tres fallos de
+tests de Admisiones en la ejecucion 34272694992, sin cambios en esos formularios
+en este diff. Resolver esos gates antes de promover; los 29 tests operativos
+acotados pasan. No se modifico Nginx ni se activaron las apps nuevas.
+El acceso temporal queda pendiente de retiro al completar la instalacion o
+cerrar la intervencion.
+
+### Restablecer acceso temporal para la instalacion
+
+Ejecutar como root en HML y PRD. El bloque permite al operador existente trabajar
+como runner y, como root, instalar solamente el snippet PWA, validar/recargar
+Nginx y retirar el permiso. No instala las apps ni recarga Nginx al ejecutarlo.
+
+```bash
+(
+  set -eu
+  umask 077
+  pwa_sudoers=$(mktemp)
+  trap 'rm -f "$pwa_sudoers"' EXIT
+  cat > "$pwa_sudoers" <<'SUDOERS'
+jportilla ALL=(sisoc-deploy) NOPASSWD: /usr/bin/bash -s
+jportilla ALL=(root) NOPASSWD: /usr/bin/install -o root -g root -m 0644 /home/jportilla/sisoc-pwa-nginx.conf /etc/nginx/snippets/sisoc-pwas.conf, /usr/sbin/nginx -t, /usr/bin/systemctl reload nginx, /usr/bin/rm -f /etc/sudoers.d/sisoc-pwa-temporal
+SUDOERS
+  visudo -cf "$pwa_sudoers"
+  install -o root -g root -m 0440 "$pwa_sudoers" /etc/sudoers.d/sisoc-pwa-temporal
+)
+```
+
+Al terminar la instalacion, retirar `/etc/sudoers.d/sisoc-pwa-temporal` y verificar
+que `sudo -n -H -u sisoc-deploy /usr/bin/bash -s` vuelva a ser rechazado para
+jportilla. No confundir este acceso administrativo temporal con las deploy keys
+permanentes del runner.
 
 ## Aprovisionamiento previo a fusionar/desplegar
 
@@ -80,9 +160,14 @@ acordar o agregar su empaquetado operativo con este contrato (no se exige Vite):
   secretos de servidor. El runtime se administra desde SISOC, no desde servicios
   adicionales que pudiera definir la app.
 - Build reproducible desde el lockfile y un snapshot limpio del SHA. Los archivos
-  Compose pueden mapear `VITE_PUBLIC_BASE_PATH` y `VITE_API_BASE_URL` a los nombres
-  que use el framework; esos nombres son el contrato operativo, no una obligacion
-  de usar Vite. `/api` usa el mismo origen del entorno; no fijar PRD dentro del JS.
+  Compose mapea `VITE_PUBLIC_BASE_PATH` al nombre que use el framework. Espacios
+  conserva `VITE_API_BASE_URL=/api`. Para Expo, `PWA_API_BASE_URL` es
+  `https://hml-sisoc.secretarianaf.gob.ar/api` en HML y
+  `https://sisoc.secretarianaf.gob.ar/api` en PRD. El coordinador fija estos valores
+  despues de leer el ambiente; no pueden heredar por accidente la API de otro
+  entorno. DataCalle usa EXPO_PUBLIC_SISOC_API_URL y Gestionar
+  EXPO_PUBLIC_API_BASE_URL, con autenticacion api. No usar build:production de
+  DataCalle en HML porque fija la URL de PRD.
 - DataCalle debe generar recursos/router/manifest/SW bajo `/pwa/datacalle/`;
   Gestionar bajo `/pwa/gestionar/`. No depender de rutas de assets en `/`.
   Limitar el scope del SW a la app y usar nombres propios para caches y
@@ -160,9 +245,11 @@ ruta solo despues de revisar el diff, respaldar el include/vhost anterior y
 comprobar upstreams. Ejecutar `nginx -t` y recargar Nginx. Repetir por entorno,
 primero HML y luego PRD. El generador no instala nada ni ejecuta sudo/reloads.
 
-`docs/operacion/nginx/sisoc-pwas.conf` es la configuracion inicial activa:
-solo `/mobile/`. `sisoc-pwas-preview.conf.example` muestra las tres rutas finales
-y sus aliases; NO instalar esa vista previa mientras las apps no esten listas.
+`docs/operacion/nginx/sisoc-pwas.conf` es el candidato activo de esta entrega:
+`/mobile/`, `/pwa/datacalle/` y `/pwa/gestionar/`, con aliases `/mobile2/` y
+`/mobile3/`. El archivo del repositorio no acredita su instalacion en los hosts.
+`sisoc-pwas-preview.conf.example` muestra ademas la ruta final de Espacios;
+NO instalar esa vista previa mientras su migracion de clientes este pendiente.
 
 Las redirecciones de navegacion son inicialmente 302 y preservan sufijo/query.
 Usan rutas relativas al origen, de modo que HML no redirige hacia PRD. Las rutas
@@ -174,6 +261,11 @@ anterior y assets. El generador bloquea esa activacion prematura. No redirigir
 el script del SW antiguo ni borrar datos pendientes para forzar una actualizacion.
 Se debe probar el cambio con una instalacion vieja y acordar su transicion antes
 de retirar este bloqueo. No depende de la conversion de DataCalle/Gestionar.
+
+El empaquetado nuevo conserva la imagen anterior para rollback, pero no sirve
+assets exclusivos de builds anteriores desde la imagen nueva. Antes de releases
+sucesivas, validar una actualizacion con una PWA ya instalada y trabajo pendiente;
+no confundir retencion de imagenes con disponibilidad HTTP de assets antiguos.
 
 ## Validacion acotada
 

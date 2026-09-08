@@ -6,8 +6,10 @@ Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrollador
 
 - PWA privadas: `scripts/operacion/pwas.json` declara Espacios Comunitarios,
   DataCalle y Gestionar. `deploy_pwas.py` prepara snapshots/imagenes antes del
-  downtime y activa despues del health del backend; las apps nuevas estan
-  deshabilitadas hasta completar su conversion web. Operacion y contrato de build:
+  downtime y activa despues del health del backend. Las apps nuevas estan
+  habilitadas en el registro: requieren Compose en main, .env privado en la raiz
+  y la API de HML disponible antes de promover. `PWA_API_BASE_URL` fija la URL
+  HTTPS del entorno para Expo; Espacios conserva /api y /mobile/. Contrato y orden:
   `docs/operacion/deploy_pwas.md`. `render_pwa_nginx.py` genera un include de servidor
   y una vista previa que no debe instalarse. No mover `/sisoc/SISOC-Mobile` ni
   asumir acceso publico de Git. Estado privado de releases: `SISOC/.deploy/pwa/`.
@@ -447,6 +449,8 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - `comedores/services/`
 - `comedores/api_views.py`
 - `comedores/api_views_territorial.py` (scope provincial PWA, altas idempotentes y edición)
+- `comedores/api_serializers.py::TerritorialComedorWriteSerializer` (validacion de
+  altas/ediciones territoriales, catalogos y jerarquia geografica)
 - tests del root `tests/test_comedor*`, `tests/test_comedores*`
 - docs de flujo: `docs/flujos/comedor_sync.md`
 - certificaciones mensuales de prestaciones: regla de pendiente en

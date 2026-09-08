@@ -20,11 +20,23 @@ def renderer(monkeypatch):
 
 
 def test_active_nginx_exposes_only_legacy_espacios(renderer):
-    content = renderer.render(renderer.configuration(SCRIPTS / "pwas.json"))
+    apps = renderer.configuration(SCRIPTS / "pwas.json")
+    for app in apps[1:]:
+        app["enabled"] = False
+    content = renderer.render(apps)
     assert "location ^~ /mobile/" in content
     assert "127.0.0.1:8080/" in content
     assert "127.0.0.1:8081/" not in content
     assert "127.0.0.1:8082/" not in content
+    assert "rewrite ^/mobile/" not in content
+
+
+def test_default_nginx_routes_both_new_apps_with_legacy_aliases(renderer):
+    content = renderer.render(renderer.configuration(SCRIPTS / "pwas.json"))
+    assert "location ^~ /pwa/datacalle/" in content
+    assert "location ^~ /pwa/gestionar/" in content
+    assert "rewrite ^/mobile2/(.*)$ /pwa/datacalle/$1 redirect;" in content
+    assert "rewrite ^/mobile3/(.*)$ /pwa/gestionar/$1 redirect;" in content
     assert "rewrite ^/mobile/" not in content
 
 

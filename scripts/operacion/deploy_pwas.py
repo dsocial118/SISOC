@@ -242,6 +242,11 @@ def prepare(config, root, state_dir, environment):
         env.update(
             IMAGE_TAG=f"{environment}-{app['revision']}",
             VITE_API_BASE_URL="/api",
+            PWA_API_BASE_URL=(
+                "https://hml-sisoc.secretarianaf.gob.ar/api"
+                if environment == "hml"
+                else "https://sisoc.secretarianaf.gob.ar/api"
+            ),
             VITE_PUBLIC_BASE_PATH=app["base_path"],
             FRONTEND_BIND_ADDRESS="127.0.0.1",
             FRONTEND_PORT=str(app["port"]),

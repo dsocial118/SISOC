@@ -14,7 +14,7 @@
     },
     {
       "id": "datacalle",
-      "enabled": false,
+      "enabled": true,
       "repository": "dsocial118/DataCalle",
       "checkout": "DataCalle",
       "project": "sisoc-pwa-datacalle",
@@ -26,7 +26,7 @@
     },
     {
       "id": "gestionar",
-      "enabled": false,
+      "enabled": true,
       "repository": "dsocial118/Gestionar",
       "checkout": "Gestionar",
       "project": "sisoc-pwa-gestionar",
