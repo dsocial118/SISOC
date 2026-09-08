@@ -138,6 +138,7 @@ def test_prepare_does_not_resolve_disabled_apps_or_start_services(
 def test_all_three_build_from_main_before_any_activation(
     tmp_path, monkeypatch, environment
 ):
+    monkeypatch.setenv("PWA_API_BASE_URL", "https://wrong-environment.invalid/api")
     config, apps = registry(tmp_path, count=3)
     fake = FakeCommands(apps)
     monkeypatch.setattr(deploy, "command", fake)
@@ -151,6 +152,12 @@ def test_all_three_build_from_main_before_any_activation(
         if "build" in args:
             assert env["IMAGE_TAG"] == f"{environment}-{REVISION}"
             assert env["VITE_API_BASE_URL"] == "/api"
+            host = (
+                "hml-sisoc.secretarianaf.gob.ar"
+                if environment == "hml"
+                else "sisoc.secretarianaf.gob.ar"
+            )
+            assert env["PWA_API_BASE_URL"] == f"https://{host}/api"
     assert (
         json.loads((tmp_path / "state/state.json").read_text())["status"] == "healthy"
     )
