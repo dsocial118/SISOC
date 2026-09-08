@@ -1,0 +1,40 @@
+{
+  "apps": [
+    {
+      "id": "espacios",
+      "enabled": true,
+      "repository": "dsocial118/Espacios-Comunitarios",
+      "checkout": "SISOC-Mobile",
+      "project": "sisoc-mobile",
+      "port": 8080,
+      "base_path": "/mobile/",
+      "canonical_path": "/pwa/espacioscomunitarios/",
+      "legacy_path": "/mobile/",
+      "ssh_identity": "~/.ssh/sisoc-pwa-espacios"
+    },
+    {
+      "id": "datacalle",
+      "enabled": false,
+      "repository": "dsocial118/DataCalle",
+      "checkout": "DataCalle",
+      "project": "sisoc-pwa-datacalle",
+      "port": 8081,
+      "base_path": "/pwa/datacalle/",
+      "canonical_path": "/pwa/datacalle/",
+      "legacy_path": "/mobile2/",
+      "ssh_identity": "~/.ssh/sisoc-pwa-datacalle"
+    },
+    {
+      "id": "gestionar",
+      "enabled": false,
+      "repository": "dsocial118/Gestionar",
+      "checkout": "Gestionar",
+      "project": "sisoc-pwa-gestionar",
+      "port": 8082,
+      "base_path": "/pwa/gestionar/",
+      "canonical_path": "/pwa/gestionar/",
+      "legacy_path": "/mobile3/",
+      "ssh_identity": "~/.ssh/sisoc-pwa-gestionar"
+    }
+  ]
+}
