@@ -38,6 +38,7 @@
 - `docs/registro/prs/PR-2474.md`
 - `scripts/operacion/deploy_pwas.py`
 - `scripts/operacion/pwas.json`
+- `tests/test_admisiones_forms_unit.py`
 - `tests/test_deploy_pwas.py`
 - `tests/test_pwa_nginx.py`
 - Documentación sugerida para ampliar contexto:
