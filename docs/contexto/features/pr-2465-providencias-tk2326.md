@@ -37,6 +37,7 @@
 - `admisiones/admin.py`
 - `admisiones/forms/admisiones_forms.py`
 - `admisiones/migrations/0080_issue_2326_providencias.py`
+- `admisiones/migrations/0081_issue_2326_ampliar_numero_pv.py`
 - `admisiones/models/admisiones.py`
 - `admisiones/services/admisiones_service/impl.py`
 - `admisiones/services/docx_service/impl.py`
@@ -52,8 +53,7 @@
 - `admisiones/templates/admisiones/docx/renovacion_docx_proyecto_disposicion.docx`
 - `admisiones/templates/admisiones/docx/segunda_providencia.docx`
 - `admisiones/templates/admisiones/partials/numero_pv_estructurado.html`
-- `admisiones/templates/admisiones/pdf/incorporacion_pdf_proyecto_disposicion.html`
-- ... y 12 archivo(s) adicional(es) relacionados.
+- ... y 13 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
