@@ -270,7 +270,10 @@ class TerritorialComedorWriteSerializer(serializers.Serializer):
             )
 
         if self.instance:
-            if provincia.pk != self.instance.provincia_id and not municipio_was_provided:
+            if (
+                provincia.pk != self.instance.provincia_id
+                and not municipio_was_provided
+            ):
                 raise serializers.ValidationError(
                     {
                         "municipio": (
