@@ -17,6 +17,7 @@ from django.utils.html import strip_tags
 from django.utils.text import slugify
 from docx import Document
 from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT, WD_TABLE_ALIGNMENT
+from docx.enum import text as docx_text
 from docx.oxml import OxmlElement, parse_xml
 from docx.oxml.ns import nsdecls, qn
 from docx.shared import Mm, Pt
@@ -90,6 +91,7 @@ class GdeDocxService:
                 archivo_docx.open("rb")
             contenido = archivo_docx.read()
             documento = Document(BytesIO(contenido))
+            cls._justificar_estilo_normal(documento)
             ancho_disponible = cls._ancho_disponible_documento_dxa(documento)
             for tabla in documento.tables:
                 cls._normalizar_tabla(tabla, ancho_disponible)
@@ -106,6 +108,14 @@ class GdeDocxService:
         finally:
             if hasattr(archivo_docx, "close"):
                 archivo_docx.close()
+
+    @staticmethod
+    def _justificar_estilo_normal(documento):
+        """Evita que el contenido sin alineación explícita quede a la izquierda."""
+
+        documento.styles["Normal"].paragraph_format.alignment = (
+            docx_text.WD_ALIGN_PARAGRAPH.JUSTIFY
+        )
 
     @staticmethod
     def _ancho_disponible_documento_dxa(documento):
@@ -1108,17 +1118,12 @@ class InformeService:
                 and informe.estado != "Validado"
                 else None
             )
-            documento_docx = pdf_final or pdf_borrador
-
             return {
                 "tipo": tipo,
                 "admision": informe.admision,
                 "campos": InformeService.get_campos_visibles_informe(informe),
                 "pdf": pdf_final,
                 "pdf_borrador": pdf_borrador,
-                "docx_para_gde_disponible": bool(
-                    GdeDocxService.seleccionar_ultimo_archivo(documento_docx)
-                ),
             }
         except Exception:
             logger.exception(
