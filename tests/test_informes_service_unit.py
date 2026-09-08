@@ -8,6 +8,7 @@ from zipfile import ZipFile
 import pytest
 from django.utils import timezone
 from docx import Document
+from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml.ns import qn
 from docx.shared import Mm, Pt
 
@@ -376,6 +377,9 @@ def test_generate_docx_content_estiliza_tablas_de_templates_dinamicos():
 
 def test_generar_docx_para_gde_normaliza_tablas_y_prioriza_docx_editado():
     documento = Document()
+    documento.add_paragraph("Texto del cuerpo sin alineación explícita")
+    titulo = documento.add_paragraph("Título centrado")
+    titulo.alignment = WD_ALIGN_PARAGRAPH.CENTER
     tabla = documento.add_table(rows=2, cols=3)
     tabla.cell(0, 0).text = "Encabezado"
     tabla.cell(0, 1).merge(tabla.cell(0, 2))
@@ -400,6 +404,11 @@ def test_generar_docx_para_gde_normaliza_tablas_y_prioriza_docx_editado():
     assert archivo is editado
     assert resultado is not None
     normalizado = Document(BytesIO(resultado.read()))
+    assert (
+        normalizado.styles["Normal"].paragraph_format.alignment
+        == WD_ALIGN_PARAGRAPH.JUSTIFY
+    )
+    assert normalizado.paragraphs[1].alignment == WD_ALIGN_PARAGRAPH.CENTER
     tabla_normalizada = normalizado.tables[0]
     ancho_disponible = (
         normalizado.sections[0].page_width.twips
