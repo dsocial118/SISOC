@@ -59,6 +59,32 @@ no sustituyen el build en los hosts ni los flujos autenticados. El permiso sudo
 temporal de aprovisionamiento fue revocado y debe volver a habilitarse para la
 instalacion operativa, retirandolo al terminar.
 
+### Restablecer acceso temporal para la instalacion
+
+Ejecutar como root en HML y PRD. El bloque permite al operador existente trabajar
+como runner y, como root, instalar solamente el snippet PWA, validar/recargar
+Nginx y retirar el permiso. No instala las apps ni recarga Nginx al ejecutarlo.
+
+```bash
+(
+  set -eu
+  umask 077
+  pwa_sudoers=$(mktemp)
+  trap 'rm -f "$pwa_sudoers"' EXIT
+  cat > "$pwa_sudoers" <<'SUDOERS'
+jportilla ALL=(sisoc-deploy) NOPASSWD: /usr/bin/bash -s
+jportilla ALL=(root) NOPASSWD: /usr/bin/install -o root -g root -m 0644 /home/jportilla/sisoc-pwa-nginx.conf /etc/nginx/snippets/sisoc-pwas.conf, /usr/sbin/nginx -t, /usr/bin/systemctl reload nginx, /usr/bin/rm -f /etc/sudoers.d/sisoc-pwa-temporal
+SUDOERS
+  visudo -cf "$pwa_sudoers"
+  install -o root -g root -m 0440 "$pwa_sudoers" /etc/sudoers.d/sisoc-pwa-temporal
+)
+```
+
+Al terminar la instalacion, retirar `/etc/sudoers.d/sisoc-pwa-temporal` y verificar
+que `sudo -n -H -u sisoc-deploy /usr/bin/bash -s` vuelva a ser rechazado para
+jportilla. No confundir este acceso administrativo temporal con las deploy keys
+permanentes del runner.
+
 ## Aprovisionamiento previo a fusionar/desplegar
 
 1. Como administrador del host, habilitar acceso al usuario operativo
