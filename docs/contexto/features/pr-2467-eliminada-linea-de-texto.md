@@ -32,11 +32,15 @@
 - Empezar por `docs/registro/prs/PR-2467.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
 - `ciudadanos/templates/ciudadanos/ciudadano_form.html`
+- `docs/contexto/features/pr-2467-eliminada-linea-de-texto.md`
+- `docs/registro/prs/PR-2467.md`
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`
+- `docs/contexto/features/pr-2467-eliminada-linea-de-texto.md`
+- `docs/registro/prs/PR-2467.md`
 
 ## Trazabilidad
 
