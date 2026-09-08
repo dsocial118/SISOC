@@ -33,6 +33,7 @@
 - `AGENT_REPO_MAP.md`
 - `docs/contexto/aplicaciones.md`
 - `docs/contexto/dominio.md`
+- `docs/contexto/features/pr-2463-docs-spec-consolidar-contratos-recientes.md`
 - `docs/flujos/relevamiento_sync.md`
 - `docs/implementaciones/celiaquia_comentarios_tecnicos.md`
 - `docs/implementaciones/encuestas.md`
@@ -42,23 +43,14 @@
 - `docs/operacion/deploy_automatizado.md`
 - `docs/registro/README.md`
 - `docs/registro/cambios/2026-09-08-spec-as-source-contratos-recentes.md`
+- `docs/registro/prs/PR-2463.md`
 - `docs/seguridad/security_baseline_pwa.md`
+- `scripts/ci/pr_doc_automation.py`
+- `tests/test_pr_doc_automation_unit.py`
 - Documentación sugerida para ampliar contexto:
-- `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`
-- `docs/contexto/aplicaciones.md`
-- `docs/contexto/dominio.md`
-- `docs/flujos/relevamiento_sync.md`
-- `docs/implementaciones/celiaquia_comentarios_tecnicos.md`
-- `docs/implementaciones/encuestas.md`
-- `docs/implementaciones/pas.md`
-- `docs/implementaciones/pwa_backend.md`
-- `docs/operacion/deploy_automatizado.md`
-- `docs/registro/README.md`
-- `docs/registro/cambios/2026-09-08-spec-as-source-contratos-recentes.md`
-- `docs/seguridad/security_baseline_pwa.md`
 
 ## Trazabilidad
 
