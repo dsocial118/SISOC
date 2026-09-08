@@ -49,6 +49,7 @@ from .views.beneficiarios import (
     BuscarCUILView,
     BuscarResponsableView,
 )
+from .views.beneficiarios_export import BeneficiariosExportView
 
 urlpatterns = [
     path(
@@ -234,6 +235,13 @@ urlpatterns = [
             BeneficiariosListView.as_view()
         ),
         name="beneficiarios_list",
+    ),
+    path(
+        "beneficiarios/beneficiarios/exportar/",
+        permissions_any_required(["centrodefamilia.view_centro"])(
+            BeneficiariosExportView.as_view()
+        ),
+        name="beneficiarios_export",
     ),
     path(
         "beneficiarios/beneficiarios/<int:pk>/",

@@ -54,9 +54,14 @@
                     </a>
                 </li>
                 <li class="nav-item circle-btn">
-                    <a class="nav-link" href="{% url 'logout' %}">
-                        <i class="bi bi-box-arrow-right"></i>
-                    </a>
+                    <form method="post" action="{% url 'logout' %}" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit"
+                                class="nav-link border-0 bg-transparent"
+                                aria-label="Cerrar sesión">
+                            <i class="bi bi-box-arrow-right"></i>
+                        </button>
+                    </form>
                 </li>
             </ul>
         </div>

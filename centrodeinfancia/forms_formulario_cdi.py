@@ -80,7 +80,7 @@ class FormularioCDIForm(forms.ModelForm):
         widget=forms.CheckboxSelectMultiple,
     )
     dias_funcionamiento = forms.MultipleChoiceField(
-        required=False,
+        required=True,
         choices=CAMPOS_OPCIONES_MULTIPLES["dias_funcionamiento"],
         widget=forms.CheckboxSelectMultiple,
     )

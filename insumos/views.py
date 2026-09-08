@@ -59,6 +59,18 @@ class InsumoListView(LoginRequiredMixin, ListView):
         context["puede_gestionar_categorias"] = self.request.user.has_perm(
             "insumos.add_insumocategoria"
         )
+        # "Categorias" viaja como boton adicional del componente de busqueda:
+        # el componente solo acepta una lista, no un condicional en template.
+        context["insumos_additional_buttons"] = []
+        if context["puede_gestionar_categorias"]:
+            context["insumos_additional_buttons"].append(
+                {
+                    "label": "Categorías",
+                    "url": str(reverse_lazy("insumos_categorias_listar")),
+                    "class": "poncho-btn poncho-btn--neutro",
+                    "title": "Gestionar categorías de insumos",
+                }
+            )
         context["sin_categoria_value"] = SIN_CATEGORIA
         return context
 

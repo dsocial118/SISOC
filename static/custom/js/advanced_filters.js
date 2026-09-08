@@ -1,3 +1,15 @@
+/**
+ * Filtros avanzados de los listados.
+ *
+ * Modelo (definicion UX/UI del prototipo Figma): cada filtro es una barra
+ * completa "campo + valor + lupa". "+ Filtro" agrega una fila, "- Filtro" la
+ * quita y aparece recien desde la segunda.
+ *
+ * El selector de "tipo de coincidencia" se elimino por definicion: el operador
+ * se deduce del tipo de campo (texto -> contiene, numero/fecha/choice -> igual).
+ * Eso implica que ya no se puede buscar por campo vacio ni por rango; queda
+ * asentado en docs/registro/cambios/2026-07-31-buscador-transversal-lupa-y-cta.md
+ */
 (function () {
     const form = document.getElementById('filters-form');
     if (!form) {
@@ -24,28 +36,18 @@
         return;
     }
 
-    const rowsContainer = document.getElementById('filters-rows');
-    const addBtn = document.getElementById('add-filter');
-    const logicSelect = document.getElementById('filters-logic');
+    const rowsContainer = document.getElementById('poncho-filters-rows');
+    const rowTemplate = document.getElementById('poncho-filter-row-template');
     const hiddenInput = document.getElementById('filters-input');
 
-    if (!rowsContainer || !addBtn || !logicSelect || !hiddenInput) {
+    if (!rowsContainer || !rowTemplate || !hiddenInput) {
         console.warn('AdvancedFilters: faltan elementos requeridos en el DOM.');
         return;
     }
 
-    const operatorLabels = Object.assign(
-        {
-            contains: 'Contiene',
-            ncontains: 'No contiene',
-            eq: 'Igual a',
-            ne: 'Distinto de',
-            gt: 'Mayor a',
-            lt: 'Menor a',
-            empty: 'Vacío',
-        },
-        config.operatorLabels || {}
-    );
+    // AND/OR se retiro de la UI por definicion de UX/UI: los filtros se
+    // combinan siempre con AND. El backend sigue aceptando el campo `logic`.
+    const LOGICA_FIJA = 'AND';
 
     const defaultOpByType = Object.assign(
         {
@@ -63,28 +65,11 @@
         { value: 'false', label: 'No' },
     ];
 
-    const emptyModeOptions = [
-        { value: 'both', label: 'Nulos o vacíos' },
-        { value: 'null', label: 'Solo nulos' },
-        { value: 'blank', label: 'Solo vacíos' },
-    ];
-
     const fields = Array.isArray(config.fields) ? config.fields : [];
     if (!fields.length) {
         console.warn('AdvancedFilters: no hay campos configurados.');
         return;
     }
-
-    const operatorsByType = Object.assign(
-        {
-            text: ['contains', 'ncontains', 'eq', 'ne', 'empty'],
-            number: ['eq', 'ne', 'gt', 'lt', 'empty'],
-            date: ['eq', 'ne', 'gt', 'lt', 'empty'],
-            boolean: ['eq', 'ne'],
-            choice: ['eq', 'ne'],
-        },
-        config.operators || {}
-    );
 
     const fieldsByName = fields.reduce((acc, field) => {
         if (field && field.name) {
@@ -102,15 +87,6 @@
         return;
     }
 
-    function createSelect(className, options) {
-        const select = document.createElement('select');
-        select.className = className;
-        if (Array.isArray(options)) {
-            populateOptions(select, options);
-        }
-        return select;
-    }
-
     function createOption(value, label) {
         const option = document.createElement('option');
         option.value = value;
@@ -125,59 +101,24 @@
         });
     }
 
-    function tryInitSelect2(el, opts) {
-        if (window.jQuery && window.jQuery.fn && window.jQuery.fn.select2) {
-            const $el = window.jQuery(el);
-            if (!$el.data('select2')) {
-                $el.select2(Object.assign({ width: '100%' }, opts || {}));
-            }
-        }
-    }
-
-    function tryDestroySelect2(el) {
-        if (window.jQuery && window.jQuery.fn && window.jQuery.fn.select2) {
-            const $el = window.jQuery(el);
-            if ($el.data('select2')) {
-                $el.select2('destroy');
-            }
-        }
-    }
-
-    function bindSelect2FieldEvents(el, handler) {
-        if (window.jQuery && window.jQuery.fn && window.jQuery.fn.select2) {
-            window.jQuery(el)
-                .off('select2:select.advancedFilters select2:clear.advancedFilters')
-                .on(
-                    'select2:select.advancedFilters select2:clear.advancedFilters',
-                    handler
-                );
-        }
+    function setVisible(el, visible) {
+        el.hidden = !visible;
+        el.style.display = visible ? '' : 'none';
     }
 
     function getFieldDefinition(name) {
         return fieldsByName[name];
     }
 
-    function getOperatorsFor(fieldType) {
-        const ops = operatorsByType[fieldType];
-        if (!Array.isArray(ops) || !ops.length) {
-            return operatorsByType.text;
-        }
-        return ops;
-    }
-
-    function getOperatorOptions(fieldType) {
-        return getOperatorsFor(fieldType).map(op => ({
-            value: op,
-            label: operatorLabels[op] || op,
-        }));
+    /** El operador ya no lo elige el usuario: sale del tipo de campo. */
+    function operadorPara(fieldDef) {
+        return defaultOpByType[fieldDef ? fieldDef.type : 'text'] || 'contains';
     }
 
     function getChoiceOptions(fieldDef) {
         if (Array.isArray(fieldDef.options) && fieldDef.options.length) {
             return fieldDef.options;
         }
-
         if (fieldDef.type === 'boolean') {
             return booleanOptions;
         }
@@ -188,283 +129,160 @@
         input.removeAttribute('step');
         input.removeAttribute('min');
         input.removeAttribute('max');
-        input.removeAttribute('pattern');
 
+        const attrs = fieldDef.input || {};
         if (fieldDef.type === 'number') {
             input.type = 'number';
-            const attrs = fieldDef.input || {};
             input.step = attrs.step || '1';
-            if (attrs.min !== undefined) {
-                input.min = attrs.min;
-            }
-            if (attrs.max !== undefined) {
-                input.max = attrs.max;
-            }
         } else if (fieldDef.type === 'date') {
             input.type = 'date';
-            const attrs = fieldDef.input || {};
-            if (attrs.min !== undefined) {
-                input.min = attrs.min;
-            }
-            if (attrs.max !== undefined) {
-                input.max = attrs.max;
-            }
         } else {
             input.type = 'text';
         }
+        if (attrs.min !== undefined) {
+            input.min = attrs.min;
+        }
+        if (attrs.max !== undefined) {
+            input.max = attrs.max;
+        }
     }
 
-    function disableBlankOption(emptyModeSel, disabled) {
-        Array.from(emptyModeSel.options).forEach(opt => {
-            if (opt.value === 'blank') {
-                opt.disabled = disabled;
+    /** Renumera los placeholders: "Buscar por filtro 1", "... 2", ... */
+    function renumerarFilas() {
+        const filas = Array.from(rowsContainer.children);
+        filas.forEach((fila, indice) => {
+            const refs = fila._filtroRefs;
+            if (!refs) {
+                return;
             }
+            refs.valueInput.placeholder = `Buscar por filtro ${indice + 1}`;
+            // "- Filtro" no va en la primera fila
+            setVisible(refs.quitarBtn, indice > 0);
         });
-        if (disabled && emptyModeSel.value === 'blank') {
-            emptyModeSel.value = 'both';
-        }
     }
 
-    function addHeaderRow() {
-        // Check if header already exists
-        if (rowsContainer.querySelector('.filters-header-row')) {
-            return;
-        }
-
-        const headerRow = document.createElement('div');
-        headerRow.className = 'filters-header-row';
-        
-        const headerField = document.createElement('div');
-        headerField.className = 'filter-header';
-        headerField.textContent = 'Buscar por';
-        
-        const headerOp = document.createElement('div');
-        headerOp.className = 'filter-header';
-        headerOp.textContent = 'Tipo de coincidencia';
-        
-        const headerValue = document.createElement('div');
-        headerValue.className = 'filter-header';
-        headerValue.textContent = 'Ingresar valor';
-        
-        const headerEmpty = document.createElement('div');
-        headerEmpty.className = 'filter-header';
-        
-        headerRow.appendChild(headerField);
-        headerRow.appendChild(headerOp);
-        headerRow.appendChild(headerValue);
-        headerRow.appendChild(headerEmpty);
-        
-        rowsContainer.prepend(headerRow);
-    }
-
-    function addRow(prefill) {
-        // Add header row if it doesn't exist
-        addHeaderRow();
-
-        const row = document.createElement('div');
-        row.className = 'filters-row';
-
-        const fieldSel = createSelect('form-select', fieldOptions);
-        const opSel = createSelect('form-select');
-        const valueInput = document.createElement('input');
-        valueInput.type = 'text';
-        valueInput.className = 'form-control form-control-sm';
-        valueInput.placeholder = 'Valor';
-
-        const selectValue = createSelect('form-select form-select-sm');
-        selectValue.style.display = 'none';
-
-        const emptyModeSel = createSelect('form-select form-select-sm', emptyModeOptions);
-        emptyModeSel.style.display = 'none';
-
-        const removeBtn = document.createElement('button');
-        removeBtn.type = 'button';
-        removeBtn.className = 'btn btn-sm btn-outline-danger';
-        removeBtn.textContent = '-';
+    function crearFila(prefill) {
+        const fragmento = rowTemplate.content.cloneNode(true);
+        const fila = fragmento.querySelector('.poncho-search--row');
 
         const refs = {
-            fieldSel,
-            opSel,
-            valueInput,
-            selectValue,
-            emptyModeSel,
+            fieldSel: fila.querySelector('[data-rol="campo"]'),
+            valueInput: fila.querySelector('[data-rol="valor"]'),
+            selectValue: fila.querySelector('[data-rol="valor-select"]'),
+            agregarBtn: fila.querySelector('[data-rol="agregar"]'),
+            quitarBtn: fila.querySelector('[data-rol="quitar"]'),
         };
 
-        function currentFieldDef() {
-            return getFieldDefinition(fieldSel.value) || fields[0];
+        populateOptions(
+            refs.fieldSel,
+            [{ value: '', label: 'Buscar por' }].concat(fieldOptions)
+        );
+
+        function campoActual() {
+            return getFieldDefinition(refs.fieldSel.value) || fields[0];
         }
 
-        function refreshOperators(preserveCurrent) {
-            const fieldDef = currentFieldDef();
-            const options = getOperatorOptions(fieldDef.type);
-            const previous = preserveCurrent ? opSel.value : null;
-            populateOptions(opSel, options);
-
-            const defaultOp = defaultOpByType[fieldDef.type] || options[0]?.value;
-            opSel.value = options.some(opt => opt.value === previous)
-                ? previous
-                : defaultOp;
-        }
-
-        function refreshSelectOptions(fieldDef, prefillValue) {
-            const options = getChoiceOptions(fieldDef);
-            if (!options.length) {
-                selectValue.innerHTML = '';
-                return;
-            }
-
-            populateOptions(selectValue, options);
-            if (prefillValue !== undefined) {
-                selectValue.value = prefillValue;
-                if (selectValue.value !== prefillValue) {
-                    // si el valor no existe, agregarlo temporalmente
-                    selectValue.appendChild(createOption(prefillValue, prefillValue));
-                    selectValue.value = prefillValue;
-                }
-            }
-        }
-
-        function adjustVisibility(prefillValue) {
-            const fieldDef = currentFieldDef();
-            const operator = opSel.value;
-            const type = fieldDef.type;
-
-            if (operator === 'empty') {
-                valueInput.style.display = 'none';
-                tryDestroySelect2(selectValue);
-                selectValue.style.display = 'none';
-                emptyModeSel.style.display = 'inline-block';
-                disableBlankOption(
-                    emptyModeSel,
-                    type === 'number' || type === 'boolean' || type === 'date'
-                );
-                return;
-            }
-
-            emptyModeSel.style.display = 'none';
-
-            if (type === 'choice' || type === 'boolean') {
-                tryDestroySelect2(selectValue);
-                refreshSelectOptions(fieldDef, prefillValue);
-                selectValue.style.display = 'inline-block';
-                tryInitSelect2(selectValue, { width: '100%' });
-                valueInput.style.display = 'none';
-                return;
-            }
-
-            tryDestroySelect2(selectValue);
-            selectValue.style.display = 'none';
-            valueInput.style.display = 'inline-block';
-            applyInputAttributes(valueInput, fieldDef);
-
-            if (prefillValue !== undefined) {
-                valueInput.value = prefillValue;
-            }
-        }
-
-        function handleFieldChange() {
-            const fieldDef = currentFieldDef();
-            refreshOperators(false);
-            adjustVisibility();
-            if (fieldDef.type !== 'choice' && fieldDef.type !== 'boolean') {
-                valueInput.value = '';
-            } else {
-                selectValue.value = getChoiceOptions(fieldDef)[0]?.value || '';
-            }
-        }
-
-        refs.handleFieldChange = handleFieldChange;
-
-        fieldSel.addEventListener('change', handleFieldChange);
-
-        opSel.addEventListener('change', () => adjustVisibility());
-        removeBtn.addEventListener('click', () => {
-            tryDestroySelect2(fieldSel);
-            tryDestroySelect2(selectValue);
-            row.remove();
-        });
-
-        row.appendChild(fieldSel);
-        row.appendChild(opSel);
-        row.appendChild(valueInput);
-        row.appendChild(selectValue);
-        row.appendChild(emptyModeSel);
-        row.appendChild(removeBtn);
-        rowsContainer.appendChild(row);
-
-        // Prefill / defaults
-        if (prefill) {
-            if (prefill.field && fieldsByName[prefill.field]) {
-                fieldSel.value = prefill.field;
-            }
-            refreshOperators(true);
-            if (prefill.op) {
-                opSel.value = prefill.op;
-            }
-            adjustVisibility(prefill.op === 'empty' ? undefined : prefill.value);
-
-            if (opSel.value === 'empty' && prefill.empty_mode) {
-                emptyModeSel.value = prefill.empty_mode;
-            } else if (prefill.value !== undefined) {
-                const fieldDef = currentFieldDef();
-                if (fieldDef.type === 'choice' || fieldDef.type === 'boolean') {
-                    refreshSelectOptions(fieldDef, prefill.value);
-                } else {
-                    valueInput.value = String(prefill.value);
-                }
-            }
-        } else {
-            fieldSel.value = fieldOptions[0].value;
-            refreshOperators(false);
-            adjustVisibility();
-        }
-
-        row._advancedFilterRefs = refs;
-
-        tryInitSelect2(fieldSel, { width: '100%' });
-        bindSelect2FieldEvents(fieldSel, handleFieldChange);
-    }
-
-    addBtn.addEventListener('click', () => addRow());
-
-    form.addEventListener('submit', () => {
-        const items = [];
-        const rows = rowsContainer.children;
-
-        for (let i = 0; i < rows.length; i += 1) {
-            const refs = rows[i]._advancedFilterRefs;
-            if (!refs) {
-                continue;
-            }
-
-            const field = refs.fieldSel.value;
-            const op = refs.opSel.value;
-            const fieldDef = getFieldDefinition(field);
-            if (!fieldDef || !field || !op) {
-                continue;
-            }
-
-            if (op === 'empty') {
-                items.push({ field, op, empty_mode: refs.emptyModeSel.value || 'both' });
-                continue;
-            }
+        function ajustarValor(prefillValue) {
+            const fieldDef = campoActual();
 
             if (fieldDef.type === 'choice' || fieldDef.type === 'boolean') {
-                const selected = refs.selectValue.value;
-                if (selected !== '') {
-                    items.push({ field, op, value: selected });
+                const opciones = getChoiceOptions(fieldDef);
+                populateOptions(refs.selectValue, opciones);
+                if (prefillValue !== undefined) {
+                    refs.selectValue.value = prefillValue;
+                    if (refs.selectValue.value !== prefillValue) {
+                        refs.selectValue.appendChild(
+                            createOption(prefillValue, prefillValue)
+                        );
+                        refs.selectValue.value = prefillValue;
+                    }
                 }
-                continue;
+                setVisible(refs.selectValue, true);
+                setVisible(refs.valueInput, false);
+                return;
             }
 
-            const rawValue = refs.valueInput.value.trim();
-            if (rawValue !== '') {
-                items.push({ field, op, value: rawValue });
+            setVisible(refs.selectValue, false);
+            setVisible(refs.valueInput, true);
+            applyInputAttributes(refs.valueInput, fieldDef);
+            if (prefillValue !== undefined) {
+                refs.valueInput.value = prefillValue;
             }
         }
 
-        const logic = logicSelect.value || 'AND';
-        hiddenInput.value = JSON.stringify({ logic, items });
+        function alCambiarCampo() {
+            refs.valueInput.value = '';
+            ajustarValor();
+        }
+
+        refs.fieldSel.addEventListener('change', alCambiarCampo);
+
+        refs.agregarBtn.addEventListener('click', () => crearFila());
+        refs.quitarBtn.addEventListener('click', () => {
+            fila.remove();
+            renumerarFilas();
+        });
+
+        fila._filtroRefs = refs;
+        rowsContainer.appendChild(fila);
+
+        if (prefill && prefill.field && fieldsByName[prefill.field]) {
+            refs.fieldSel.value = prefill.field;
+            ajustarValor(prefill.value);
+        } else {
+            ajustarValor();
+        }
+
+        renumerarFilas();
+        return refs;
+    }
+
+    function readRow(refs) {
+        // '' es el placeholder "Buscar por": se busca por el primer campo.
+        const field = refs.fieldSel.value || fieldOptions[0].value;
+        const fieldDef = getFieldDefinition(field);
+        if (!fieldDef) {
+            return null;
+        }
+
+        const op = operadorPara(fieldDef);
+
+        if (fieldDef.type === 'choice' || fieldDef.type === 'boolean') {
+            const seleccionado = refs.selectValue.value;
+            return seleccionado !== '' ? { field, op, value: seleccionado } : null;
+        }
+
+        const valor = refs.valueInput.value.trim();
+        return valor !== '' ? { field, op, value: valor } : null;
+    }
+
+    function collectItems() {
+        const items = [];
+        Array.from(rowsContainer.children).forEach(fila => {
+            const refs = fila._filtroRefs;
+            if (!refs) {
+                return;
+            }
+            const item = readRow(refs);
+            if (item) {
+                items.push(item);
+            }
+        });
+        return items;
+    }
+
+    function collectPayload() {
+        return {
+            logic: LOGICA_FIJA,
+            items: collectItems(),
+        };
+    }
+
+    // Lo consume favorite_filters.js para no duplicar la serializacion.
+    window.AdvancedFilters = { collectPayload };
+
+    form.addEventListener('submit', () => {
+        hiddenInput.value = JSON.stringify(collectPayload());
     });
 
     function loadFromQuerystring() {
@@ -479,8 +297,7 @@
                 return false;
             }
 
-            logicSelect.value = parsed.logic === 'OR' ? 'OR' : 'AND';
-            parsed.items.forEach(item => addRow(item));
+            parsed.items.forEach(item => crearFila(item));
             return true;
         } catch (error) {
             console.warn('AdvancedFilters: no se pudo reconstruir filtros desde la URL.', error);
@@ -489,20 +306,6 @@
     }
 
     if (!loadFromQuerystring()) {
-        addRow();
+        crearFila();
     }
-
-    // Inicializar Select2 en filas ya existentes una vez que jQuery y Select2 estén disponibles.
-    // Esto cubre la llamada inicial a addRow() que ocurre antes de que jQuery se cargue.
-    window.addEventListener('load', function () {
-        rowsContainer.querySelectorAll('.filters-row').forEach(function (row) {
-            var refs = row._advancedFilterRefs;
-            if (!refs) { return; }
-            tryInitSelect2(refs.fieldSel, { width: '100%' });
-            bindSelect2FieldEvents(refs.fieldSel, refs.handleFieldChange);
-            if (refs.selectValue.style.display !== 'none') {
-                tryInitSelect2(refs.selectValue, { width: '100%' });
-            }
-        });
-    });
 })();

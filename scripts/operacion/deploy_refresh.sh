@@ -3,6 +3,7 @@ set -Eeuo pipefail
 
 SCRIPT_NAME="$(basename "$0")"
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+ROOT_DIR="${SISOC_ROOT_DIR:-$ROOT_DIR}"
 ENV_FILE="${ENV_FILE:-$ROOT_DIR/.env}"
 DRY_RUN=0
 ASSUME_YES=0
@@ -11,9 +12,11 @@ ALLOW_DIRTY=0
 ALLOW_BRANCH_MISMATCH=0
 SKIP_PULL=0
 WITH_MOBILE=0
+WITHOUT_MOBILE=0
 MOBILE_DIR=""
 MOBILE_SCRIPT=""
-MOBILE_HTTPS_REMOTE="https://github.com/dsocial118/SISOC-Mobile.git"
+MOBILE_HTTPS_REMOTE="https://github.com/dsocial118/Espacios-Comunitarios.git"
+EXPECTED_REVISION=""
 
 usage() {
   cat <<'USAGE'
@@ -33,12 +36,15 @@ Opciones:
   --allow-branch-mismatch   No bloquea si la branch actual no coincide
                             con la esperada para ENVIRONMENT.
   --skip-pull               No ejecuta git fetch/pull; solo reinicia Docker.
+  --expected-revision SHA   Exige que la revision a desplegar sea exactamente SHA.
+                            Si origin o HEAD ya avanzaron, bloquea antes de bajar Docker.
   --with-mobile             Tambien despliega SISOC-Mobile.
+  --without-mobile          Solo backend; las PWA se coordinan por separado.
   --mobile-dir PATH         Ruta del checkout SISOC-Mobile.
                             Default: ../SISOC-Mobile desde la raiz de SISOC.
                             Ejecuta scripts/operacion/deploy_refresh.sh de ese repo.
                             SISOC-Mobile debe estar en branch main.
-                            Su origin conocido se normaliza a HTTPS publica.
+                            Requiere acceso autenticado al repositorio privado.
   -h, --help                Muestra esta ayuda.
 
 Mapeo por entorno:
@@ -125,7 +131,13 @@ parse_args() {
       --allow-dirty) ALLOW_DIRTY=1 ;;
       --allow-branch-mismatch) ALLOW_BRANCH_MISMATCH=1 ;;
       --skip-pull) SKIP_PULL=1 ;;
+      --expected-revision)
+        shift
+        [[ $# -gt 0 ]] || fail "--expected-revision requiere un SHA."
+        EXPECTED_REVISION="$1"
+        ;;
       --with-mobile) WITH_MOBILE=1 ;;
+      --without-mobile) WITHOUT_MOBILE=1 ;;
       --mobile-dir)
         shift
         [[ $# -gt 0 ]] || fail "--mobile-dir requiere una ruta."
@@ -180,17 +192,36 @@ normalize_mobile_origin() {
     || fail "SISOC-Mobile no tiene remote origin configurado."
 
   case "$current_remote" in
-    "$MOBILE_HTTPS_REMOTE")
+    "$MOBILE_HTTPS_REMOTE"|git@github.com:dsocial118/Espacios-Comunitarios.git|ssh://git@github.com/dsocial118/Espacios-Comunitarios.git)
       return 0
       ;;
-    https://github.com/dsocial118/SISOC-Mobile|git@github.com:dsocial118/SISOC-Mobile.git|ssh://git@github.com/dsocial118/SISOC-Mobile.git)
-      log "Normalizando origin de SISOC-Mobile a HTTPS publica."
-      run git -C "$MOBILE_DIR" remote set-url origin "$MOBILE_HTTPS_REMOTE"
+    https://github.com/dsocial118/SISOC-Mobile.git|https://github.com/dsocial118/SISOC-Mobile|git@github.com:dsocial118/SISOC-Mobile.git|ssh://git@github.com/dsocial118/SISOC-Mobile.git)
+      log "Origin anterior de Espacios Comunitarios: actualizar durante el aprovisionamiento."
       ;;
     *)
       fail "Origin inesperado para SISOC-Mobile; revisar origin sin copiar credenciales al log."
       ;;
   esac
+}
+
+validate_expected_revision() {
+  local actual_revision source
+
+  [[ -z "$EXPECTED_REVISION" ]] && return 0
+  [[ "$EXPECTED_REVISION" =~ ^[0-9a-f]{40}$ ]] \
+    || fail "--expected-revision debe ser un SHA completo de 40 caracteres hexadecimales."
+
+  if [[ "$SKIP_PULL" -eq 0 ]]; then
+    source="origin/$CURRENT_BRANCH"
+  else
+    source="HEAD"
+  fi
+
+  actual_revision="$(git -C "$ROOT_DIR" rev-parse "$source")" \
+    || fail "No pude resolver la revision $source para validar el deploy."
+  [[ "$actual_revision" == "$EXPECTED_REVISION" ]] \
+    || fail "La revision esperada $EXPECTED_REVISION ya no coincide con $source ($actual_revision); no se baja Docker."
+  log "revision_verificada=$actual_revision"
 }
 
 compose_for_environment() {
@@ -245,13 +276,21 @@ configure_mobile() {
   MOBILE_ARGS=()
   [[ "$DRY_RUN" -eq 1 ]] && MOBILE_ARGS+=(--dry-run)
   [[ "$ASSUME_YES" -eq 1 ]] && MOBILE_ARGS+=(--yes)
-  [[ "$INCLUDE_VOLUMES" -eq 1 ]] && MOBILE_ARGS+=(--volumes)
   [[ "$ALLOW_DIRTY" -eq 1 ]] && MOBILE_ARGS+=(--allow-dirty)
   [[ "$ALLOW_BRANCH_MISMATCH" -eq 1 ]] && MOBILE_ARGS+=(--allow-branch-mismatch)
-  [[ "$SKIP_PULL" -eq 1 ]] && MOBILE_ARGS+=(--skip-pull)
+  MOBILE_ARGS+=(--skip-pull)
 
   ensure_clean_branch "$MOBILE_DIR" "${MOBILE_BRANCH:-main}" MOBILE_BRANCH "SISOC-Mobile"
   normalize_mobile_origin
+  if [[ "$SKIP_PULL" -eq 0 ]]; then
+    # Fallar por autenticacion antes de interrumpir el backend.
+    run env GIT_TERMINAL_PROMPT=0 git -C "$MOBILE_DIR" fetch origin --no-tags main
+  fi
+  if [[ "$DRY_RUN" -eq 0 && "$SKIP_PULL" -eq 0 ]]; then
+    MOBILE_REVISION="$(git -C "$MOBILE_DIR" rev-parse 'FETCH_HEAD^{commit}')"
+    git -C "$MOBILE_DIR" merge-base --is-ancestor HEAD "$MOBILE_REVISION" \
+      || fail "Espacios Comunitarios no permite fast-forward."
+  fi
 }
 
 main() {
@@ -264,12 +303,14 @@ main() {
   ENVIRONMENT="$(printf '%s' "$ENVIRONMENT" | tr '[:upper:]' '[:lower:]')"
 
   compose_for_environment "$ENVIRONMENT"
+  [[ "$WITHOUT_MOBILE" -eq 1 ]] && WITH_MOBILE=0
   ensure_clean_branch "$ROOT_DIR" "$EXPECTED_BRANCH" CURRENT_BRANCH "SISOC"
   configure_mobile
 
   log "root=$ROOT_DIR"
   log "environment=$ENVIRONMENT"
   log "branch=$CURRENT_BRANCH"
+  [[ -n "$EXPECTED_REVISION" ]] && log "expected_revision=$EXPECTED_REVISION"
   log "compose_files=${COMPOSE_FILES[*]}"
   if [[ "$WITH_MOBILE" -eq 1 ]]; then
     log "mobile_root=$MOBILE_DIR"
@@ -288,12 +329,21 @@ main() {
     run git -C "$ROOT_DIR" fetch origin --prune
   fi
 
+  validate_expected_revision
+
   run "${COMPOSE_CMD[@]}" --project-directory "$ROOT_DIR" config -q
 
   run "${COMPOSE_CMD[@]}" --project-directory "$ROOT_DIR" "${DOWN_ARGS[@]}"
 
   if [[ "$SKIP_PULL" -eq 0 ]]; then
-    run git -C "$ROOT_DIR" pull --ff-only origin "$CURRENT_BRANCH"
+    run git -C "$ROOT_DIR" merge --ff-only "origin/$CURRENT_BRANCH"
+  fi
+
+  if [[ -n "$EXPECTED_REVISION" ]]; then
+    deployed_revision="$(git -C "$ROOT_DIR" rev-parse HEAD)" \
+      || fail "No pude resolver la revision desplegada."
+    [[ "$deployed_revision" == "$EXPECTED_REVISION" ]] \
+      || fail "La revision desplegada $deployed_revision no coincide con $EXPECTED_REVISION."
   fi
 
   run "${COMPOSE_CMD[@]}" --project-directory "$ROOT_DIR" up -d --build
@@ -301,9 +351,13 @@ main() {
   run "${COMPOSE_CMD[@]}" --project-directory "$ROOT_DIR" ps
 
   if [[ "$WITH_MOBILE" -eq 1 ]]; then
+    if [[ "$SKIP_PULL" -eq 0 ]]; then
+      run git -C "$MOBILE_DIR" merge --ff-only "${MOBILE_REVISION:-FETCH_HEAD}"
+    fi
     run bash "$MOBILE_SCRIPT" "${MOBILE_ARGS[@]}"
   fi
 
+  log "deployed_revision=$(git -C "$ROOT_DIR" rev-parse HEAD)"
   log "Deploy refresh finalizado."
 }
 

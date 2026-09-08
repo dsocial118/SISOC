@@ -6,6 +6,7 @@ from organizaciones.views import (
     OrganizacionCreateView,
     OrganizacionUpdateView,
     OrganizacionDetailView,
+    OrganizacionRendicionDetailView,
     OrganizacionDeleteView,
     FirmanteCreateView,
     AvalCreateView,
@@ -16,8 +17,10 @@ from organizaciones.views import (
     actualizar_estado_documento_organizacion,
     actualizar_vencimiento_documento_organizacion,
     historial_documento_organizacion,
+    load_organizaciones,
     sub_tipo_entidad_ajax,
     organizaciones_ajax,
+    proyectos_organizacion_ajax,
     cuil_check_ajax,
     subir_documento_organizacion,
     agregar_documento_personalizado_organizacion,
@@ -30,8 +33,18 @@ ORGANIZACION_DOCUMENTACION_PERMS = [
     "auth.role_tecnico_comedor",
     "auth.role_abogado_dupla",
 ]
+ORGANIZACION_PROYECTOS_PERMS = [
+    *ORGANIZACION_DOCUMENTACION_PERMS,
+    "comedores.add_comedor",
+    "comedores.change_comedor",
+]
 
 urlpatterns = [
+    path(
+        "ajax/load-organizaciones/",
+        load_organizaciones,
+        name="ajax_load_organizaciones",
+    ),
     path(
         "organizaciones/listar",
         permissions_any_required(ORGANIZACION_DOCUMENTACION_PERMS)(
@@ -66,6 +79,13 @@ urlpatterns = [
             OrganizacionDetailView.as_view()
         ),
         name="organizacion_detalle",
+    ),
+    path(
+        "organizaciones/<int:organizacion_id>/rendiciones/<int:pk>/detalle/",
+        permissions_any_required(ORGANIZACION_DOCUMENTACION_PERMS)(
+            OrganizacionRendicionDetailView.as_view()
+        ),
+        name="organizacion_rendicion_detalle",
     ),
     path(
         "organizaciones/eliminar/<int:pk>",
@@ -169,6 +189,13 @@ urlpatterns = [
         "organizaciones/ajax/",
         permissions_any_required(ORGANIZACION_DOCUMENTACION_PERMS)(organizaciones_ajax),
         name="organizaciones_ajax",
+    ),
+    path(
+        "organizaciones/<int:organizacion_id>/proyectos/ajax/",
+        permissions_any_required(ORGANIZACION_PROYECTOS_PERMS)(
+            proyectos_organizacion_ajax
+        ),
+        name="organizacion_proyectos_ajax",
     ),
     path(
         "organizaciones/cuil-check/ajax/",

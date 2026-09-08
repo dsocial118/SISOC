@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import argparse
 import json
 import os
 import re
@@ -148,28 +149,50 @@ def clean_text(value: str) -> str:
 
 
 def parse_pr_body_metadata(body: str) -> dict[str, str]:
-    """Extrae metadata estructurada desde listas del body del PR."""
+    """Extrae metadata estructurada desde etiquetas del body del PR."""
 
     metadata: dict[str, str] = {}
+    active_key = ""
+    active_lines: list[str] = []
+
+    def save_active_value():
+        if active_key and active_lines and active_key not in metadata:
+            metadata[active_key] = clean_text(" ".join(active_lines))
+
     for raw_line in (body or "").splitlines():
         line = raw_line.strip()
         if not line:
-            continue
-        if not line.startswith("-"):
+            save_active_value()
+            active_key = ""
+            active_lines = []
             continue
         candidate = re.sub(r"^[\-\*\s]+", "", line)
         candidate = candidate.replace("**", "").replace("`", "")
-        if ":" not in candidate:
-            continue
-        raw_key, raw_value = candidate.split(":", 1)
-        normalized_key = normalize_key(raw_key)
-        value = clean_text(raw_value)
-        if not value:
-            continue
-        for canonical_key, aliases in BODY_FIELD_ALIASES.items():
-            if normalized_key in aliases and canonical_key not in metadata:
-                metadata[canonical_key] = value
-                break
+        if ":" in candidate:
+            raw_key, raw_value = candidate.split(":", 1)
+            normalized_key = normalize_key(raw_key)
+            canonical_key = next(
+                (
+                    key
+                    for key, aliases in BODY_FIELD_ALIASES.items()
+                    if normalized_key in aliases
+                ),
+                "",
+            )
+            if canonical_key:
+                save_active_value()
+                active_key = ""
+                active_lines = []
+                value = clean_text(raw_value)
+                if value and canonical_key not in metadata:
+                    metadata[canonical_key] = value
+                elif not value and canonical_key not in metadata:
+                    active_key = canonical_key
+                continue
+        if active_key:
+            active_lines.append(candidate)
+
+    save_active_value()
     return metadata
 
 
@@ -198,6 +221,18 @@ def remove_previous_pr_files(directory: Path, pattern: str) -> None:
 
     for stale_file in directory.glob(pattern):
         stale_file.unlink()
+
+
+def find_previous_release_dates(directory: Path, pr_number: int) -> set[str]:
+    """Recupera las fechas de artefactos previos antes de regenerar un PR."""
+
+    release_dates: set[str] = set()
+    pattern = re.compile(r"^(\d{4}-\d{2}-\d{2})-pr-\d+\.md$")
+    for stale_file in directory.glob(f"*-pr-{pr_number}.md"):
+        match = pattern.match(stale_file.name)
+        if match:
+            release_dates.add(match.group(1))
+    return release_dates
 
 
 def detect_affected_areas(changed_files: list[str]) -> list[str]:
@@ -359,7 +394,6 @@ def build_pr_document(
 - Base: `{pr.base_ref}`
 - Rama origen: `{pr.head_ref}`
 - Autor: `{pr.author}`
-- Última actualización: `{pr.updated_at}`
 
 ## Resumen operativo
 
@@ -595,6 +629,17 @@ def replace_auto_release_block(
     return replacement_block
 
 
+def remove_auto_release_block(changelog_content: str, release_date: str) -> str:
+    """Quita un bloque auto-generado cuando ya no tiene notas pendientes."""
+
+    pattern = re.compile(
+        rf"{re.escape(AUTO_RELEASE_START.format(release_date=release_date))}\n.*?"
+        rf"{re.escape(AUTO_RELEASE_END.format(release_date=release_date))}\n?",
+        re.S,
+    )
+    return pattern.sub("", changelog_content).lstrip()
+
+
 def render_changelog(
     existing_content: str,
     release_date: str,
@@ -617,6 +662,15 @@ def extract_pull_request_data(payload: dict[str, Any]) -> PullRequestData:
 
     pull_request = payload["pull_request"]
     repository = payload["repository"]
+    return pull_request_data_from_api(pull_request, repository["full_name"])
+
+
+def pull_request_data_from_api(
+    pull_request: dict[str, Any],
+    repo_full_name: str,
+) -> PullRequestData:
+    """Construye el contexto comun desde la respuesta de la API de GitHub."""
+
     return PullRequestData(
         number=int(pull_request["number"]),
         title=pull_request["title"],
@@ -626,7 +680,7 @@ def extract_pull_request_data(payload: dict[str, Any]) -> PullRequestData:
         head_ref=pull_request["head"]["ref"],
         author=pull_request["user"]["login"],
         updated_at=pull_request["updated_at"],
-        repo_full_name=repository["full_name"],
+        repo_full_name=repo_full_name,
     )
 
 
@@ -666,6 +720,31 @@ def fetch_changed_files(pr: PullRequestData, token: str) -> list[str]:
     return files
 
 
+def fetch_pull_request_data(
+    repo_full_name: str,
+    pull_number: int,
+    token: str,
+) -> PullRequestData:
+    """Obtiene el PR para una ejecucion fuera de un evento de GitHub Actions."""
+
+    encoded_repo = urllib.parse.quote(repo_full_name, safe="/")
+    response_data = github_api_get_json(
+        f"https://api.github.com/repos/{encoded_repo}/pulls/{pull_number}",
+        token,
+    )
+    return pull_request_data_from_api(response_data, repo_full_name)
+
+
+def read_changed_files_file(path: Path) -> list[str]:
+    """Lee un manifiesto de paths, uno por linea, generado desde el diff real."""
+
+    return [
+        line.strip()
+        for line in path.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+
+
 def ensure_parent_dirs() -> None:
     """Crea carpetas necesarias para artefactos generados."""
 
@@ -685,11 +764,13 @@ def sync_pr_artifacts(
     pr: PullRequestData,
     token: str,
     today: date | None = None,
+    changed_files: list[str] | None = None,
 ) -> None:
     """Genera todos los artefactos requeridos para un PR."""
 
     ensure_parent_dirs()
-    changed_files = fetch_changed_files(pr, token)
+    if changed_files is None:
+        changed_files = fetch_changed_files(pr, token)
     metadata = parse_pr_body_metadata(pr.body)
 
     pr_document_path = DOCS_PR_DIR / f"PR-{pr.number}.md"
@@ -710,6 +791,9 @@ def sync_pr_artifacts(
         return
 
     release_file_date = resolve_release_date(metadata, today or date.today())
+    previous_release_dates = find_previous_release_dates(
+        DOCS_RELEASE_PENDING_DIR, pr.number
+    )
     remove_previous_pr_files(DOCS_RELEASE_PENDING_DIR, f"*-pr-{pr.number}.md")
     pending_note = PendingReleaseNote(
         pr_number=pr.number,
@@ -730,25 +814,77 @@ def sync_pr_artifacts(
     existing_changelog = ""
     if CHANGELOG_PATH.exists():
         existing_changelog = CHANGELOG_PATH.read_text(encoding="utf-8")
+    for previous_release_date in sorted(previous_release_dates - {release_file_date}):
+        previous_notes = load_pending_release_notes(
+            DOCS_RELEASE_PENDING_DIR, previous_release_date
+        )
+        if previous_notes:
+            existing_changelog = render_changelog(
+                existing_changelog, previous_release_date, previous_notes
+            )
+        else:
+            existing_changelog = remove_auto_release_block(
+                existing_changelog, previous_release_date
+            )
     notes = load_pending_release_notes(DOCS_RELEASE_PENDING_DIR, release_file_date)
     updated_changelog = render_changelog(existing_changelog, release_file_date, notes)
     write_text_file(CHANGELOG_PATH, updated_changelog)
 
 
-def main() -> int:
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    """Parsea tanto el evento de Actions como una ejecucion controlada de pre-deploy."""
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--event-path",
+        type=Path,
+        help="Payload de pull_request; por defecto usa GITHUB_EVENT_PATH.",
+    )
+    parser.add_argument(
+        "--pr",
+        type=int,
+        help="Numero de PR para consultar por API fuera de GitHub Actions.",
+    )
+    parser.add_argument(
+        "--repository",
+        help="Repositorio owner/name requerido junto con --pr.",
+    )
+    parser.add_argument(
+        "--changed-files-file",
+        type=Path,
+        help="Manifiesto de archivos del diff real que reemplaza la consulta de files del PR.",
+    )
+    args = parser.parse_args(argv)
+    if args.pr is not None and not args.repository:
+        parser.error("--repository es requerido junto con --pr.")
+    if args.pr is None and args.repository:
+        parser.error("--repository solo se admite junto con --pr.")
+    return args
+
+
+def main(argv: list[str] | None = None) -> int:
     """Punto de entrada del script."""
 
-    event_path_value = os.environ.get("GITHUB_EVENT_PATH")
+    args = parse_args(argv)
+    event_path_value = args.event_path or os.environ.get("GITHUB_EVENT_PATH")
     token = os.environ.get("GITHUB_TOKEN")
-    if not event_path_value:
-        raise RuntimeError("GITHUB_EVENT_PATH no está definido.")
     if not token:
         raise RuntimeError("GITHUB_TOKEN no está definido.")
 
-    payload = read_event_payload(Path(event_path_value))
-    pr = extract_pull_request_data(payload)
     try:
-        sync_pr_artifacts(pr, token)
+        if args.pr is not None:
+            pr = fetch_pull_request_data(args.repository, args.pr, token)
+        else:
+            if not event_path_value:
+                raise RuntimeError("GITHUB_EVENT_PATH no está definido.")
+            payload = read_event_payload(Path(event_path_value))
+            pr = extract_pull_request_data(payload)
+        changed_files = (
+            read_changed_files_file(args.changed_files_file)
+            if args.changed_files_file
+            else None
+        )
+        sync_pr_artifacts(pr, token, changed_files=changed_files)
     except urllib.error.HTTPError as exc:
         raise RuntimeError(f"No se pudo consultar la API de GitHub: {exc}") from exc
     return 0

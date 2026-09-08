@@ -4,6 +4,7 @@ import logging
 
 from django.contrib import messages
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError
 
 from centrodeinfancia.models import AccesoCDI
@@ -38,15 +39,36 @@ def crear_referente_cdi_automaticamente(request, centro):
         return
     if AccesoCDI.objects.filter(centro=centro).exists():
         return
-    if User.objects.filter(email__iexact=datos_referente["email"]).exists():
+    usuarios_existentes = list(
+        User.objects.filter(email__iexact=datos_referente["email"]).order_by("pk")[:2]
+    )
+    if len(usuarios_existentes) == 1:
+        usuario = usuarios_existentes[0]
+        grupo, _ = Group.objects.get_or_create(name=UserGroups.CDI_REFERENTE_CENTRO)
+        usuario.groups.add(grupo)
+        acceso, creado = AccesoCDI.objects.get_or_create(
+            user=usuario,
+            centro=centro,
+            defaults={"creado_por": request.user, "activo": True},
+        )
+        if not creado and not acceso.activo:
+            acceso.activo = True
+            acceso.fecha_baja = None
+            acceso.save(update_fields=["activo", "fecha_baja"])
+        messages.success(
+            request,
+            f"Usuario existente «{usuario.username}» asociado como referente.",
+        )
+        return
+    if usuarios_existentes:
         logger.warning(
-            "No se creó referente CDI porque el email ya está en uso centro_id=%s email=%s",
+            "No se vinculó referente CDI por email ambiguo centro_id=%s email=%s",
             centro.id,
             datos_referente["email"],
         )
         messages.warning(
             request,
-            "El CDI se guardó sin crear referente: el email ya está asociado a un usuario.",
+            "El CDI se guardó sin vincular referente: el email está asociado a más de un usuario.",
         )
         return
 
@@ -84,10 +106,16 @@ def crear_referente_cdi_automaticamente(request, centro):
             "El CDI se guardó, pero no se pudo crear el referente automáticamente.",
         )
     else:
-        messages.success(
-            request,
-            f"Referente «{resultado['user'].username}» creado automáticamente.",
-        )
+        if resultado["email_enviado"]:
+            messages.success(
+                request,
+                f"Referente «{resultado['user'].username}» creado automáticamente y credenciales enviadas.",
+            )
+        else:
+            messages.warning(
+                request,
+                f"Referente «{resultado['user'].username}» creado automáticamente, pero no se pudieron enviar las credenciales por email.",
+            )
 
 
 def _vincular_usuario_trabajador(trabajador, user):
@@ -138,10 +166,17 @@ def crear_usuario_trabajador_automaticamente(request, trabajador):
         )
     else:
         trabajador.usuario = resultado["user"]
-        messages.success(
-            request,
-            f"Usuario de trabajador «{resultado['user'].username}» creado automáticamente.",
-        )
+        if resultado["email_enviado"]:
+            messages.success(
+                request,
+                f"Usuario de trabajador «{resultado['user'].username}» creado automáticamente y credenciales enviadas.",
+            )
+        else:
+            messages.warning(
+                request,
+                f"Usuario de trabajador «{resultado['user'].username}» creado "
+                "automáticamente, pero no se pudieron enviar las credenciales por email.",
+            )
 
 
 def _sincronizar_email_si_cuenta_temporal(request, user, email, tipo_usuario):
@@ -203,8 +238,8 @@ def sincronizar_email_trabajador(request, trabajador):
     )
 
 
-def vincular_scope_provincial_egp(nuevo_usuario, provincia):
-    """Marca un EGP como territorial y lo limita a una provincia completa."""
+def vincular_scope_provincial_egp(nuevo_usuario, provincias):
+    """Marca un EGP como territorial y lo limita a provincias completas."""
     profile, _ = Profile.objects.get_or_create(user=nuevo_usuario)
     profile.es_usuario_provincial = True
     profile.save(update_fields=["es_usuario_provincial"])
@@ -216,5 +251,6 @@ def vincular_scope_provincial_egp(nuevo_usuario, provincia):
                 "municipio_id": None,
                 "localidad_id": None,
             }
+            for provincia in provincias
         ],
     )

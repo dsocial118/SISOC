@@ -53,9 +53,12 @@
             </a>
         </li -->
 <li class="nav-item circle-btn">
-<a class="nav-link nav-link-rounded" href="{% url 'logout' %}">
+<form method="post" action="{% url 'logout' %}" class="d-inline">
+{% csrf_token %}
+<button type="submit" class="nav-link nav-link-rounded border-0 bg-transparent" aria-label="Cerrar sesión">
 <img src="{% static 'custom/img/iconos_navbar/exit.svg' %}" alt="Salir" />
-</a>
+</button>
+</form>
 </li>
 </ul>
 </nav>

@@ -32,9 +32,12 @@ pendiente de validación en destino. Aplica tanto a `comedores.Nomina` como a
 5. Si el comedor destino usa admisión, busca la última admisión activa; si no
    hay, rechaza con mensaje claro.
 6. Verifica que la persona no tenga ya un registro `Activo`/`Espera` o
-   `Activo`/`Pendiente` en destino.
+   `Activo`/`Pendiente` en destino. Para CDI también rechaza una ficha vigente
+   en cualquier **tercer** centro, sin revelar cuál es.
 7. Abre una transacción atómica:
-   - Bloquea origen con `select_for_update()` y revalida estado y duplicado.
+   - En CDI bloquea primero la fila de la persona y luego la nómina origen;
+     revalida estado y vigencia bajo lock. En Comedores bloquea el origen y
+     revalida el duplicado según su contrato actual.
    - Marca origen como `BAJA`.
    - Crea destino con estado `ESPERA`/`PENDIENTE`. En CDI copia campos ricos
      desde el origen (`_CAMPOS_COPIABLES`: identidad, salud, domicilio,
@@ -48,6 +51,9 @@ pendiente de validación en destino. Aplica tanto a `comedores.Nomina` como a
 - El usuario debe tener scope tanto sobre origen como sobre destino.
 - Comedor destino con `programa.usa_admision_para_nomina=True` exige al menos
   una `Admision.activa=True`.
+- En CDI, una ficha `Activo` o `Pendiente` en otro centro bloquea el alta y la
+  derivación. `Baja` y la baja lógica no bloquean, para permitir que el origen
+  de la derivación se cierre y el destino quede pendiente.
 - Permisos requeridos en URL (ambos a la vez, `permissions_all_required`):
   - Comedores: `comedores.change_nomina` + `comedores.add_nomina`.
   - CDI: `centrodeinfancia.change_nominacentroinfancia` +
@@ -55,7 +61,8 @@ pendiente de validación en destino. Aplica tanto a `comedores.Nomina` como a
 
 ## Side effects
 - Cambio de estado del origen y creación del registro destino, todo bajo
-  `transaction.atomic` con bloqueo de fila origen.
+  `transaction.atomic`. CDI serializa además por fila de ciudadano para que
+  intentos concurrentes desde centros distintos no creen dos vigencias.
 - Registro de auditoría inmutable (admin define `has_add_permission=False` y
   `has_change_permission=False`).
 - FKs `comedor_origen`/`comedor_destino` con `on_delete=PROTECT` para impedir
@@ -69,6 +76,8 @@ pendiente de validación en destino. Aplica tanto a `comedores.Nomina` como a
 - `La persona ya tiene un registro activo o en espera en «X»`: hay duplicado.
 - `El registro fue modificado antes de completar la derivación`: TOCTOU
   detectado por la revalidación bajo lock.
+- En CDI, el conflicto con un tercer centro vigente devuelve el mensaje neutro
+  de nómina vigente; no informa el nombre ni el enlace del centro ajeno.
 
 ## Selector del modal
 - `comedores_para_derivar` se construye con `get_scoped_comedor_queryset(user)`
@@ -96,4 +105,5 @@ pendiente de validación en destino. Aplica tanto a `comedores.Nomina` como a
   con admisión, fallas por estado/duplicado/admisión inexistente) + vistas
   AJAX (405 sin POST, 302/403 sin auth, 400 entrada inválida, 200 OK).
 - `centrodeinfancia/tests/test_derivar_service.py`: análogos para CDI,
-  incluyendo verificación de copia de campos ricos (incluye FK a Provincia).
+  incluyendo verificación de copia de campos ricos (incluye FK a Provincia),
+  conflicto con un tercer CDI y revalidación concurrente en MySQL.

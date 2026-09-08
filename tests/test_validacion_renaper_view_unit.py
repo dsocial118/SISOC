@@ -101,18 +101,13 @@ def test_helpers_build_log_data():
     legajo = SimpleNamespace(pk=2, expediente_id=20)
     ciudadano = SimpleNamespace(id=30, sexo=SimpleNamespace(sexo="Masculino"))
 
-    data = module._build_log_data(
-        user,
-        legajo,
-        ciudadano,
-        documento_original="20123456780",
-        documento_consulta="12345678",
-        sexo_renaper="M",
-    )
+    data = module._build_log_data(user, legajo, ciudadano)
 
     assert data["user_id"] == 10
     assert data["legajo_id"] == 2
-    assert data["documento_consulta"] == "12345678"
+    assert "documento_original" not in data
+    assert "documento_consulta" not in data
+    assert "username" not in data
 
 
 def test_dispatch_permissions():
@@ -203,8 +198,8 @@ def test_consultar_renaper_guard_clauses(mocker):
     resp_bad_doc = view._consultar_renaper(
         SimpleNamespace(user=_User(superuser=True)), pk=1, legajo_id=1
     )
-    assert json.loads(resp_bad_doc.content)["error"].startswith(
-        "No se pudo extraer DNI válido"
+    assert json.loads(resp_bad_doc.content)["error"] == (
+        "No se pudo extraer un DNI válido del documento."
     )
 
 
@@ -328,7 +323,7 @@ def test_consultar_renaper_invalid_response_muestra_mensaje_y_log(mocker):
     assert log_data["error_type"] == "invalid_response"
     assert log_data["retry_attempt"] == 1
     assert log_data["max_retries"] == 1
-    assert '"broken": true' in log_data["raw_response_excerpt"]
+    assert "raw_response_excerpt" not in log_data
 
 
 def test_no_match_no_reintenta_ni_loguea_retry(mocker):
@@ -403,7 +398,7 @@ def test_no_match_loguea_solo_no_match_y_mensaje_funcional(mocker):
     assert log_data["error_type"] == "no_match"
     assert log_data["retry_attempt"] == 1
     assert log_data["max_retries"] == 1
-    assert '"detalle": "mismatch"' in log_data["raw_response_excerpt"]
+    assert "raw_response_excerpt" not in log_data
 
 
 def test_consultar_datos_renaper_con_reintentos_respeta_backoff_y_retry_log(mocker):

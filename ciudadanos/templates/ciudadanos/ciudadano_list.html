@@ -9,17 +9,30 @@
     <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
     {% with titulo_search='Buscar ciudadano' placeholder_text='Apellido, nombre o documento' help_text='Ingresá apellido, nombre o DNI' reset_url_name='ciudadanos' %}
         {% url 'ciudadanos_exportar' as export_url %}
-        {% include 'components/search_bar.html' with titulo=titulo_search placeholder=placeholder_text help_text=help_text reset_url=reset_url_name query=filter_form.q.value show_add_button=True add_url='ciudadanos_crear' add_text='Nuevo ciudadano' export_url=export_url additional_buttons=additional_buttons %}
+        {% include 'components/search_bar.html' with titulo=titulo_search placeholder=placeholder_text help_text=help_text reset_url=reset_url_name back_url='' query=filter_form.q.value show_add_button=True add_url='ciudadanos_crear' add_text='Nuevo ciudadano' export_url=export_url additional_buttons=additional_buttons filters_mode=filters_mode filters_config=filters_config filters_action=filters_action %}
     {% endwith %}
+    {% comment %}
+    El listado tiene dos formularios: el de la barra (#filters-form, con los
+    filtros combinables) y el propio (#province-filter-form, con estado
+    identidad y estado de revision). Cada uno arrastra los parametros del otro
+    como hidden para que aplicar uno no borre lo seleccionado en el otro.
+    Se usa el atributo form= para engancharlos al formulario de la barra, que
+    lo renderiza el componente compartido.
+    {% endcomment %}
     <input type="hidden"
            name="q"
            id="hidden-q-input"
-           form="simple-search-form"
+           form="filters-form"
            value="{{ filter_form.q.value|default:'' }}" />
+    <input type="hidden" name="filters_mode" form="filters-form" value="ui" />
     <input type="hidden"
-           name="filters_mode"
-           form="simple-search-form"
-           value="ui" />
+           name="tipo_registro"
+           form="filters-form"
+           value="{{ filter_form.tipo_registro.value|default:'' }}" />
+    <input type="hidden"
+           name="estado_revision"
+           form="filters-form"
+           value="{{ filter_form.estado_revision.value|default:'' }}" />
     <div class="row mt-5 max-width-100">
         <div class="col-12">
             <div class="card">
@@ -27,18 +40,21 @@
                     <h3 class="card-title mb-0">Listado de ciudadanos</h3>
                 </div>
                 <div class="card-body">
+                    {% comment %}
+                    Provincia se movio a los filtros combinables de la barra.
+                    Estado identidad y Estado de Revision siguen aca porque el
+                    primero gobierna la condicionalidad del segundo, y el motor
+                    de filtros no puede expresar esa dependencia entre filas.
+                    Ver ciudadanos/ciudadanos_filter_config.py
+                    {% endcomment %}
                     <form method="get"
                           class="row g-2 align-items-end mb-4"
                           id="province-filter-form">
-                        <div class="col-12 col-lg-3">
-                            {{ filter_form.provincia.label_tag }}
-                            {{ filter_form.provincia }}
-                        </div>
-                        <div class="col-12 col-lg-3">
+                        <div class="col-12 col-lg-4">
                             {{ filter_form.tipo_registro.label_tag }}
                             {{ filter_form.tipo_registro }}
                         </div>
-                        <div class="col-12 col-lg-3"
+                        <div class="col-12 col-lg-4"
                              id="estado-revision-group"
                              data-enabled-values=",SIN_DNI,DNI_NO_VALIDADO_RENAPER">
                             {{ filter_form.estado_revision.label_tag }}
@@ -49,7 +65,14 @@
                                id="province-hidden-q"
                                value="{{ filter_form.q.value|default:'' }}" />
                         <input type="hidden" name="filters_mode" value="ui" />
-                        <div class="col-12 col-lg-3">
+                        {% comment %}
+                        Arrastra los filtros combinables para que "Aplicar" no
+                        los borre.
+                        {% endcomment %}
+                        <input type="hidden"
+                               name="filters"
+                               value="{{ request.GET.filters|default:'' }}" />
+                        <div class="col-12 col-lg-4">
                             <button type="submit" class="btn btn-outline-secondary w-100">Aplicar</button>
                         </div>
                     </form>

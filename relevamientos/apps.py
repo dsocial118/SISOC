@@ -6,4 +6,5 @@ class RelevamientosConfig(AppConfig):
     name = "relevamientos"
 
     def ready(self):
+        import relevamientos.audit_signals  # pylint: disable=unused-import, import-outside-toplevel
         import relevamientos.signals  # pylint: disable=unused-import, import-outside-toplevel

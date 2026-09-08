@@ -1,0 +1,114 @@
+# Contexto de feature PR #2317 - hml
+
+## Resumen
+
+- PR: https://github.com/dsocial118/SISOC/pull/2317
+- Base: `homologacion`
+- Rama origen: `development`
+- Autor: `juanikitro`
+
+## Contexto funcional
+
+- No informado explícitamente; inferir desde el título del PR y el diff.
+
+## Arquitectura tocada
+
+- Hay cambios en capa API/DRF y conviene revisar contratos de request/response.
+- Hay cambios en vistas web y puede existir impacto en permisos o renderizado.
+- Se modifican templates, con posible impacto visual o de composición UI.
+- Existen cambios de persistencia o migraciones que requieren revisión de datos.
+- El alcance incluye automatización o tooling de CI/CD.
+
+## Decisiones y supuestos detectados
+
+- Tipo de cambio declarado: No informado
+- Área principal declarada: No informada
+- Impacto usuario declarado: No informado
+- Riesgos / rollback: No informado
+
+## Design system y UI
+
+- El PR toca piezas de UI y conviene revisar consistencia visual con el patrón existente.
+- Archivos visuales relevantes: centrodeinfancia/templates/centrodeinfancia/destinatario_detail.html, centrodeinfancia/templates/centrodeinfancia/destinatario_form.html, centrodeinfancia/templates/centrodeinfancia/nomina_form.html, centrodeinfancia/templates/centrodeinfancia/nomina_form_edit.html, centrodeinfancia/templates/centrodeinfancia/nomina_formulario_detail.html, rendicioncuentasmensual/templates/components/rendicion_global_list_cell.html, rendicioncuentasmensual/templates/rendicioncuentasmensual_datos_form.html, rendicioncuentasmensual/templates/rendicioncuentasmensual_detail.html
+
+## Memoria operativa para agentes
+
+- Empezar por `docs/registro/prs/PR-2317.md` para contexto resumido del PR.
+- Revisar primero estos archivos del diff:
+- `.github/workflows/pr-docs.yml`
+- `AGENT_REPO_MAP.md`
+- `centrodeinfancia/forms.py`
+- `centrodeinfancia/migrations/0044_nominacentroinfancia_departamento.py`
+- `centrodeinfancia/models.py`
+- `centrodeinfancia/templates/centrodeinfancia/destinatario_detail.html`
+- `centrodeinfancia/templates/centrodeinfancia/destinatario_form.html`
+- `centrodeinfancia/templates/centrodeinfancia/nomina_form.html`
+- `centrodeinfancia/templates/centrodeinfancia/nomina_form_edit.html`
+- `centrodeinfancia/templates/centrodeinfancia/nomina_formulario_detail.html`
+- `centrodeinfancia/tests/test_destinatario_form.py`
+- `comedores/api_serializers.py`
+- `comedores/management/commands/sincronizar_accesos_pwa_organizaciones.py`
+- `comedores/models.py`
+- `comedores/signals.py`
+- `dashboard/signals.py`
+- `docs/contexto/aplicaciones.md`
+- `docs/contexto/features/pr-2258-feat-celiaquia-contrato-publico-de-integracion.md`
+- `docs/contexto/features/pr-2263-docs-spec-completar-trazabilidad-de-prs-y-guias-canonicas.md`
+- `docs/contexto/features/pr-2265-fixs.md`
+- ... y 72 archivo(s) adicional(es) relacionados.
+- Documentación sugerida para ampliar contexto:
+- `docs/indice.md`
+- `docs/ia/CONTEXT_HYGIENE.md`
+- `docs/ia/ARCHITECTURE.md`
+- `docs/ia/TESTING.md`
+- `docs/contexto/aplicaciones.md`
+- `docs/contexto/features/pr-2258-feat-celiaquia-contrato-publico-de-integracion.md`
+- `docs/contexto/features/pr-2263-docs-spec-completar-trazabilidad-de-prs-y-guias-canonicas.md`
+- `docs/contexto/features/pr-2265-fixs.md`
+- `docs/contexto/features/pr-2266-refactor-core-centralizar-integracion-renaper.md`
+- `docs/contexto/features/pr-2288-usuarios-organizacion-pwa.md`
+- `docs/contexto/features/pr-2294-chore-sync-integrar-main-en-development.md`
+- `docs/contexto/features/pr-2297-chore-sync-integrar-main-en-development.md`
+- `docs/contexto/features/pr-2299-fix-ui-comunicados.md`
+- `docs/contexto/features/pr-2303-docs-spec-corregir-trazabilidad-y-guias-canonicas.md`
+- `docs/contexto/features/pr-2310-fix-cdi-resolver-urgentes-del-issue-2304.md`
+- `docs/contexto/features/pr-2313-chore-sync-integrar-main-en-development.md`
+- `docs/contexto/features/pr-2315-evolutivos-de-rendicion-de-cuentas-ii-2305.md`
+- `docs/contexto/features/pr-2321-fix-resolver-observaciones-de-reapertura-del-issue-2305.md`
+- `docs/contexto/features/pr-2323-chore-sync-integrar-homologacion-en-development-para-pr-2317.md`
+- `docs/flujos/rendiciones_mensuales_proyectos.md`
+- `docs/implementaciones/admisiones_informes_tecnicos.md`
+- `docs/implementaciones/comedores_certificaciones_prestaciones.md`
+- `docs/implementaciones/pwa_backend.md`
+- `docs/implementaciones/usuarios_perfil_iam.md`
+- `docs/operacion/comandos_administracion.md`
+- `docs/operacion/infraestructura.md`
+- `docs/operacion/integraciones.md`
+- `docs/plans/2026-08-18-pr-2288-accesos-organizacion-hardening-design.md`
+- `docs/plans/2026-08-20-pr-2321-review-findings-design.md`
+- `docs/registro/README.md`
+- `docs/registro/cambios/2026-08-12-accesos-pwa-organizacion-automaticos.md`
+- `docs/registro/cambios/2026-08-18-gate-spec-as-source-promociones.md`
+- `docs/registro/cambios/2026-08-18-issue-2304-nomina-domicilio-sala.md`
+- `docs/registro/cambios/2026-08-19-issue-2305-rendiciones.md`
+- `docs/registro/cambios/2026-08-20-fix-cache-metricas-dashboard.md`
+- `docs/registro/prs/PR-2258.md`
+- `docs/registro/prs/PR-2263.md`
+- `docs/registro/prs/PR-2265.md`
+- `docs/registro/prs/PR-2266.md`
+- `docs/registro/prs/PR-2288.md`
+- `docs/registro/prs/PR-2294.md`
+- `docs/registro/prs/PR-2297.md`
+- `docs/registro/prs/PR-2299.md`
+- `docs/registro/prs/PR-2303.md`
+- `docs/registro/prs/PR-2310.md`
+- `docs/registro/prs/PR-2313.md`
+- `docs/registro/prs/PR-2315.md`
+- `docs/registro/prs/PR-2321.md`
+- `docs/registro/prs/PR-2323.md`
+- `docs/seguridad/security_baseline.md`
+
+## Trazabilidad
+
+- Documento generado automáticamente desde el evento de `pull_request`.
+- Si este PR cambia de título, el archivo se renombrará para mantener el slug alineado.

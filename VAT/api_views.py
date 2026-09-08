@@ -2,7 +2,7 @@
 import logging
 
 from django.db.models import Count, Prefetch, Q
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import PolymorphicProxySerializer, extend_schema
 from drf_spectacular.utils import OpenApiParameter, inline_serializer
 from drf_spectacular.types import OpenApiTypes
 from rest_framework import serializers as drf_serializers
@@ -30,6 +30,7 @@ from VAT.models import (
     OfertaInstitucional,
     Comision,
     ComisionHorario,
+    SesionComision,
     Inscripcion,
     Evaluacion,
     ResultadoEvaluacion,
@@ -42,6 +43,7 @@ from VAT.pagination import VATPageNumberPagination
 from VAT.services.inscripcion_service import ESTADOS_INSCRIPCION_OCUPAN_CUPO
 from VAT.serializers import (
     CentroSerializer,
+    CentroCueDetalleSerializer,
     ProvinciaSerializer,
     MunicipioSerializer,
     LocalidadSerializer,
@@ -84,6 +86,35 @@ CURSO_BUSQUEDA_PAGINATED_RESPONSE = inline_serializer(
 )
 
 
+CENTRO_LIST_PAGINATED_RESPONSE = inline_serializer(
+    name="CentroListPaginatedResponse",
+    fields={
+        "count": drf_serializers.IntegerField(),
+        "next": drf_serializers.URLField(allow_null=True),
+        "previous": drf_serializers.URLField(allow_null=True),
+        "results": PolymorphicProxySerializer(
+            component_name="CentroListResult",
+            serializers=[CentroSerializer, CentroCueDetalleSerializer],
+            resource_type_field_name=None,
+            many=True,
+        ),
+    },
+)
+
+
+def normalizar_cue_consulta(cue: str | None) -> str:
+    """Normaliza el CUE recibido sin asumir una jurisdicción de origen."""
+
+    cue_normalizado = (cue or "").strip()
+    if not cue_normalizado:
+        raise ValidationError({"cue": ["Este parámetro es requerido."]})
+    if not cue_normalizado.isdigit() or len(cue_normalizado) > 9:
+        raise ValidationError(
+            {"cue": ["Debe contener solo números y hasta 9 dígitos."]}
+        )
+    return cue_normalizado.zfill(9)
+
+
 class SoftDeleteDestroyMixin:
     def perform_destroy(self, instance):
         if is_soft_deletable_instance(instance):
@@ -117,8 +148,112 @@ class CentroViewSet(SoftDeleteDestroyMixin, VATModelViewSet):
     serializer_class = CentroSerializer
     permission_classes = [HasAPIKey]
 
+    def _cue_consultado(self):
+        if self.action != "list" or "cue" not in self.request.query_params:
+            return None
+        if not hasattr(self, "_cue_consultado_cache"):
+            self._cue_consultado_cache = normalizar_cue_consulta(
+                self.request.query_params.get("cue")
+            )
+        return self._cue_consultado_cache
+
+    def _queryset_detalle_cue(self):
+        horarios = ComisionHorario.objects.select_related("dia_semana").order_by(
+            "dia_semana", "hora_desde"
+        )
+        sesiones = SesionComision.objects.select_related(
+            "horario", "horario__dia_semana"
+        ).order_by("fecha", "horario__hora_desde")
+        comisiones_curso = ComisionCurso.objects.select_related(
+            "ubicacion",
+            "ubicacion__localidad",
+            "ubicacion__localidad__municipio",
+            "ubicacion__localidad__municipio__provincia",
+        ).prefetch_related(
+            Prefetch("horarios", queryset=horarios),
+            Prefetch("sesiones", queryset=sesiones),
+        )
+        comisiones_oferta = Comision.objects.select_related(
+            "ubicacion",
+            "ubicacion__localidad",
+            "ubicacion__localidad__municipio",
+            "ubicacion__localidad__municipio__provincia",
+        ).prefetch_related(
+            Prefetch("horarios", queryset=horarios),
+            Prefetch("sesiones", queryset=sesiones),
+        )
+        parametria_voucher = VoucherParametria.objects.select_related(
+            "programa"
+        ).order_by("programa_id", "id")
+        cursos = Curso.objects.select_related(
+            "plan_estudio",
+            "plan_estudio__provincia",
+            "plan_estudio__sector",
+            "plan_estudio__subsector",
+            "plan_estudio__modalidad_cursada",
+            "modalidad",
+        ).prefetch_related(
+            "plan_estudio__titulos",
+            Prefetch("voucher_parametrias", queryset=parametria_voucher),
+            Prefetch("comisiones", queryset=comisiones_curso),
+        )
+        ofertas = OfertaInstitucional.objects.select_related(
+            "plan_curricular",
+            "plan_curricular__provincia",
+            "plan_curricular__sector",
+            "plan_curricular__subsector",
+            "plan_curricular__modalidad_cursada",
+            "programa",
+        ).prefetch_related(
+            "plan_curricular__titulos",
+            Prefetch("voucher_parametrias", queryset=parametria_voucher),
+            Prefetch("comisiones", queryset=comisiones_oferta),
+        )
+        ubicaciones = InstitucionUbicacion.objects.select_related(
+            "localidad",
+            "localidad__municipio",
+            "localidad__municipio__provincia",
+        ).order_by("rol_ubicacion", "id")
+
+        return (
+            Centro.objects.select_related("provincia", "municipio", "localidad")
+            .prefetch_related(
+                Prefetch(
+                    "identificadores_hist",
+                    queryset=InstitucionIdentificadorHist.objects.select_related(
+                        "ubicacion"
+                    ).order_by("-es_actual", "-vigencia_desde", "-id"),
+                ),
+                Prefetch(
+                    "contactos_adicionales",
+                    queryset=InstitucionContacto.objects.order_by(
+                        "-es_principal", "nombre_contacto", "rol_area"
+                    ),
+                ),
+                Prefetch("ubicaciones", queryset=ubicaciones),
+                Prefetch("cursos", queryset=cursos),
+                Prefetch("ofertas_institucionales", queryset=ofertas),
+            )
+            .order_by("id")
+        )
+
+    def get_serializer_class(self):
+        if self._cue_consultado() is not None:
+            return CentroCueDetalleSerializer
+        return super().get_serializer_class()
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        cue = self._cue_consultado()
+        if cue is not None:
+            context["cue"] = cue
+        return context
+
     def get_queryset(self):
-        queryset = super().get_queryset()
+        cue = self._cue_consultado()
+        queryset = (
+            self._queryset_detalle_cue() if cue is not None else super().get_queryset()
+        )
         activo = self.request.query_params.get("activo")
         if activo is not None:
             queryset = queryset.filter(activo=activo.lower() == "true")
@@ -131,7 +266,38 @@ class CentroViewSet(SoftDeleteDestroyMixin, VATModelViewSet):
             queryset = queryset.filter(municipio_id=municipio_id)
         if localidad_id:
             queryset = queryset.filter(localidad_id=localidad_id)
+        if cue is not None:
+            queryset = queryset.filter(
+                Q(codigo=cue)
+                | Q(
+                    identificadores_hist__tipo_identificador="cue",
+                    identificadores_hist__valor_identificador=cue,
+                )
+            ).distinct()
         return queryset
+
+    @extend_schema(
+        summary="Listar centros VAT o buscar por CUE",
+        description=(
+            "Sin `cue` conserva el listado habitual. Con `cue` realiza una "
+            "búsqueda exacta, incluye CUEs históricos y devuelve la ficha "
+            "institucional y formativa ampliada, sin alumnos ni inscripciones."
+        ),
+        parameters=[
+            OpenApiParameter(
+                "cue",
+                OpenApiTypes.STR,
+                OpenApiParameter.QUERY,
+                description=(
+                    "CUE numérico de hasta 9 dígitos. Se completa con ceros a la "
+                    "izquierda para buscar el CUE vigente, histórico o código legacy."
+                ),
+            ),
+        ],
+        responses={200: CENTRO_LIST_PAGINATED_RESPONSE},
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
     @action(detail=False, methods=["get"])
     def activos(self, request):

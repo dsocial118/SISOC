@@ -3,6 +3,12 @@ Módulo centralizado para validaciones de permisos en comunicados.
 """
 
 from django.core.exceptions import PermissionDenied
+from comedores.api import (
+    obtener_ids_comedores,
+    obtener_ids_comedores_del_tecnico,
+    obtener_ids_organizaciones,
+    obtener_ids_organizaciones_de_comedores,
+)
 from iam.services import user_has_any_permission_codes, user_has_permission_code
 from users.services import UserPermissionService
 
@@ -153,46 +159,32 @@ def es_tecnico(user) -> bool:
     return UserPermissionService.es_tecnico_o_abogado(user)
 
 
-def get_comedores_del_tecnico(user):
-    """
-    Obtiene los comedores asignados a un técnico.
-    Relación: User → Dupla (M2M) → Comedor (FK)
-    """
-    from comedores.models import Comedor
+def get_ids_comedores_del_tecnico(user) -> tuple[int, ...]:
+    """Obtiene los identificadores de comedores asignados a un técnico."""
 
-    # Obtener las duplas activas del técnico
-    duplas = user.dupla_tecnico.filter(estado="Activo")
-    # Obtener comedores de esas duplas
-    return Comedor.objects.filter(dupla__in=duplas)
+    return obtener_ids_comedores_del_tecnico(user)
 
 
-def get_comedores_del_usuario(user):
-    """Retorna los comedores que puede ver/enviar el usuario."""
-    from comedores.models import Comedor
+def get_ids_comedores_del_usuario(user) -> tuple[int, ...]:
+    """Retorna los identificadores de comedores que puede ver/enviar el usuario."""
 
     if is_admin(user) or _has_permission(user, COMUNICADO_CREATE_CODE):
-        # Admin y usuarios con permisos internos ven todos los comedores
-        return Comedor.objects.all()
-    elif es_tecnico(user):
-        # Técnico ve solo los comedores de sus duplas
-        return get_comedores_del_tecnico(user)
-    return Comedor.objects.none()
+        return obtener_ids_comedores()
+    if es_tecnico(user):
+        return get_ids_comedores_del_tecnico(user)
+    return ()
 
 
-def get_organizaciones_del_usuario(user):
-    """Retorna las organizaciones que puede ver/enviar el usuario."""
-    from organizaciones.models import Organizacion
+def get_ids_organizaciones_del_usuario(user) -> tuple[int, ...]:
+    """Retorna los identificadores de organizaciones que puede ver/enviar el usuario."""
 
     if is_admin(user) or _has_permission(user, COMUNICADO_CREATE_CODE):
-        return Organizacion.objects.all()
-    elif es_tecnico(user):
-        organizacion_ids = (
-            get_comedores_del_tecnico(user)
-            .exclude(organizacion__isnull=True)
-            .values_list("organizacion_id", flat=True)
+        return obtener_ids_organizaciones()
+    if es_tecnico(user):
+        return obtener_ids_organizaciones_de_comedores(
+            get_ids_comedores_del_tecnico(user)
         )
-        return Organizacion.objects.filter(id__in=organizacion_ids)
-    return Organizacion.objects.none()
+    return ()
 
 
 # Permisos para comunicados internos

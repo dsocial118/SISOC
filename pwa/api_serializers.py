@@ -876,6 +876,10 @@ class NominaAsistenciaAlimentariaBulkSerializer(serializers.Serializer):
         required=True,
         allow_empty=True,
     )
+    periodo = serializers.DateField(input_formats=["%Y-%m", "%Y-%m-%d"])
+
+    def validate_periodo(self, value):
+        return value.replace(day=1)
 
     def validate_nomina_ids(self, value):
         return list(dict.fromkeys(value or []))

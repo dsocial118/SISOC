@@ -285,8 +285,8 @@ CAMPOS_OPCIONES = {
         "muy_ocasionales_limitadas",
         "ninguna",
     ),
-    "tiene_registro_lista_espera": [("si", "Si"), ("no", "No"), ("ns_nc", "NS/NC")],
-    "tiene_personal_entrada_salida": [("si", "Si"), ("no", "No"), ("ns_nc", "NS/NC")],
+    "tiene_registro_lista_espera": [("si", "Si"), ("no", "No"), ("ns_nc", "No sabe")],
+    "tiene_personal_entrada_salida": [("si", "Si"), ("no", "No"), ("ns_nc", "No sabe")],
     "frecuencia_comunicacion_familias": _construir_opciones(
         "reuniones_mensuales_y_canales_formales",
         "reuniones_trimestrales_y_canales_formales",
@@ -304,12 +304,12 @@ CAMPOS_OPCIONES = {
     "realiza_acciones_promocion_acceso_derechos": [
         ("si", "Si"),
         ("no", "No"),
-        ("ns_nc", "NS/NC"),
+        ("ns_nc", "No sabe"),
     ],
     "realiza_acciones_acompanamiento_vulneracion_derechos": [
         ("si", "Si"),
         ("no", "No"),
-        ("ns_nc", "NS/NC"),
+        ("ns_nc", "No sabe"),
     ],
     "nivel_trabajo_red": _construir_opciones(
         "red_mapeo_mesas_trimestral_o_mas",

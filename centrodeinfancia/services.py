@@ -4,17 +4,136 @@ import re
 
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.db.models import Q
 from django.utils import timezone
 
 from centrodeinfancia.access import aplicar_scope_centros_cdi
 from centrodeinfancia.models import (
-    AsistenciaTrabajador,
+    AsistenciaNominaCentroInfancia,
     CentroDeInfancia,
     NominaCentroInfancia,
     NominaCentroInfanciaDerivacion,
 )
+from ciudadanos.models import Ciudadano
 
 logger = logging.getLogger(__name__)
+
+# Estados que cuentan como inscripción vigente en un CDI. Los registros en
+# "baja" (y los dados de baja lógicamente) no bloquean una nueva nominalización,
+# lo que permite sostener el flujo de derivación entre centros.
+ESTADOS_NOMINA_CDI_VIGENTE = (
+    NominaCentroInfancia.ESTADO_ACTIVO,
+    NominaCentroInfancia.ESTADO_PENDIENTE,
+)
+
+# Mensaje neutro: no debe permitir inferir en qué centro está la persona.
+MENSAJE_NOMINA_VIGENTE_EN_OTRO_CENTRO = (
+    "No se puede avanzar con el registro porque la persona ya se encuentra "
+    "registrada en otro Centro de Infancia."
+)
+
+MOTIVO_NOMINA_DUPLICADA_MISMO_CENTRO = "duplicada_mismo_centro"
+MOTIVO_NOMINA_VIGENTE_OTRO_CENTRO = "vigente_otro_centro"
+
+
+def tiene_nomina_cdi_vigente_en_otro_centro(
+    ciudadano_id: int | None,
+    centro_id: int | None,
+    excluir_nomina_id: int | None = None,
+    bloquear: bool = False,
+) -> bool:
+    """Indica si la persona ya tiene una nómina CDI vigente fuera de ``centro_id``.
+
+    Devuelve sólo un booleano a propósito: quien llama no debe poder informar
+    (ni inferir) de qué centro se trata.
+
+    El manager por defecto de ``NominaCentroInfancia`` ya excluye los registros
+    dados de baja lógicamente, así que ambos sentidos de "baja" (estado y soft
+    delete) quedan fuera del cálculo de vigencia.
+
+    ``bloquear=True`` convierte la consulta en una lectura con lock, y **sólo
+    puede usarse dentro de una transacción**. Es necesario en los caminos que
+    escriben: bajo REPEATABLE READ (default de InnoDB) una lectura común usa el
+    snapshot de la transacción, que pudo tomarse antes de obtener el lock del
+    ciudadano y no vería un alta concurrente ya commiteada. La lectura con lock
+    siempre ve la última versión commiteada y, al no haber filas, toma el gap
+    lock del índice de ``ciudadano_id``, que además frena el insert simultáneo.
+    """
+    if not ciudadano_id:
+        return False
+
+    queryset = NominaCentroInfancia.objects.filter(
+        ciudadano_id=ciudadano_id,
+        estado__in=ESTADOS_NOMINA_CDI_VIGENTE,
+    )
+    if centro_id:
+        queryset = queryset.exclude(centro_id=centro_id)
+    if excluir_nomina_id:
+        queryset = queryset.exclude(pk=excluir_nomina_id)
+    if bloquear:
+        queryset = queryset.select_for_update()
+    return queryset.exists()
+
+
+def bloquear_ciudadano_para_nomina_cdi(ciudadano_id: int | None) -> None:
+    """Toma el lock de fila del ciudadano dentro de la transacción en curso.
+
+    Serializa altas/derivaciones simultáneas del mismo destinatario en centros
+    distintos: bloquear el centro no alcanza porque los intentos concurrentes
+    ocurren justamente en centros diferentes. El lock se toma siempre sobre el
+    ciudadano primero para mantener un orden de adquisición único y evitar
+    deadlocks.
+    """
+    if not ciudadano_id:
+        return
+    Ciudadano.objects.select_for_update().filter(pk=ciudadano_id).exists()
+
+
+def puede_reactivar_nomina_cdi_bajo_bloqueo(
+    nomina: NominaCentroInfancia,
+) -> bool:
+    """Revalida una reactivación mientras serializa por ciudadano.
+
+    Debe invocarse dentro de ``transaction.atomic()`` inmediatamente antes de
+    guardar. Complementa la validación temprana del formulario y evita que dos
+    reactivaciones concurrentes de fichas en baja creen dos vigencias.
+    """
+    if (
+        not nomina.pk
+        or not nomina.ciudadano_id
+        or nomina.estado not in ESTADOS_NOMINA_CDI_VIGENTE
+    ):
+        return True
+
+    bloquear_ciudadano_para_nomina_cdi(nomina.ciudadano_id)
+    nomina_persistida = NominaCentroInfancia.objects.select_for_update().get(
+        pk=nomina.pk
+    )
+    if nomina_persistida.estado in ESTADOS_NOMINA_CDI_VIGENTE:
+        return True
+
+    return not tiene_nomina_cdi_vigente_en_otro_centro(
+        nomina_persistida.ciudadano_id,
+        nomina_persistida.centro_id,
+        excluir_nomina_id=nomina_persistida.pk,
+        bloquear=True,
+    )
+
+
+def validar_restauracion_nomina_cdi(nomina: NominaCentroInfancia) -> None:
+    """Impide restaurar una ficha vigente si existe otra en un CDI distinto."""
+    if nomina.estado not in ESTADOS_NOMINA_CDI_VIGENTE:
+        return
+
+    bloquear_ciudadano_para_nomina_cdi(nomina.ciudadano_id)
+    if tiene_nomina_cdi_vigente_en_otro_centro(
+        nomina.ciudadano_id,
+        nomina.centro_id,
+        excluir_nomina_id=nomina.pk,
+        bloquear=True,
+    ):
+        raise ValidationError(MENSAJE_NOMINA_VIGENTE_EN_OTRO_CENTRO)
+
 
 _CAMPOS_COPIABLES = [
     "dni",
@@ -63,9 +182,10 @@ _CAMPOS_COPIABLES = [
 ]
 
 
-class AsistenciaTrabajadorService:
+class AsistenciaNominaCentroInfanciaService:
     _MARCAS = {"0": False, "1": True}
     _FORMATO_FECHA = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+    _FORMATO_MES = re.compile(r"^\d{4}-\d{2}$")
 
     @classmethod
     def parsear_fecha(cls, fecha_raw):
@@ -83,41 +203,141 @@ class AsistenciaTrabajadorService:
             ) from exc
 
     @classmethod
+    def parsear_mes(cls, mes_raw):
+        if not cls._FORMATO_MES.fullmatch(mes_raw or ""):
+            raise ValidationError("El mes debe tener formato AAAA-MM.")
+        try:
+            return datetime.date.fromisoformat(f"{mes_raw}-01")
+        except ValueError as exc:
+            raise ValidationError("El mes debe tener formato AAAA-MM.") from exc
+
+    @staticmethod
+    def nominas_editables(centro, fecha):
+        return list(
+            NominaCentroInfancia.objects.select_related("ciudadano")
+            .filter(centro=centro, deleted_at__isnull=True)
+            .filter(
+                Q(estado=NominaCentroInfancia.ESTADO_ACTIVO)
+                | Q(
+                    estado=NominaCentroInfancia.ESTADO_BAJA,
+                    asistencias_nomina__fecha=fecha,
+                )
+            )
+            .distinct()
+            .order_by("apellido", "nombre", "pk")
+        )
+
+    @classmethod
     def guardar(cls, *, centro, fecha_raw, datos, usuario):
         fecha = cls.parsear_fecha(fecha_raw)
+        nominas = cls.nominas_editables(centro, fecha)
         cambios = []
 
-        for trabajador in centro.trabajadores.order_by("apellido", "nombre"):
-            marca = datos.get(f"presente_{trabajador.pk}")
-            if marca is None:
-                continue
-            if marca not in cls._MARCAS:
+        for nomina in nominas:
+            marca = datos.get(f"presente_{nomina.pk}")
+            if marca is not None and marca not in cls._MARCAS:
                 raise ValidationError("El estado de asistencia recibido no es válido.")
-            observaciones = (datos.get(f"obs_{trabajador.pk}") or "").strip()
             cambios.append(
                 (
-                    trabajador,
-                    cls._MARCAS[marca],
-                    observaciones or None,
+                    nomina,
+                    cls._MARCAS.get(marca),
+                    (datos.get(f"obs_{nomina.pk}") or "").strip() or None,
                 )
             )
 
         with transaction.atomic():
-            for trabajador, presente, observaciones in cambios:
-                AsistenciaTrabajador.objects.update_or_create(
-                    trabajador=trabajador,
-                    fecha=fecha,
-                    defaults={
-                        "presente": presente,
-                        "observaciones": observaciones,
-                        "registrado_por": usuario,
-                    },
+            NominaCentroInfancia.objects.select_for_update().filter(
+                pk__in=[nomina.pk for nomina in nominas]
+            ).exists()
+            existentes = {
+                asistencia.nomina_id: asistencia
+                for asistencia in (
+                    AsistenciaNominaCentroInfancia.objects.select_for_update().filter(
+                        nomina__in=nominas,
+                        fecha=fecha,
+                    )
                 )
+            }
+            for nomina, presente, observaciones in cambios:
+                asistencia = existentes.get(nomina.pk)
+                if presente is None:
+                    if asistencia:
+                        asistencia.delete()
+                    continue
+                if asistencia:
+                    asistencia.presente = presente
+                    asistencia.observaciones = observaciones
+                    asistencia.registrado_por = usuario
+                    asistencia.save(
+                        update_fields=["presente", "observaciones", "registrado_por"]
+                    )
+                else:
+                    AsistenciaNominaCentroInfancia.objects.create(
+                        nomina=nomina,
+                        fecha=fecha,
+                        presente=presente,
+                        observaciones=observaciones,
+                        registrado_por=usuario,
+                    )
 
         return fecha
 
+    @classmethod
+    def dias_con_asistencia(cls, *, centro, mes):
+        siguiente_mes = (
+            mes.replace(year=mes.year + 1, month=1)
+            if mes.month == 12
+            else mes.replace(month=mes.month + 1)
+        )
+        return list(
+            AsistenciaNominaCentroInfancia.objects.filter(
+                nomina__centro=centro,
+                fecha__gte=mes,
+                fecha__lt=siguiente_mes,
+            )
+            .order_by("fecha")
+            .values_list("fecha", flat=True)
+            .distinct()
+        )
+
 
 class CentroDeInfanciaService:
+    @staticmethod
+    def _validar_vigencia_para_derivacion(
+        nomina_origen: NominaCentroInfancia,
+        centro_destino: CentroDeInfancia,
+        bloquear: bool = False,
+    ) -> str | None:
+        """Devuelve el mensaje de impedimento, o None si la derivación puede seguir.
+
+        El origen no cuenta: pasa a baja dentro de la misma transacción.
+        ``bloquear`` sólo se activa en la revalidación dentro de la transacción
+        (ver `tiene_nomina_cdi_vigente_en_otro_centro`).
+        """
+        queryset_destino = NominaCentroInfancia.objects.filter(
+            ciudadano_id=nomina_origen.ciudadano_id,
+            centro=centro_destino,
+            estado__in=ESTADOS_NOMINA_CDI_VIGENTE,
+        )
+        if bloquear:
+            queryset_destino = queryset_destino.select_for_update()
+        if queryset_destino.exists():
+            return (
+                "La persona ya tiene un registro activo o pendiente en "
+                f"«{centro_destino.nombre}»."
+            )
+
+        queryset_terceros = NominaCentroInfancia.objects.filter(
+            ciudadano_id=nomina_origen.ciudadano_id,
+            estado__in=ESTADOS_NOMINA_CDI_VIGENTE,
+        ).exclude(centro_id__in=[nomina_origen.centro_id, centro_destino.pk])
+        if bloquear:
+            queryset_terceros = queryset_terceros.select_for_update()
+        if queryset_terceros.exists():
+            return MENSAJE_NOMINA_VIGENTE_EN_OTRO_CENTRO
+
+        return None
+
     @staticmethod
     def transferir_ciudadano_entre_centros(  # pylint: disable=too-many-return-statements
         nomina_pk, centro_destino_pk, usuario, motivo=""
@@ -143,23 +363,15 @@ class CentroDeInfanciaService:
         if centro_destino.pk == nomina_origen.centro_id:
             return False, "El centro destino debe ser diferente al centro de origen."
 
-        ya_existe = NominaCentroInfancia.objects.filter(
-            ciudadano_id=nomina_origen.ciudadano_id,
-            centro=centro_destino,
-            estado__in=[
-                NominaCentroInfancia.ESTADO_ACTIVO,
-                NominaCentroInfancia.ESTADO_PENDIENTE,
-            ],
-        ).exists()
-
-        if ya_existe:
-            return (
-                False,
-                f"La persona ya tiene un registro activo o pendiente en «{centro_destino.nombre}».",
-            )
+        impedimento = CentroDeInfanciaService._validar_vigencia_para_derivacion(
+            nomina_origen, centro_destino
+        )
+        if impedimento:
+            return False, impedimento
 
         try:
             with transaction.atomic():
+                bloquear_ciudadano_para_nomina_cdi(nomina_origen.ciudadano_id)
                 nomina_origen = NominaCentroInfancia.objects.select_for_update().get(
                     pk=nomina_pk
                 )
@@ -169,19 +381,11 @@ class CentroDeInfanciaService:
                         "El registro fue modificado antes de completar la derivación.",
                     )
 
-                ya_existe = NominaCentroInfancia.objects.filter(
-                    ciudadano_id=nomina_origen.ciudadano_id,
-                    centro=centro_destino,
-                    estado__in=[
-                        NominaCentroInfancia.ESTADO_ACTIVO,
-                        NominaCentroInfancia.ESTADO_PENDIENTE,
-                    ],
-                ).exists()
-                if ya_existe:
-                    return (
-                        False,
-                        f"La persona ya tiene un registro activo o pendiente en «{centro_destino.nombre}».",
-                    )
+                impedimento = CentroDeInfanciaService._validar_vigencia_para_derivacion(
+                    nomina_origen, centro_destino, bloquear=True
+                )
+                if impedimento:
+                    return False, impedimento
 
                 centro_origen_id = nomina_origen.centro_id
 

@@ -14,6 +14,7 @@ urlpatterns = [
     path("comunicados/gestion/", _ok_view, name="comunicados_gestion"),
     path("grupos/", _ok_view, name="grupos"),
     path("usuarios/", _ok_view, name="usuarios"),
+    path("mi-cuenta/", _ok_view, name="mi_cuenta"),
     path("api/buscar-ciudadanos/", _ok_view, name="api_buscar_ciudadanos"),
     path("", include("VAT.urls")),
 ]

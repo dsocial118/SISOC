@@ -574,6 +574,18 @@ def _parse_territorial_payload(raw_territorial_data):
     return territorial_uid, territorial_nombre
 
 
+def _territorial_user_id_from_uid(territorial_uid):
+    """El dropdown de SISOC envía el id del usuario territorial como `gestionar_uid`.
+
+    Devuelve el id (int) si es numérico, o None para valores legacy (uid de
+    AppSheet alfanumérico) que no corresponden a un usuario SISOC.
+    """
+    try:
+        return int(territorial_uid)
+    except (TypeError, ValueError):
+        return None
+
+
 def _upsert_referente_por_documento_data(referente_data):
     referente = Referente.objects.filter(
         documento=referente_data.get("documento")
@@ -712,12 +724,18 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
     def create_pendiente(request, comedor_id):
         try:
             comedor = get_object_or_404(Comedor, id=comedor_id)
-            relevamiento = Relevamiento(comedor=comedor, estado="Pendiente")
+            # El relevamiento nace directamente en "Visita pendiente": ya se le
+            # asigna un territorial en este popup, así que el estado "Pendiente"
+            # (sin territorial) quedó en desuso y no se emite más.
+            relevamiento = Relevamiento(comedor=comedor)
             territorial_uid, territorial_nombre = _parse_territorial_payload(
                 request.POST.get("territorial")
             )
             relevamiento.territorial_uid = territorial_uid
             relevamiento.territorial_nombre = territorial_nombre
+            relevamiento.territorial_user_id = _territorial_user_id_from_uid(
+                territorial_uid
+            )
             relevamiento.estado = "Visita pendiente"
 
             relevamiento.save()
@@ -735,9 +753,11 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
         try:
             relevamiento_id = request.POST.get("relevamiento_id")
             relevamiento = Relevamiento.objects.get(id=relevamiento_id)
-            if relevamiento.estado != "Pendiente":
+            # La asignación es a un territorial a la vez pero reasignable: se
+            # permite mientras el relevamiento no esté finalizado.
+            if relevamiento.estado in ("Finalizado", "Finalizado/Excepciones"):
                 raise ValidationError(
-                    "Solo se puede asignar territorial a relevamientos pendientes."
+                    "No se puede reasignar un relevamiento finalizado."
                 )
             territorial_data = request.POST.get("territorial_editar")
             if not territorial_data:
@@ -763,6 +783,9 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
             )
             relevamiento.territorial_uid = territorial_uid
             relevamiento.territorial_nombre = territorial_nombre
+            relevamiento.territorial_user_id = _territorial_user_id_from_uid(
+                territorial_uid
+            )
             relevamiento.estado = "Visita pendiente"
 
             relevamiento.save()

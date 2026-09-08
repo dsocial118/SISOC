@@ -1,13 +1,17 @@
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.views.generic import View
-from django.contrib.auth.mixins import LoginRequiredMixin
 from core.mixins import CSVExportMixin
 from ciudadanos.models import Ciudadano
 from ciudadanos.forms import CiudadanoFiltroForm
 from ciudadanos.views import apply_ciudadanos_filters
 
 
-class CiudadanosExportView(LoginRequiredMixin, CSVExportMixin, View):
+class CiudadanosExportView(
+    LoginRequiredMixin, PermissionRequiredMixin, CSVExportMixin, View
+):
     export_filename = "listado_ciudadanos.csv"
+    permission_required = "ciudadanos.view_ciudadano"
+    raise_exception = True
 
     def get_export_columns(self):
         return [

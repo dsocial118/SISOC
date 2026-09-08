@@ -1,0 +1,56 @@
+{% extends "includes/main.html" %}
+{% block title %}Importar titulares PAS{% endblock %}
+{% block breadcrumb %}
+    {% include "components/breadcrumb.html" with items=breadcrumb_items %}
+{% endblock %}
+{% block content %}
+    <main class="pas-workspace">
+        <header class="pas-module-header">
+            <div>
+                <span class="pas-eyebrow">Programa de Acompañamiento Social</span>
+                <h1>Importar titulares</h1>
+            </div>
+        </header>
+
+        <section class="pas-search-panel">
+            <div class="pas-section-heading">
+                <div>
+                    <span class="pas-eyebrow">Carga incremental</span>
+                    <h2>Archivo CSV</h2>
+                </div>
+            </div>
+            <p>
+                Columnas obligatorias: <strong>Apellidos/Apellido, Nombres/Nombre, DNI, CUIT, Provincia y Municipio</strong>.
+                También se pueden informar Calle, Altura, Email, UltimoEstadoPas y AvisoLiquidacion.
+                Calle y Altura forman el domicilio; los campos opcionales vacíos quedan sin dato.
+                Los registros cuyo DNI o CUIT ya exista se omiten sin modificar el padrón.
+                Los nuevos titulares reciben un IdPersona interno y un token DDJJ vigente. Si no se informa
+                UltimoEstadoPas, se asigna el estado Activo.
+            </p>
+            <form method="post" enctype="multipart/form-data" class="mt-4">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="{{ form.archivo.id_for_label }}" class="form-label">{{ form.archivo.label }}</label>
+                    {{ form.archivo }}
+                    {% for error in form.archivo.errors %}<div class="text-danger mt-2">{{ error }}</div>{% endfor %}
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-file-earmark-arrow-up" aria-hidden="true"></i>
+                    Importar titulares
+                </button>
+            </form>
+
+            {% if resultado %}
+                <div class="alert alert-info mt-4" role="status">
+                    Procesados: {{ resultado.total }} · Nuevos: {{ resultado.creados }} ·
+                    Duplicados omitidos: {{ resultado.duplicados }} · Errores: {{ resultado.errores|length }}
+                </div>
+                {% if resultado.errores %}
+                    <ul class="alert alert-warning">
+                        {% for error in resultado.errores %}<li>{{ error }}</li>{% endfor %}
+                    </ul>
+                {% endif %}
+            {% endif %}
+        </section>
+    </main>
+{% endblock %}

@@ -8,9 +8,25 @@ La relación coordinador <-> duplas es bidireccional:
 Estos signals aseguran que cuando se modifica uno, el otro se actualice automáticamente.
 """
 
-from django.db.models.signals import post_save, pre_save, post_delete
+from django.db.models.signals import m2m_changed, post_save, pre_save, post_delete
 from django.dispatch import receiver
 from duplas.models import Dupla
+from users.models import Profile
+
+
+@receiver(m2m_changed, sender=Profile.duplas_asignadas.through)
+def sync_profile_duplas_to_dupla_coordinador(
+    sender, instance, action, pk_set, **kwargs
+):
+    """Sincroniza ``Dupla.coordinador`` desde el ABM de usuarios."""
+    if action == "post_add" and pk_set and hasattr(instance, "user"):
+        Dupla.objects.filter(pk__in=pk_set).update(coordinador=instance.user)
+    elif action == "post_remove" and pk_set and hasattr(instance, "user"):
+        Dupla.objects.filter(pk__in=pk_set, coordinador=instance.user).update(
+            coordinador=None
+        )
+    elif action == "post_clear" and hasattr(instance, "user"):
+        Dupla.objects.filter(coordinador=instance.user).update(coordinador=None)
 
 
 @receiver(pre_save, sender=Dupla)

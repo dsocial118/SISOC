@@ -8,7 +8,6 @@ from core.views import (
     inicio_view,
     load_localidad,
     load_municipios,
-    load_organizaciones,
     MontoPrestacionProgramaListView,
     MontoPrestacionProgramaCreateView,
     MontoPrestacionProgramaUpdateView,
@@ -42,11 +41,6 @@ urlpatterns = [
         "ajax/load-localidades/",
         load_localidad,
         name="ajax_load_localidades",
-    ),
-    path(
-        "ajax/load-organizaciones/",
-        load_organizaciones,
-        name="ajax_load_organizaciones",
     ),
     path(
         "ajax/filtros-favoritos/",

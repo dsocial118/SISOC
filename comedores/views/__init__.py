@@ -6,6 +6,9 @@ from .comedor import (
     ComedorListView,
     ComedorTransaccionesDetailView,
     ComedorUpdateView,
+    ResponsableTarjetaComedorUpdateView,
+    CertificacionesPrestacionesHistorialView,
+    descargar_certificacion_prestaciones_web,
 )
 from .colaborador import (
     ColaboradorEspacioCreateView,
@@ -70,6 +73,9 @@ __all__ = [
     "ComedorListView",
     "ComedorTransaccionesDetailView",
     "ComedorUpdateView",
+    "ResponsableTarjetaComedorUpdateView",
+    "CertificacionesPrestacionesHistorialView",
+    "descargar_certificacion_prestaciones_web",
     "NominaCreateView",
     "NominaAsistenciaHistorialView",
     "NominaDeleteView",

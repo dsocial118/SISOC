@@ -6,70 +6,7 @@
             <div class="card">
                 <div class="card-body">
                     {% if column_config %}
-                        {{ column_config|json_script:column_config.script_id }}
-                        <div class="d-flex justify-content-start mb-2">
-                            <button type="button"
-                                    class="btn btn-outline-warning btn-sm"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#{{ column_config.modal_id }}">Configurar columnas</button>
-                        </div>
-                        <div class="modal fade"
-                             id="{{ column_config.modal_id }}"
-                             tabindex="-1"
-                             aria-hidden="true"
-                             data-column-config="true"
-                             data-config-id="{{ column_config.script_id }}">
-                            <div class="modal-dialog modal-dialog-centered modal-lg">
-                                <div class="modal-content">
-                                    <div class="modal-header">
-                                        <h5 class="modal-title">Columnas visibles</h5>
-                                        <button type="button"
-                                                class="btn-close"
-                                                data-bs-dismiss="modal"
-                                                aria-label="Cerrar"></button>
-                                    </div>
-                                    <div class="modal-body">
-                                        <p class="text-muted mb-3">Seleccioná qué columnas mostrar y ordenalas con las flechas.</p>
-                                        <div class="list-group column-config-list">
-                                            {% for col in column_config.available %}
-                                                <div class="list-group-item d-flex flex-wrap align-items-center justify-content-between gap-2"
-                                                     data-column-key="{{ col.key }}">
-                                                    <div class="form-check">
-                                                        <input class="form-check-input column-config-checkbox"
-                                                               type="checkbox"
-                                                               id="{{ column_config.modal_id }}-{{ col.key }}"
-                                                               {% if col.active %}checked{% endif %}
-                                                               {% if col.required %}disabled{% endif %} />
-                                                        <label class="form-check-label"
-                                                               for="{{ column_config.modal_id }}-{{ col.key }}">
-                                                            {{ col.title }}
-                                                        </label>
-                                                        {% if col.required %}<span class="badge bg-secondary ms-2">Obligatoria</span>{% endif %}
-                                                    </div>
-                                                    <div class="btn-group btn-group-sm" role="group">
-                                                        <button type="button"
-                                                                class="btn btn-light column-move-up"
-                                                                title="Mover arriba">
-                                                            <i class="fas fa-arrow-up"></i>
-                                                        </button>
-                                                        <button type="button"
-                                                                class="btn btn-light column-move-down"
-                                                                title="Mover abajo">
-                                                            <i class="fas fa-arrow-down"></i>
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            {% endfor %}
-                                        </div>
-                                        <div class="alert alert-danger d-none mt-3 column-config-error"></div>
-                                    </div>
-                                    <div class="modal-footer">
-                                        <button type="button" class="btn btn-outline-secondary column-config-reset">Restablecer</button>
-                                        <button type="button" class="btn btn-primary column-config-save">Guardar</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        {% include "components/column_config_modal.html" %}
                     {% endif %}
                     <div class="table-responsive-lg">
                         <table class="table table-bordered table-striped projects {{ table_class|default:'' }}">
@@ -79,8 +16,22 @@
                                         {% for header in headers %}
                                             <th {% if header.width %}style="width: {{ header.width }}"{% endif %}
                                                 {% if header.sortable %}class="sortable {{ header.class|default:'' }}" data-column="{{ header.sort_key|default:header.title }}"{% elif header.class %}class="{{ header.class }}"{% endif %}>
-                                                {{ header.title|default:header }}
-                                                {% if header.sortable %}<i class="fas fa-sort sort-icon"></i>{% endif %}
+                                                {% if header.sort_url %}
+                                                    <a href="{{ header.sort_url }}"
+                                                       class="d-flex align-items-center justify-content-between gap-2 text-reset text-decoration-none">
+                                                        {{ header.title }}
+                                                        {% if header.sort_direction == "asc" %}
+                                                            <i class="fas fa-sort-up"></i>
+                                                        {% elif header.sort_direction == "desc" %}
+                                                            <i class="fas fa-sort-down"></i>
+                                                        {% else %}
+                                                            <i class="fas fa-sort"></i>
+                                                        {% endif %}
+                                                    </a>
+                                                {% else %}
+                                                    {{ header.title|default:header }}
+                                                    {% if header.sortable %}<i class="fas fa-sort sort-icon"></i>{% endif %}
+                                                {% endif %}
                                             </th>
                                         {% endfor %}
                                         {% if show_actions %}
@@ -95,7 +46,8 @@
                                         {% if custom_cells %}
                                             <!-- Modo personalizado - permite definir las celdas manualmente -->
                                             {% for cell in item.cells %}
-                                                <td {% if cell.class %}class="{{ cell.class }}"{% endif %}{% if cell.data_attr %} data-{{ cell.data_attr }}="{{ cell.data_value|default:cell.content }}"{% endif %}>
+                                                <td {% if cell.class %}class="{{ cell.class }}"{% endif %}
+                                                    {% if cell.data_attr %}data-{{ cell.data_attr }}="{{ cell.data_value|default:cell.content }}"{% endif %}>
                                                     {% if cell.link_url and not disable_links %}
                                                         <a href="{{ cell.link_url }}"
                                                            {% if cell.link_class %}class="{{ cell.link_class }}"{% endif %}

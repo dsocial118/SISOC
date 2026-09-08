@@ -8,7 +8,11 @@
 - Estado (actividad/proceso/detalle): estructura jerárquica para estados de comedores e historial. Evidencia: comedores/models.py:106-200.
 - Observación: nota asociada a un comedor con fecha de visita. Evidencia: comedores/models.py:500-518.
 - Nómina: asociación comedor↔ciudadano con estado (pendiente/activo/baja). Evidencia: comedores/models.py:451-488.
-- Territorial/GESTIONAR: sistema externo con el que se sincronizan comedores/relevamientos. Evidencia: comedores/tasks.py:1-249; relevamientos/tasks.py:1-144.
+- Territorial/GESTIONAR: sistema externo con el que se sincronizan
+  comedores/relevamientos. `Relevamiento` conserva el UID externo y puede
+  asociar opcionalmente al usuario territorial de SISOC. Evidencia:
+  comedores/tasks.py:1-249; relevamientos/tasks.py:1-144;
+  relevamientos/models.py.
 
 ## 2) Entidades core
 | Modelo | Significado | Campos clave | Invariantes |
@@ -16,7 +20,7 @@
 | Comedor | Establecimiento gestionado (comedor/merendero). | `nombre`, `programa`, `tipocomedor`, `provincia/municipio/localidad`, `dupla`, `referente`, `estado`, `estado_validacion`, `ultimo_estado`. Evidencia: comedores/models.py:203-405. | `estado` choices (“Sin Ingreso”, “Asignado…”); `estado_validacion` choices (Pendiente/Validado/No Validado); `latitud/longitud` con rangos; validación de direcciones via regex; `delete` limpia historial antes de borrar. Evidencia: comedores/models.py:264-396. |
 | EstadoActividad/Proceso/Detalle + EstadoGeneral/Historial | Taxonomía y tracking de estados de comedores. | FK encadenados (actividad→proceso→detalle), `EstadoHistorial.comedor`, `estado_general`, `fecha_cambio`. Evidencia: comedores/models.py:106-200. | Historial ordenado desc; `ultimo_estado` en Comedor apunta a último registro. Evidencia: comedores/models.py:176-200,278-285. |
 | Referente | Contacto del comedor. | `nombre`, `apellido`, `mail`, `celular`, `documento`, `funcion`. Evidencia: comedores/models.py:30-92. | `clean` valida celular (≤15 dígitos) y documento (7 u 8 dígitos); `save` ejecuta `full_clean`. Evidencia: comedores/models.py:60-84. |
-| Relevamiento | Registro de visita/encuesta al comedor. | `comedor`, `estado`, `fecha_visita`, `territorial_uid/nombre`, varias OneToOne a componentes (espacio, recursos, etc.), `responsable_relevamiento`, `docPDF`. Evidencia: relevamientos/models.py:986-1040,1018-1034. | Único por `comedor` + `fecha_visita`; validación evita más de un relevamiento activo (“Pendiente”/“Visita pendiente”); puede asignar responsable al referente del comedor. Evidencia: relevamientos/models.py:1050-1071. |
+| Relevamiento | Registro de visita/encuesta al comedor. | `comedor`, `estado`, `fecha_visita`, `territorial_uid/nombre` externos, `territorial_user` opcional en SISOC, varias OneToOne a componentes (espacio, recursos, etc.), `responsable_relevamiento`, `docPDF`. Evidencia: relevamientos/models.py. | Único por `comedor` + `fecha_visita`; validación evita más de un relevamiento activo (“Pendiente”/“Visita pendiente”); puede asignar responsable al referente del comedor. Los UID externos heredados no se convierten automáticamente en usuarios SISOC. Evidencia: relevamientos/models.py y migration 0012. |
 | Observacion | Nota con fecha sobre un comedor. | `comedor`, `observador`, `fecha_visita`, `observacion`. Evidencia: comedores/models.py:500-518. | Índice por comedor; sincroniza con GESTIONAR en post_save. Evidencia: comedores/signals.py:70-75. |
 | Nomina | Relación comedor↔ciudadano con estado. | `comedor`, `ciudadano`, `estado` (pendiente/activo/baja), `fecha`. Evidencia: comedores/models.py:451-488. | Estado con choices; index por comedor. Evidencia: comedores/models.py:451-488. |
 

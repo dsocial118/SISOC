@@ -1,9 +1,10 @@
 # QA - Riesgos iniciales de infraestructura
 
-Estado: actualizado despues del mantenimiento aprobado, corte 2026-07-13.
+Estado: actualizado despues del mantenimiento aprobado y del retiro Stage 2 del
+MySQL local, corte 2026-07-21.
 
 La clasificacion prioriza continuidad, seguridad y migrabilidad. Se aplicaron
-la limpieza Docker, la eliminacion aprobada de dos dumps y el Stage 1 reversible
+la limpieza Docker, la eliminacion aprobada de dos dumps y el retiro Stage 2
 del MySQL local, todos documentados y sin reiniciar la aplicacion.
 
 ## Riesgos criticos
@@ -19,30 +20,30 @@ Impacto: se puede documentar, migrar, respaldar o apagar el servidor equivocado.
 Accion segura: reconciliar la documentacion sin tocar destinos ni GitHub
 Environment.
 
-### 2. Filesystem raiz mitigado de 93% a 77%
+### 2. Filesystem raiz recuperado a 34%
 
-La limpieza Docker y la eliminacion aprobada de dos dumps antiguos dejaron 22 GB
-libres. Docker ya no es el componente principal conocido. Media ocupa 2.8 GiB y
-el datadir MySQL local ya fue identificado como el principal consumo restante:
-43 GB preservados para rollback hasta decidir Stage 2.
+La limpieza Docker, la eliminacion aprobada de dos dumps antiguos y Stage 2
+dejaron 62 GB libres. Docker ya no es el componente principal conocido; el
+datadir MySQL local de 43 GB ya no existe.
 
-Impacto: fallas de build, escritura de logs, MySQL, Docker o deploy; posible caida
-abrupta.
+Impacto residual: el espacio ya no bloquea el deploy, pero logs, media y Docker
+pueden volver a crecer si no se mantiene el monitoreo.
 
-Accion segura: mantener el cron conservador y observar que MySQL no se reactive.
-No borrar datos MySQL antes del 2026-07-20 ni sin aprobar Stage 2.
+Accion segura: mantener el cron conservador y monitorear semanalmente capacidad
+y journal del mantenimiento.
 
-### 3. MySQL local heredado conserva 43 GB (exposicion mitigada)
+### 3. Retiro Stage 2 del MySQL local irreversible
 
-MySQL 8.0.46 conserva 43 GB en 25 schemas no de sistema. Stage 1 lo dejo inactivo,
-deshabilitado y sin listener. El preflight confirmo cero clientes inesperados,
-eventos o replicacion. Los datos y paquetes siguen intactos para rollback.
+Stage 2 purgo los paquetes server y elimino el datadir local de 43 GB. No queda
+unidad, binario ni listener local. La aplicacion continuo en la DB canonica
+`10.80.9.18`; no se uso `autoremove`.
 
-Impacto pendiente: 43 GB ocupados y riesgo de perder datos historicos si Stage 2
-los elimina sin decidir conservacion.
+Impacto aceptado: ya no existe rollback del clon historico local. El backup de
+Stage 1 conserva metadatos operativos, no los datos eliminados.
 
-Accion segura: observar hasta 2026-07-20. Borrar datos o purgar paquetes requiere
-una aprobacion posterior y una decision explicita de conservacion.
+Accion segura: no reinstalar MySQL local ni usar ese backup como fuente de
+restauracion. Cualquier nueva instancia local requiere una decision de
+arquitectura y plan de datos separado.
 
 El responsable confirmo que este MySQL local no forma parte de la arquitectura:
 QA usa `10.80.9.18`. La instancia heredada debe retirarse por etapas, no asumirse
@@ -102,8 +103,8 @@ de colision futura de puertos. No deshabilitar hasta conocer por que existe.
 
 ### Acceso privilegiado incompleto para cerrar el inventario
 
-Se obtuvo acceso puntual suficiente para inventariar MySQL local y aplicar su
-Stage 1 aprobado. Todavia falta verificar firewall/ACL, crontab root y la
+Se obtuvo acceso puntual suficiente para inventariar y retirar el MySQL local
+en Stages 1 y 2. Todavia falta verificar firewall/ACL, crontab root y la
 configuracion efectiva completa de NGINX y servicios.
 
 ### Bind mount del repo completo y contenedores como root
@@ -181,8 +182,8 @@ realidad observada es CD self-hosted en QA viejo.
 
 1. Mantener inventario, operaciones y rollback actualizados.
 2. Monitorear semanalmente disco y journal del mantenimiento.
-3. Verificar durante la observacion que MySQL local permanezca inactivo y sin
-   clientes dependientes.
+3. Mantener ausente el MySQL local; no introducir una dependencia nueva del
+   host de aplicacion.
 4. Pedir evidencia de backup/retencion/restore de `10.80.9.18`.
 5. Comparar GitHub Environment `qa` y label del runner sin cambiar valores.
 
@@ -192,7 +193,7 @@ realidad observada es CD self-hosted en QA viejo.
 - cambiar bind de MySQL, firewall, puertos o ACL;
 - cambiar permisos/owners de logs, repo o `.env`;
 - deshabilitar Apache, Certbot u otro servicio;
-- borrar `/var/lib/mysql` o purgar paquetes server en Stage 2;
+- reinstalar MySQL local o intentar reconstruir sus datos historicos;
 - ampliar la limpieza a logs, datos, cache reciente o el archivo no trackeado;
 - modificar NGINX, Compose, entrypoint, runner, cron o deploy;
 - reiniciar/redeployar, porque dispara escrituras en DB;
@@ -201,9 +202,8 @@ realidad observada es CD self-hosted en QA viejo.
 
 ## No conviene tocar todavia
 
-1. El datadir MySQL local hasta terminar la observacion y decidir conservacion.
-2. El QA canonico hasta planificar y validar formalmente una migracion.
-3. El archivo no trackeado hasta identificarlo en una sesion controlada.
-4. Crontab root y monitoreo historico hasta saber que jobs/agentes existen.
-5. Apache/Certbot hasta descartar dependencias ocultas.
-6. El orden del deploy sin antes definir rollback, backup y ventana de prueba.
+1. El QA canonico hasta planificar y validar formalmente una migracion.
+2. El archivo no trackeado hasta identificarlo en una sesion controlada.
+3. Crontab root y monitoreo historico hasta saber que jobs/agentes existen.
+4. Apache/Certbot hasta descartar dependencias ocultas.
+5. El orden del deploy sin antes definir rollback, backup y ventana de prueba.

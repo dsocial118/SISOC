@@ -5,6 +5,8 @@ class DashboardConfig(AppConfig):
     name = "dashboard"
 
     def ready(self):
-        from dashboard import signals  # pylint: disable=import-outside-toplevel
+        from dashboard.signals import (  # pylint: disable=import-outside-toplevel
+            register_signals,
+        )
 
-        signals.register_signals()
+        register_signals()

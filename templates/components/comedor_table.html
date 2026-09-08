@@ -163,9 +163,9 @@
                                         {% elif column_key == "estado_actividad" %}
                                             <td>{{ comedor.ultimo_estado__estado_general__estado_actividad__estado | default_if_none:"Sin estado" }}</td>
                                         {% elif column_key == "estado_proceso" %}
-                                            <td>{{ comedor.ultimo_estado__estado_general__estado_proceso | default_if_none:"Sin estado" }}</td>
+                                            <td>{{ comedor.ultimo_estado__estado_general__estado_proceso__estado | default_if_none:"Sin estado" }}</td>
                                         {% elif column_key == "estado_detalle" %}
-                                            <td>{{ comedor.ultimo_estado__estado_general__estado_detalle | default_if_none:"Sin estado" }}</td>
+                                            <td>{{ comedor.ultimo_estado__estado_general__estado_detalle__estado | default_if_none:"Sin estado" }}</td>
                                         {% elif column_key == "provincia" %}
                                             <td>{{ comedor.provincia__nombre | default_if_none:"Sin provincia" }}</td>
                                         {% elif column_key == "municipio" %}

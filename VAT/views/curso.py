@@ -21,6 +21,7 @@ from VAT.forms import (
     ComisionCursoForm,
     ComisionCursoHorarioForm,
     CiudadanoInscripcionRapidaForm,
+    ProfesorCentroForm,
     build_curso_queryset_for_centros,
     build_ubicacion_queryset_for_centros,
 )
@@ -32,6 +33,8 @@ from VAT.models import (
     SesionComision,
     Inscripcion,
     AsistenciaSesion,
+    ProfesorCentro,
+    ActaCierreComision,
 )
 from VAT.services.access_scope import (
     can_user_edit_centro,
@@ -46,7 +49,9 @@ from VAT.services.nomina_export import (
     build_comision_curso_nomina_excel,
     build_nomina_filename,
 )
+from VAT.services.resultados_comision_service import ResultadosComisionService
 from VAT.services.sesion_comision_service.impl import SesionComisionService
+from VAT.services.tipo_alumno_service import anotar_tipo_alumno
 
 
 def _scoped_centros_ids(user):
@@ -409,10 +414,12 @@ class ComisionCursoDetailView(LoginRequiredMixin, DetailView):
         horario_form.fields["comision_curso"].queryset = ComisionCurso.objects.filter(
             pk=comision.pk
         )
-        inscripciones = list(
-            Inscripcion.objects.filter(comision_curso=comision)
-            .select_related("ciudadano", "programa")
-            .order_by("estado", "fecha_inscripcion")
+        inscripciones = anotar_tipo_alumno(
+            list(
+                Inscripcion.objects.filter(comision_curso=comision)
+                .select_related("ciudadano", "programa")
+                .order_by("estado", "fecha_inscripcion")
+            )
         )
         sesiones = list(
             SesionComision.objects.filter(comision_curso=comision)
@@ -467,6 +474,18 @@ class ComisionCursoDetailView(LoginRequiredMixin, DetailView):
         )
         total_inscriptos = sum(
             1 for inscripcion in inscripciones if inscripcion.estado != "en_espera"
+        )
+        puede_gestionar_resultados = (
+            puede_gestionar_comision
+            and self.request.user.has_perm("VAT.change_inscripcion")
+        )
+        alumnos_resultados = list(
+            ResultadosComisionService.alumnos_calificables(comision)
+        )
+        acta_cierre = (
+            ActaCierreComision.objects.filter(comision_curso=comision)
+            .select_related("profesor")
+            .first()
         )
         context.update(
             {
@@ -567,6 +586,15 @@ class ComisionCursoDetailView(LoginRequiredMixin, DetailView):
                 "unidad_detail_url": cancel_url,
                 "unidad_detail_text": "Ver centro",
                 "inscripcion_estado_url_name": "vat_inscripcion_curso_cambiar_estado",
+                # Flag propio de la accion en lote: el template es compartido con
+                # el camino legacy Comision/OfertaInstitucional, que si define
+                # `puede_cambiar_inscripcion` pero no tiene endpoint de lote.
+                "puede_gestionar_lote_inscriptos": puede_gestionar_comision
+                and self.request.user.has_perm("VAT.change_inscripcion"),
+                "inscripcion_estado_lote_url": reverse(
+                    "vat_inscripcion_curso_cambiar_estado_lote",
+                    kwargs={"pk": comision.pk},
+                ),
                 "asistencia_url_name": "vat_asistencia_sesion_curso",
                 "horario_create_url_name": "vat_comision_curso_horario_create",
                 "horario_create_query_param": "comision_curso",
@@ -589,6 +617,30 @@ class ComisionCursoDetailView(LoginRequiredMixin, DetailView):
                     if self.request.user.has_perm("VAT.view_comisioncurso")
                     else None
                 ),
+                # Pestaña "Resultados". El flag gatea el render de la solapa: el
+                # camino legacy Comision/OfertaInstitucional no lo define y por
+                # eso no la muestra.
+                "puede_gestionar_resultados": puede_gestionar_resultados,
+                "alumnos_resultados": alumnos_resultados,
+                "resumen_resultados": ResultadosComisionService.resumen(
+                    alumnos_resultados
+                ),
+                "acta_cierre": acta_cierre,
+                "acta_fecha_fin_inicial": (
+                    acta_cierre.fecha_fin if acta_cierre else comision.fecha_fin
+                ),
+                "resultado_aprobado": Inscripcion.RESULTADO_APROBADO,
+                "resultado_desaprobado": Inscripcion.RESULTADO_DESAPROBADO,
+                "resultados_save_url": reverse(
+                    "vat_comision_curso_resultados", kwargs={"pk": comision.pk}
+                ),
+                "profesor_buscar_url": reverse(
+                    "vat_profesor_centro_buscar", kwargs={"pk": comision.pk}
+                ),
+                "profesor_crear_url": reverse(
+                    "vat_profesor_centro_crear", kwargs={"pk": comision.pk}
+                ),
+                "profesor_form": ProfesorCentroForm(),
             }
         )
         return context
@@ -635,6 +687,105 @@ class ComisionCursoInscriptosExportView(_ComisionCursoNominaExportView):
     only_inscriptos = True
 
 
+def _serializar_profesor(profesor):
+    return {
+        "id": profesor.pk,
+        "apellido": profesor.apellido,
+        "nombre": profesor.nombre,
+        "documento": str(profesor.documento),
+        "email": profesor.email,
+        "text": (
+            f"{profesor.apellido}, {profesor.nombre} — "
+            f"DNI {profesor.documento} — {profesor.email}"
+        ),
+    }
+
+
+class ComisionCursoResultadosView(LoginRequiredMixin, View):
+    """Guarda el acta de cierre y las calificaciones de la comisión."""
+
+    def post(self, request, pk):
+        comision = get_object_or_404(
+            _scoped_comisiones_curso_queryset(request.user), pk=pk
+        )
+        detail_url = reverse("vat_comision_curso_detail", kwargs={"pk": comision.pk})
+
+        # El pk se castea a mano: `filter(pk="abc")` levanta ValueError al
+        # evaluar el queryset y terminaria en 500 con un POST manipulado.
+        try:
+            profesor_pk = int(request.POST.get("profesor") or 0)
+        except (TypeError, ValueError):
+            profesor_pk = 0
+        profesor = ProfesorCentro.objects.filter(
+            pk=profesor_pk,
+            centro_id=comision.curso.centro_id,
+        ).first()
+
+        resultados = {}
+        for key, value in request.POST.items():
+            if not key.startswith("resultado_"):
+                continue
+            try:
+                inscripcion_id = int(key.removeprefix("resultado_"))
+            except ValueError:
+                continue
+            resultados[inscripcion_id] = value
+
+        try:
+            resumen = ResultadosComisionService.guardar_resultados(
+                comision_curso=comision,
+                profesor=profesor,
+                fecha_fin=request.POST.get("fecha_fin") or None,
+                numero_acta=request.POST.get("numero_acta"),
+                resultados=resultados,
+                usuario=request.user,
+            )
+        except ValueError as exc:
+            messages.error(request, str(exc))
+            return redirect(f"{detail_url}#resultados")
+
+        messages.success(
+            request,
+            f"Resultados guardados: {resumen['calificados']} "
+            f"{'calificación actualizada' if resumen['calificados'] == 1 else 'calificaciones actualizadas'}.",
+        )
+        return redirect(f"{detail_url}#resultados")
+
+
+class ProfesorCentroBuscarView(LoginRequiredMixin, View):
+    """Busca profesores del centro de la comisión por nombre, apellido o DNI."""
+
+    def get(self, request, pk):
+        comision = get_object_or_404(
+            _scoped_comisiones_curso_queryset(request.user), pk=pk
+        )
+        query = (request.GET.get("q") or "").strip()
+        profesores = ProfesorCentro.objects.filter(centro_id=comision.curso.centro_id)
+        if query:
+            filtros = Q(apellido__icontains=query) | Q(nombre__icontains=query)
+            if query.isdigit():
+                filtros |= Q(documento__startswith=query)
+            profesores = profesores.filter(filtros)
+        profesores = profesores.order_by("apellido", "nombre")[:10]
+        return JsonResponse({"results": [_serializar_profesor(p) for p in profesores]})
+
+
+class ProfesorCentroCrearView(LoginRequiredMixin, View):
+    """Alta rápida de profesor, sin validación de identidad externa."""
+
+    def post(self, request, pk):
+        comision = get_object_or_404(
+            _scoped_comisiones_curso_queryset(request.user), pk=pk
+        )
+        form = ProfesorCentroForm(request.POST, centro=comision.curso.centro)
+        if not form.is_valid():
+            return _modal_json_error_response(
+                form, "No se pudo dar de alta al profesor. Revisá los datos."
+            )
+        profesor = form.save()
+        return JsonResponse({"ok": True, "profesor": _serializar_profesor(profesor)})
+
+
 class InscripcionCursoCambiarEstadoView(LoginRequiredMixin, View):
     def post(self, request, pk):
         inscripcion = get_object_or_404(
@@ -662,6 +813,84 @@ class InscripcionCursoCambiarEstadoView(LoginRequiredMixin, View):
                     f"actualizada a '{estados_validos[nuevo_estado]}'.",
                 )
         return redirect("vat_comision_curso_detail", pk=inscripcion.comision_curso_id)
+
+
+class InscripcionCursoCambiarEstadoLoteView(LoginRequiredMixin, View):
+    """
+    Acepta o rechaza en lote las inscripciones seleccionadas de una comisión.
+
+    Sólo admite `inscripta` y `rechazada`: son las dos acciones del listado, y
+    restringir el whitelist evita que un POST armado a mano mueva inscripciones
+    a cualquier estado por esta vía.
+    """
+
+    ESTADOS_PERMITIDOS = {
+        "inscripta": "Aceptada",
+        "rechazada": "Rechazada",
+    }
+
+    def post(self, request, pk):
+        comision = get_object_or_404(
+            _scoped_comisiones_curso_queryset(request.user), pk=pk
+        )
+        detail_url = reverse("vat_comision_curso_detail", kwargs={"pk": comision.pk})
+        redirect_url = f"{detail_url}#inscriptos"
+
+        nuevo_estado = request.POST.get("estado")
+        if nuevo_estado not in self.ESTADOS_PERMITIDOS:
+            messages.error(request, "Acción no válida.")
+            return redirect(redirect_url)
+
+        seleccionados = set()
+        for valor in request.POST.getlist("inscripciones"):
+            try:
+                seleccionados.add(int(valor))
+            except (TypeError, ValueError):
+                continue
+
+        if not seleccionados:
+            messages.error(request, "No seleccionaste ninguna inscripción.")
+            return redirect(redirect_url)
+
+        # Se filtra por la comisión además del id: un id de otra comisión no
+        # puede colarse en el lote.
+        inscripciones = list(
+            Inscripcion.objects.filter(
+                comision_curso=comision,
+                pk__in=seleccionados,
+            ).select_related("ciudadano")
+        )
+        if not inscripciones:
+            messages.error(
+                request, "Las inscripciones seleccionadas no pertenecen a la comisión."
+            )
+            return redirect(redirect_url)
+
+        resumen = InscripcionService.actualizar_estado_en_lote(
+            inscripciones=inscripciones,
+            nuevo_estado=nuevo_estado,
+            usuario=request.user,
+        )
+
+        accion = self.ESTADOS_PERMITIDOS[nuevo_estado].lower()
+        if resumen["actualizadas"]:
+            messages.success(
+                request,
+                f"{len(resumen['actualizadas'])} "
+                f"{'inscripción' if len(resumen['actualizadas']) == 1 else 'inscripciones'} "
+                f"{accion}{'s' if len(resumen['actualizadas']) != 1 else ''}.",
+            )
+        if resumen["sin_cambios"]:
+            messages.info(
+                request,
+                f"{len(resumen['sin_cambios'])} ya estaban en ese estado: sin cambios.",
+            )
+        for inscripcion, error in resumen["errores"]:
+            messages.error(
+                request,
+                f"{inscripcion.ciudadano.nombre_completo}: {error}",
+            )
+        return redirect(redirect_url)
 
 
 class InscripcionRapidaComisionCursoView(LoginRequiredMixin, View):
@@ -750,11 +979,13 @@ class AsistenciaSesionCursoView(LoginRequiredMixin, TemplateView):
         )
 
     def _inscripciones_activas(self, comision):
-        return list(
-            Inscripcion.objects.filter(
-                comision_curso=comision,
-                estado__in=["inscripta", "validada_presencial"],
-            ).select_related("ciudadano")
+        return anotar_tipo_alumno(
+            list(
+                Inscripcion.objects.filter(
+                    comision_curso=comision,
+                    estado__in=["inscripta", "validada_presencial"],
+                ).select_related("ciudadano")
+            )
         )
 
     def get_context_data(self, **kwargs):

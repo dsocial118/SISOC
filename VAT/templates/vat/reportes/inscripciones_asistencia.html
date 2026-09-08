@@ -355,6 +355,16 @@
             white-space: nowrap;
         }
 
+        .rep-pill--vat {
+            background: rgba(20, 184, 166, 0.2);
+            color: #2dd4bf;
+        }
+
+        .rep-pill--sin-plan {
+            background: rgba(148, 163, 184, 0.18);
+            color: #a9b5c7;
+        }
+
         /* ── Pie + paginador ── */
         .rep-tbl-foot {
             display: flex;
@@ -902,6 +912,7 @@
                             <th>DNI</th>
                             <th>Apellido y nombre</th>
                             <th>Estado</th>
+                            <th>Tipo de alumno</th>
                             <th>Centro</th>
                             <th>Comisión</th>
                             <th>Curso/Oferta</th>
@@ -916,6 +927,13 @@
                                 <td>
                                     <span class="rep-pill">{{ item.estado }}</span>
                                 </td>
+                                <td>
+                                    {% if item.tiene_voucher_activo %}
+                                        <span class="rep-pill rep-pill--vat">VAT</span>
+                                    {% else %}
+                                        <span class="rep-pill rep-pill--sin-plan">Sin Plan</span>
+                                    {% endif %}
+                                </td>
                                 <td>{{ item.centro_nombre_ref }}</td>
                                 <td>{{ item.comision_codigo_ref }}</td>
                                 <td>{{ item.unidad_formativa_nombre }}</td>
@@ -923,7 +941,7 @@
                             </tr>
                         {% empty %}
                             <tr class="rep-tbl-empty">
-                                <td colspan="7">No hay personas para los filtros seleccionados.</td>
+                                <td colspan="8">No hay personas para los filtros seleccionados.</td>
                             </tr>
                         {% endfor %}
                     </tbody>

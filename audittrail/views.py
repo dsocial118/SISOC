@@ -6,7 +6,7 @@ import re
 from django.core.exceptions import PermissionDenied
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.db import models
-from django.http import HttpResponse, JsonResponse
+from django.http import JsonResponse
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
@@ -17,6 +17,7 @@ from auditlog.models import LogEntry
 from audittrail.constants import TRACKED_MODELS, tracked_model_choices
 from audittrail.forms import AuditLogFilterForm
 from audittrail.services import query_service
+from core.services.csv_export import build_csv_response
 
 
 AUDITTRAIL_ACCESS_LOGGER = logging.getLogger("audittrail.access")
@@ -390,10 +391,7 @@ class BaseAuditLogListView(
             )
             return response
 
-        response = HttpResponse(content_type="text/csv; charset=utf-8")
-        response["Content-Disposition"] = (
-            f'attachment; filename="{self._build_export_filename("csv")}"'
-        )
+        response = build_csv_response(self._build_export_filename("csv"))
         writer = csv.writer(response)
         writer.writerow(
             [

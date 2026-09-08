@@ -81,6 +81,7 @@ def test_user_creation_form_acepta_email_vacio():
     form = UserCreationForm(
         data={
             "username": "sin_email_user",
+            "tipo_usuario": "interno",
             "email": "",
             "password": "Inicial123!",
             "first_name": "Juan",
@@ -103,6 +104,7 @@ def test_user_creation_form_acepta_email_repetido():
     form = UserCreationForm(
         data={
             "username": "segundo_usuario",
+            "tipo_usuario": "interno",
             "email": "repetido@example.com",
             "password": "Pass123!",
             "first_name": "Ana",
@@ -125,6 +127,7 @@ def test_user_change_form_acepta_email_vacio():
     form = CustomUserChangeForm(
         data={
             "username": "cambia_email",
+            "tipo_usuario": "interno",
             "email": "",
             "first_name": "Pedro",
             "last_name": "Lopez",

@@ -1,0 +1,48 @@
+/* ============================================
+   PONCHO - Tokens del design system
+   ============================================
+   Fuente: prototipo Figma "SISOC_ Versión UX"
+   (file yXUvxp2RKEMNDS8JHv0HdU, nodo 13501:32237).
+
+   Este archivo define SOLO variables. No aplica estilos por sí mismo,
+   asi que puede cargarse temprano en el <head> sin pelear con la cascada
+   de los CSS por página (listModerno.css, comedoresSearchBar.css, etc.).
+
+   La aplicación transversal de la forma a todos los botones queda fuera
+   de este PR: hoy `.btn` está redefinido en ~20 hojas de estilo y
+   desarmarlas es un refactor propio.
+   ============================================ */
+
+:root {
+  /* Paleta PONCHO */
+  --poncho-azul-principal: #232d4f;
+  --poncho-azul-secundario: #3e5a7e;
+  --poncho-verde: #2e7d33;
+  --poncho-verde-hover: #256428;
+  --poncho-verde-azulado: #3b8681;
+  --poncho-rojo: #c62828;
+  --poncho-blanco: #ffffff;
+  --poncho-texto-placeholder: #dddddd;
+
+  /* Radios */
+  --poncho-radio-buscador: 15px;
+  --poncho-radio-cta: 20px;
+  --poncho-radio-base: 12px;
+
+  /* Espaciado */
+  --poncho-space-1-5: 6px;
+  --poncho-space-3: 12px;
+  --poncho-space-5: 20px;
+
+  /* Tipografía */
+  --poncho-font-base: "Montserrat", "Inter", system-ui, -apple-system,
+    "Segoe UI", sans-serif;
+  --poncho-text-cta: 18px;
+  --poncho-text-buscador: 20px;
+  --poncho-text-selector: 24px;
+  --poncho-text-sm: 14px;
+
+  /* Medidas del buscador */
+  --poncho-buscador-alto: 50px;
+  --poncho-buscador-borde: 2px;
+}

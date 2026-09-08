@@ -7,16 +7,27 @@
 {% block breadcrumb %}
     <ol class="breadcrumb float-sm-right">
         <div class="breadcrumb-item">
-            <a href="{% url 'admisiones_tecnicos_editar' admision.id %}">{{ admision.comedor.nombre }}</a>
+            {% if origen_acompanamiento %}
+                <a href="{% url 'detalle_acompanamiento' admision.comedor_id %}?admision_id={{ admision.id }}">
+                    {{ admision.comedor.nombre }}
+                </a>
+            {% else %}
+                <a href="{% url 'admisiones_tecnicos_editar' admision.id %}">{{ admision.comedor.nombre }}</a>
+            {% endif %}
         </div>
         <div class="breadcrumb-item active">Informe Complementario</div>
     </ol>
 {% endblock %}
 {% block content %}
+    {% if origen_acompanamiento %}
+        {% url 'detalle_acompanamiento' admision.comedor_id as volver_url %}
+    {% else %}
+        {% url 'admisiones_tecnicos_editar' admision.id as volver_url %}
+    {% endif %}
     <div class="container mt-4">
         <div class="row justify-content-between d-print-none mx-1 mb-3">
             <div class="col-auto">
-                <a href="{% url 'admisiones_tecnicos_editar' admision.id %}"
+                <a href="{{ volver_url }}{% if origen_acompanamiento %}?admision_id={{ admision.id }}{% endif %}"
                    class="btn btn-secondary mr-1 backbutton-handler">Volver</a>
             </div>
         </div>
@@ -33,47 +44,114 @@
         <div class="row">
             <form method="post">
                 {% csrf_token %}
-                <div class="list-group">
-                    {% for nombre, valor in campos %}
-                        <div class="list-group-item d-flex flex-column gap-2">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div class="flex-grow-1">
-                                    <h6 class="mb-1">{{ nombre }}</h6>
-                                    <p class="mb-1 text-muted">
-                                        <strong>Valor actual:</strong> {{ valor }}
-                                    </p>
-                                    {% if campos_modificados_existentes and nombre in campos_modificados_existentes %}
-                                        <p class="mb-1 text-info">
-                                            <strong>Valor modificado:</strong> {{ campos_modificados_existentes|get_item:nombre }}
-                                        </p>
-                                    {% endif %}
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input campo-subsanar"
-                                           type="checkbox"
-                                           name="campos_subsanar"
-                                           value="{{ nombre }}"
-                                           id="check_{{ forloop.counter }}"
-                                           {% if campos_modificados_existentes and nombre in campos_modificados_existentes %}checked{% endif %} />
-                                    <label class="form-check-label" for="check_{{ forloop.counter }}">Modificar campo</label>
-                                </div>
-                            </div>
-                            <div class="input-wrapper mt-2"
-                                 id="input_{{ forloop.counter }}"
-                                 style="{% if campos_modificados_existentes and nombre in campos_modificados_existentes %}display: block{% else %}display: none{% endif %}">
-                                <input type="text"
-                                       class="form-control"
-                                       name="campo_{{ nombre }}"
-                                       id="campo_{{ forloop.counter }}"
-                                       value="{% if campos_modificados_existentes and nombre in campos_modificados_existentes %}{{ campos_modificados_existentes|get_item:nombre }}{% endif %}"
-                                       placeholder="Escriba el nuevo valor"
-                                       data-field-name="{{ nombre }}" />
-                            </div>
+                {% for grupo in campos_agrupados %}
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">{{ grupo.titulo }}</h5>
                         </div>
-                    {% endfor %}
-                </div>
+                        <div class="card-body">
+                            {% if grupo.tipo == "matriz" %}
+                                <div class="table-responsive">
+                                    <table id="matriz-{{ grupo.identificador }}"
+                                           class="table table-sm table-bordered align-middle text-center mb-0">
+                                        <thead class="table-dark">
+                                            <tr class="text-uppercase small">
+                                                <th scope="col" class="fw-semibold">Comida</th>
+                                                <th scope="col">Lun</th>
+                                                <th scope="col">Mar</th>
+                                                <th scope="col">Mié</th>
+                                                <th scope="col">Jue</th>
+                                                <th scope="col">Vie</th>
+                                                <th scope="col">Sáb</th>
+                                                <th scope="col">Dom</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for fila in grupo.filas %}
+                                                <tr>
+                                                    <th scope="row" class="text-nowrap fw-semibold">{{ fila.titulo }}</th>
+                                                    {% for campo in fila.campos %}
+                                                        <td class="p-1">
+                                                            <p class="mb-1 small text-muted">{{ campo.valor }}</p>
+                                                            {% if campos_modificados_existentes and campo.nombre in campos_modificados_existentes %}
+                                                                <p class="mb-1 small text-info">{{ campos_modificados_existentes|get_item:campo.nombre }}</p>
+                                                            {% endif %}
+                                                            <div class="form-check d-flex justify-content-center">
+                                                                <input class="form-check-input campo-subsanar"
+                                                                       type="checkbox"
+                                                                       name="campos_subsanar"
+                                                                       value="{{ campo.nombre }}"
+                                                                       id="check_{{ campo.identificador }}"
+                                                                       {% if campos_modificados_existentes and campo.nombre in campos_modificados_existentes %}checked{% endif %} />
+                                                                <label class="visually-hidden" for="check_{{ campo.identificador }}">Modificar {{ campo.nombre }}</label>
+                                                            </div>
+                                                            <div class="input-wrapper mt-2"
+                                                                 id="input_{{ campo.identificador }}"
+                                                                 {% if campos_modificados_existentes and campo.nombre in campos_modificados_existentes %} style="display: block" {% else %} style="display: none" {% endif %}>
+                                                                <input type="text"
+                                                                       class="form-control form-control-sm"
+                                                                       name="campo_{{ campo.nombre }}"
+                                                                       id="campo_{{ campo.identificador }}"
+                                                                       {% if campos_modificados_existentes and campo.nombre in campos_modificados_existentes %} value="{{ campos_modificados_existentes|get_item:campo.nombre }}" {% endif %}
+                                                                       placeholder="Nuevo valor"
+                                                                       aria-label="Nuevo valor para {{ campo.nombre }}"
+                                                                       data-field-name="{{ campo.nombre }}" />
+                                                            </div>
+                                                        </td>
+                                                    {% endfor %}
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <div class="row">
+                                    {% for campo in grupo.campos %}
+                                        <div class="col-md-6 mb-3">
+                                            <div class="border rounded p-3 h-100 d-flex flex-column gap-2">
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <div class="flex-grow-1">
+                                                        <h6 class="mb-1">{{ campo.nombre }}</h6>
+                                                        <p class="mb-1 text-muted">
+                                                            <strong>Valor actual:</strong> {{ campo.valor }}
+                                                        </p>
+                                                        {% if campos_modificados_existentes and campo.nombre in campos_modificados_existentes %}
+                                                            <p class="mb-1 text-info">
+                                                                <strong>Valor modificado:</strong> {{ campos_modificados_existentes|get_item:campo.nombre }}
+                                                            </p>
+                                                        {% endif %}
+                                                    </div>
+                                                    <div class="form-check">
+                                                        <input class="form-check-input campo-subsanar"
+                                                               type="checkbox"
+                                                               name="campos_subsanar"
+                                                               value="{{ campo.nombre }}"
+                                                               id="check_{{ campo.identificador }}"
+                                                               {% if campos_modificados_existentes and campo.nombre in campos_modificados_existentes %}checked{% endif %} />
+                                                        <label class="form-check-label" for="check_{{ campo.identificador }}">Modificar campo</label>
+                                                    </div>
+                                                </div>
+                                                <div class="input-wrapper mt-2"
+                                                     id="input_{{ campo.identificador }}"
+                                                     {% if campos_modificados_existentes and campo.nombre in campos_modificados_existentes %} style="display: block" {% else %} style="display: none" {% endif %}>
+                                                    <input type="text"
+                                                           class="form-control"
+                                                           name="campo_{{ campo.nombre }}"
+                                                           id="campo_{{ campo.identificador }}"
+                                                           {% if campos_modificados_existentes and campo.nombre in campos_modificados_existentes %} value="{{ campos_modificados_existentes|get_item:campo.nombre }}" {% endif %}
+                                                           placeholder="Escriba el nuevo valor"
+                                                           data-field-name="{{ campo.nombre }}" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
                 <div class="mt-4">
-                    <a href="{% url 'admisiones_tecnicos_editar' admision.id %}"
+                    <a href="{{ volver_url }}{% if origen_acompanamiento %}?admision_id={{ admision.id }}{% endif %}"
                        class="btn btn-secondary">Volver</a>
                     <button type="submit" class="btn btn-primary">Guardar y Enviar para Validación</button>
                 </div>

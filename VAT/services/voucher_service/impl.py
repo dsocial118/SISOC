@@ -82,6 +82,49 @@ class VoucherService:
         )
 
     @staticmethod
+    def reintegrar_voucher(
+        voucher: Voucher,
+        cantidad: int,
+        usuario: User,
+        detalles: dict | None = None,
+    ) -> tuple[bool, str]:
+        """Revierte un débito de créditos y registra la compensación."""
+        if cantidad <= 0:
+            return False, "La cantidad a reintegrar debe ser mayor a cero."
+
+        with VoucherService._atomic_if_persistent(voucher):
+            voucher = Voucher.objects.select_for_update().get(pk=voucher.pk)
+            voucher.cantidad_usada = max(voucher.cantidad_usada - cantidad, 0)
+            voucher.cantidad_disponible += cantidad
+            if voucher.estado == "agotado":
+                voucher.estado = "activo"
+            voucher.save(
+                update_fields=[
+                    "cantidad_usada",
+                    "cantidad_disponible",
+                    "estado",
+                    "fecha_modificacion",
+                ]
+            )
+
+            VoucherRecarga.objects.create(
+                voucher=voucher,
+                cantidad=cantidad,
+                motivo="compensacion",
+                autorizado_por=usuario,
+            )
+            VoucherLog.objects.create(
+                voucher=voucher,
+                tipo_evento="recarga",
+                cantidad_afectada=cantidad,
+                usuario=usuario,
+                detalles=detalles or {},
+            )
+
+        logger.info("Voucher %s reintegrado con %s créditos", voucher.id, cantidad)
+        return True, f"Créditos reintegrados. Disponible: {voucher.cantidad_disponible}"
+
+    @staticmethod
     def crear_voucher(
         ciudadano_id: int,
         programa_id: int,

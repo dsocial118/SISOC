@@ -4,6 +4,31 @@
  * Reutilizable para todos los listados
  */
 
+function parseDateForSort(value) {
+  const match = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(String(value).trim());
+  if (!match) return null;
+
+  const day = Number(match[1]);
+  const month = Number(match[2]);
+  const year = Number(match[3]);
+  const timestamp = Date.UTC(year, month - 1, day);
+  const parsed = new Date(timestamp);
+
+  if (
+    parsed.getUTCFullYear() !== year ||
+    parsed.getUTCMonth() !== month - 1 ||
+    parsed.getUTCDate() !== day
+  ) {
+    return null;
+  }
+
+  return timestamp;
+}
+
+if (typeof module !== "undefined") {
+  module.exports = { parseDateForSort };
+}
+
 document.addEventListener("DOMContentLoaded", function () {
   // Buscar tabla - priorizar .table-comedor-moderno, luego .table, luego .projects
   const table = document.querySelector(".table-comedor-moderno, .table, .projects");
@@ -109,11 +134,18 @@ document.addEventListener("DOMContentLoaded", function () {
 
       // Detectar tipo de valor
       let isNumber = false;
-      let aNum = parseFloat(aValue);
-      let bNum = parseFloat(bValue);
+      let aNum = parseDateForSort(aValue);
+      let bNum = parseDateForSort(bValue);
 
-      if (!isNaN(aNum) && !isNaN(bNum) && aValue !== "" && bValue !== "") {
+      if (aNum !== null && bNum !== null) {
         isNumber = true;
+      } else {
+        aNum = parseFloat(aValue);
+        bNum = parseFloat(bValue);
+
+        if (!isNaN(aNum) && !isNaN(bNum) && aValue !== "" && bValue !== "") {
+          isNumber = true;
+        }
       }
 
       // Normalizar strings para comparación (minúsculas, sin acentos)

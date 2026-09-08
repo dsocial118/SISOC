@@ -5,10 +5,15 @@ from django.contrib.auth.models import Permission, User
 from django.db.models import Case, CharField, Count, F, Q, Value, When
 from django.urls import NoReverseMatch, reverse
 
+from core.constants import UserGroups
 from core.services.advanced_filters import AdvancedFilterEngine
 from core.services.column_preferences import build_columns_context
 from core.services.favorite_filters import SeccionesFiltrosFavoritos
-from iam.services import user_has_any_permission_codes, user_has_permission_code
+from iam.services import (
+    apply_user_queryset_scopes,
+    user_has_any_permission_codes,
+    user_has_permission_code,
+)
 from users.models import Profile
 from users.services_delegation import effective_delegatable_groups_qs
 from users.users_filter_config import (
@@ -45,6 +50,11 @@ def _reverse_optional(url_name):
 
 
 class UsuariosService:
+    USUARIOS_NACIONALES_CON_VISIBILIDAD_GLOBAL = (
+        UserGroups.SIMEPI_ADMINISTRADOR,
+        UserGroups.SIMEPI_EQUIPO_NACIONAL,
+    )
+
     @staticmethod
     def get_pending_mobile_password_reset_count() -> int:
         """Cantidad de usuarios con solicitud pendiente de reset mobile."""
@@ -79,9 +89,24 @@ class UsuariosService:
 
     @staticmethod
     def get_filtered_usuarios(request_or_get):
-        """Aplica filtros combinables sobre el listado de usuarios."""
+        """Filtra el listado visible; los grupos nacionales pueden verlo completo."""
         base_qs = UsuariosService.get_usuarios_queryset()
-        base_qs = UsuariosService._apply_actor_scope(base_qs, request_or_get)
+        actor = getattr(request_or_get, "user", None)
+        tiene_visibilidad_nacional = bool(
+            actor
+            and getattr(actor, "is_authenticated", False)
+            and actor.groups.filter(
+                name__in=UsuariosService.USUARIOS_NACIONALES_CON_VISIBILIDAD_GLOBAL
+            ).exists()
+        )
+        if not (getattr(actor, "is_superuser", False) or tiene_visibilidad_nacional):
+            base_qs = UsuariosService._apply_actor_scope(base_qs, request_or_get)
+        return BENEFICIARIO_ADVANCED_FILTER.filter_queryset(base_qs, request_or_get)
+
+    @staticmethod
+    def get_filtered_usuarios_en_alcance(request_or_get):
+        """Filtra usuarios administrables sin ampliar el alcance por visibilidad."""
+        base_qs = UsuariosService.get_usuarios_en_alcance(request_or_get)
         return BENEFICIARIO_ADVANCED_FILTER.filter_queryset(base_qs, request_or_get)
 
     @staticmethod
@@ -165,7 +190,11 @@ class UsuariosService:
             is_superuser=True
         )
 
-        return scoped_qs.distinct().order_by("-id")
+        scoped_qs = scoped_qs.distinct().order_by("-id")
+
+        # El alcance delegable define qué roles puede administrar el actor. Los
+        # dominios intersectan luego sus límites sin invertir dependencias.
+        return apply_user_queryset_scopes(scoped_qs, actor)
 
     @staticmethod
     def get_usuarios_queryset():

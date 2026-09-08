@@ -8,8 +8,6 @@ from drf_spectacular.views import (
     SpectacularSwaggerView,
     SpectacularRedocView,
 )
-from celiaquia.views.reporter_provincias import ReporterProvinciasView
-from core.decorators import permissions_any_required
 from config.views import VatSpectacularAPIView
 from users.views import (
     PasswordResetConfirmCustomView,
@@ -54,6 +52,7 @@ urlpatterns = [
     path("", include("healthcheck.urls")),
     path("", include("centrodeinfancia.urls")),
     path("", include("ver_para_ser_libre.urls")),
+    path("", include("pas.urls")),
     path("acompanamientos/", include("acompanamientos.urls")),
     path("expedientespagos/", include("expedientespagos.urls")),
     path("", include("rendicioncuentasfinal.urls")),
@@ -61,13 +60,7 @@ urlpatterns = [
     path("", include("dispositivos.urls")),
     path("", include("insumos.urls")),
     path("rendicioncuentasmensual/", include("rendicioncuentasmensual.urls")),
-    path(
-        "reporter-provincias/",
-        permissions_any_required(["celiaquia.view_expediente"])(
-            ReporterProvinciasView.as_view()
-        ),
-        name="reporter_provincias",
-    ),
+    path("", include("celiaquia.global_urls")),
     path("celiaquia/", include("celiaquia.urls")),
     # API URLs
     path("api/users/", include("users.api_urls")),
@@ -82,6 +75,7 @@ urlpatterns = [
     path("", include("importarexpediente.urls")),
     path("", include("comunicados.urls")),
     path("ocr/", include("ocr.urls")),
+    path("", include("encuestas.urls")),
 ]
 
 if settings.DEBUG and not getattr(settings, "RUNNING_TESTS", False):

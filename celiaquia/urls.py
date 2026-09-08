@@ -57,6 +57,7 @@ from celiaquia.views.padron_final_export import ExpedientePadronFinalExportView
 from celiaquia.views.comentarios import (
     LegajoComentarioCreateView,
     LegajoComentarioListView,
+    LegajoMotivoPreviewView,
 )
 
 urlpatterns = [
@@ -226,28 +227,28 @@ urlpatterns = [
     ),
     path(
         "cupos/",
-        permissions_any_required(["celiaquia.view_expediente"])(
+        permissions_any_required(["celiaquia.view_cupo_dashboard"])(
             CupoDashboardView.as_view()
         ),
         name="cupo_dashboard",
     ),
     path(
         "cupos/provincia/<int:provincia_id>/",
-        permissions_any_required(["celiaquia.view_expediente"])(
+        permissions_any_required(["celiaquia.view_cupo_dashboard"])(
             CupoProvinciaDetailView.as_view()
         ),
         name="cupo_provincia_detail",
     ),
     path(
         "cupos/provincia/<int:provincia_id>/legajo/<int:legajo_id>/baja/",
-        permissions_any_required(["celiaquia.view_expediente"])(
+        permissions_any_required(["celiaquia.view_cupo_dashboard"])(
             CupoBajaLegajoView.as_view()
         ),
         name="cupo_legajo_baja",
     ),
     path(
         "cupos/provincia/<int:provincia_id>/legajo/<int:legajo_id>/suspender/",
-        permissions_any_required(["celiaquia.view_expediente"])(
+        permissions_any_required(["celiaquia.view_cupo_dashboard"])(
             CupoSuspenderLegajoView.as_view()
         ),
         name="cupo_legajo_suspender",
@@ -259,7 +260,9 @@ urlpatterns = [
     ),
     path(
         "cupo/<int:provincia_id>/legajo/<int:legajo_id>/reactivar/",
-        CupoReactivarLegajoView.as_view(),
+        permissions_any_required(["celiaquia.view_cupo_dashboard"])(
+            CupoReactivarLegajoView.as_view()
+        ),
         name="cupo_legajo_reactivar",
     ),
     path(
@@ -349,5 +352,12 @@ urlpatterns = [
             LegajoComentarioCreateView.as_view()
         ),
         name="legajo_comentario_create",
+    ),
+    path(
+        "expedientes/<int:expediente_id>/legajos/<int:legajo_id>/motivo-preview/",
+        permissions_any_required(["celiaquia.view_expediente"])(
+            LegajoMotivoPreviewView.as_view()
+        ),
+        name="legajo_motivo_preview",
     ),
 ]

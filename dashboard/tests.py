@@ -1,7 +1,11 @@
 from pathlib import Path
 
+from django.db import connection
 from django.test import RequestFactory
+from django.test.utils import CaptureQueriesContext
 
+import dashboard
+from dashboard.apps import DashboardConfig
 from dashboard.models import Tablero
 from dashboard.templatetags.dashboard_tags import tableros_para_sidebar
 
@@ -10,6 +14,15 @@ def _request_para(user, path="/"):
     request = RequestFactory().get(path)
     request.user = user
     return request
+
+
+def test_dashboard_ready_no_consulta_la_base(db):
+    app_config = DashboardConfig("dashboard", dashboard)
+
+    with CaptureQueriesContext(connection) as queries:
+        app_config.ready()
+
+    assert len(queries) == 0
 
 
 def test_tablero_convierte_url_compartible_de_lookerstudio_a_embed():

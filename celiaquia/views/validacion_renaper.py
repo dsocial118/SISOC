@@ -1,4 +1,3 @@
-import json
 import logging
 import time
 from django.conf import settings
@@ -11,7 +10,7 @@ from django.views.decorators.csrf import csrf_protect
 
 from celiaquia.models import ExpedienteCiudadano
 from celiaquia.services.legajo_service import LegajoService
-from centrodefamilia.services.consulta_renaper import consultar_datos_renaper
+from core.services.renaper import consultar_datos_renaper
 from iam.services import user_has_permission_code
 
 logger = logging.getLogger(__name__)
@@ -46,37 +45,16 @@ def _truncate(value, length=500):
     return value
 
 
-def _build_raw_response_excerpt(raw_response):
-    if raw_response in (None, ""):
-        return None
-
-    if isinstance(raw_response, (dict, list, tuple)):
-        try:
-            raw_response = json.dumps(raw_response, ensure_ascii=True)
-        except (TypeError, ValueError):
-            raw_response = str(raw_response)
-
-    return _truncate(str(raw_response))
-
-
 def _build_log_data(
     user,
     legajo=None,
     ciudadano=None,
-    documento_original=None,
-    documento_consulta=None,
-    sexo_renaper=None,
 ):
     data = {
         "user_id": getattr(user, "id", None),
-        "username": getattr(user, "get_username", lambda: None)(),
         "legajo_id": getattr(legajo, "pk", None),
         "expediente_id": getattr(legajo, "expediente_id", None),
         "ciudadano_id": getattr(ciudadano, "id", None),
-        "documento_original": documento_original,
-        "documento_consulta": documento_consulta,
-        "sexo_consulta": sexo_renaper,
-        "sexo_registrado": getattr(getattr(ciudadano, "sexo", None), "sexo", None),
     }
     return {k: v for k, v in data.items() if v is not None}
 
@@ -191,9 +169,6 @@ def _build_error_log_data(log_data, resultado_renaper, stage="response"):
         "error_type": resultado_renaper.get("error_type"),
         "retry_attempt": resultado_renaper.get("retry_attempt"),
         "max_retries": resultado_renaper.get("max_retries"),
-        "raw_response_excerpt": _build_raw_response_excerpt(
-            resultado_renaper.get("raw_response")
-        ),
     }
 
 
@@ -231,15 +206,10 @@ def _consultar_datos_renaper_con_reintentos(documento_consulta, sexo_renaper):
             "renaper.validation.retrying_remote_query",
             extra={
                 "data": {
-                    "documento_consulta": documento_consulta,
-                    "sexo_consulta": sexo_renaper,
                     "retry_attempt": intento + 1,
                     "max_retries": max_retries,
                     "error": ultimo_resultado.get("error"),
                     "error_type": ultimo_resultado.get("error_type"),
-                    "raw_response_excerpt": _build_raw_response_excerpt(
-                        ultimo_resultado.get("raw_response")
-                    ),
                 }
             },
         )
@@ -407,9 +377,6 @@ class ValidacionRenaperView(View):
                             "expediente_id": pk,
                             "estado_recibido": validacion_estado,
                             "user_id": getattr(request.user, "id", None),
-                            "username": getattr(
-                                request.user, "get_username", lambda: None
-                            )(),
                         }
                     },
                 )
@@ -458,9 +425,6 @@ class ValidacionRenaperView(View):
                         "estado_guardado": mensaje,
                         "requiere_subsanacion": validacion_estado == "3",
                         "user_id": getattr(request.user, "id", None),
-                        "username": getattr(
-                            request.user, "get_username", lambda: None
-                        )(),
                     }
                 },
             )
@@ -473,16 +437,13 @@ class ValidacionRenaperView(View):
                 }
             )
         except Exception:  # pylint: disable=broad-exception-caught
-            logger.exception(
+            logger.error(
                 "renaper.validation.status_error",
                 extra={
                     "data": {
                         "legajo_id": legajo_id,
                         "expediente_id": pk,
                         "user_id": getattr(request.user, "id", None),
-                        "username": getattr(
-                            request.user, "get_username", lambda: None
-                        )(),
                     }
                 },
             )
@@ -519,9 +480,6 @@ class ValidacionRenaperView(View):
                                 "legajo_id": legajo_id,
                                 "expediente_id": pk,
                                 "user_id": getattr(user, "id", None),
-                                "username": getattr(
-                                    user, "get_username", lambda: None
-                                )(),
                             }
                         },
                     )
@@ -543,7 +501,6 @@ class ValidacionRenaperView(View):
                             "legajo_id": legajo_id,
                             "expediente_id": pk,
                             "user_id": getattr(user, "id", None),
-                            "username": getattr(user, "get_username", lambda: None)(),
                         }
                     },
                 )
@@ -586,14 +543,13 @@ class ValidacionRenaperView(View):
                             user,
                             legajo,
                             ciudadano,
-                            documento_original=documento_original,
                         )
                     },
                 )
                 return JsonResponse(
                     {
                         "success": False,
-                        "error": f"No se pudo extraer DNI válido del documento: {documento_original}",
+                        "error": "No se pudo extraer un DNI válido del documento.",
                     }
                 )
 
@@ -608,8 +564,6 @@ class ValidacionRenaperView(View):
                             user,
                             legajo,
                             ciudadano,
-                            documento_original=documento_original,
-                            documento_consulta=documento_consulta,
                         )
                     },
                 )
@@ -632,9 +586,6 @@ class ValidacionRenaperView(View):
                 user,
                 legajo,
                 ciudadano,
-                documento_original=documento_original,
-                documento_consulta=documento_consulta,
-                sexo_renaper=sexo_renaper,
             )
 
             logger.info(
@@ -702,17 +653,14 @@ class ValidacionRenaperView(View):
                 }
             )
 
-        except Exception as exc:  # pylint: disable=broad-exception-caught
-            logger.exception(
+        except Exception:  # pylint: disable=broad-exception-caught
+            logger.error(
                 "renaper.validation.unhandled_error",
                 extra={
                     "data": {
                         "legajo_id": legajo_id,
                         "expediente_id": pk,
                         "user_id": getattr(request.user, "id", None),
-                        "username": getattr(
-                            request.user, "get_username", lambda: None
-                        )(),
                     }
                 },
             )

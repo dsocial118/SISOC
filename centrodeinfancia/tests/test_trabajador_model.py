@@ -130,16 +130,25 @@ def test_clean_preserva_tipo_discapacidad_si_tiene():
 
 @pytest.mark.django_db
 def test_clean_borra_numero_cud_si_no_tiene_cud():
-    t = _trabajador(tiene_cud="no", numero_cud="12345")
+    t = _trabajador(tiene_discapacidad="si", tiene_cud="no", numero_cud="12345")
     t.full_clean()
     assert t.numero_cud is None
 
 
 @pytest.mark.django_db
 def test_clean_preserva_numero_cud_si_tiene_cud():
-    t = _trabajador(tiene_cud="si", numero_cud="12345")
+    t = _trabajador(tiene_discapacidad="si", tiene_cud="si", numero_cud="12345")
     t.full_clean()
     assert t.numero_cud == "12345"
+
+
+@pytest.mark.django_db
+def test_clean_borra_cud_si_no_tiene_discapacidad():
+    # El bloque "¿Tiene CUD?" solo se muestra si hay discapacidad (TC49).
+    t = _trabajador(tiene_discapacidad="no", tiene_cud="si", numero_cud="12345")
+    t.full_clean()
+    assert t.tiene_cud is None
+    assert t.numero_cud is None
 
 
 # ─── clean(): validación multiselect ───────────────────────────────────────

@@ -1,6 +1,7 @@
 """Tests de seguridad para usuarios/perfil e IAM auth flows."""
 
 import pytest
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
 from django.contrib.auth.tokens import default_token_generator
@@ -29,11 +30,32 @@ from users.temporary_passwords import store_temporary_password
 User = get_user_model()
 
 
+@pytest.mark.parametrize(
+    "template_name",
+    [
+        "includes/base.html",
+        "includes/header.html",
+        "includes/navbar.html",
+        "includes/new_base.html",
+        "includes/new_navbar.html",
+    ],
+)
+def test_web_logout_controls_submit_post_with_csrf(template_name):
+    template_source = (settings.BASE_DIR / "templates" / template_name).read_text(
+        encoding="utf-8"
+    )
+
+    assert "href=\"{% url 'logout' %}\"" not in template_source
+    assert '<form method="post" action="{% url \'logout\' %}"' in template_source
+    assert "{% csrf_token %}" in template_source
+
+
 @pytest.mark.django_db
 def test_user_creation_form_allows_empty_email():
     form = UserCreationForm(
         data={
             "username": "sinemail",
+            "tipo_usuario": "interno",
             "email": "",
             "password": "Secreta123!",
         }
@@ -50,6 +72,7 @@ def test_custom_user_change_form_allows_empty_email(user):
         instance=user,
         data={
             "username": user.username,
+            "tipo_usuario": "interno",
             "email": "",
             "password": "",
         },
@@ -92,6 +115,7 @@ def test_custom_user_change_form_assigns_direct_permissions(user):
         instance=user,
         data={
             "username": user.username,
+            "tipo_usuario": "interno",
             "email": user.email,
             "password": "",
             "groups": [],
@@ -113,6 +137,7 @@ def test_user_creation_sets_first_login_password_flags():
     form = UserCreationForm(
         data={
             "username": "nuevo_user",
+            "tipo_usuario": "interno",
             "email": "nuevo@example.com",
             "password": "Secreta123!",
             "groups": [],
@@ -142,6 +167,7 @@ def test_mobile_user_creation_generates_password_automatically():
     form = UserCreationForm(
         data={
             "username": "mobile_auto_pwd",
+            "tipo_usuario": "interno",
             "email": "mobile_auto_pwd@example.com",
             "es_representante_pwa": True,
             "tipo_asociacion_pwa": "organizacion",
@@ -178,6 +204,7 @@ def test_existing_user_keeps_password_when_gaining_mobile_access():
         instance=user,
         data={
             "username": user.username,
+            "tipo_usuario": "interno",
             "email": user.email,
             "password": "",
             "es_representante_pwa": True,
@@ -242,16 +269,27 @@ def test_first_login_middleware_redirects_when_password_change_required(client):
 @pytest.mark.django_db
 @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
 def test_password_reset_request_sends_email_for_existing_user():
-    User.objects.create_user(
+    organizacion = Organizacion.objects.create(nombre="Organización Reset Email")
+    comedor = Comedor.objects.create(
+        nombre="Espacio Reset Email",
+        organizacion=organizacion,
+    )
+    user = User.objects.create_user(
         username="reset_user",
         email="reset@example.com",
         password="Secreta123!",
+    )
+    AccesoComedorPWA.objects.create(
+        user=user,
+        comedor=comedor,
+        rol=AccesoComedorPWA.ROL_REPRESENTANTE,
+        activo=True,
     )
     client = APIClient()
 
     response = client.post(
         "/api/users/password-reset/request/",
-        {"email": "reset@example.com"},
+        {"username": "reset_user", "email": "reset@example.com"},
         format="json",
     )
 
@@ -263,10 +301,88 @@ def test_password_reset_request_sends_email_for_existing_user():
 def test_password_reset_form_uses_sisoc_template(client):
     response = client.get(reverse("password_reset"))
     assert response.status_code == 200
+    assert "Ingresá tu usuario y el correo registrado." in response.content.decode(
+        "utf-8"
+    )
+
+
+@pytest.mark.django_db
+@override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+def test_web_password_reset_elige_un_usuario_aunque_compartan_email(client):
+    User.objects.create_user(
+        username="reset_web_otro",
+        email="compartido@example.com",
+        password="Secreta123!",
+    )
+    User.objects.create_user(
+        username="reset_web_objetivo",
+        email="compartido@example.com",
+        password="Secreta123!",
+    )
+
+    response = client.post(
+        reverse("password_reset"),
+        {
+            "username": "reset_web_objetivo",
+            "email": "COMPARTIDO@example.COM",
+        },
+    )
+
+    assert response.status_code == 302
+    assert response.url == reverse("password_reset_done")
+    assert len(mail.outbox) == 1
+    assert "reset_web_objetivo" in mail.outbox[0].body
+    assert "reset_web_otro" not in mail.outbox[0].body
+
+
+@pytest.mark.django_db
+@override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+def test_web_password_reset_no_envia_si_username_y_email_no_coinciden(client):
+    User.objects.create_user(
+        username="reset_web_mismatch",
+        email="registrado@example.com",
+        password="Secreta123!",
+    )
+
+    response = client.post(
+        reverse("password_reset"),
+        {
+            "username": "reset_web_mismatch",
+            "email": "otro@example.com",
+        },
+        follow=True,
+    )
+
+    assert response.status_code == 200
+    assert len(mail.outbox) == 0
     assert (
-        "Ingresa tu email para recibir un enlace de recuperación."
+        "Si los datos son correctos, recibirás un enlace de recuperación"
         in response.content.decode("utf-8")
     )
+
+
+@pytest.mark.django_db
+@override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+def test_web_password_reset_envia_para_password_inutilizable(client):
+    user = User.objects.create_user(
+        username="reset_web_sin_password",
+        email="sin-password@example.com",
+    )
+    user.set_unusable_password()
+    user.save(update_fields=["password"])
+
+    response = client.post(
+        reverse("password_reset"),
+        {
+            "username": "reset_web_sin_password",
+            "email": "sin-password@example.com",
+        },
+    )
+
+    assert response.status_code == 302
+    assert response.url == reverse("password_reset_done")
+    assert len(mail.outbox) == 1
+    assert mail.outbox[0].to == ["sin-password@example.com"]
 
 
 @pytest.mark.django_db
@@ -276,7 +392,7 @@ def test_password_reset_request_hides_non_existing_user():
 
     response = client.post(
         "/api/users/password-reset/request/",
-        {"email": "missing@example.com"},
+        {"username": "missing", "email": "missing@example.com"},
         format="json",
     )
 
@@ -323,7 +439,8 @@ def test_send_password_reset_link_uses_ascii_safe_subject():
 
 
 @pytest.mark.django_db
-def test_password_reset_request_by_username_marks_pending_request():
+@override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+def test_password_reset_request_by_identity_sends_link_to_pwa_user():
     provincia = Provincia.objects.create(nombre="Buenos Aires")
     organizacion = Organizacion.objects.create(nombre="Organización Reset")
     comedor = Comedor.objects.create(
@@ -346,17 +463,19 @@ def test_password_reset_request_by_username_marks_pending_request():
 
     response = client.post(
         "/api/users/password-reset/request/",
-        {"username": "mobile_reset_request"},
+        {
+            "username": "mobile_reset_request",
+            "email": "mobile_reset_request@example.com",
+        },
         format="json",
     )
 
     assert response.status_code == 200
-    user.refresh_from_db()
-    assert user.profile.password_reset_requested_at is not None
+    assert len(mail.outbox) == 1
 
 
 @pytest.mark.django_db
-def test_password_reset_request_by_username_ignores_non_pwa_user():
+def test_password_reset_request_by_identity_ignores_non_pwa_user():
     user = User.objects.create_user(
         username="web_only_reset_request",
         email="web_only_reset_request@example.com",
@@ -366,7 +485,10 @@ def test_password_reset_request_by_username_ignores_non_pwa_user():
 
     response = client.post(
         "/api/users/password-reset/request/",
-        {"username": "web_only_reset_request"},
+        {
+            "username": "web_only_reset_request",
+            "email": "web_only_reset_request@example.com",
+        },
         format="json",
     )
 
@@ -567,6 +689,7 @@ def test_user_create_view_redirects_with_temporary_password_visible(
         reverse("usuario_crear"),
         data={
             "username": "mobile_visible",
+            "tipo_usuario": "interno",
             "email": "mobile_visible@example.com",
             "es_representante_pwa": True,
             "tipo_asociacion_pwa": "organizacion",
@@ -611,7 +734,7 @@ def test_user_list_hides_reset_column_when_no_pending_requests(client):
 
 
 @pytest.mark.django_db
-def test_user_update_view_shows_reset_alert_and_button_inside_mobile_card(client):
+def test_user_update_view_hides_manual_reset_button(client):
     admin = User.objects.create_superuser(
         username="users_admin_edit_reset",
         email="users_admin_edit_reset@example.com",
@@ -636,11 +759,7 @@ def test_user_update_view_shows_reset_alert_and_button_inside_mobile_card(client
 
     assert response.status_code == 200
     content = response.content.decode("utf-8")
-    assert "El usuario pidió el blanqueamiento de contraseña." in content
-    assert "Resetear contraseña" in content
-    assert (
-        reverse("usuario_generar_password_temporal", kwargs={"pk": user.pk}) in content
-    )
+    assert "Resetear contraseña" not in content
 
 
 @pytest.mark.django_db
@@ -670,7 +789,7 @@ def test_user_update_view_handles_user_without_profile(client):
 
 
 @pytest.mark.django_db
-def test_generate_temporary_password_view_resets_flags_and_redirects_to_edit(client):
+def test_generate_temporary_password_route_is_removed(client):
     admin = User.objects.create_superuser(
         username="users_admin_reset",
         email="users_admin_reset@example.com",
@@ -704,17 +823,9 @@ def test_generate_temporary_password_view_resets_flags_and_redirects_to_edit(cli
     user.profile.save(update_fields=["password_reset_requested_at"])
 
     client.force_login(admin)
-    response = client.post(
-        reverse("usuario_generar_password_temporal", kwargs={"pk": user.pk})
-    )
+    response = client.post(f"/usuarios/generar-password-temporal/{user.pk}/")
 
-    assert response.status_code in {302, 303}
-    assert reverse("usuario_editar", kwargs={"pk": user.pk}) in response.url
-    user.refresh_from_db()
-    assert user.profile.password_reset_requested_at is None
-    assert user.profile.must_change_password is True
-    assert user.profile.temporary_password_plaintext
-    assert user.check_password(user.profile.temporary_password_plaintext) is True
+    assert response.status_code == 404
 
 
 @pytest.mark.django_db

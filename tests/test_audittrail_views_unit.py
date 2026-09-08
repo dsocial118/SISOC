@@ -1,5 +1,6 @@
 """Tests unitarios para audittrail.views."""
 
+import codecs
 from datetime import date
 from types import SimpleNamespace
 
@@ -33,6 +34,38 @@ class _Form:
 
     def is_valid(self):
         return self._valid
+
+
+def test_csv_export_declares_utf8_and_includes_excel_bom():
+    view = module.BaseAuditLogListView()
+    view.kwargs = {}
+    view._iter_export_rows = lambda: iter(
+        [
+            {
+                "event_id": 1,
+                "timestamp": "2026-08-28T10:00:00-03:00",
+                "action": "Actualización",
+                "app_label": "core",
+                "model": "Provincia",
+                "object_pk": "1",
+                "user": "José Muñoz",
+                "user_detail": "Operación en Córdoba",
+                "source": "interfaz",
+                "batch_key": "",
+                "remote_addr": "127.0.0.1",
+                "changes": {"nombre": ["Cordoba", "Córdoba"]},
+                "changes_resolved": {"nombre": ["Cordoba", "Córdoba"]},
+            }
+        ]
+    )
+
+    response = view._build_export_response("csv")
+
+    assert response["Content-Type"] == "text/csv; charset=utf-8"
+    assert response.content.startswith(codecs.BOM_UTF8)
+    decoded = response.content.decode("utf-8-sig")
+    assert "José Muñoz" in decoded
+    assert "Córdoba" in decoded
 
 
 def test_extract_value_and_format_value_basic_paths():

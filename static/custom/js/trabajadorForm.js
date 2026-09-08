@@ -157,7 +157,7 @@ function toggleVisible(el, show) {
     if (el) el.classList.toggle("d-none", !show);
 }
 
-function setContainerControlsEnabled(container, enabled, clearWhenDisabled) {
+function setContainerControlsEnabled(container, enabled, clearWhenDisabled, requiredWhenEnabled) {
     if (!container) return;
     container.querySelectorAll("input, select, textarea").forEach(function (control) {
         if (!enabled && clearWhenDisabled) {
@@ -168,6 +168,7 @@ function setContainerControlsEnabled(container, enabled, clearWhenDisabled) {
             }
         }
         control.disabled = !enabled;
+        control.required = Boolean(enabled && requiredWhenEnabled);
     });
 }
 
@@ -179,9 +180,11 @@ function getCheckedValues(containerId) {
 
 function initializeConditionalFields() {
     const subcomponenteSelect  = document.getElementById("id_subcomponente");
+    const rowFuncionPfpi       = document.getElementById("row-funcion-pfpi");
     const rowFuncionEgp        = document.getElementById("row-funcion-egp");
     const rowFuncionCdi        = document.getElementById("row-funcion-cdi");
     const rowSalaCdi           = document.getElementById("row-sala-cdi");
+    const rowFuncionUaf        = document.getElementById("row-funcion-uaf");
     const nivelEducativoSelect = document.getElementById("id_nivel_educativo");
     const rowFormacionAcad     = document.getElementById("row-formacion-academica");
     const tieneDiscapSelect    = document.getElementById("id_tiene_discapacidad");
@@ -192,12 +195,20 @@ function initializeConditionalFields() {
 
     function applyFunciones() {
         if (!subcomponenteSelect) return;
+        const esPfpi = subcomponenteSelect.value === "pfpi";
         const esCdi = subcomponenteSelect.value === "cdi";
         const esEgp = subcomponenteSelect.value === "egp";
+        const esUaf = subcomponenteSelect.value === "uaf";
+        toggleVisible(rowFuncionPfpi, esPfpi);
         toggleVisible(rowFuncionEgp, esEgp);
         toggleVisible(rowFuncionCdi, esCdi);
         toggleVisible(rowSalaCdi,    esCdi);
-        setContainerControlsEnabled(rowSalaCdi, esCdi, true);
+        toggleVisible(rowFuncionUaf, esUaf);
+        setContainerControlsEnabled(rowFuncionPfpi, esPfpi, true, true);
+        setContainerControlsEnabled(rowFuncionEgp, esEgp, true, true);
+        setContainerControlsEnabled(rowFuncionCdi, esCdi, true, true);
+        setContainerControlsEnabled(rowSalaCdi, esCdi, true, true);
+        setContainerControlsEnabled(rowFuncionUaf, esUaf, true, true);
     }
 
     function applyFormacion() {
@@ -244,6 +255,7 @@ function initializeConditionalFields() {
 
 function initializeGeography() {
     const provinciaSelect  = document.getElementById("id_provincia_contacto");
+    const departamentoSelect = document.getElementById("id_departamento_contacto");
     const municipioSelect  = document.getElementById("id_municipio_contacto");
     const localidadSelect  = document.getElementById("id_localidad_contacto");
     const initialMunicipio = municipioSelect ? municipioSelect.value : "";
@@ -262,7 +274,18 @@ function initializeGeography() {
         sel.appendChild(buildEmptyOption(label));
     }
 
-    async function loadOptions(url, sel, emptyLabel) {
+    function selectValue(sel, value) {
+        if (!sel || !value) return;
+        const exists = [...sel.options].some(function (option) {
+            return option.value === value;
+        });
+        if (!exists) {
+            sel.appendChild(new Option(value, value));
+        }
+        sel.value = value;
+    }
+
+    async function loadOptions(url, sel, emptyLabel, valueKey = "id") {
         if (!sel || !url) return;
         const resp = await fetch(url, {
             headers: { "X-Requested-With": "XMLHttpRequest" },
@@ -273,7 +296,7 @@ function initializeGeography() {
         resetSelect(sel, emptyLabel);
         data.forEach(function (item) {
             const opt = document.createElement("option");
-            opt.value = item.id;
+            opt.value = item[valueKey];
             opt.textContent = item.nombre || item.nombre_region || "";
             sel.appendChild(opt);
         });
@@ -282,9 +305,14 @@ function initializeGeography() {
     if (provinciaSelect && municipioSelect) {
         provinciaSelect.addEventListener("change", async function () {
             try {
+                resetSelect(departamentoSelect, "Seleccionar departamento...");
                 resetSelect(municipioSelect, "Seleccionar municipio...");
                 resetSelect(localidadSelect, "Seleccionar localidad...");
                 if (!this.value) return;
+                await loadOptions(
+                    window.ajaxLoadDepartamentosIpiUrl + "?provincia_id=" + this.value,
+                    departamentoSelect, "Seleccionar departamento...", "nombre"
+                );
                 await loadOptions(
                     window.ajaxLoadMunicipiosUrl + "?provincia_id=" + this.value,
                     municipioSelect, "Seleccionar municipio..."
@@ -307,17 +335,25 @@ function initializeGeography() {
     }
 
     if (provinciaSelect && provinciaSelect.value) {
-        loadOptions(
+        const initialDepartamento = departamentoSelect ? departamentoSelect.value : "";
+        Promise.all([
+            loadOptions(
+                window.ajaxLoadDepartamentosIpiUrl + "?provincia_id=" + provinciaSelect.value,
+                departamentoSelect, "Seleccionar departamento...", "nombre"
+            ),
+            loadOptions(
             window.ajaxLoadMunicipiosUrl + "?provincia_id=" + provinciaSelect.value,
             municipioSelect, "Seleccionar municipio..."
-        ).then(function () {
-            if (initialMunicipio) municipioSelect.value = initialMunicipio;
+            ),
+        ]).then(function () {
+            selectValue(departamentoSelect, initialDepartamento);
+            selectValue(municipioSelect, initialMunicipio);
             if (municipioSelect && municipioSelect.value && localidadSelect) {
                 return loadOptions(
                     window.ajaxLoadLocalidadesUrl + "?municipio_id=" + municipioSelect.value,
                     localidadSelect, "Seleccionar localidad..."
                 ).then(function () {
-                    if (initialLocalidad) localidadSelect.value = initialLocalidad;
+                    selectValue(localidadSelect, initialLocalidad);
                 });
             }
         }).catch(function (e) { console.error("Error al precargar ubicación:", e); });

@@ -74,9 +74,11 @@ def test_detail_view_muestra_boton_y_modal_asignar_para_pendiente(
 
 
 @pytest.mark.django_db
-def test_detail_view_no_muestra_asignar_para_visita_pendiente(
+def test_detail_view_muestra_reasignar_para_visita_pendiente(
     client_logged, relevamiento
 ):
+    # La asignación es a un territorial a la vez pero reasignable: mientras el
+    # relevamiento no esté finalizado, el modal de reasignación debe estar visible.
     relevamiento.estado = "Visita pendiente"
     relevamiento.save(update_fields=["estado"])
 
@@ -88,8 +90,8 @@ def test_detail_view_no_muestra_asignar_para_visita_pendiente(
     body = response.content.decode()
 
     assert response.status_code == 200
-    assert 'data-bs-target="#modalAsignarTerritorial"' not in body
-    assert 'id="update_territorial_select"' not in body
+    assert 'data-bs-target="#modalAsignarTerritorial"' in body
+    assert 'id="update_territorial_select"' in body
 
 
 @pytest.mark.django_db

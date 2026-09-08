@@ -69,8 +69,10 @@ from pwa.services.nomina_service import (
     update_nomina_persona,
 )
 from pwa.services.nomina_destinatarios_pdf_service import (
+    get_latest_nomina_destinatarios_documents_by_period,
     serialize_nomina_destinatarios_documento,
 )
+from pwa.services.nomina_queryset_service import get_nomina_queryset_for_comedor
 from pwa.utils import parse_periodo_referencia
 from pwa.view_helpers import (
     build_mensaje_espacio_summary,
@@ -79,10 +81,12 @@ from pwa.view_helpers import (
     serialize_ciudadano_local,
     serialize_renaper_data,
 )
+from users.api_permissions import CanViewPwaColaboradoresPermission
 from users.api_permissions import HasPwaColaboradoresPermission
 from users.api_permissions import HasPwaNominaPermission
 from users.api_permissions import IsPWAAuthenticatedToken
 from users.api_permissions import IsPWAUserForComedor
+from users.api_permissions import IsPWAWriteAllowed
 from comedores.models import (
     ActividadColaboradorEspacio,
     ColaboradorEspacio,
@@ -117,6 +121,12 @@ class MensajeEspacioPWAViewSet(viewsets.ViewSet):
 
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated, IsPWAAuthenticatedToken]
+
+    def get_permissions(self):
+        permissions = [IsAuthenticated(), IsPWAAuthenticatedToken()]
+        if getattr(self, "action", None) == "marcar_visto":
+            permissions.append(IsPWAWriteAllowed())
+        return permissions
 
     def list(self, request, comedor_id=None):
         queryset = list_mensajes_for_espacio(comedor_id=comedor_id, user=request.user)
@@ -351,6 +361,7 @@ class ColaboradorEspacioPWAViewSet(viewsets.ViewSet):
     def get_permissions(self):
         permissions = [IsAuthenticated(), IsPWAUserForComedor()]
         if getattr(self, "action", None) in self.write_actions:
+            permissions.append(IsPWAWriteAllowed())
             permissions.append(HasPwaColaboradoresPermission())
         return permissions
 
@@ -551,7 +562,7 @@ class CatalogoActividadPWAViewSet(viewsets.ViewSet):
     permission_classes = [
         IsAuthenticated,
         IsPWAUserForComedor,
-        HasPwaColaboradoresPermission,
+        CanViewPwaColaboradoresPermission,
     ]
 
     def list(self, request, comedor_id=None):
@@ -574,11 +585,19 @@ class ActividadEspacioPWAViewSet(viewsets.ViewSet):
     """CRUD de actividades por espacio para la app PWA."""
 
     authentication_classes = [TokenAuthentication]
-    permission_classes = [
-        IsAuthenticated,
-        IsPWAUserForComedor,
-        HasPwaColaboradoresPermission,
-    ]
+    permission_classes = [IsAuthenticated, IsPWAUserForComedor]
+    write_actions = {"create", "partial_update", "destroy"}
+
+    def get_permissions(self):
+        permissions = [
+            IsAuthenticated(),
+            IsPWAUserForComedor(),
+            CanViewPwaColaboradoresPermission(),
+        ]
+        if getattr(self, "action", None) in self.write_actions:
+            permissions.append(IsPWAWriteAllowed())
+            permissions.append(HasPwaColaboradoresPermission())
+        return permissions
 
     def _get_queryset(self):
         comedor_id = self.kwargs["comedor_id"]
@@ -712,6 +731,7 @@ class NominaEspacioPWAViewSet(viewsets.ViewSet):
     def get_permissions(self):
         permissions = [IsAuthenticated(), IsPWAUserForComedor()]
         if getattr(self, "action", None) in self.write_actions:
+            permissions.append(IsPWAWriteAllowed())
             permissions.append(HasPwaNominaPermission())
         return permissions
 
@@ -734,9 +754,8 @@ class NominaEspacioPWAViewSet(viewsets.ViewSet):
         comedor_id = self.kwargs["comedor_id"]
         periodo_actual = get_periodo_mensual_actual()
         queryset = (
-            Nomina.objects.filter(
-                Q(admision__comedor_id=comedor_id)
-                | Q(comedor_id=comedor_id, admision__isnull=True),
+            get_nomina_queryset_for_comedor(comedor_id)
+            .filter(
                 deleted_at__isnull=True,
                 estado=Nomina.ESTADO_ACTIVO,
             )
@@ -810,10 +829,10 @@ class NominaEspacioPWAViewSet(viewsets.ViewSet):
     def _attendance_queryset(self, tab: str):
         comedor_id = self.kwargs["comedor_id"]
         tab = (tab or "consolidada").strip().lower()
+        nomina_ids = get_nomina_queryset_for_comedor(comedor_id).values("id")
         queryset = (
             RegistroAsistenciaNominaPWA.objects.filter(
-                Q(nomina__admision__comedor_id=comedor_id)
-                | Q(nomina__comedor_id=comedor_id, nomina__admision__isnull=True),
+                nomina_id__in=nomina_ids,
                 periodicidad=RegistroAsistenciaNominaPWA.PERIODICIDAD_MENSUAL,
                 nomina__deleted_at__isnull=True,
             )
@@ -836,12 +855,24 @@ class NominaEspacioPWAViewSet(viewsets.ViewSet):
         return queryset
 
     @staticmethod
-    def _serialize_attendance_period(periodo_referencia, total):
+    def _serialize_attendance_period(
+        periodo_referencia, total, documento_nomina=None, request=None
+    ):
         return {
             "periodo_referencia": periodo_referencia,
             "periodo_label": periodo_referencia.strftime("%m/%Y"),
             "total_asistentes": total,
+            "nomina_destinatarios_documento": serialize_nomina_destinatarios_documento(
+                documento_nomina,
+                request=request,
+            ),
         }
+
+    def _attendance_documents_by_period(self, periodos):
+        return get_latest_nomina_destinatarios_documents_by_period(
+            comedor_id=self.kwargs["comedor_id"],
+            periodos=periodos,
+        )
 
     _parse_periodo_referencia = staticmethod(parse_periodo_referencia)
 
@@ -1044,11 +1075,18 @@ class NominaEspacioPWAViewSet(viewsets.ViewSet):
 
     def periodos_asistencia(self, request, comedor_id=None):
         tab = request.query_params.get("tab", "consolidada")
-        periodos = (
+        periodos = list(
             self._attendance_queryset(tab)
             .values("periodo_referencia")
             .annotate(total_asistentes=Count("id"))
             .order_by("-periodo_referencia")
+        )
+        documentos_by_period = (
+            self._attendance_documents_by_period(
+                [row["periodo_referencia"] for row in periodos]
+            )
+            if tab == "alimentaria"
+            else {}
         )
         return Response(
             {
@@ -1057,6 +1095,8 @@ class NominaEspacioPWAViewSet(viewsets.ViewSet):
                     self._serialize_attendance_period(
                         row["periodo_referencia"],
                         row["total_asistentes"],
+                        documentos_by_period.get(row["periodo_referencia"]),
+                        request,
                     )
                     for row in periodos
                 ],
@@ -1077,11 +1117,21 @@ class NominaEspacioPWAViewSet(viewsets.ViewSet):
         asistentes = list(
             self._attendance_queryset(tab).filter(periodo_referencia=periodo_referencia)
         )
+        documento_nomina = (
+            self._attendance_documents_by_period([periodo_referencia]).get(
+                periodo_referencia
+            )
+            if tab == "alimentaria"
+            else None
+        )
         return Response(
             {
                 "tab": tab,
                 **self._serialize_attendance_period(
-                    periodo_referencia, len(asistentes)
+                    periodo_referencia,
+                    len(asistentes),
+                    documento_nomina,
+                    request,
                 ),
                 "asistentes": [
                     self._serialize_attendance_attendee(registro)
@@ -1099,6 +1149,7 @@ class NominaEspacioPWAViewSet(viewsets.ViewSet):
                 comedor_id=comedor_id,
                 actor=request.user,
                 selected_nomina_ids=serializer.validated_data["nomina_ids"],
+                periodo_referencia=serializer.validated_data["periodo"],
             )
         except ValidationError as exc:
             detail = exc.message_dict if hasattr(exc, "message_dict") else exc.messages

@@ -20,7 +20,9 @@ class DocumentacionAdjunta(SoftDeleteModelMixin, models.Model):
     CATEGORIA_FORMULARIO_V_SIPH = "formulario_v_siph"
     CATEGORIA_FORMULARIO_VI = "formulario_vi"
     CATEGORIA_EXTRACTO_BANCARIO = "extracto_bancario"
-    CATEGORIA_COMPROBANTES = "comprobantes"
+    CATEGORIA_COMPROBANTES_ALIMENTARIO = "comprobantes_alimentario"
+    CATEGORIA_COMPROBANTES_SIPH = "comprobantes_siph"
+    CATEGORIA_COMPROBANTES = CATEGORIA_COMPROBANTES_ALIMENTARIO
     CATEGORIA_PLANILLA_SEGUROS = "planilla_seguros"
     CATEGORIA_OTROS = "otros"
     MODELO_FORMULARIO_I = CATEGORIA_FORMULARIO_I
@@ -56,7 +58,8 @@ class DocumentacionAdjunta(SoftDeleteModelMixin, models.Model):
         (CATEGORIA_FORMULARIO_V_SIPH, "Formulario V - Certificación de SIPH"),
         (CATEGORIA_FORMULARIO_VI, "Formulario VI - Planilla de Pagos"),
         (CATEGORIA_EXTRACTO_BANCARIO, "Extracto Bancario"),
-        (CATEGORIA_COMPROBANTES, "Comprobante/s"),
+        (CATEGORIA_COMPROBANTES_ALIMENTARIO, "Comprobantes Prestación Alimentaria"),
+        (CATEGORIA_COMPROBANTES_SIPH, "Comprobantes SIPH"),
         (CATEGORIA_PLANILLA_SEGUROS, "Planilla de Seguros"),
         (CATEGORIA_OTROS, "Documentación Adicional"),
     ]
@@ -72,7 +75,7 @@ class DocumentacionAdjunta(SoftDeleteModelMixin, models.Model):
             "codigo": CATEGORIA_FORMULARIO_I,
             "label": "Formulario I - Certificación de Cuenta Bancaria",
             "required": False,
-            "multiple": False,
+            "multiple": True,
             "order": 1,
         },
         {
@@ -86,14 +89,15 @@ class DocumentacionAdjunta(SoftDeleteModelMixin, models.Model):
             "codigo": CATEGORIA_FORMULARIO_III_ALIMENTARIO,
             "label": "Formulario III - Desagregado por Facturas Prestación Alimentaria",
             "required": True,
-            "multiple": False,
+            "multiple": True,
             "order": 3,
         },
         {
             "codigo": CATEGORIA_FORMULARIO_III_SIPH,
             "label": "Formulario III - Desagregado por Facturas SIPH",
-            "required": True,
-            "multiple": False,
+            "description": "Este documento es obligatorio si presentó actividades para este Convenio",
+            "required": False,
+            "multiple": True,
             "order": 4,
         },
         {
@@ -107,36 +111,44 @@ class DocumentacionAdjunta(SoftDeleteModelMixin, models.Model):
             "codigo": CATEGORIA_FORMULARIO_V_ALIMENTARIO,
             "label": "Formulario V - Certificación de Prestaciones Alimentarias",
             "required": True,
-            "multiple": False,
+            "multiple": True,
             "order": 6,
         },
         {
             "codigo": CATEGORIA_FORMULARIO_V_SIPH,
             "label": "Formulario V - Certificación de SIPH",
-            "required": True,
-            "multiple": False,
+            "description": "Este documento es obligatorio si presentó actividades para este Convenio",
+            "required": False,
+            "multiple": True,
             "order": 7,
         },
         {
             "codigo": CATEGORIA_FORMULARIO_VI,
             "label": "Formulario VI - Planilla de Pagos",
             "required": False,
-            "multiple": False,
+            "multiple": True,
             "order": 8,
         },
         {
             "codigo": CATEGORIA_EXTRACTO_BANCARIO,
             "label": "Extracto Bancario",
             "required": True,
-            "multiple": False,
+            "multiple": True,
             "order": 9,
         },
         {
-            "codigo": CATEGORIA_COMPROBANTES,
-            "label": "Comprobante/s",
-            "required": True,
+            "codigo": CATEGORIA_COMPROBANTES_ALIMENTARIO,
+            "label": "Comprobantes Prestación Alimentaria",
+            "required": False,
             "multiple": True,
             "order": 10,
+        },
+        {
+            "codigo": CATEGORIA_COMPROBANTES_SIPH,
+            "label": "Comprobantes SIPH",
+            "required": False,
+            "multiple": True,
+            "order": 12,
         },
         {
             "codigo": CATEGORIA_PLANILLA_SEGUROS,
@@ -150,7 +162,7 @@ class DocumentacionAdjunta(SoftDeleteModelMixin, models.Model):
             "label": "Documentación Adicional",
             "required": False,
             "multiple": True,
-            "order": 12,
+            "order": 13,
         },
     )
 
@@ -253,6 +265,12 @@ class DocumentacionAdjunta(SoftDeleteModelMixin, models.Model):
                 "label": "Formulario VI - Planilla de Pagos",
                 "filename": "FORM.VI.RMC.AF.1.xlsx",
                 "order": 8,
+            },
+            {
+                "codigo": CATEGORIA_PLANILLA_SEGUROS,
+                "label": "Planilla de Seguros",
+                "filename": "Planilla.II.Seguros.Actualizacion.-.Tradicional.docx",
+                "order": 9,
             },
         ),
     }
@@ -401,6 +419,39 @@ class RendicionCuentaMensual(SoftDeleteModelMixin, models.Model):
         (ESTADO_FINALIZADA, "Presentación finalizada"),
     ]
 
+    ETAPA_CARGA_DOCUMENTACION = "carga_documentacion"
+    ETAPA_REVISION_DOCUMENTACION = "revision_documentacion"
+    ETAPA_REVISION_AUDITORIA = "revision_auditoria"
+    ETAPA_AUDITORIA = "auditoria"
+    ETAPA_REGULARIZACION = "regularizacion"
+
+    ETAPA_PROCESO_CHOICES = [
+        (ETAPA_CARGA_DOCUMENTACION, "Carga de documentación"),
+        (ETAPA_REVISION_DOCUMENTACION, "Revisión Territorial"),
+        (ETAPA_REVISION_AUDITORIA, "Revisión de Auditoría"),
+        (ETAPA_AUDITORIA, "Auditoría"),
+        (ETAPA_REGULARIZACION, "Regularización"),
+    ]
+
+    SUBESTADO_PENDIENTE = "pendiente"
+    SUBESTADO_EN_CURSO = "en_curso"
+    SUBESTADO_PENDIENTE_CORRECCIONES = "pendiente_correcciones"
+    SUBESTADO_SUBSANADO = "subsanado"
+    SUBESTADO_FINALIZADA = "finalizada"
+    SUBESTADO_FINALIZADA_CON_OBSERVACIONES = "finalizada_con_observaciones"
+
+    SUBESTADO_PROCESO_CHOICES = [
+        (SUBESTADO_PENDIENTE, "Pendiente"),
+        (SUBESTADO_EN_CURSO, "En curso"),
+        (SUBESTADO_PENDIENTE_CORRECCIONES, "Pendiente de correcciones"),
+        (SUBESTADO_SUBSANADO, "Subsanado"),
+        (SUBESTADO_FINALIZADA, "Finalizada"),
+        (
+            SUBESTADO_FINALIZADA_CON_OBSERVACIONES,
+            "Finalizada con observaciones",
+        ),
+    ]
+
     LINEA_PROGRAMATICA_CHOICES = [
         (LINEA_SECOS, "Abordaje Comunitario - Linea Secos"),
         (LINEA_TRADICIONAL, "Abordaje Comunitario - Linea Tradicional"),
@@ -428,6 +479,13 @@ class RendicionCuentaMensual(SoftDeleteModelMixin, models.Model):
         null=True,
         blank=True,
     )
+    proyecto = models.ForeignKey(
+        "organizaciones.ProyectoOrganizacion",
+        on_delete=models.PROTECT,
+        related_name="rendiciones_cuentas_mensuales",
+        null=True,
+        blank=True,
+    )
     mes = models.IntegerField(verbose_name="Mes", choices=MESES)
     anio = models.IntegerField(verbose_name="Año")
     convenio = models.CharField(
@@ -435,6 +493,9 @@ class RendicionCuentaMensual(SoftDeleteModelMixin, models.Model):
         verbose_name="Convenio",
         blank=True,
         null=True,
+    )
+    nombre = models.CharField(
+        max_length=255, blank=True, null=True, verbose_name="Nombre de Rendición"
     )
     numero_rendicion = models.PositiveIntegerField(
         verbose_name="Número de Rendición",
@@ -472,6 +533,42 @@ class RendicionCuentaMensual(SoftDeleteModelMixin, models.Model):
         blank=True,
         null=True,
     )
+    etapa_proceso = models.CharField(
+        max_length=30,
+        choices=ETAPA_PROCESO_CHOICES,
+        default=ETAPA_CARGA_DOCUMENTACION,
+        verbose_name="Etapa del proceso",
+    )
+    subestado_proceso = models.CharField(
+        max_length=35,
+        choices=SUBESTADO_PROCESO_CHOICES,
+        default=SUBESTADO_EN_CURSO,
+        verbose_name="Subestado del proceso",
+    )
+    monto_rendido = models.DecimalField(
+        max_digits=15,
+        decimal_places=2,
+        blank=True,
+        null=True,
+        verbose_name="Monto rendido",
+    )
+    fecha_validacion_territorial = models.DateTimeField(blank=True, null=True)
+    fecha_validacion_auditoria = models.DateTimeField(blank=True, null=True)
+    fecha_carga_auditoria = models.DateTimeField(blank=True, null=True)
+    fecha_auditada = models.DateTimeField(blank=True, null=True)
+    acta_auditoria = models.FileField(
+        upload_to="rendicioncuentasmensual/auditoria/actas/",
+        blank=True,
+        null=True,
+        verbose_name="PDF Acta de Auditoría",
+    )
+    fecha_regularizacion = models.DateTimeField(blank=True, null=True)
+    documento_regularizacion = models.FileField(
+        upload_to="rendicioncuentasmensual/auditoria/regularizaciones/",
+        blank=True,
+        null=True,
+        verbose_name="PDF Regularización",
+    )
     usuario_creador = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -500,10 +597,125 @@ class RendicionCuentaMensual(SoftDeleteModelMixin, models.Model):
     class Meta:
         permissions = [
             ("manage_mobile_rendicion", "Puede gestionar rendiciones mobile"),
+            ("edit_rendicion_data", "Puede editar datos de rendición"),
+            (
+                "manage_territorial_stage",
+                "Puede gestionar la etapa Revisión Territorial",
+            ),
+            (
+                "manage_auditoria_review_stage",
+                "Puede gestionar la etapa Revisión de Auditoría",
+            ),
+            ("manage_auditoria_stage", "Puede gestionar la etapa Auditoría"),
+            (
+                "manage_regularizacion_stage",
+                "Puede gestionar la etapa Regularización",
+            ),
         ]
         verbose_name = "Rendición de Cuenta Mensual"
         verbose_name_plural = "Rendiciones de Cuenta Mensuales"
 
     @property
+    def validacion_territorial_finalizada(self):
+        return self.fecha_validacion_territorial is not None or self.etapa_proceso in {
+            self.ETAPA_REVISION_AUDITORIA,
+            self.ETAPA_AUDITORIA,
+            self.ETAPA_REGULARIZACION,
+        }
+
+    @property
+    def etapa_badge_class(self):
+        return {
+            self.ETAPA_CARGA_DOCUMENTACION: "etapa-carga",
+            self.ETAPA_REVISION_DOCUMENTACION: "etapa-territorial",
+            self.ETAPA_REVISION_AUDITORIA: "etapa-revision-auditoria",
+            self.ETAPA_AUDITORIA: "etapa-auditoria",
+            self.ETAPA_REGULARIZACION: "etapa-regularizacion",
+        }.get(self.etapa_proceso, "etapa-carga")
+
+    @property
+    def validacion_auditoria_finalizada(self):
+        return self.fecha_validacion_auditoria is not None or self.etapa_proceso in {
+            self.ETAPA_AUDITORIA,
+            self.ETAPA_REGULARIZACION,
+        }
+
+    @property
+    def cargada_para_auditoria(self):
+        return self.fecha_carga_auditoria is not None or self.etapa_proceso in {
+            self.ETAPA_AUDITORIA,
+            self.ETAPA_REGULARIZACION,
+        }
+
+    @property
+    def auditada(self):
+        return (
+            self.fecha_auditada is not None
+            or (
+                self.etapa_proceso == self.ETAPA_AUDITORIA
+                and self.subestado_proceso
+                in {
+                    self.SUBESTADO_FINALIZADA,
+                    self.SUBESTADO_FINALIZADA_CON_OBSERVACIONES,
+                }
+            )
+            or self.etapa_proceso == self.ETAPA_REGULARIZACION
+        )
+
+    @property
+    def regularizada(self):
+        return self.fecha_regularizacion is not None or (
+            self.etapa_proceso == self.ETAPA_REGULARIZACION
+            and self.subestado_proceso == self.SUBESTADO_FINALIZADA
+        )
+
+    @property
+    def estado_proceso_display(self):
+        if (
+            self.etapa_proceso == self.ETAPA_AUDITORIA
+            and self.subestado_proceso == self.SUBESTADO_FINALIZADA
+        ):
+            return "Auditoría finalizada sin observaciones"
+        if (
+            self.etapa_proceso == self.ETAPA_AUDITORIA
+            and self.subestado_proceso == self.SUBESTADO_FINALIZADA_CON_OBSERVACIONES
+        ):
+            return "Auditoría finalizada con observaciones"
+        if self.regularizada:
+            return "Rendición regularizada tras Auditoría"
+        return f"{self.get_etapa_proceso_display()} {self.get_subestado_proceso_display().lower()}"
+
+    @property
     def arvhios_adjuntos(self):  # compat legacy (typo histórico)
         return getattr(self, "archivos_adjuntos")
+
+
+class SolicitudDocumentoFaltante(models.Model):
+    rendicion = models.ForeignKey(
+        RendicionCuentaMensual,
+        on_delete=models.CASCADE,
+        related_name="solicitudes_documentos_faltantes",
+    )
+    categoria = models.CharField(
+        max_length=40, choices=DocumentacionAdjunta.CATEGORIA_CHOICES
+    )
+    observaciones = models.TextField()
+    activa = models.BooleanField(default=True)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    usuario_creador = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True
+    )
+
+    class Meta:
+        ordering = ("fecha_creacion", "id")
+
+    @property
+    def nombre(self):
+        return self.get_categoria_display()
+
+    @property
+    def rendicion_cuenta_mensual(self):
+        return self.rendicion
+
+    def get_estado_display(self):
+        return "Faltante solicitado"

@@ -127,8 +127,12 @@ from VAT.views.curso import (
     ComisionCursoHorarioUpdateView,
     ComisionCursoHorarioDeleteView,
     InscripcionCursoCambiarEstadoView,
+    InscripcionCursoCambiarEstadoLoteView,
     InscripcionRapidaComisionCursoView,
     AsistenciaSesionCursoView,
+    ComisionCursoResultadosView,
+    ProfesorCentroBuscarView,
+    ProfesorCentroCrearView,
 )
 from VAT.views.comision_curso_wizard import ComisionCursoWizardView
 
@@ -312,11 +316,43 @@ urlpatterns = [
         name="vat_inscripcion_curso_cambiar_estado",
     ),
     path(
+        "vat/cursos/comisiones/<int:pk>/inscripciones/cambiar-estado-lote/",
+        permissions_any_required(["VAT.change_inscripcion"])(
+            InscripcionCursoCambiarEstadoLoteView.as_view()
+        ),
+        name="vat_inscripcion_curso_cambiar_estado_lote",
+    ),
+    path(
         "vat/cursos/inscripciones/rapida-comision/",
         permissions_any_required(["VAT.add_inscripcion"])(
             InscripcionRapidaComisionCursoView.as_view()
         ),
         name="vat_inscripcion_rapida_comision_curso",
+    ),
+    # Resultados / acta de cierre. Se gatea con VAT.change_inscripcion — el
+    # mismo permiso que habilita Admitir/Rechazar en la lista de espera — para
+    # que los perfiles ya existentes (CFP, INET Admin General) alcancen la
+    # feature sin tocar users/bootstrap/groups_seed.py.
+    path(
+        "vat/cursos/comisiones/<int:pk>/resultados/",
+        permissions_any_required(["VAT.change_inscripcion"])(
+            ComisionCursoResultadosView.as_view()
+        ),
+        name="vat_comision_curso_resultados",
+    ),
+    path(
+        "vat/cursos/comisiones/<int:pk>/profesores/buscar/",
+        permissions_any_required(["VAT.change_inscripcion"])(
+            ProfesorCentroBuscarView.as_view()
+        ),
+        name="vat_profesor_centro_buscar",
+    ),
+    path(
+        "vat/cursos/comisiones/<int:pk>/profesores/nuevo/",
+        permissions_any_required(["VAT.change_inscripcion"])(
+            ProfesorCentroCrearView.as_view()
+        ),
+        name="vat_profesor_centro_crear",
     ),
     # Modalidades Institucionales
     path(

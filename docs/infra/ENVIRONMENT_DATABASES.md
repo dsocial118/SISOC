@@ -1,6 +1,7 @@
 # Bases de datos canonicas por entorno
 
-Fuente: definicion operativa confirmada por el responsable el 2026-07-13.
+Fuente: definicion operativa confirmada por el responsable el 2026-07-13 y
+actualizada con el retiro Stage 2 de QA el 2026-07-21.
 
 ## Politica
 
@@ -30,13 +31,13 @@ futura. No son canonicos actualmente.
 
 - `.env` de QA apunta a `10.80.9.18:3306`, schema `sisoc_local`.
 - `10.80.9.18:3306` es alcanzable desde `qa-old`.
-- MySQL local en `qa-old` quedo inactivo y deshabilitado en Stage 1; no hay
-  proceso ni listener 3306 local.
-- `/var/lib/mysql` ocupa 43 GB y contiene multiples schemas historicos/analiticos;
-  los mayores son `dw_PA` (~17.8 GB), `sisoc_local` (~6.9 GB),
-  `SISOC_Comedores` (~4.2 GB), `DW_DD` (~2.0 GB) y `DW_HSU` (~1.4 GB).
+- Stage 2 retiro los paquetes `mysql-server`, `mysql-server-8.0` y
+  `mysql-server-core-8.0`, sin `autoremove`; no queda unidad, binario ni
+  listener MySQL local.
+- El datadir local `/var/lib/mysql` de 43 GB fue eliminado. El filesystem
+  raiz quedo en 34% de uso, con 62 GB libres.
 - El preflight final confirmo cero clientes inesperados, eventos, canales de
   replica o miembros de Group Replication. La conexion inicial era interna.
-- `/var/lib/mysql` y paquetes quedan intactos hasta 2026-07-20 para rollback.
-- Backup de Stage 1:
-  `/var/backups/sisoc/mysql-local-retirement/20260713_115645`.
+- Se conserva el backup de metadatos de Stage 1 en
+  `/var/backups/sisoc/mysql-local-retirement/20260713_115645`; no contiene
+  un datadir recuperable y no habilita rollback del MySQL local.

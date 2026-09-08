@@ -18,6 +18,27 @@ Registrar el relevamiento inicial de comedores y crear el primer seguimiento aso
 3. La baja usa `AsyncRemoveRelevamientoToGestionar`.
 4. La concurrencia se controla con `ThreadPoolExecutor` y `GESTIONAR_RELEVAMIENTOS_WORKERS` / `GESTIONAR_WORKERS`.
 
+## Asignación territorial en SISOC
+
+El relevamiento conserva los campos históricos `territorial_uid` y
+`territorial_nombre` para el contrato con AppSheet, y agrega
+`territorial_user` como referencia opcional al usuario territorial de SISOC.
+
+- Al crear un relevamiento inicial o ancla, si el valor recibido en
+  `gestionar_uid` es numérico, también se persiste como `territorial_user_id`.
+  Los UID alfanuméricos heredados de AppSheet no se fuerzan a un usuario local
+  y dejan ese campo en `null`.
+- La migración `relevamientos.0012_relevamiento_territorial_user` no hace
+  backfill: los datos históricos conservan su UID/nombre externo hasta que una
+  reasignación futura los relacione con un usuario SISOC.
+- `GET /api/territorial/comedores/` expone el identificador local en
+  `relevamientos.items[].territorial_user` cuando existe. Es una proyección de
+  lectura; no reemplaza ni modifica los campos externos del relevamiento.
+
+La elección del territorial debe seguir llegando por el flujo existente. No se
+debe inferir un usuario local desde un UID alfanumérico de AppSheet ni usar este
+campo como un mecanismo nuevo de autorización.
+
 ## Primer seguimiento
 
 1. `PrimerSeguimientoService.create_asignado` resuelve el `Relevamiento` ancla y el territorial del seguimiento:

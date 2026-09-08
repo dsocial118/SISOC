@@ -7,12 +7,18 @@ from django.core.cache import cache
 from django.db.models import Model
 from django.utils import timezone
 
-from comedores.models import ValorComida
+from comedores.models import PrestacionAlimentariaConformidad, ValorComida
 from rendicioncuentasmensual.models import RendicionCuentaMensual
 
 # IDs de programa PNUD en la tabla core_programa (prog 3 = PNUD Prog1, prog 4 = PNUD Prog2).
 # Se complementa con la búsqueda por nombre para tolerar entornos donde los IDs difieren.
 _PNUD_PROGRAMA_IDS = frozenset((3, 4))
+_PROGRAMAS_CON_CODIGO_DE_PROYECTO = frozenset(
+    (
+        "abordaje comunitario - linea secos",
+        "abordaje comunitario - linea tradicional",
+    )
+)
 
 
 def is_pnud_comedor(comedor) -> bool:
@@ -44,6 +50,12 @@ def _get_programa_nombre_normalizado(comedor) -> str:
     return _normalize_programa(nombre)
 
 
+def permite_codigo_de_proyecto(programa) -> bool:
+    """Indica si el programa admite código de proyecto en el legajo."""
+    nombre = str(getattr(programa, "nombre", "") or "")
+    return _normalize_programa(nombre) in _PROGRAMAS_CON_CODIGO_DE_PROYECTO
+
+
 def is_prestacion_alimentaria_conformidad_program(comedor) -> bool:
     """Programas que gestionan conformidad mensual de prestaciones en mobile."""
     normalized = _get_programa_nombre_normalizado(comedor)
@@ -53,6 +65,11 @@ def is_prestacion_alimentaria_conformidad_program(comedor) -> bool:
 def is_abordaje_comunitario_linea_secos_program(comedor) -> bool:
     normalized = _get_programa_nombre_normalizado(comedor)
     return "abordaje comunitario" in normalized and "linea secos" in normalized
+
+
+def is_abordaje_comunitario_linea_tradicional_program(comedor) -> bool:
+    normalized = _get_programa_nombre_normalizado(comedor)
+    return "abordaje comunitario" in normalized and "linea tradicional" in normalized
 
 
 def is_abordaje_comunitario_relevamientos_header_program(comedor) -> bool:
@@ -131,7 +148,17 @@ def is_prestacion_conformidad_period_enabled(comedor, period: date) -> bool:
 
 
 def get_prestacion_conformidad_pending_period(comedor):
-    return previous_month_period()
+    period = previous_month_period()
+    certificacion_realizada = (
+        PrestacionAlimentariaConformidad.objects.filter(
+            comedor=comedor,
+            periodo=period,
+            certificacion_pdf__isnull=False,
+        )
+        .exclude(certificacion_pdf="")
+        .exists()
+    )
+    return None if certificacion_realizada else period
 
 
 def get_object_by_filter(model: Type[Model], **kwargs):

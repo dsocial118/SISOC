@@ -5,6 +5,12 @@ document.addEventListener("DOMContentLoaded", function () {
     const downloadAction = document.getElementById("rendicion-download-action");
     const downloadUrl = "./descargar-pdf/";
 
+    const escapeHtml = function (value) {
+        const container = document.createElement("div");
+        container.textContent = value || "";
+        return container.innerHTML;
+    };
+
     const renderRendicionBadge = function (estado, label) {
         if (!statusBadge) {
             return;
@@ -98,7 +104,8 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         if (display) {
-            display.innerHTML = "<strong>Observaciones:</strong> " + observaciones;
+            display.innerHTML =
+                "<strong>Observaciones:</strong> " + escapeHtml(observaciones);
         }
     };
 
@@ -241,4 +248,63 @@ document.addEventListener("DOMContentLoaded", function () {
                 });
         });
     });
+
+    document
+        .querySelectorAll(".js-solicitud-faltante-form")
+        .forEach(function (form) {
+            form.addEventListener("submit", function (event) {
+                event.preventDefault();
+
+                const categoria = form.dataset.categoria;
+                const submitter = event.submitter || form.querySelector("button[type='submit']");
+                const input = form.querySelector("[name='observaciones_faltante']");
+                const formData = new FormData(form);
+
+                setSubmitterLoading(submitter, true);
+                fetch(window.location.href, {
+                    method: "POST",
+                    headers: {
+                        "X-Requested-With": "XMLHttpRequest",
+                    },
+                    body: formData,
+                })
+                    .then(function (response) {
+                        return response.json().then(function (data) {
+                            if (!response.ok) {
+                                throw new Error(
+                                    data.message || "No se pudo registrar la solicitud."
+                                );
+                            }
+                            return data;
+                        });
+                    })
+                    .then(function (data) {
+                        const badge = document.getElementById(
+                            "solicitud-faltante-badge-" + categoria
+                        );
+                        const row = document.getElementById(
+                            "solicitud-faltante-row-" + categoria
+                        );
+                        const observation = document.getElementById(
+                            "solicitud-faltante-observacion-" + categoria
+                        );
+
+                        if (badge) badge.classList.remove("d-none");
+                        if (row) row.classList.remove("d-none");
+                        if (observation) {
+                            observation.innerHTML =
+                                "<strong>Observaciones:</strong> " +
+                                escapeHtml(data.solicitud.observaciones);
+                        }
+                        if (input) input.value = "";
+                        showFeedback(data.message, "success");
+                    })
+                    .catch(function (error) {
+                        showFeedback(error.message, "error");
+                    })
+                    .finally(function () {
+                        setSubmitterLoading(submitter, false);
+                    });
+            });
+        });
 });

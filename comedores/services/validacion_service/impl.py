@@ -3,6 +3,10 @@ from django.utils import timezone
 from django.shortcuts import get_object_or_404
 
 from comedores.models import Comedor, HistorialValidacion
+from iam.services import user_has_permission_code
+
+
+VALIDAR_COMEDORES_PERMISSION_CODE = "auth.role_validador_comedores"
 
 
 class ValidacionService:
@@ -10,8 +14,10 @@ class ValidacionService:
     @staticmethod
     def puede_validar(user, comedor):
         """Verifica si el usuario puede validar el comedor"""
-        return user.is_superuser or (
-            comedor.dupla and user in comedor.dupla.tecnico.all()
+        return (
+            user.is_superuser
+            or user_has_permission_code(user, VALIDAR_COMEDORES_PERMISSION_CODE)
+            or (comedor.dupla and user in comedor.dupla.tecnico.all())
         )
 
     @staticmethod

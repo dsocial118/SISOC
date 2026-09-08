@@ -11,7 +11,5 @@
     {% include 'components/data_table.html' with headers=table_headers items=table_items show_actions=True custom_cells=True custom_actions=True empty_message='No hay expedientes registrados.' include_pagination=True full_width=True %}
 {% endblock %}
 {% block customJS %}
-    <!-- Script de ordenamiento reutilizable para tablas -->
-    <script src="{% static 'custom/js/listSort.js' %}"></script>
     <script src="{% static 'custom/js/filtroadmisiones.js' %}"></script>
 {% endblock %}

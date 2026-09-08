@@ -11,10 +11,15 @@ from ciudadanos.models import Ciudadano
 from centrodeinfancia.models import (
     CentroDeInfancia,
     AccesoCDI,
+    DepartamentoIpi,
     IntervencionCentroInfancia,
     NominaCentroInfancia,
     ObservacionCentroInfancia,
+    OfertaServicio,
     Trabajador,
+)
+from centrodeinfancia.tests.test_centrodeinfancia_form import (
+    datos_validos as _datos_validos_cdi,
 )
 from centrodeinfancia.access import aplicar_scope_centros_cdi
 from centrodeinfancia.views import (
@@ -50,6 +55,39 @@ def _crear_usuario(username, provincia=None):
     if provincia:
         ProfileTerritorialScope.objects.create(profile=profile, provincia=provincia)
     return user
+
+
+def _payload_cdi_scope(provincia_ubicacion, **overrides):
+    """Payload completo de CDI con ubicación bajo `provincia_ubicacion`.
+
+    Los campos de ubicación son obligatorios y el form valida el departamento contra
+    el queryset de la provincia efectiva (la del scope, no la posteada), así que la
+    ubicación debe pertenecer a esa provincia. `provincia` se puede sobrescribir para
+    simular el intento de cargar en otra jurisdicción.
+    """
+
+    departamento = DepartamentoIpi.objects.create(
+        codigo_departamento=f"D{provincia_ubicacion.pk:04d}",
+        provincia=provincia_ubicacion,
+        nombre=f"Depto {provincia_ubicacion.pk}",
+        decil_ipi=3,
+    )
+    municipio = Municipio.objects.create(
+        nombre=f"Muni {provincia_ubicacion.pk}", provincia=provincia_ubicacion
+    )
+    localidad = Localidad.objects.create(
+        nombre=f"Loc {provincia_ubicacion.pk}", municipio=municipio
+    )
+    servicio, _ = OfertaServicio.objects.get_or_create(
+        codigo="multiedad", defaults={"orden": 5}
+    )
+    ubicacion = {
+        "provincia": provincia_ubicacion,
+        "departamento": departamento,
+        "municipio": municipio,
+        "localidad": localidad,
+    }
+    return _datos_validos_cdi(ubicacion, servicio, **overrides)
 
 
 def _crear_ciudadano(documento):
@@ -515,6 +553,34 @@ def test_trabajador_respeta_scope_en_vistas_de_lectura(client):
 
 
 @pytest.mark.django_db
+def test_egp_sin_alcance_territorial_falla_cerrado():
+    user = _crear_usuario("egp-sin-alcance")
+    user.profile.es_usuario_provincial = True
+    user.profile.save(update_fields=["es_usuario_provincial"])
+    _asignar_grupo_con_permisos(user, UserGroups.SIMEPI_EGP)
+    CentroDeInfancia.objects.create(nombre="CDI que no debe ver")
+
+    scoped = aplicar_scope_centros_cdi(CentroDeInfancia.objects.all(), user)
+
+    assert not scoped.exists()
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "group_name",
+    [UserGroups.CDI_REFERENTE_CENTRO, UserGroups.CDI_TRABAJADOR],
+)
+def test_rol_cdi_sin_vinculo_falla_cerrado(group_name):
+    user = _crear_usuario(f"sin-vinculo-{group_name}")
+    _asignar_grupo_con_permisos(user, group_name)
+    CentroDeInfancia.objects.create(nombre=f"CDI ajeno {group_name}")
+
+    scoped = aplicar_scope_centros_cdi(CentroDeInfancia.objects.all(), user)
+
+    assert not scoped.exists()
+
+
+@pytest.mark.django_db
 @pytest.mark.parametrize(
     "group_name",
     [UserGroups.SIMEPI_ADMINISTRADOR, UserGroups.SIMEPI_ANALISTA_DATOS],
@@ -547,6 +613,108 @@ def test_auditoria_no_puede_mutar_centro_por_url(client):
 
     assert response.status_code == 403
     assert not CentroDeInfancia.objects.filter(nombre="No crear").exists()
+
+
+@pytest.mark.django_db
+def test_egp_ve_referentes_del_cdi_sin_credenciales_temporales(client):
+    provincia = Provincia.objects.create(nombre="EGP referentes")
+    centro = CentroDeInfancia.objects.create(
+        nombre="CDI referentes EGP",
+        provincia=provincia,
+    )
+    referente = _crear_usuario("referente-visible-egp")
+    _asignar_grupo_con_permisos(referente, UserGroups.CDI_REFERENTE_CENTRO)
+    AccesoCDI.objects.create(user=referente, centro=centro)
+    referente.profile.temporary_password_plaintext = "temporal-no-visible-egp"
+    referente.profile.save(update_fields=["temporary_password_plaintext"])
+
+    egp = _crear_usuario("egp-referentes", provincia=provincia)
+    _asignar_grupo_con_permisos(egp, UserGroups.SIMEPI_EGP)
+    client.force_login(egp)
+
+    response = client.get(reverse("centrodeinfancia_detalle", kwargs={"pk": centro.pk}))
+    contenido = response.content.decode()
+
+    assert response.status_code == 200
+    assert "Usuarios del centro" in contenido
+    assert referente.username in contenido
+    assert "Generar usuario" in contenido
+    assert "temporal-no-visible-egp" not in contenido
+
+
+@pytest.mark.django_db
+def test_egp_ve_referentes_con_cupo_completo_sin_opcion_de_alta(client):
+    provincia = Provincia.objects.create(nombre="EGP referentes sin cupo")
+    centro = CentroDeInfancia.objects.create(
+        nombre="CDI referentes sin cupo",
+        provincia=provincia,
+    )
+    Group.objects.get_or_create(name=UserGroups.CDI_REFERENTE_CENTRO)
+    for indice in range(AccesoCDI.LIMITE_USUARIOS_POR_CENTRO):
+        referente = _crear_usuario(f"referente-cupo-{indice}")
+        AccesoCDI.objects.create(user=referente, centro=centro)
+
+    egp = _crear_usuario("egp-referentes-sin-cupo", provincia=provincia)
+    _asignar_grupo_con_permisos(egp, UserGroups.SIMEPI_EGP)
+    client.force_login(egp)
+
+    response = client.get(reverse("centrodeinfancia_detalle", kwargs={"pk": centro.pk}))
+    contenido = response.content.decode()
+
+    assert response.status_code == 200
+    assert "Usuarios del centro" in contenido
+    assert "referente-cupo-0" in contenido
+    assert "Generar usuario" not in contenido
+
+
+@pytest.mark.django_db
+def test_referente_ve_solo_su_credencial_temporal_en_detalle(client):
+    centro = CentroDeInfancia.objects.create(nombre="CDI credencial referente")
+    referente = _crear_usuario("referente-credencial-propia")
+    otro_referente = _crear_usuario("referente-credencial-ajena")
+    _asignar_grupo_con_permisos(referente, UserGroups.CDI_REFERENTE_CENTRO)
+    _asignar_grupo_con_permisos(otro_referente, UserGroups.CDI_REFERENTE_CENTRO)
+    AccesoCDI.objects.create(user=referente, centro=centro)
+    AccesoCDI.objects.create(user=otro_referente, centro=centro)
+    referente.profile.temporary_password_plaintext = "temporal-propia-visible"
+    referente.profile.save(update_fields=["temporary_password_plaintext"])
+    otro_referente.profile.temporary_password_plaintext = "temporal-ajena-oculta"
+    otro_referente.profile.save(update_fields=["temporary_password_plaintext"])
+    client.force_login(referente)
+
+    response = client.get(reverse("centrodeinfancia_detalle", kwargs={"pk": centro.pk}))
+    contenido = response.content.decode()
+
+    assert response.status_code == 200
+    assert "temporal-propia-visible" in contenido
+    assert "temporal-ajena-oculta" not in contenido
+    assert otro_referente.username not in contenido
+
+
+@pytest.mark.django_db
+def test_superusuario_ve_credenciales_temporales_del_centro(client):
+    centro = CentroDeInfancia.objects.create(nombre="CDI credenciales admin")
+    referente_uno = _crear_usuario("referente-admin-uno")
+    referente_dos = _crear_usuario("referente-admin-dos")
+    AccesoCDI.objects.create(user=referente_uno, centro=centro)
+    AccesoCDI.objects.create(user=referente_dos, centro=centro)
+    referente_uno.profile.temporary_password_plaintext = "temporal-admin-uno"
+    referente_uno.profile.save(update_fields=["temporary_password_plaintext"])
+    referente_dos.profile.temporary_password_plaintext = "temporal-admin-dos"
+    referente_dos.profile.save(update_fields=["temporary_password_plaintext"])
+    superusuario = User.objects.create_superuser(
+        username="admin-credenciales-cdi",
+        email="admin-credenciales@example.com",
+        password="test1234",
+    )
+    client.force_login(superusuario)
+
+    response = client.get(reverse("centrodeinfancia_detalle", kwargs={"pk": centro.pk}))
+    contenido = response.content.decode()
+
+    assert response.status_code == 200
+    assert "temporal-admin-uno" in contenido
+    assert "temporal-admin-dos" in contenido
 
 
 @pytest.mark.django_db
@@ -676,12 +844,11 @@ def test_egp_no_puede_crear_cdi_fuera_de_su_scope(client):
 
     response = client.post(
         reverse("centrodeinfancia_crear"),
-        {
-            "nombre": "CDI EGP alta acotada",
-            "provincia": provincia_ajena.pk,
-            "telefono": "1122334455",
-            "telefono_referente": "1199887766",
-        },
+        _payload_cdi_scope(
+            provincia_propia,
+            nombre="CDI EGP alta acotada",
+            provincia=provincia_ajena.pk,
+        ),
     )
 
     assert response.status_code == 302
@@ -706,12 +873,11 @@ def test_egp_prioriza_scope_explicito_sobre_provincia_legacy(client):
 
     response = client.post(
         reverse("centrodeinfancia_crear"),
-        {
-            "nombre": "CDI EGP scope explícito",
-            "provincia": provincia_legacy.pk,
-            "telefono": "1122334455",
-            "telefono_referente": "1199887766",
-        },
+        _payload_cdi_scope(
+            provincia_scope,
+            nombre="CDI EGP scope explícito",
+            provincia=provincia_legacy.pk,
+        ),
     )
 
     assert response.status_code == 302
@@ -730,12 +896,7 @@ def test_egp_sin_scope_no_puede_crear_cdi(client):
 
     response = client.post(
         reverse("centrodeinfancia_crear"),
-        {
-            "nombre": "CDI EGP sin scope",
-            "provincia": provincia.pk,
-            "telefono": "1122334455",
-            "telefono_referente": "1199887766",
-        },
+        _payload_cdi_scope(provincia, nombre="CDI EGP sin scope"),
     )
 
     assert response.status_code == 200
@@ -764,17 +925,24 @@ def test_egp_no_puede_mover_cdi_fuera_de_su_scope(client):
 
     response = client.post(
         reverse("centrodeinfancia_editar", kwargs={"pk": centro.pk}),
-        {
-            "nombre": centro.nombre,
-            "provincia": provincia_ajena.pk,
-            "telefono": centro.telefono,
-            "telefono_referente": centro.telefono_referente,
-        },
+        _payload_cdi_scope(
+            provincia_propia,
+            nombre=centro.nombre,
+            provincia=provincia_ajena.pk,
+            nombre_referente="Nombre actualizado",
+            apellido_referente="Apellido actualizado",
+            telefono_referente="1188776655",
+            email_referente="referente.actualizado@example.com",
+        ),
     )
 
     assert response.status_code == 302
     centro.refresh_from_db()
     assert centro.provincia_id == provincia_propia.pk
+    assert centro.nombre_referente == "Nombre actualizado"
+    assert centro.apellido_referente == "Apellido actualizado"
+    assert centro.telefono_referente == "1188776655"
+    assert centro.email_referente == "referente.actualizado@example.com"
 
 
 @pytest.mark.django_db
@@ -791,14 +959,13 @@ def test_admin_y_analista_crean_cdi_fuera_de_scope_legacy(client, group_name):
 
     response = client.post(
         reverse("centrodeinfancia_crear"),
-        {
-            "nombre": f"CDI alta amplia {group_name}",
-            "provincia": provincia_ajena.pk,
-            "telefono": "1122334455",
-            "telefono_referente": "1199887766",
-        },
+        _payload_cdi_scope(
+            provincia_ajena,
+            nombre="CDI alta amplia nacional",
+            provincia=provincia_ajena.pk,
+        ),
     )
 
     assert response.status_code == 302
-    centro = CentroDeInfancia.objects.get(nombre=f"CDI alta amplia {group_name}")
+    centro = CentroDeInfancia.objects.get(nombre="CDI alta amplia nacional")
     assert centro.provincia_id == provincia_ajena.pk

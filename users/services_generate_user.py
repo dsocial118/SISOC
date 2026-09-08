@@ -41,6 +41,8 @@ class DatosUsuarioDelegado:
     first_name: str = ""
     last_name: str = ""
     email: str = ""
+    dni: str = ""
+    cuil: str = ""
 
 
 def _normalizar_email(value: str) -> str:
@@ -205,6 +207,12 @@ def generar_usuario_delegado(  # pylint: disable=too-many-arguments
         )
         user.set_unusable_password()
         user.save()  # el signal post_save crea el Profile
+
+        if datos.dni or datos.cuil:
+            profile = user.profile
+            profile.dni = datos.dni
+            profile.cuil = datos.cuil
+            profile.save(update_fields=["dni", "cuil"])
 
         user.groups.set([grupo])
 

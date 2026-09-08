@@ -1,5 +1,35 @@
 # Configuración del Sistema de Vouchers - VAT
 
+## Contratos de inscripción y clasificación
+
+### Clasificación visible del alumno
+
+Las pantallas de asistencia, el detalle de comisión y sus exportaciones muestran
+`Tipo de alumno`. Un alumno es `VAT` si tiene al menos un voucher con
+`estado="activo"` y `fecha_vencimiento` vigente; en cualquier otro caso es
+`Sin Plan`.
+
+La clasificación representa la elegibilidad vigente, no el medio de pago
+histórico. Por eso una inscripción que originalmente usó voucher se muestra
+como `Sin Plan` si el voucher se agotó, venció o fue cancelado. El cálculo se
+centraliza en `VAT/services/tipo_alumno_service.py` para evitar que la UI y los
+exports apliquen criterios distintos.
+
+### Rechazo y reaceptación de inscripciones
+
+Al rechazar una inscripción que ya consumió cupo mediante un voucher, el
+sistema revierte el último débito asociado con una recarga de compensación. La
+operación conserva la auditoría en `VoucherRecarga` y `VoucherLog`, actualiza
+los saldos y reactiva el voucher si había quedado agotado.
+
+Si la inscripción se acepta otra vez, no se descuenta un crédito adicional
+cuando existe un débito histórico vigente para ella. Este ciclo es idempotente:
+el saldo debe representar el estado final de la inscripción sin duplicar cargos
+ni compensaciones. No cambia el tratamiento de vouchers vencidos o cancelados.
+
+Las regresiones de ambos contratos están en `VAT/test_tipo_alumno.py`,
+`VAT/tests.py` y los tests de servicios de inscripción.
+
 ## Descripción General
 
 El sistema de vouchers permite asignar créditos de formación a ciudadanos para que se inscriban en ofertas formativas. Cada voucher tiene:

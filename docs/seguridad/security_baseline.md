@@ -1,7 +1,7 @@
 # Security Baseline - BACKOFFICE (Django/DRF)
 
 ## Alcance
-- Backend: Django 4.2.27 + DRF 3.15.2 (ver `requirements.txt`)
+- Backend: Django 5.2.16 + DRF 3.16.1 (ver `requirements/base.txt`)
 - Autenticacion API: API Keys via `djangorestframework-api-key==3.0.0`
 - Autenticacion web: sesiones Django (`SessionAuthentication`)
 - DB: MySQL 8.0 (Docker Compose)

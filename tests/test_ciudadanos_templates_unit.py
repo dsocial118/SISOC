@@ -42,6 +42,20 @@ def test_ciudadano_detail_template_incluye_pestana_vat():
     assert "Créditos actuales" in content
 
 
+def test_ciudadano_detail_template_usa_el_resumen_publico_de_celiaquia():
+    repo_root = Path(__file__).resolve().parents[1]
+    template_path = (
+        repo_root / "ciudadanos" / "templates" / "ciudadanos" / "ciudadano_detail.html"
+    )
+
+    content = template_path.read_text(encoding="utf-8")
+
+    assert "celiaquia_resumen.legajo_actual" in content
+    assert "celiaquia_resumen.historial" in content
+    assert "expediente_actual" not in content
+    assert "expedientes_celiaquia" not in content
+
+
 def test_ciudadano_list_template_incluye_filtro_estado_revision_dinamico():
     repo_root = Path(__file__).resolve().parents[1]
     template_path = (

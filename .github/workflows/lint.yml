@@ -5,10 +5,12 @@ on:
         branches:
             - main
             - development
+            - homologacion
     push:
         branches:
             - main
             - development
+            - homologacion
 
 permissions:
     contents: read
@@ -23,19 +25,34 @@ jobs:
         permissions:
             contents: write
         steps:
+            - name: Determinar si la rama admite autofix
+              id: eligibility
+              shell: bash
+              run: |
+                  if [[ "${{ github.event_name }}" == "pull_request" \
+                    && "${{ github.event.pull_request.head.repo.full_name }}" == "${{ github.repository }}" \
+                    && "${{ github.event.pull_request.head.ref }}" != "development" \
+                    && "${{ github.event.pull_request.head.ref }}" != "homologacion" \
+                    && "${{ github.event.pull_request.head.ref }}" != "main" ]]; then
+                      echo "enabled=true" >> "$GITHUB_OUTPUT"
+                  else
+                      echo "enabled=false" >> "$GITHUB_OUTPUT"
+                  fi
+
             - name: Checkout PR head branch
-              if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+              if: steps.eligibility.outputs.enabled == 'true'
               uses: actions/checkout@v6.0.2
               with:
                   fetch-depth: 0
                   ref: ${{ github.event.pull_request.head.ref }}
 
-            - name: Skip autofix outside internal pull requests
-              if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository
-              run: echo "Autofix solo habilitado para pull requests del mismo repositorio."
+            - name: Omitir autofix para ramas protegidas o externas
+              if: steps.eligibility.outputs.enabled != 'true'
+              run: |
+                  echo "Autofix omitido: solo se permiten branches internas no protegidas."
 
             - name: Set up Python
-              if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+              if: steps.eligibility.outputs.enabled == 'true'
               uses: actions/setup-python@v6.2.0
               with:
                   python-version: '3.11.15'
@@ -43,23 +60,23 @@ jobs:
                   cache-dependency-path: requirements/lint.txt
 
             - name: Install autofix dependencies
-              if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+              if: steps.eligibility.outputs.enabled == 'true'
               run: |
                   python -m pip install --upgrade pip
                   pip install -r requirements/lint.txt
 
             - name: Detect changed Python files
               id: detect-changed-python
-              if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+              if: steps.eligibility.outputs.enabled == 'true'
               run: echo "files=$(python scripts/ci/pr_lint_tools.py changed-files --kind python)" >> "$GITHUB_OUTPUT"
 
             - name: Detect changed templates
               id: detect-changed-templates
-              if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+              if: steps.eligibility.outputs.enabled == 'true'
               run: echo "files=$(python scripts/ci/pr_lint_tools.py changed-files --kind templates)" >> "$GITHUB_OUTPUT"
 
             - name: Run Black autofix
-              if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && steps.detect-changed-python.outputs.files != '[]'
+              if: steps.eligibility.outputs.enabled == 'true' && steps.detect-changed-python.outputs.files != '[]'
               run: |
                   python - <<'PY'
                   import json
@@ -77,7 +94,7 @@ jobs:
                   PYTHON_FILES_JSON: ${{ steps.detect-changed-python.outputs.files }}
 
             - name: Run DJLint autofix
-              if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && steps.detect-changed-templates.outputs.files != '[]'
+              if: steps.eligibility.outputs.enabled == 'true' && steps.detect-changed-templates.outputs.files != '[]'
               run: |
                   python - <<'PY'
                   import json
@@ -107,11 +124,11 @@ jobs:
                   TEMPLATE_FILES_JSON: ${{ steps.detect-changed-templates.outputs.files }}
 
             - name: Normalize mojibake in changed text files
-              if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+              if: steps.eligibility.outputs.enabled == 'true'
               run: python scripts/ci/pr_lint_tools.py fix-encoding
 
             - name: Commit and push autofix
-              if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+              if: steps.eligibility.outputs.enabled == 'true'
               run: |
                   if git diff --quiet; then
                       echo "No hubo cambios automaticos para commitear."

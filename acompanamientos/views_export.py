@@ -42,9 +42,9 @@ class AcompanamientoExportView(LoginRequiredMixin, CSVExportMixin, View):
 
     def get_queryset(self):
         user = self.request.user
-        busqueda = self.request.GET.get("busqueda", "").strip().lower()
-        # Returns Comedor queryset with prefetched admisions
-        return AcompanamientoService.obtener_comedores_acompanamiento(user, busqueda)
+        return AcompanamientoService.obtener_comedores_acompanamiento(
+            user, self.request
+        )
 
     def resolve_field(self, obj, field_path):
         # Handle custom fields dependent on the related Admission

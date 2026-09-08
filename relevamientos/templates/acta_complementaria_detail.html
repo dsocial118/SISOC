@@ -1,0 +1,156 @@
+{% extends "includes/main.html" %}
+{% load static %}
+{% block title %}
+    Acta complementaria - Comedor: {{ comedor.nombre }}
+{% endblock title %}
+{% block titulo-pagina %}
+    <div class="mb-4">
+        <a href="{% url 'relevamientos' comedor.id %}"
+           class="btn btn-outline-secondary btn-back mr-1">Volver</a>
+    </div>
+    {{ comedor.nombre }}
+    <span class="ml-2 h5">| Acta complementaria extraordinaria</span>
+    <span class="ml-2 h5">| {{ acta.fecha_hora|default_if_none:"Sin fecha" }}</span>
+    {% if acta.origen == "app" %}
+        <span class="badge bg-primary ml-2"
+              title="Cargada por el territorial desde la app">App</span>
+    {% else %}
+        <span class="badge bg-light text-dark ml-2" title="Cargada desde SISOC">SISOC</span>
+    {% endif %}
+{% endblock titulo-pagina %}
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <div class="breadcrumb-item">
+            <a href="{% url 'comedores' %}">Comedores</a>
+        </div>
+        <div class="breadcrumb-item">
+            <a href="{% url 'comedor_detalle' comedor.id %}">{{ comedor.nombre }}</a>
+        </div>
+        <div class="breadcrumb-item">
+            <a href="{% url 'relevamientos' comedor.id %}">Relevamientos</a>
+        </div>
+        <div class="breadcrumb-item active">Acta complementaria</div>
+    </ol>
+{% endblock breadcrumb %}
+{% block content %}
+    <link rel="stylesheet"
+          href="{% static 'custom/css/comedorRelevamiento.css' %}" />
+    <div class="row justify-content-between d-print-none mx-1 mb-3">
+        <div class="col-auto"></div>
+        <div class="col-auto">
+            {% if perms.relevamientos.change_actacomplementaria %}
+                <a href="{% url 'acta_complementaria_editar' comedor.id acta.id %}"
+                   class="btn btn-primary mr-1">Editar</a>
+            {% endif %}
+            {% if perms.relevamientos.delete_actacomplementaria %}
+                <button type="button"
+                        class="btn btn-danger"
+                        data-bs-toggle="modal"
+                        data-bs-target="#modalEliminarActa">Eliminar</button>
+            {% endif %}
+        </div>
+    </div>
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3 class="card-title font-weight-bold mr-3 pt-1">Resumen</h3>
+        </div>
+        <div class="card-body card-comments pt-0 pb-1">
+            <div class="nav nav-pills row my-3">
+                <div class="nav-item col-md-3 col-sm-6 d-flex">
+                    <div class="comment-text d-flex flex-column text-sm">
+                        ID SISOC
+                        <span class="username fw-bold fs-5">{{ acta.id }}</span>
+                    </div>
+                </div>
+                <div class="nav-item col-md-3 col-sm-6 d-flex">
+                    <div class="comment-text d-flex flex-column text-sm">
+                        Fecha y hora
+                        <span class="username fw-bold fs-5">{{ acta.fecha_hora|default_if_none:"Sin fecha" }}</span>
+                    </div>
+                </div>
+                <div class="nav-item col-md-3 col-sm-6 d-flex">
+                    <div class="comment-text d-flex flex-column text-sm">
+                        Técnico
+                        <span class="username fw-bold fs-5">{{ acta.tecnico|default:"Sin asignar" }}</span>
+                    </div>
+                </div>
+                <div class="nav-item col-md-3 col-sm-6 d-flex">
+                    <div class="comment-text d-flex flex-column text-sm">
+                        Cargada el
+                        <span class="username fw-bold fs-5">{{ acta.fecha_creacion }}</span>
+                    </div>
+                </div>
+                <div class="nav-item col-12 d-flex mt-3">
+                    <div class="comment-text d-flex flex-column text-sm">
+                        Motivo / observaciones del cambio de prestación
+                        <span class="username fw-bold fs-5">{{ acta.observaciones|default:"Sin observaciones"|linebreaksbr }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card mb-3" id="bloque-prestaciones">
+        <div class="card-header">
+            <h3 class="card-title font-weight-bold mr-3 pt-1">Prestaciones</h3>
+        </div>
+        <div class="card-body p-0">
+            {% if prestaciones %}
+                <div class="table-responsive">
+                    <table class="table table-striped mb-0">
+                        <thead>
+                            <tr>
+                                <th>Días</th>
+                                <th>Tipo</th>
+                                <th>Cantidad actual</th>
+                                <th>Cantidad en espera</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for prestacion in prestaciones %}
+                                <tr>
+                                    <td>{{ prestacion.dias_prestacion|default_if_none:"-" }}</td>
+                                    <td>{{ prestacion.tipo_prestacion|default_if_none:"-" }}</td>
+                                    <td>{{ prestacion.cantidad_actual|default_if_none:"-" }}</td>
+                                    <td>{{ prestacion.cantidad_espera|default_if_none:"-" }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-muted m-3">El acta no tiene prestaciones cargadas.</p>
+            {% endif %}
+        </div>
+    </div>
+    {% if perms.relevamientos.delete_actacomplementaria %}
+        <div class="modal fade"
+             id="modalEliminarActa"
+             tabindex="-1"
+             aria-labelledby="modalEliminarActaLabel"
+             aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <form method="post"
+                          action="{% url 'acta_complementaria_eliminar' comedor.id acta.id %}">
+                        {% csrf_token %}
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="modalEliminarActaLabel">Eliminar acta complementaria</h5>
+                            <button type="button"
+                                    class="btn-close"
+                                    data-bs-dismiss="modal"
+                                    aria-label="Cerrar"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p class="mb-2">Esta acción elimina el acta y sus prestaciones.</p>
+                            <p class="mb-0 text-muted">No se puede deshacer.</p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-danger">Eliminar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+{% endblock content %}

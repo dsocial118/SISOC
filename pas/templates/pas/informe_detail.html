@@ -1,0 +1,128 @@
+{% extends "includes/main.html" %}
+{% load custom_filters static %}
+{% block title %}{{ informe.numero }}{% endblock %}
+{% block breadcrumb %}
+    {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
+{% endblock %}
+{% block head %}
+    <link rel="stylesheet" href="{% static 'custom/css/comedor_detail.css' %}" />
+{% endblock %}
+{% block content %}
+    <div class="container-fluid pas-detail-page p-0">
+        <div class="pas-legajo-header">
+            <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center gap-3">
+                <div>
+                    <h1>{{ informe.numero }}</h1>
+                    <p class="mb-0">
+                        Generado el {{ informe.creado|date:"d/m/Y H:i" }} por {{ informe.usuario.get_full_name|default:informe.usuario.username|default:"-" }}
+                    </p>
+                </div>
+                <div class="d-flex gap-2">
+                    {% if request.user|has_perm_code:"pas.view_paspersona" and request.user|has_perm_code:"pas.view_pasinforme" and request.user|has_perm_code:"auth.role_exportar_a_csv" %}
+                        <a href="{% url 'pas_informe_descargar' informe.id %}"
+                           class="btn btn-warning">
+                            <i class="fas fa-download me-1"></i> Descargar CSV
+                        </a>
+                    {% endif %}
+                    <a href="{% url 'pas_informe_listar' %}" class="btn btn-outline-light">
+                        <i class="fas fa-arrow-left me-1"></i> Volver
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="pas-detail-content">
+            <section class="pas-state-summary">
+                <div class="pas-state-summary-item">
+                    <span class="pas-summary-label">Personas incluidas</span>
+                    <span class="pas-last-change">{{ informe.total_personas }}</span>
+                </div>
+                <div class="pas-state-summary-item">
+                    <span class="pas-summary-label">Cambios detectados</span>
+                    <span class="pas-last-change">{{ informe.total_cambios }}</span>
+                </div>
+                <div class="pas-state-summary-item">
+                    <span class="pas-summary-label">Numero</span>
+                    <span class="pas-last-change">{{ informe.numero }}</span>
+                </div>
+            </section>
+            <section class="pas-data-card">
+                <h5>Filtros aplicados</h5>
+                <div class="pas-filter-chipset">
+                    {% for key, value in informe.filtros.items %}
+                        <span class="pas-aviso-card">
+                            {{ key }}:
+                            {% if value.label %}
+                                {{ value.label }}
+                            {% else %}
+                                {{ value }}
+                            {% endif %}
+                        </span>
+                    {% empty %}
+                        <span class="text-muted">Sin filtros. Incluye el universo PAS disponible.</span>
+                    {% endfor %}
+                </div>
+            </section>
+            <div class="row relevamiento-container mb-3">
+                <div class="col-12">
+                    <div class="card bg-card">
+                        <div class="card-header">
+                            <h3 class="card-title font-weight-bold me-3 pt-1">Resultado del CSV</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered table-striped mb-0 pas-history-table">
+                                    <thead>
+                                        <tr>
+                                            <th>IdPersona</th>
+                                            <th>Apellido</th>
+                                            <th>Nombre</th>
+                                            <th>DNI</th>
+                                            <th>CUIT</th>
+                                            <th>Provincia</th>
+                                            <th>Municipio</th>
+                                            <th>Estado actual</th>
+                                            <th>Avisos actuales</th>
+                                            <th>Fecha creacion</th>
+                                            <th>Fecha ultimo cambio</th>
+                                            <th>Fecha cambio</th>
+                                            <th>Estado anterior</th>
+                                            <th>Estado resultante</th>
+                                            <th>Avisos cambio</th>
+                                            <th>Usuario cambio</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for row in informe.resultado %}
+                                            <tr>
+                                                <td>{{ row.id_persona }}</td>
+                                                <td>{{ row.apellido }}</td>
+                                                <td>{{ row.nombre }}</td>
+                                                <td>{{ row.dni }}</td>
+                                                <td>{{ row.cuit }}</td>
+                                                <td>{{ row.provincia }}</td>
+                                                <td>{{ row.municipio }}</td>
+                                                <td>{{ row.estado_actual }}</td>
+                                                <td>{{ row.avisos_actuales }}</td>
+                                                <td>{{ row.fecha_creacion }}</td>
+                                                <td>{{ row.fecha_ultimo_cambio }}</td>
+                                                <td>{{ row.fecha_cambio }}</td>
+                                                <td>{{ row.estado_anterior }}</td>
+                                                <td>{{ row.estado_resultante }}</td>
+                                                <td>{{ row.avisos_cambio }}</td>
+                                                <td>{{ row.usuario_cambio }}</td>
+                                            </tr>
+                                        {% empty %}
+                                            <tr>
+                                                <td colspan="16" class="text-center text-muted py-3">Sin registros para los filtros seleccionados.</td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

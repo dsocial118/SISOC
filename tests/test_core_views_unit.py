@@ -318,17 +318,12 @@ def test_load_localidad(mocker):
     )
     assert module.load_localidad(req).status_code == 200
 
-
-def test_load_organizaciones_paginado(mocker):
-    rf = RequestFactory()
-    req = rf.get("/core/organizaciones", {"q": "org", "page": "1"})
-    req.user = _auth_user()
-
-    items = [
-        SimpleNamespace(id=1, nombre="Organizacion A"),
-        SimpleNamespace(id=2, nombre="Otra"),
-    ]
-    mocker.patch("core.views.Organizacion.objects.all", return_value=_QS(items))
-
-    resp = module.load_organizaciones(req)
-    assert resp.status_code == 200
+    req_provincia = rf.get("/core/localidades", {"provincia_id": "3"})
+    req_provincia.user = user
+    mocker.patch(
+        "core.views.Localidad.objects.filter",
+        return_value=SimpleNamespace(
+            values=lambda *_a, **_k: [{"id": 2, "nombre": "Otra localidad"}]
+        ),
+    )
+    assert module.load_localidad(req_provincia).status_code == 200

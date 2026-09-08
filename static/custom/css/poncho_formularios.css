@@ -1,0 +1,249 @@
+/* ============================================
+   PONCHO - Formularios de autogestion
+   ============================================
+   Aplica la paleta PONCHO (tokens en poncho.css, que base.html ya carga
+   globalmente) a Mi cuenta y a la confirmacion de datos personales, para que
+   convivan con los listados nuevos en una unica paleta.
+
+   Alcance: todo cuelga de `.poncho-form`, igual que poncho_listados.css cuelga
+   de `:has(.poncho-search)`. Es deliberado por el mismo motivo que documenta
+   ese archivo: repintar todos los formularios de la app es un cambio de tema
+   con otro riesgo. Estas dos pantallas se suman al tema nuevo; el resto sigue
+   como esta.
+
+   Reparto de superficies, tomado de los listados: el fondo de pagina es el
+   azul secundario y los controles son el azul principal. En el modal la
+   superficie es el propio modal-content, asi que ocupa el rol del fondo.
+   ============================================ */
+
+/* El rojo del design system (#c62828) no llega a contraste suficiente como
+   texto sobre el azul principal. Para los mensajes de error se usa una version
+   aclarada; el rojo original se conserva como fondo de la alerta, donde si
+   funciona con texto blanco. */
+.poncho-form {
+  --poncho-form-error: #ffb3b3;
+  --poncho-form-borde-sutil: rgba(255, 255, 255, .25);
+}
+
+/* ---------- Fondo de pagina ---------- */
+.app-main:has(.poncho-form) {
+  background: var(--poncho-azul-secundario);
+}
+
+/* ---------- Superficies ----------
+   En Mi cuenta la tarjeta desaparece y el formulario apoya sobre el fondo,
+   como la tabla en los listados. */
+.poncho-form .card,
+.poncho-form .card .card-body {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+/* En la confirmacion la superficie es el modal. */
+.modal-content.poncho-form {
+  background: var(--poncho-azul-secundario);
+  border: none;
+  border-radius: var(--poncho-radio-buscador);
+  box-shadow: 0 20px 13.5px rgba(0, 0, 0, .1);
+}
+
+.modal-content.poncho-form .modal-header,
+.modal-content.poncho-form .modal-footer {
+  border-color: var(--poncho-form-borde-sutil);
+}
+
+/* `.modal-dialog-scrollable` de Bootstrap da por sentado que header, body y
+   footer son hijos directos de `.modal-content`, que es el contenedor flex.
+   Aca el <form> envuelve al body y al footer para poder postear todo junto,
+   asi que el `.modal-body` deja de ser item flex: su `flex: 1 1 auto` y su
+   `overflow-y: auto` no tienen contra que resolverse, el form crece sin tope y
+   el footer con el boton Guardar queda fuera del viewport apenas el contenido
+   crece (por ejemplo al mostrarse un error de validacion).
+
+   Se restituye la cadena: el form pasa a ser el item flexible y a su vez
+   contenedor columna. El `min-height: 0` es lo que habilita que el hijo
+   scrollee, porque por defecto un item flex no baja de su contenido. */
+.modal-content.poncho-form > form {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.modal-content.poncho-form .modal-body {
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.modal-content.poncho-form .modal-footer {
+  flex: 0 0 auto;
+}
+
+/* ---------- Tipografia ---------- */
+.poncho-form,
+.poncho-form .modal-title {
+  color: var(--poncho-blanco);
+  font-family: var(--poncho-font-base);
+}
+
+.poncho-form .modal-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+/* Encabezados de seccion: text-muted de Bootstrap queda ilegible en oscuro. */
+.poncho-form h6 {
+  color: var(--poncho-blanco);
+  font-family: var(--poncho-font-base);
+  font-weight: 700;
+  letter-spacing: .5px;
+  opacity: .85;
+}
+
+.poncho-form .text-muted {
+  color: rgba(255, 255, 255, .75) !important;
+}
+
+.poncho-form hr {
+  border-color: var(--poncho-form-borde-sutil);
+  opacity: 1;
+}
+
+/* ---------- Controles ----------
+   Mismo tratamiento que los selects de filtros en poncho_listados.css:
+   azul principal, borde blanco de 1px y radio base. */
+.poncho-form label,
+.poncho-form .form-label {
+  color: var(--poncho-blanco);
+  font-family: var(--poncho-font-base);
+  font-size: var(--poncho-text-sm);
+  font-weight: 500;
+}
+
+.poncho-form .form-control,
+.poncho-form .form-select {
+  background-color: var(--poncho-azul-principal);
+  border: 1px solid var(--poncho-blanco);
+  border-radius: var(--poncho-radio-base);
+  color: var(--poncho-blanco);
+  font-family: var(--poncho-font-base);
+}
+
+.poncho-form .form-control::placeholder {
+  color: var(--poncho-texto-placeholder);
+}
+
+.poncho-form .form-control:focus,
+.poncho-form .form-select:focus {
+  background-color: var(--poncho-azul-principal);
+  border-color: var(--poncho-blanco);
+  box-shadow: 0 0 0 .2rem rgba(255, 255, 255, .25);
+  color: var(--poncho-blanco);
+}
+
+/* Autofill del navegador: Chrome pisa el fondo con su amarillo salvo que se
+   lo empuje con un inset shadow. */
+.poncho-form .form-control:-webkit-autofill,
+.poncho-form .form-control:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px var(--poncho-azul-principal) inset;
+  -webkit-text-fill-color: var(--poncho-blanco);
+}
+
+.poncho-form .form-text,
+.poncho-form .helptext {
+  color: rgba(255, 255, 255, .7);
+  font-family: var(--poncho-font-base);
+  font-size: var(--poncho-text-sm);
+}
+
+/* ---------- Checkbox de la declaracion ---------- */
+.poncho-form .form-check-input {
+  background-color: var(--poncho-azul-principal);
+  border: 1px solid var(--poncho-blanco);
+}
+
+.poncho-form .form-check-input:checked {
+  background-color: var(--poncho-verde);
+  border-color: var(--poncho-verde);
+}
+
+.poncho-form .form-check-input:focus {
+  border-color: var(--poncho-blanco);
+  box-shadow: 0 0 0 .2rem rgba(255, 255, 255, .25);
+}
+
+.poncho-form .form-check-label {
+  color: var(--poncho-blanco);
+  font-size: var(--poncho-text-sm);
+  line-height: 1.5;
+}
+
+/* ---------- Errores ---------- */
+.poncho-form .invalid-feedback,
+.poncho-form .invalid-feedback strong {
+  color: var(--poncho-form-error);
+  font-family: var(--poncho-font-base);
+  font-weight: 500;
+}
+
+.poncho-form .alert-danger {
+  background: var(--poncho-rojo);
+  border: none;
+  border-radius: var(--poncho-radio-base);
+  color: var(--poncho-blanco);
+  font-family: var(--poncho-font-base);
+}
+
+.poncho-form .form-control.is-invalid,
+.poncho-form .form-select.is-invalid {
+  border-color: var(--poncho-form-error);
+}
+
+/* ---------- Boton ----------
+   La forma del CTA (.poncho-btn/.poncho-btn--cta) esta definida en
+   comedoresSearchBar.css, pero esa hoja la carga components/search_bar.html y
+   estas pantallas no tienen buscador. Se repite aca, scopeada, en lugar de
+   arrastrar 565 lineas de estilos del buscador. Ambas copias salen de los
+   mismos tokens; si el CTA se muda a una hoja compartida, esta se borra. */
+.poncho-form .poncho-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--poncho-space-1-5);
+  padding: var(--poncho-space-3) var(--poncho-space-5);
+  border: 1px solid transparent;
+  border-radius: var(--poncho-radio-cta);
+  font-family: var(--poncho-font-base);
+  font-size: var(--poncho-text-cta);
+  font-weight: 500;
+  line-height: 20px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background .2s ease, transform .2s ease;
+}
+
+.poncho-form .poncho-btn--cta {
+  background: var(--poncho-verde);
+  border-color: var(--poncho-verde);
+  color: var(--poncho-blanco);
+}
+
+.poncho-form .poncho-btn--cta:hover,
+.poncho-form .poncho-btn--cta:focus {
+  background: var(--poncho-verde-hover);
+  border-color: var(--poncho-verde-hover);
+  color: var(--poncho-blanco);
+  transform: translateY(-1px);
+}
+
+/* Estado deshabilitado: no existe en el design system y esta pantalla lo
+   necesita, porque el boton arranca bloqueado hasta completar el formulario. */
+.poncho-form .poncho-btn:disabled,
+.poncho-form .poncho-btn[disabled] {
+  background: var(--poncho-azul-principal);
+  border-color: var(--poncho-form-borde-sutil);
+  color: rgba(255, 255, 255, .5);
+  cursor: not-allowed;
+  transform: none;
+}

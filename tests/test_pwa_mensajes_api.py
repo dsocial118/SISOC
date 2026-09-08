@@ -16,23 +16,35 @@ from comunicados.models import (
     SubtipoComunicado,
     TipoComunicado,
 )
-from comedores.models import Comedor
+from comedores.models import Comedor, Programas
 from core.models import Provincia
 from organizaciones.models import Organizacion
 from pwa.models import AuditoriaOperacionPWA, LecturaMensajePWA
 from rendicioncuentasmensual.models import DocumentacionAdjunta, RendicionCuentaMensual
-from rendicioncuentasmensual.services import RendicionCuentaMensualService
-from users.models import AccesoComedorPWA
+from rendicioncuentasmensual.services import (
+    RendicionCuentaMensualService,
+    RendicionProcesoService,
+)
+from users.models import (
+    AccesoComedorPWA,
+    AccesoOrganizacionPWA,
+    CoordinadorEquipoTecnicoPWA,
+)
 
 
 @pytest.fixture
 def espacios(db):
     provincia = Provincia.objects.create(nombre="Buenos Aires")
+    programa = Programas.objects.create(nombre="Abordaje Comunitario")
     espacio_1 = Comedor.objects.create(
-        nombre="Espacio Mensajes Uno", provincia=provincia
+        nombre="Espacio Mensajes Uno",
+        provincia=provincia,
+        programa=programa,
     )
     espacio_2 = Comedor.objects.create(
-        nombre="Espacio Mensajes Dos", provincia=provincia
+        nombre="Espacio Mensajes Dos",
+        provincia=provincia,
+        programa=programa,
     )
     return espacio_1, espacio_2
 
@@ -66,6 +78,18 @@ def _grant_mobile_rendicion_permission(user):
         codename="manage_mobile_rendicion",
     )
     user.user_permissions.add(permission)
+
+
+def _create_coordinador_pwa(*, comedor, username="coord_mensajes"):
+    user_model = get_user_model()
+    user = user_model.objects.create_user(
+        username=username,
+        email=f"{username}@example.com",
+        password="testpass123",
+    )
+    scope = CoordinadorEquipoTecnicoPWA.objects.create(user=user, activo=True)
+    scope.comedores_adicionales.add(comedor)
+    return user
 
 
 def _create_comunicado(
@@ -225,6 +249,10 @@ def test_list_mensajes_por_espacio_expone_organizacion_solo_a_usuario_organizaci
         email="rep_mensajes_organizacion@example.com",
         password="testpass123",
     )
+    AccesoOrganizacionPWA.objects.create(
+        user=representante,
+        organizacion=organizacion,
+    )
     for espacio in (espacio_1, espacio_2):
         AccesoComedorPWA.objects.create(
             user=representante,
@@ -300,6 +328,8 @@ def test_list_mensajes_por_espacio_incluye_contadores_agrupados_para_rendiciones
         periodo_inicio=timezone.now().date(),
         periodo_fin=timezone.now().date(),
         estado=RendicionCuentaMensual.ESTADO_REVISION,
+        etapa_proceso=RendicionCuentaMensual.ETAPA_REVISION_DOCUMENTACION,
+        subestado_proceso=RendicionCuentaMensual.SUBESTADO_EN_CURSO,
     )
     documento_1 = DocumentacionAdjunta.objects.create(
         nombre="comprobante-1.pdf",
@@ -334,6 +364,12 @@ def test_list_mensajes_por_espacio_incluye_contadores_agrupados_para_rendiciones
         documento=documento_2,
         estado=DocumentacionAdjunta.ESTADO_SUBSANAR,
         observaciones="Observacion 2",
+        actor=representante,
+    )
+    RendicionProcesoService.ejecutar(
+        rendicion=rendicion,
+        accion=RendicionProcesoService.ACCION_FINALIZAR_TERRITORIAL,
+        datos={},
         actor=representante,
     )
 
@@ -380,6 +416,8 @@ def test_revision_de_rendicion_genera_mensaje_mobile_visible_en_el_espacio(espac
         periodo_inicio=timezone.now().date(),
         periodo_fin=timezone.now().date(),
         estado=RendicionCuentaMensual.ESTADO_REVISION,
+        etapa_proceso=RendicionCuentaMensual.ETAPA_REVISION_DOCUMENTACION,
+        subestado_proceso=RendicionCuentaMensual.SUBESTADO_EN_CURSO,
     )
     documento = DocumentacionAdjunta.objects.create(
         nombre="comprobante.pdf",
@@ -395,6 +433,12 @@ def test_revision_de_rendicion_genera_mensaje_mobile_visible_en_el_espacio(espac
         documento=documento,
         estado=DocumentacionAdjunta.ESTADO_SUBSANAR,
         observaciones="Volver a subir el documento completo",
+        actor=representante,
+    )
+    RendicionProcesoService.ejecutar(
+        rendicion=rendicion,
+        accion=RendicionProcesoService.ACCION_FINALIZAR_TERRITORIAL,
+        datos={},
         actor=representante,
     )
 
@@ -923,3 +967,32 @@ def test_detalle_mensaje_incluye_fecha_creacion_y_datos_de_adjuntos(
     assert response.data["adjuntos"][0]["nombre_original"] == adjunto.nombre_original
     assert response.data["adjuntos"][0]["fecha_subida"] is not None
     assert response.data["adjuntos"][0]["url"] is not None
+
+
+@pytest.mark.django_db
+def test_coordinador_ve_mensajes_de_rendicion_sin_poder_marcar_visto(espacios):
+    espacio_1, _ = espacios
+    coordinador = _create_coordinador_pwa(comedor=espacio_1)
+    client = _auth_client_for_user(coordinador)
+    mensaje = _create_comunicado(
+        creador=coordinador,
+        titulo="Rendición pendiente",
+        comedor=espacio_1,
+        cuerpo="[SISOC_ACCION]rendicion_detalle:999999",
+    )
+
+    list_response = client.get(f"/api/pwa/espacios/{espacio_1.id}/mensajes/")
+    mark_response = client.patch(
+        f"/api/pwa/espacios/{espacio_1.id}/mensajes/{mensaje.id}/marcar-visto/",
+        {},
+        format="json",
+    )
+
+    assert list_response.status_code == 200
+    assert [item["id"] for item in list_response.data["results"]] == [mensaje.id]
+    assert mark_response.status_code == 403
+    assert not LecturaMensajePWA.objects.filter(
+        comunicado=mensaje,
+        comedor=espacio_1,
+        user=coordinador,
+    ).exists()

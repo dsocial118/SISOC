@@ -1,16 +1,19 @@
 from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import Http404, HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
 from django.views import View
 
+from core.services.csv_export import build_csv_response
 from users.forms import UserImportForm
+from users.models import UserImportJobRow
 from users.views import AdminRequiredMixin
 from users.services_user_import import (
     USER_IMPORT_TEMPLATE_FILENAME,
     create_user_import_job,
+    generate_user_import_job_csv,
     generate_user_import_template,
 )
 from users.services_user_import_jobs import (
@@ -92,6 +95,10 @@ class UserImportJobDetailView(AdminRequiredMixin, View):
                 "is_resume_available": can_resume_user_import_job(job),
                 "upload_url": reverse("usuarios_importar"),
                 "status_filter": status_filter,
+                "has_csv_download": job.rows.filter(
+                    status=UserImportJobRow.Status.CREATED,
+                    created_user__isnull=False,
+                ).exists(),
             },
         )
 
@@ -113,6 +120,19 @@ class UserImportJobResumeView(AdminRequiredMixin, View):
         return HttpResponseRedirect(
             reverse("usuarios_importar_detalle", kwargs={"pk": job.pk})
         )
+
+
+class UserImportJobDownloadCSVView(AdminRequiredMixin, View):
+    required_permissions = (USER_IMPORT_PERMISSION_CODE,)
+
+    def get(self, request, *args, **kwargs):
+        job = get_user_import_job_or_404(job_id=kwargs["pk"])
+        if not request.user.is_superuser and job.requested_by_id != request.user.id:
+            raise Http404("No existe el lote solicitado.")
+
+        response = build_csv_response(f"lote-usuarios-{job.pk}.csv")
+        response.write(generate_user_import_job_csv(job))
+        return response
 
 
 class UserImportTemplateView(AdminRequiredMixin, View):

@@ -1,0 +1,16 @@
+# Contrato aislado para la composición global de rutas de Celiaquía.
+# Se mantiene separado para no ampliar el baseline de los contratos Fase 0.
+[importlinter]
+include_external_packages = True
+root_packages =
+    config
+
+[importlinter:contract:config-no-celiaquia-imports]
+name = config no importa Celiaquía fuera de sus includes de URL
+type = forbidden
+allow_indirect_imports = True
+source_modules =
+    config
+forbidden_modules =
+    celiaquia
+ignore_imports =

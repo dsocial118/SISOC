@@ -4,7 +4,8 @@ Extracción de texto a partir de imágenes y PDFs usando Tesseract OCR.
 
 ## Uso (pantalla)
 
-1. Ir a **Administración del sistema → OCR** en el sidebar.
+1. Ir a la sección **OCR** del sidebar, entre **Configuración de Comedores** y
+   **Comunicados**.
 2. Seleccionar uno o varios archivos (JPG, JPEG, PNG o PDF).
 3. (Opcional) En **Opciones de calidad** se pueden desactivar, por lote, el
    preprocesado de imagen, la capa de texto del PDF y la auto-orientación.

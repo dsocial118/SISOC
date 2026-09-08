@@ -346,6 +346,72 @@
     min-width: 160px;
 }
 
+/* ── Calendario de asistencia de nómina ─────────────────── */
+.asis-calendar-backdrop {
+    position: fixed;
+    z-index: 1060;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: 20px;
+    background: rgb(10 23 40 / 55%);
+}
+
+.asis-calendar-panel {
+    width: min(100%, 430px);
+    padding: 22px;
+    border-radius: 18px;
+    background: var(--cdf-navy, #12243a);
+    box-shadow: 0 18px 48px rgb(0 0 0 / 30%);
+}
+
+.asis-calendar-header,
+.asis-calendar-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.asis-calendar-header strong { text-transform: capitalize; }
+
+.asis-calendar-week,
+.asis-calendar-days {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 6px;
+    margin-top: 18px;
+    text-align: center;
+}
+
+.asis-calendar-week { color: var(--cdf-muted, #b9c4d0); font-size: 12px; }
+
+.asis-calendar-day {
+    position: relative;
+    min-height: 39px;
+    border: 0;
+    border-radius: 10px;
+    color: inherit;
+    background: transparent;
+}
+
+.asis-calendar-day:hover,
+.asis-calendar-day:focus-visible { background: rgb(255 255 255 / 14%); outline: 0; }
+.asis-calendar-day.is-selected { background: var(--cdf-gold, #e3b341); color: #172235; font-weight: 700; }
+.asis-calendar-day.has-attendance::after {
+    position: absolute;
+    right: 50%;
+    bottom: 4px;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--cdf-gold, #e3b341);
+    content: "";
+    transform: translateX(50%);
+}
+.asis-calendar-day.is-selected::after { background: #172235; }
+.asis-calendar-actions { margin-top: 22px; }
+
 /* ── Responsive ─────────────────────────────────────────── */
 @media (max-width: 860px) {
     .cdi-side-tab { width: 40px; }

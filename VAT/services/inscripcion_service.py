@@ -6,7 +6,13 @@ from django.contrib.auth import get_user_model
 from django.db import transaction
 
 from ciudadanos.models import Ciudadano
-from VAT.models import Inscripcion, InscripcionOferta, Voucher, VoucherUso
+from VAT.models import (
+    Inscripcion,
+    InscripcionOferta,
+    Voucher,
+    VoucherLog,
+    VoucherUso,
+)
 from VAT.services.voucher_service import VoucherService
 
 User = get_user_model()
@@ -279,6 +285,59 @@ class InscripcionService:
         raise ValueError(
             f"{ciudadano} no tiene voucher válido para el programa {oferta.programa}."
         )
+
+    @staticmethod
+    def _ultimo_movimiento_voucher_para_inscripcion(inscripcion):
+        """Obtiene el último débito o compensación asociado a una inscripción."""
+        if not inscripcion.pk:
+            return None
+        return (
+            VoucherLog.objects.filter(
+                detalles__inscripcion_id=inscripcion.pk,
+                tipo_evento__in=("uso", "recarga"),
+            )
+            .select_related("voucher")
+            .order_by("-fecha_evento", "-pk")
+            .first()
+        )
+
+    @staticmethod
+    def _tiene_debito_voucher_vigente(inscripcion):
+        movimiento = InscripcionService._ultimo_movimiento_voucher_para_inscripcion(
+            inscripcion
+        )
+        return movimiento is not None and movimiento.tipo_evento == "uso"
+
+    @staticmethod
+    def _reintegrar_debito_voucher_para_inscripcion(*, inscripcion, usuario):
+        movimiento = InscripcionService._ultimo_movimiento_voucher_para_inscripcion(
+            inscripcion
+        )
+        if movimiento is None or movimiento.tipo_evento != "uso":
+            return
+
+        usuario_auditoria = InscripcionService._resolver_usuario_auditoria(usuario)
+        if usuario_auditoria is None:
+            raise ValueError(
+                "No hay usuario disponible para registrar la compensación del voucher."
+            )
+
+        cantidad = -movimiento.cantidad_afectada
+        if cantidad <= 0:
+            return
+        ok, mensaje = VoucherService.reintegrar_voucher(
+            voucher=movimiento.voucher,
+            cantidad=cantidad,
+            usuario=usuario_auditoria,
+            detalles={
+                "inscripcion_id": inscripcion.id,
+                "comision_id": inscripcion.comision_id,
+                "comision_curso_id": inscripcion.comision_curso_id,
+                "origen": "rechazo_inscripcion",
+            },
+        )
+        if not ok:
+            raise ValueError(mensaje)
 
     @staticmethod
     def validar_inscripcion_unica(ciudadano, programa) -> tuple[bool, str]:
@@ -713,7 +772,22 @@ class InscripcionService:
                 if cupos_disponibles <= 0:
                     raise ValueError(MENSAJE_CUPO_COMPLETO)
 
-            if unidad_formativa.usa_voucher and pasa_a_ocupar_cupo and not ocupaba_cupo:
+            if (
+                unidad_formativa.usa_voucher
+                and nuevo_estado == "rechazada"
+                and ocupaba_cupo
+            ):
+                InscripcionService._reintegrar_debito_voucher_para_inscripcion(
+                    inscripcion=inscripcion,
+                    usuario=usuario,
+                )
+
+            if (
+                unidad_formativa.usa_voucher
+                and pasa_a_ocupar_cupo
+                and not ocupaba_cupo
+                and not InscripcionService._tiene_debito_voucher_vigente(inscripcion)
+            ):
                 cantidad_debito = InscripcionService._resolver_cantidad_debito(
                     getattr(unidad_formativa, "costo", None)
                     or getattr(unidad_formativa, "costo_creditos", 0)
@@ -742,6 +816,47 @@ class InscripcionService:
             inscripcion.save(update_fields=update_fields)
 
         return inscripcion
+
+    @staticmethod
+    def actualizar_estado_en_lote(*, inscripciones, nuevo_estado, usuario=None):
+        """
+        Aplica un cambio de estado a varias inscripciones y devuelve un resumen.
+
+        Cada inscripción se procesa en su propia transacción (la de
+        `actualizar_estado_inscripcion`): un fallo puntual — cupo completo,
+        voucher sin saldo — no descarta los cambios ya aplicados. Es lo que se
+        quiere en una acción en lote sobre un listado: se informa qué filas
+        quedaron afuera y por qué, en vez de perder todo el trabajo.
+
+        Devuelve {"actualizadas": [...], "sin_cambios": [...], "errores": [(insc, msg)]}.
+        """
+        if nuevo_estado not in dict(Inscripcion.ESTADO_INSCRIPCION_CHOICES):
+            raise ValueError("Estado no válido.")
+
+        actualizadas = []
+        sin_cambios = []
+        errores = []
+
+        for inscripcion in inscripciones:
+            if inscripcion.estado == nuevo_estado:
+                sin_cambios.append(inscripcion)
+                continue
+            try:
+                InscripcionService.actualizar_estado_inscripcion(
+                    inscripcion=inscripcion,
+                    nuevo_estado=nuevo_estado,
+                    usuario=usuario,
+                )
+            except ValueError as exc:
+                errores.append((inscripcion, str(exc)))
+            else:
+                actualizadas.append(inscripcion)
+
+        return {
+            "actualizadas": actualizadas,
+            "sin_cambios": sin_cambios,
+            "errores": errores,
+        }
 
     @staticmethod
     def crear_inscripcion_oferta(

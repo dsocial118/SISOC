@@ -320,7 +320,6 @@ class ImportarExpedienteListView(LoginRequiredMixin, ListView):
         queryset = ArchivosImportados.objects.select_related("usuario").order_by(
             "-fecha_subida"
         )
-        queryset = queryset.filter(usuario=self.request.user)
         query = self.request.GET.get("busqueda", "").strip()
         if query:
             queryset = queryset.filter(
@@ -340,10 +339,8 @@ def importarexpedientes_ajax(request):
     query = request.GET.get("busqueda", "").strip()
     page = request.GET.get("page", 1)
 
-    queryset = (
-        ArchivosImportados.objects.select_related("usuario")
-        .filter(usuario=request.user)
-        .order_by("-fecha_subida")
+    queryset = ArchivosImportados.objects.select_related("usuario").order_by(
+        "-fecha_subida"
     )
     if query:
         queryset = queryset.filter(
@@ -391,7 +388,7 @@ def importarexpedientes_ajax(request):
 
 @login_required
 def descargar_archivo_importado(request, id_archivo):
-    batch = get_object_or_404(ArchivosImportados, pk=id_archivo, usuario=request.user)
+    batch = get_object_or_404(ArchivosImportados, pk=id_archivo)
     return FileResponse(
         batch.archivo.open("rb"),
         as_attachment=True,
@@ -407,9 +404,7 @@ class ImportarExpedienteDetalleListView(LoginRequiredMixin, ListView):
 
     def dispatch(self, request, *args, **kwargs):
         self.batch_id = int(self.kwargs.get("id_archivo"))
-        self.batch = get_object_or_404(
-            ArchivosImportados, pk=self.batch_id, usuario=request.user
-        )
+        self.batch = get_object_or_404(ArchivosImportados, pk=self.batch_id)
         return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
@@ -455,7 +450,6 @@ def importarexpediente_detail_ajax(request, id_archivo):
     queryset = (
         ErroresImportacion.objects.filter(
             archivo_importado_id=id_archivo,
-            archivo_importado__usuario=request.user,
         )
         .select_related("archivo_importado")
         .order_by("fila")
@@ -586,9 +580,7 @@ class ImportDatosView(LoginRequiredMixin, FormView):
 
     # pylint: disable=too-many-locals,too-many-branches,too-many-statements
     def post(self, request, *args, **kwargs):
-        batch = get_object_or_404(
-            ArchivosImportados, pk=self.batch_id, usuario=request.user
-        )
+        batch = get_object_or_404(ArchivosImportados, pk=self.batch_id)
 
         try:
             batch.archivo.open("rb")
@@ -632,7 +624,7 @@ class ImportDatosView(LoginRequiredMixin, FormView):
         try:
             with transaction.atomic():
                 batch = ArchivosImportados.objects.select_for_update().get(
-                    pk=self.batch_id, usuario=request.user
+                    pk=self.batch_id
                 )
                 if getattr(batch, "importacion_completada", False):
                     messages.warning(
@@ -733,9 +725,7 @@ class BorrarDatosImportadosView(LoginRequiredMixin, FormView):
         return super().dispatch(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
-        batch = get_object_or_404(
-            ArchivosImportados, pk=self.batch_id, usuario=request.user
-        )
+        batch = get_object_or_404(ArchivosImportados, pk=self.batch_id)
 
         registros_qs = RegistroImportado.objects.filter(
             exito_importacion__archivo_importado=batch

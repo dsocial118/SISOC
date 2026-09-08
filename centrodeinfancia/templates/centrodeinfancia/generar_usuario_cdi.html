@@ -26,6 +26,8 @@
                         {{ form.first_name|as_crispy_field }}
                         {{ form.last_name|as_crispy_field }}
                         {{ form.email|as_crispy_field }}
+                        {{ form.dni|as_crispy_field }}
+                        {{ form.cuil|as_crispy_field }}
                         <button class="btn btn-primary mx-1" type="submit">Generar usuario</button>
                         <a href="{% url 'centrodeinfancia_detalle' centro.id %}"
                            class="btn btn-secondary">Cancelar</a>

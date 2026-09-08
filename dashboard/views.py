@@ -1,7 +1,7 @@
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.views.generic import DetailView, TemplateView
 
-from centrodefamilia.models import Centro, ActividadCentro, ParticipanteActividad
+from centrodefamilia.api import obtener_metricas_dashboard
 from dashboard.models import Dashboard, Tablero
 
 
@@ -16,17 +16,8 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         context.update({item.llave: item.cantidad for item in dashboard_data})
 
         # 2) Indicadores dinámicos
-        context["participantes_total"] = ParticipanteActividad.objects.filter(
-            estado="inscrito"
-        ).count()
-
-        context["centros_adheridos_totales"] = Centro.objects.filter(
-            tipo="adherido"
-        ).count()
-
-        context["centros_faro_totales"] = Centro.objects.filter(tipo="faro").count()
-
-        context["actividades_totales"] = ActividadCentro.objects.count()
+        metricas_cdf = obtener_metricas_dashboard()
+        context.update(metricas_cdf.__dict__)
 
         return context
 

@@ -1,0 +1,60 @@
+{% extends "includes/main.html" %}
+{% load static %}
+
+{% block title %}Confirma tus datos personales{% endblock %}
+{% block titulo-pagina %}Confirma tus datos personales{% endblock %}
+
+{% block content %}
+    <link rel="stylesheet"
+          href="{% static 'custom/css/poncho_formularios.css' %}" />
+
+    {# El wrapper tambien vive en el contenido, no solo en el modal: es lo que #}
+    {# hace que .app-main:has(.poncho-form) pinte el fondo de la pagina. #}
+    <div class="row poncho-form">
+        <div class="col-12">
+            <p class="text-muted">Para continuar usando SISOC necesitamos que confirmes o corrijas tus datos personales.</p>
+        </div>
+    </div>
+{% endblock %}
+
+{% block modals %}
+    <div class="modal-backdrop show"></div>
+    <div class="modal show d-block"
+         id="modal-confirmar-datos"
+         tabindex="-1"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="modal-confirmar-datos-titulo">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg"
+             role="document">
+            <div class="modal-content poncho-form">
+                <div class="modal-header">
+                    <h4 class="modal-title" id="modal-confirmar-datos-titulo">Confirma tus datos personales</h4>
+                </div>
+                <form method="post"
+                      action="{% url 'confirmar_datos_personales' %}"
+                      novalidate>
+                    {% csrf_token %}
+                    <div class="modal-body">
+                        <p class="text-muted">
+                            Como parte del proceso de actualización de datos, te solicitamos que revises tu información personal y completes los campos pendientes o desactualizados.
+                        </p>
+                        <p class="text-muted small">
+                            Vas a poder modificar estos datos luego desde <strong>Mi cuenta</strong>.
+                        </p>
+                        {% include "user/_mi_cuenta_campos.html" %}
+                    </div>
+                    <div class="modal-footer justify-content-end">
+                        <button type="submit"
+                                class="poncho-btn poncho-btn--cta"
+                                data-mi-cuenta-submit>Guardar datos</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block customJS %}
+    {% include "user/_mi_cuenta_submit_js.html" %}
+{% endblock %}

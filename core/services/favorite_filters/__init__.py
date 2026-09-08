@@ -7,6 +7,7 @@ from .config import (
     clave_cache_filtros_favoritos,
     obtener_configuracion_seccion,
 )
+from .registry import registrar_configuracion_seccion
 from .validation import normalizar_carga, obtener_items_obsoletos
 
 __all__ = [
@@ -17,4 +18,5 @@ __all__ = [
     "normalizar_carga",
     "obtener_configuracion_seccion",
     "obtener_items_obsoletos",
+    "registrar_configuracion_seccion",
 ]

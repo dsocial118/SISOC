@@ -174,6 +174,40 @@ def test_comedor_detail_view_get_context(client_logged_fixture, comedor_fixture)
 
 
 @pytest.mark.django_db
+def test_comedor_detail_hides_validation_controls_without_permission(
+    client_logged_fixture, comedor_fixture
+):
+    """La UI no ofrece validar si el usuario no puede ejecutar la acción."""
+    response = client_logged_fixture.get(
+        reverse("comedor_detalle", kwargs={"pk": comedor_fixture.pk})
+    )
+
+    assert response.status_code == 200
+    assert 'data-bs-target="#modalValidacion"' not in response.content.decode()
+
+
+@pytest.mark.django_db
+def test_comedor_detail_shows_validation_controls_for_validator_group(
+    client_logged_fixture, comedor_fixture
+):
+    """El grupo validador habilita la acción en el legajo accesible."""
+    user = get_user_model().objects.get(
+        pk=client_logged_fixture.session["_auth_user_id"]
+    )
+    validator_group, _ = Group.objects.get_or_create(name="Validador Comedores")
+    user.groups.add(validator_group)
+    client_logged_fixture.force_login(user)
+
+    response = client_logged_fixture.get(
+        reverse("comedor_detalle", kwargs={"pk": comedor_fixture.pk})
+    )
+
+    assert response.status_code == 200
+    assert response.context["puede_validar_comedor"] is True
+    assert 'data-bs-target="#modalValidacion"' in response.content.decode()
+
+
+@pytest.mark.django_db
 def test_comedor_detail_view_renderiza_card_colaboradores(
     client_logged_fixture, comedor_fixture, monkeypatch
 ):
@@ -948,7 +982,7 @@ def test_relevamiento_create_edit_ajax_crea_primer_seguimiento(
     create_mock = mock.Mock(return_value=seguimiento_mock)
 
     monkeypatch.setattr(
-        "comedores.views.relevamientos.PrimerSeguimientoService.create_asignado",
+        "comedores.views.relevamientos.PrimerSeguimientoService.create_instancia",
         create_mock,
     )
 
@@ -983,7 +1017,7 @@ def test_relevamiento_create_edit_ajax_primer_seguimiento_reenvia_relevamiento_i
     create_mock = mock.Mock(return_value=seguimiento_mock)
 
     monkeypatch.setattr(
-        "comedores.views.relevamientos.PrimerSeguimientoService.create_asignado",
+        "comedores.views.relevamientos.PrimerSeguimientoService.create_instancia",
         create_mock,
     )
 
@@ -1000,24 +1034,48 @@ def test_relevamiento_create_edit_ajax_primer_seguimiento_reenvia_relevamiento_i
 
     assert response.status_code == 200
     assert create_mock.call_args.kwargs["relevamiento_id"] == "777"
+    assert create_mock.call_args.kwargs["tipo"] == "primer"
 
 
 @pytest.mark.django_db
-def test_relevamiento_create_edit_ajax_rechaza_segundo_seguimiento(
-    client_logged_fixture, comedor_fixture
+@pytest.mark.parametrize(
+    "valor_select, tipo_esperado",
+    [
+        ("segundo_seguimiento", "posterior"),  # alias historico
+        ("seguimiento_posterior", "posterior"),
+        ("seguimiento_virtual", "virtual"),
+        ("acta_excepcion", "acta_excepcion"),
+    ],
+)
+def test_relevamiento_create_edit_ajax_crea_otras_instancias_del_ciclo(
+    client_logged_fixture, comedor_fixture, monkeypatch, valor_select, tipo_esperado
 ):
+    """El popup ya no rechaza el 'segundo seguimiento': crea la instancia del
+    ciclo que corresponda (posterior / virtual / acta de excepcion)."""
+    relevamiento_mock = mock.Mock()
+    relevamiento_mock.pk = 1003
+    relevamiento_mock.comedor = mock.Mock()
+    relevamiento_mock.comedor.pk = comedor_fixture.pk
+    seguimiento_mock = mock.Mock()
+    seguimiento_mock.id_relevamiento = relevamiento_mock
+    create_mock = mock.Mock(return_value=seguimiento_mock)
+    monkeypatch.setattr(
+        "comedores.views.relevamientos.PrimerSeguimientoService.create_instancia",
+        create_mock,
+    )
+
     url = reverse("relevamiento_create_edit_ajax", kwargs={"pk": comedor_fixture.pk})
     response = client_logged_fixture.post(
         url,
         {
-            "tipo_relevamiento": "segundo_seguimiento",
+            "tipo_relevamiento": valor_select,
             "territorial": '{"gestionar_uid":"uid-1","nombre":"Territorial Norte"}',
         },
         HTTP_X_REQUESTED_WITH="XMLHttpRequest",
     )
 
-    assert response.status_code == 400
-    assert "Segundo seguimiento" in response.json()["error"]
+    assert response.status_code == 200
+    assert create_mock.call_args.kwargs["tipo"] == tipo_esperado
 
 
 @pytest.mark.django_db
@@ -1337,6 +1395,48 @@ def test_agregar_ciudadano_a_nomina_caso_feliz(admision_fixture, ciudadano_fixtu
     assert Nomina.objects.filter(
         admision=admision_fixture, ciudadano=ciudadano_fixture
     ).exists()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_agregar_ciudadano_revierte_nomina_si_falla_actualizacion_social(
+    admision_fixture, ciudadano_fixture, monkeypatch
+):
+    ciudadano_fixture.pertenece_comunidad_indigena = "False"
+    ciudadano_fixture.en_situacion_de_calle = "False"
+    ciudadano_fixture.persona_con_celiaquia = "False"
+    ciudadano_fixture.save(
+        update_fields=[
+            "pertenece_comunidad_indigena",
+            "en_situacion_de_calle",
+            "persona_con_celiaquia",
+        ]
+    )
+
+    def fallar_guardado(*_args, **_kwargs):
+        raise RuntimeError("falló la actualización social")
+
+    monkeypatch.setattr(Ciudadano, "save", fallar_guardado)
+
+    ok, _msg = ComedorService.agregar_ciudadano_a_nomina(
+        admision_id=admision_fixture.pk,
+        ciudadano_id=ciudadano_fixture.pk,
+        user=mock.Mock(),
+        estado=Nomina.ESTADO_ACTIVO,
+        datos_complementarios={
+            "pertenece_comunidad_indigena": "True",
+            "en_situacion_de_calle": "True",
+            "persona_con_celiaquia": "True",
+        },
+    )
+
+    assert ok is False
+    assert not Nomina.objects.filter(
+        admision=admision_fixture, ciudadano=ciudadano_fixture
+    ).exists()
+    ciudadano_fixture.refresh_from_db()
+    assert ciudadano_fixture.pertenece_comunidad_indigena == "False"
+    assert ciudadano_fixture.en_situacion_de_calle == "False"
+    assert ciudadano_fixture.persona_con_celiaquia == "False"
 
 
 @pytest.mark.django_db

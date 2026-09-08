@@ -5,7 +5,7 @@ from datetime import timedelta
 from django import forms
 from django.contrib.admin.widgets import FilteredSelectMultiple
 from django.conf import settings
-from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth.forms import AuthenticationForm, PasswordResetForm
 from django.contrib.auth.models import Group, Permission, User
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.validators import FileExtensionValidator
@@ -13,18 +13,26 @@ from django.db import transaction
 from django.utils.crypto import get_random_string
 from django.utils import timezone
 
-from comedores.models import Comedor
 from core.constants import UserGroups
 from core.models import Provincia
-from duplas.models import Dupla
-from organizaciones.models import Organizacion
-from users.models import AccesoComedorPWA, Profile, TerritorialComedorProvincia
+from core.validators import solo_digitos, validate_cuit
+from users.form_catalogs import obtener_queryset_formulario
+from users.models import (
+    AccesoComedorPWA,
+    CoordinadorEquipoTecnicoPWA,
+    Profile,
+    TerritorialComedorProvincia,
+)
+from users.profile_utils import get_profile_or_none
 from users.services_delegation import effective_delegatable_groups_qs
 from users.services_pwa import (
     PWA_ASSIGNABLE_PERMISSION_CODES,
     PWA_USUARIOS_PERMISSION_CODE,
+    deactivate_coordinador_equipo_tecnico_pwa_access,
     deactivate_representante_accesses,
+    get_organizacion_ids,
     is_pwa_user,
+    sync_coordinador_equipo_tecnico_pwa_access,
     sync_representante_accesses,
 )
 from users.services_bulk_credentials import get_bulk_credentials_send_type_choices
@@ -33,6 +41,23 @@ from users.territorial_scope import (
     serialize_profile_scopes,
     sync_profile_territorial_scopes,
 )
+
+
+class UsernameEmailPasswordResetForm(PasswordResetForm):
+    username = forms.CharField(label="Usuario", max_length=150, required=True)
+
+    def get_users(self, email):
+        username = (self.cleaned_data.get("username") or "").strip()
+        try:
+            user = User.objects.get(username=username, is_active=True)
+        except User.DoesNotExist:
+            return ()
+
+        email_matches = (user.email or "").casefold() == (email or "").casefold()
+        if not email_matches:
+            return ()
+        return (user,)
+
 
 MOBILE_RENDICION_PERMISSION_CODE = "rendicioncuentasmensual.manage_mobile_rendicion"
 PWA_OPERATION_PERMISSION_CODES = PWA_ASSIGNABLE_PERMISSION_CODES | {
@@ -65,6 +90,35 @@ ROLE_PERMISSION_QUERYSET = (
         codename__startswith="role_",
     )
     .order_by("name")
+)
+
+PWA_SELECTION_FIELDS = (
+    "es_coordinador_equipo_tecnico_pwa",
+    "duplas_coordinador_pwa",
+    "comedores_adicionales_coordinador_pwa",
+    "puede_gestionar_rendiciones_mobile",
+    *PWA_OPERATION_PERMISSION_FIELDS,
+    "tipo_asociacion_pwa",
+    "organizaciones_pwa",
+    "comedores_pwa",
+)
+
+
+CDI_ABM_RESTRICTED_GROUPS = (
+    UserGroups.SIMEPI_ADMINISTRADOR,
+    UserGroups.SIMEPI_EQUIPO_NACIONAL,
+    UserGroups.SIMEPI_EGP,
+    UserGroups.CDI_REFERENTE_CENTRO,
+)
+
+CDI_ABM_RESTRICTED_FIELDS = (
+    "es_representante_pwa",
+    *PWA_SELECTION_FIELDS,
+    "user_permissions",
+    "es_coordinador",
+    "duplas_asignadas",
+    "grupos_asignables",
+    "roles_asignables",
 )
 
 
@@ -124,16 +178,18 @@ class TerritorialScopeFormMixin:
             return cleaned
 
         scopes = cleaned.get("territorial_scopes_data", [])
-        has_single_full_province = (
+        has_only_full_provinces = (
             cleaned.get("es_usuario_provincial")
-            and len(scopes) == 1
-            and scopes[0].get("municipio_id") is None
-            and scopes[0].get("localidad_id") is None
+            and bool(scopes)
+            and all(
+                scope.get("municipio_id") is None and scope.get("localidad_id") is None
+                for scope in scopes
+            )
         )
-        if not has_single_full_province:
+        if not has_only_full_provinces:
             self.add_error(
                 "territorial_scopes",
-                "El grupo SIMEPI - EGP requiere exactamente una provincia completa.",
+                "El grupo SIMEPI - EGP requiere al menos una provincia completa.",
             )
         return cleaned
 
@@ -182,12 +238,13 @@ class BackofficeAuthenticationForm(AuthenticationForm):
 
     def confirm_login_allowed(self, user):
         super().confirm_login_allowed(user)
-        if is_pwa_user(user):
+        profile = get_profile_or_none(user)
+        saved_mobile = getattr(profile, "configuracion_mobile", {})
+        if is_pwa_user(user) or saved_mobile.get("es_coordinador_equipo_tecnico_pwa"):
             raise forms.ValidationError(
                 "Este usuario solo puede ingresar desde la PWA.",
                 code="pwa_only",
             )
-        profile = getattr(user, "profile", None)
         expires_at = getattr(profile, "initial_password_expires_at", None)
         if (
             getattr(profile, "must_change_password", False)
@@ -265,6 +322,26 @@ class PWAAccessMixin:
             required=False,
             label="Habilitar acceso a SISOC - Mobile",
         )
+        self.fields["es_coordinador_equipo_tecnico_pwa"] = forms.BooleanField(
+            required=False,
+            label="Coordinador de Equipo Técnico",
+            help_text="Acceso PWA exclusivo de solo lectura.",
+        )
+        self.fields["duplas_coordinador_pwa"] = forms.ModelMultipleChoiceField(
+            queryset=obtener_queryset_formulario("duplas_asignadas"),
+            required=False,
+            widget=forms.SelectMultiple(attrs={"class": "select2"}),
+            label="Equipos técnicos PWA",
+            help_text="El alcance se actualiza automáticamente según sus comedores.",
+        )
+        self.fields["comedores_adicionales_coordinador_pwa"] = (
+            forms.ModelMultipleChoiceField(
+                queryset=obtener_queryset_formulario("comedores_pwa"),
+                required=False,
+                widget=forms.SelectMultiple(attrs={"class": "select2"}),
+                label="Comedores adicionales PWA",
+            )
+        )
         self.fields["puede_gestionar_rendiciones_mobile"] = forms.BooleanField(
             required=False,
             label="Puede gestionar rendiciones mobile",
@@ -292,16 +369,17 @@ class PWAAccessMixin:
             label="Tipo de asociación mobile",
         )
         self.fields["organizaciones_pwa"] = forms.ModelMultipleChoiceField(
-            queryset=Organizacion.objects.all().order_by("nombre"),
+            queryset=obtener_queryset_formulario("organizaciones_pwa"),
             required=False,
             widget=forms.SelectMultiple(attrs={"class": "select2"}),
             label="Organizaciones",
-            help_text="Seleccione una o más organizaciones registradas en el sistema.",
+            help_text=(
+                "Cada organización habilita automáticamente todos sus comedores "
+                "actuales y futuros."
+            ),
         )
         self.fields["comedores_pwa"] = forms.ModelMultipleChoiceField(
-            queryset=Comedor.objects.select_related("organizacion").order_by(
-                "organizacion__nombre", "nombre"
-            ),
+            queryset=obtener_queryset_formulario("comedores_pwa"),
             required=False,
             widget=ComedorPWASelectMultiple(attrs={"class": "select2"}),
             label="Comedores PWA",
@@ -316,7 +394,7 @@ class PWAAccessMixin:
             rol=AccesoComedorPWA.ROL_REPRESENTANTE,
             activo=True,
         )
-        organizacion_ids = list(
+        organizacion_ids = get_organizacion_ids(self.instance) or list(
             accesos.exclude(organizacion_id__isnull=True)
             .values_list("organizacion_id", flat=True)
             .distinct()
@@ -325,17 +403,54 @@ class PWAAccessMixin:
             {tipo for tipo in accesos.values_list("tipo_asociacion", flat=True) if tipo}
         )
         comedor_ids = list(accesos.values_list("comedor_id", flat=True))
-        self.fields["es_representante_pwa"].initial = bool(comedor_ids)
+        self.fields["es_representante_pwa"].initial = bool(
+            comedor_ids or organizacion_ids
+        )
         self.fields["puede_gestionar_rendiciones_mobile"].initial = (
             self.instance.has_perm(MOBILE_RENDICION_PERMISSION_CODE)
         )
         for field_name, (permission_code, _) in PWA_OPERATION_PERMISSION_FIELDS.items():
             self.fields[field_name].initial = self.instance.has_perm(permission_code)
         self.fields["tipo_asociacion_pwa"].initial = (
-            tipos_asociacion[0] if len(tipos_asociacion) == 1 else ""
+            tipos_asociacion[0]
+            if len(tipos_asociacion) == 1
+            else (
+                AccesoComedorPWA.TIPO_ASOCIACION_ORGANIZACION
+                if organizacion_ids and not tipos_asociacion
+                else ""
+            )
         )
         self.fields["organizaciones_pwa"].initial = organizacion_ids
         self.fields["comedores_pwa"].initial = comedor_ids
+        coordinator_scope = CoordinadorEquipoTecnicoPWA.objects.filter(
+            user=self.instance, activo=True
+        ).first()
+        if coordinator_scope:
+            self.fields["es_representante_pwa"].initial = True
+            self.fields["es_coordinador_equipo_tecnico_pwa"].initial = True
+            self.fields["duplas_coordinador_pwa"].initial = (
+                coordinator_scope.duplas.all()
+            )
+            self.fields["comedores_adicionales_coordinador_pwa"].initial = (
+                coordinator_scope.comedores_adicionales.all()
+            )
+
+        profile = get_profile_or_none(self.instance)
+        selections = getattr(profile, "configuracion_mobile", {})
+        mobile_enabled = self.fields["es_representante_pwa"].initial
+        for name in PWA_SELECTION_FIELDS:
+            if name in selections and (
+                not mobile_enabled
+                or (
+                    coordinator_scope
+                    and name
+                    in (
+                        "puede_gestionar_rendiciones_mobile",
+                        *PWA_OPERATION_PERMISSION_FIELDS,
+                    )
+                )
+            ):
+                self.fields[name].initial = selections[name]
 
     def _is_active_pwa_operator(self) -> bool:
         if not self.instance or not self.instance.pk:
@@ -377,25 +492,77 @@ class PWAAccessMixin:
                 permission_ids.append(permission.id)
         return permission_ids
 
+    def _clean_mobile_access_switch(self, cleaned):
+        # The legacy field name now acts as the master mobile access switch.
+        # Remember selections before normalizing inactive roles and permissions.
+        self._mobile_selections = {}
+        for name in PWA_SELECTION_FIELDS:
+            value = cleaned.get(name)
+            if isinstance(self.fields[name], forms.ModelMultipleChoiceField):
+                value = (
+                    list(value.values_list("pk", flat=True))
+                    if value is not None
+                    else []
+                )
+            self._mobile_selections[name] = value
+        mobile_enabled = cleaned.get("es_representante_pwa", False)
+        if not mobile_enabled:
+            cleaned["es_coordinador_equipo_tecnico_pwa"] = False
+        if not mobile_enabled or cleaned.get("es_coordinador_equipo_tecnico_pwa"):
+            for name in (
+                "puede_gestionar_rendiciones_mobile",
+                *PWA_OPERATION_PERMISSION_FIELDS,
+            ):
+                cleaned[name] = False
+
     def _clean_pwa_fields(self, cleaned):
-        es_representante_pwa = cleaned.get("es_representante_pwa", False)
+        self._clean_mobile_access_switch(cleaned)
+        es_coordinador_pwa = cleaned.get("es_coordinador_equipo_tecnico_pwa", False)
+        es_representante_pwa = (
+            cleaned.get("es_representante_pwa", False) and not es_coordinador_pwa
+        )
         tipo_asociacion_pwa = cleaned.get("tipo_asociacion_pwa")
         organizaciones_pwa = cleaned.get("organizaciones_pwa")
         comedores_pwa = cleaned.get("comedores_pwa")
         es_coordinador = cleaned.get("es_coordinador", False)
 
+        if es_coordinador_pwa:
+            if not cleaned.get("duplas_coordinador_pwa"):
+                self.add_error(
+                    "duplas_coordinador_pwa",
+                    "Seleccione al menos un equipo técnico para el coordinador PWA.",
+                )
+            if es_coordinador:
+                self.add_error(
+                    "es_coordinador",
+                    "El coordinador PWA es independiente del coordinador SISOC.",
+                )
+            if cleaned.get("es_territorial_comedor"):
+                self.add_error(
+                    "es_territorial_comedor",
+                    "El coordinador PWA no puede tener acceso territorial.",
+                )
+            if self.instance and self.instance.pk and self._is_active_pwa_operator():
+                self.add_error(
+                    "es_coordinador_equipo_tecnico_pwa",
+                    "El coordinador PWA no puede tener rol operador activo.",
+                )
+
         if not es_representante_pwa:
             cleaned["tipo_asociacion_pwa"] = ""
-            cleaned["organizaciones_pwa"] = Organizacion.objects.none()
-            cleaned["comedores_pwa"] = Comedor.objects.none()
+            cleaned["organizaciones_pwa"] = self.fields[
+                "organizaciones_pwa"
+            ].queryset.none()
+            cleaned["comedores_pwa"] = self.fields["comedores_pwa"].queryset.none()
             tipo_asociacion_pwa = ""
             organizaciones_pwa = cleaned["organizaciones_pwa"]
             comedores_pwa = cleaned["comedores_pwa"]
 
-        if es_representante_pwa and not comedores_pwa:
+        if es_representante_pwa and not (comedores_pwa or organizaciones_pwa):
             self.add_error(
                 "comedores_pwa",
-                "Debe seleccionar al menos un comedor para un representante PWA.",
+                "Debe seleccionar al menos una organización o un comedor para un "
+                "representante PWA.",
             )
         if not es_representante_pwa and (
             comedores_pwa or organizaciones_pwa or tipo_asociacion_pwa
@@ -423,12 +590,45 @@ class PWAAccessMixin:
         return cleaned
 
     def _sync_pwa_access(self, user):
+        if not self._is_active_pwa_operator():
+            Profile.objects.filter(user=user).update(
+                configuracion_mobile=self._mobile_selections
+            )
+        if self.cleaned_data.get("es_coordinador_equipo_tecnico_pwa"):
+            deactivate_representante_accesses(user)
+            sync_coordinador_equipo_tecnico_pwa_access(
+                user=user,
+                duplas=self.cleaned_data["duplas_coordinador_pwa"],
+                comedores_adicionales=self.cleaned_data[
+                    "comedores_adicionales_coordinador_pwa"
+                ],
+            )
+            return
+        deactivate_coordinador_equipo_tecnico_pwa_access(user)
+        if not self.cleaned_data.get(
+            "es_representante_pwa"
+        ) and self._mobile_selections.get("es_coordinador_equipo_tecnico_pwa"):
+            scope, _ = CoordinadorEquipoTecnicoPWA.objects.get_or_create(
+                user=user, defaults={"activo": False}
+            )
+            scope.duplas.set(self._mobile_selections["duplas_coordinador_pwa"])
+            scope.comedores_adicionales.set(
+                self._mobile_selections["comedores_adicionales_coordinador_pwa"]
+            )
         if self.cleaned_data.get("es_representante_pwa"):
             organization_ids = set(
                 self.cleaned_data["organizaciones_pwa"].values_list("id", flat=True)
             )
+            selected_by_id = {
+                comedor.id: comedor for comedor in self.cleaned_data["comedores_pwa"]
+            }
+            for comedor in self.fields["comedores_pwa"].queryset.filter(
+                organizacion_id__in=organization_ids
+            ):
+                selected_by_id[comedor.id] = comedor
+
             access_specs = []
-            for comedor in self.cleaned_data["comedores_pwa"]:
+            for comedor in sorted(selected_by_id.values(), key=lambda item: item.id):
                 association_type = (
                     AccesoComedorPWA.TIPO_ASOCIACION_ORGANIZACION
                     if comedor.organizacion_id in organization_ids
@@ -449,6 +649,7 @@ class PWAAccessMixin:
             sync_representante_accesses(
                 user=user,
                 access_specs=access_specs,
+                organizacion_ids=organization_ids,
                 actor=None,
             )
             return
@@ -483,6 +684,34 @@ class DelegationScopeMixin:
             label="Roles que puede asignar",
             help_text="Permisos auth.role_* delegables a terceros.",
         )
+
+    def _apply_cdi_abm_restrictions(self):
+        """Restringe capacidades administrativas para los gestores CDI.
+
+        Los campos quedan deshabilitados, además de ocultos en el template, para
+        que un POST construido manualmente no pueda modificar configuraciones
+        ajenas al circuito CDI. En edición Django conserva sus valores iniciales.
+        """
+        actor_groups = (
+            set(
+                self.actor.groups.filter(
+                    name__in=CDI_ABM_RESTRICTED_GROUPS
+                ).values_list("name", flat=True)
+            )
+            if self.actor and not self.actor.is_superuser
+            else set()
+        )
+        self.is_cdi_abm_restricted = bool(actor_groups)
+        self.can_manage_mobile_access = not self.is_cdi_abm_restricted
+        self.can_manage_direct_permissions = not self.is_cdi_abm_restricted
+        self.can_manage_technical_teams = not self.is_cdi_abm_restricted
+        self.can_manage_delegation = not self.is_cdi_abm_restricted
+
+        if not self.is_cdi_abm_restricted:
+            return
+
+        for field_name in CDI_ABM_RESTRICTED_FIELDS:
+            self.fields[field_name].disabled = True
 
     def _is_unrestricted_actor(self):
         return not self.actor or self.actor.is_superuser
@@ -675,13 +904,14 @@ class TerritorialComedorFormMixin:
     def _clean_territorial_comedor_fields(self, cleaned):
         es_territorial = cleaned.get("es_territorial_comedor", False)
         es_representante_pwa = cleaned.get("es_representante_pwa", False)
+        es_coordinador_pwa = cleaned.get("es_coordinador_equipo_tecnico_pwa", False)
         provincias = cleaned.get("provincias_territorial")
 
-        if es_territorial and es_representante_pwa:
+        if es_territorial and (es_representante_pwa or es_coordinador_pwa):
             self.add_error(
                 "es_territorial_comedor",
-                "Un usuario territorial no puede tener acceso como representante "
-                "de SISOC - Mobile a la vez.",
+                "Un usuario territorial no puede tener acceso PWA de coordinador "
+                "ni representante a la vez.",
             )
 
         if not es_territorial:
@@ -727,6 +957,13 @@ class UserCreationForm(
     forms.ModelForm,
 ):
     password = forms.CharField(widget=forms.PasswordInput, label="Contraseña")
+    dni = forms.CharField(max_length=16, required=False, label="DNI")
+    cuil = forms.CharField(max_length=16, required=False, label="CUIL")
+    tipo_usuario = forms.ChoiceField(
+        choices=Profile.TipoUsuario.choices,
+        widget=forms.RadioSelect,
+        label="Tipo de usuario",
+    )
     groups = forms.ModelMultipleChoiceField(
         queryset=Group.objects.all(),
         required=False,
@@ -765,7 +1002,7 @@ class UserCreationForm(
         label="Es Coordinador de Equipo Técnico",
     )
     duplas_asignadas = forms.ModelMultipleChoiceField(
-        queryset=Dupla.objects.activas(),
+        queryset=User.objects.none(),
         required=False,
         widget=forms.SelectMultiple(attrs={"class": "select2"}),
         label="Equipos técnicos (Duplas) asignadas",
@@ -779,6 +1016,9 @@ class UserCreationForm(
             "username",
             "email",
             "password",
+            "dni",
+            "cuil",
+            "tipo_usuario",
             "groups",
             "user_permissions",
             "es_usuario_provincial",
@@ -794,6 +1034,9 @@ class UserCreationForm(
     def __init__(self, *args, **kwargs):
         self.actor = kwargs.pop("actor", None)
         super().__init__(*args, **kwargs)
+        self.fields["duplas_asignadas"].queryset = obtener_queryset_formulario(
+            "duplas_asignadas"
+        )
         self._setup_pwa_fields()
         self._setup_territorial_comedor_fields()
         self._setup_delegation_fields()
@@ -803,6 +1046,7 @@ class UserCreationForm(
         self.generated_password = None
         self.password_was_auto_generated = False
         self._setup_territorial_scope_fields()
+        self._apply_cdi_abm_restrictions()
 
     def clean(self):
         cleaned = super().clean()
@@ -825,7 +1069,9 @@ class UserCreationForm(
             return self._save_atomic(commit=commit)
 
     def _configure_created_user(self, user):
-        if self.cleaned_data.get("es_representante_pwa", False):
+        if self.cleaned_data.get(
+            "es_representante_pwa", False
+        ) or self.cleaned_data.get("es_coordinador_equipo_tecnico_pwa", False):
             self.generated_password = get_random_string(12)
             user.set_password(self.generated_password)
             user.is_staff = False
@@ -838,7 +1084,11 @@ class UserCreationForm(
             user.is_staff = True
 
     def _save_user_security_and_permissions(self, user):
-        if self.cleaned_data.get("es_representante_pwa", False):
+        if self.cleaned_data.get("es_coordinador_equipo_tecnico_pwa", False):
+            user.groups.clear()
+            user.user_permissions.clear()
+            return
+        elif self.cleaned_data.get("es_representante_pwa", False):
             user.groups.clear()
             pwa_permission_ids = self._preserve_current_pwa_operation_permission_ids(
                 user
@@ -857,6 +1107,9 @@ class UserCreationForm(
         profile.es_usuario_provincial = self.cleaned_data.get(
             "es_usuario_provincial", False
         )
+        profile.dni = self.cleaned_data.get("dni", "")
+        profile.cuil = self.cleaned_data.get("cuil", "")
+        profile.tipo_usuario = self.cleaned_data["tipo_usuario"]
         profile.provincia = None
         profile.es_coordinador = self.cleaned_data.get("es_coordinador", False)
         profile.es_territorial_comedor = self.cleaned_data.get(
@@ -923,6 +1176,13 @@ class CustomUserChangeForm(
         label="Contraseña (dejar en blanco para no cambiarla)",
         required=False,
     )
+    dni = forms.CharField(max_length=16, required=False, label="DNI")
+    cuil = forms.CharField(max_length=16, required=False, label="CUIL")
+    tipo_usuario = forms.ChoiceField(
+        choices=Profile.TipoUsuario.choices,
+        widget=forms.RadioSelect,
+        label="Tipo de usuario",
+    )
     groups = forms.ModelMultipleChoiceField(
         queryset=Group.objects.all(),
         required=False,
@@ -961,7 +1221,7 @@ class CustomUserChangeForm(
         label="Es Coordinador de Equipo Técnico",
     )
     duplas_asignadas = forms.ModelMultipleChoiceField(
-        queryset=Dupla.objects.activas(),
+        queryset=User.objects.none(),
         required=False,
         widget=forms.SelectMultiple(attrs={"class": "select2"}),
         label="Equipos técnicos (Duplas) asignadas",
@@ -975,6 +1235,9 @@ class CustomUserChangeForm(
             "username",
             "email",
             "password",
+            "dni",
+            "cuil",
+            "tipo_usuario",
             "groups",
             "user_permissions",
             "es_usuario_provincial",
@@ -990,6 +1253,9 @@ class CustomUserChangeForm(
     def __init__(self, *args, **kwargs):
         self.actor = kwargs.pop("actor", None)
         super().__init__(*args, **kwargs)
+        self.fields["duplas_asignadas"].queryset = obtener_queryset_formulario(
+            "duplas_asignadas"
+        )
         self._setup_pwa_fields()
         self._setup_territorial_comedor_fields()
         self._setup_delegation_fields()
@@ -1007,12 +1273,16 @@ class CustomUserChangeForm(
         self._setup_territorial_scope_fields(prof)
         self._init_territorial_comedor_fields(prof)
         if prof:
+            self.fields["dni"].initial = prof.dni
+            self.fields["cuil"].initial = prof.cuil
+            self.fields["tipo_usuario"].initial = prof.tipo_usuario
             self.fields["es_usuario_provincial"].initial = prof.es_usuario_provincial
             self.fields["provincia"].initial = prof.provincia
             self.fields["es_coordinador"].initial = prof.es_coordinador
             self.fields["duplas_asignadas"].initial = prof.duplas_asignadas.all()
             self.fields["rol"].initial = prof.rol
             self._init_delegation_fields(prof)
+        self._apply_cdi_abm_restrictions()
 
     def clean(self):
         cleaned = super().clean()
@@ -1042,14 +1312,23 @@ class CustomUserChangeForm(
             user.password = self._original_password_hash
 
         is_pwa_operator = self._is_active_pwa_operator()
-        if self.cleaned_data.get("es_representante_pwa", False):
+        is_pwa_read_only_coordinator = self.cleaned_data.get(
+            "es_coordinador_equipo_tecnico_pwa", False
+        )
+        if (
+            self.cleaned_data.get("es_representante_pwa", False)
+            or is_pwa_read_only_coordinator
+        ):
             user.is_staff = False
         elif self.cleaned_data.get("es_coordinador", False):
             user.is_staff = True
 
         if commit:
             user.save()
-            if self.cleaned_data.get("es_representante_pwa", False):
+            if is_pwa_read_only_coordinator:
+                user.groups.clear()
+                user.user_permissions.clear()
+            elif self.cleaned_data.get("es_representante_pwa", False):
                 user.groups.clear()
                 pwa_permission_ids = (
                     self._preserve_current_pwa_operation_permission_ids(user)
@@ -1075,6 +1354,9 @@ class CustomUserChangeForm(
             profile.es_usuario_provincial = self.cleaned_data.get(
                 "es_usuario_provincial", False
             )
+            profile.dni = self.cleaned_data.get("dni", "")
+            profile.cuil = self.cleaned_data.get("cuil", "")
+            profile.tipo_usuario = self.cleaned_data["tipo_usuario"]
             profile.provincia = None
             profile.es_coordinador = self.cleaned_data.get("es_coordinador", False)
             profile.es_territorial_comedor = self.cleaned_data.get(
@@ -1090,6 +1372,7 @@ class CustomUserChangeForm(
                 )
             elif (
                 not self.cleaned_data.get("es_representante_pwa", False)
+                and not is_pwa_read_only_coordinator
                 and not is_pwa_operator
             ):
                 profile.password_reset_requested_at = None
@@ -1195,3 +1478,101 @@ class UserImportForm(forms.Form):
         initial=False,
         help_text="Los usuarios importados son usuarios de la app movil (PWA).",
     )
+
+
+# Leyenda del checkbox de declaración. Es la redacción provisoria acordada con
+# UX/UI: queda pendiente de un filtro de aprobación posterior, así que puede
+# volver con cambios. Para modificarla alcanza con esta constante; no hay copia
+# duplicada en templates ni en tests.
+#
+# El texto original de UX estaba redactado como aviso en segunda persona
+# ("comprometiéndote a..."), que no funciona como leyenda de un checkbox: al
+class MiCuentaForm(forms.ModelForm):
+    """Edición de los datos personales del propio usuario.
+
+    Se comparte entre la vista persistente "Mi cuenta" y la confirmación
+    obligatoria de primer ingreso, para que ambas apliquen exactamente la
+    misma validación y el mismo guardado.
+
+    A diferencia de ``CustomUserChangeForm``, acá no se exponen grupos,
+    permisos, alcances territoriales ni delegación: el usuario solo edita sus
+    propios datos identificatorios. ``tipo_usuario`` y ``rol`` quedan fuera a
+    pedido de UX/UI: son datos de administración y el usuario final no los
+    toca.
+
+    Todos los campos son obligatorios salvo ``correo_institucional``.
+    """
+
+    dni = forms.CharField(
+        max_length=16,
+        label="DNI",
+        help_text="Solo números, sin puntos.",
+        error_messages={"required": "Ingrese su DNI."},
+    )
+    cuil = forms.CharField(
+        max_length=16,
+        label="CUIL",
+        help_text="11 dígitos, con o sin guiones.",
+        error_messages={"required": "Ingrese su CUIL."},
+    )
+    correo_institucional = forms.EmailField(
+        required=False,
+        label="Correo institucional",
+        help_text="Opcional.",
+    )
+
+    class Meta:
+        model = User
+        fields = ["first_name", "last_name", "email"]
+        labels = {
+            "first_name": "Nombre",
+            "last_name": "Apellido",
+            "email": "Mail",
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for nombre in ("first_name", "last_name", "email"):
+            self.fields[nombre].required = True
+        # Hay usuarios históricos sin perfil; el form igual debe poder abrirse.
+        profile = get_profile_or_none(self.instance)
+        if profile:
+            self.fields["dni"].initial = profile.dni
+            self.fields["cuil"].initial = profile.cuil
+            self.fields["correo_institucional"].initial = profile.correo_institucional
+
+    def clean_dni(self):
+        dni = solo_digitos(self.cleaned_data.get("dni"))
+        if len(dni) < 6:
+            raise forms.ValidationError("Ingrese un DNI válido (solo números).")
+        return dni
+
+    def clean_cuil(self):
+        return validate_cuit((self.cleaned_data.get("cuil") or "").strip())
+
+    def clean_email(self):
+        # El mail es obligatorio en este formulario pero sigue sin ser único:
+        # la unicidad vive en username.
+        return (self.cleaned_data.get("email") or "").strip()
+
+    def save(self, commit=True):
+        if not commit:
+            raise ValueError("MiCuentaForm requiere commit=True para ser atómico.")
+        with transaction.atomic():
+            user = super().save(commit=True)
+            profile, _ = Profile.objects.get_or_create(user=user)
+            profile.dni = self.cleaned_data["dni"]
+            profile.cuil = self.cleaned_data["cuil"]
+            profile.correo_institucional = self.cleaned_data["correo_institucional"]
+            profile.needs_profile_confirmation = False
+            profile.datos_confirmados_at = timezone.now()
+            profile.save(
+                update_fields=[
+                    "dni",
+                    "cuil",
+                    "correo_institucional",
+                    "needs_profile_confirmation",
+                    "datos_confirmados_at",
+                ]
+            )
+        return user

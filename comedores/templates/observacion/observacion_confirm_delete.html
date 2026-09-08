@@ -1,12 +1,12 @@
 {% extends "includes/main.html" %};
 {% load static %}
 ;
-{% block title %}Comedor - {{ observacion.comedor.nombre }}{% endblock %}
+{% block title %}Espacio Comunitario - {{ observacion.comedor.nombre }}{% endblock %}
 ;
 {% block breadcrumb %}
     <ol class="breadcrumb float-sm-right">
         <div class="breadcrumb-item">
-            <a href="{% url 'comedores' %}">Comedores</a>
+            <a href="{% url 'comedores' %}">Espacios Comunitarios</a>
         </div>
         <div class="breadcrumb-item">
             <a href="{% url 'comedor_detalle' observacion.comedor.id %}">{{ observacion.comedor.nombre }}</a>

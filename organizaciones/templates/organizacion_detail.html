@@ -340,7 +340,7 @@
 
         <ul class="nav nav-tabs nav-tabs-legajo" role="tablist">
             <li class="nav-item">
-                <a class="nav-link active"
+                <a class="nav-link{% if not rendiciones_tab_activo %} active{% endif %}"
                    data-bs-toggle="tab"
                    href="#informacion-general">Información General</a>
             </li>
@@ -350,11 +350,17 @@
             <li class="nav-item">
                 <a class="nav-link" data-bs-toggle="tab" href="#comedores">Comedores Asociados ({{ comedores_count }})</a>
             </li>
+            <li class="nav-item">
+                <a class="nav-link{% if rendiciones_tab_activo %} active{% endif %}"
+                   data-bs-toggle="tab"
+                   href="#rendiciones-presentadas">Rendiciones Presentadas</a>
+            </li>
         </ul>
 
         <div class="tab-content px-4">
             <!-- TAB: Información General -->
-            <div class="tab-pane fade show active" id="informacion-general">
+            <div class="tab-pane fade{% if not rendiciones_tab_activo %} show active{% endif %}"
+                 id="informacion-general">
                 <!-- Card de Datos de la Organización -->
                 <div class="row">
                     <div class="col-12">
@@ -398,6 +404,16 @@
                                         <strong>Email:</strong>
                                         <span class="value">{{ organizacion.email|default:'-' }}</span>
                                     </div>
+                                    <div class="info-row">
+                                        <strong>Códigos de Proyecto:</strong>
+                                        <div class="value d-flex flex-wrap justify-content-end gap-1">
+                                            {% for proyecto in proyectos_organizacion %}
+                                                <span class="badge rounded-pill bg-primary px-3 py-2">{{ proyecto }}</span>
+                                            {% empty %}
+                                                <span>-</span>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <div class="info-column">
@@ -424,7 +440,11 @@
                                     <div class="info-row">
                                         <strong>Fecha de Vencimiento:</strong>
                                         <span class="value">
-                                            {{ organizacion.fecha_vencimiento|date:"d/m/Y"|default:'-' }}
+                                            {% if organizacion.sin_vencimiento %}
+                                                Sin Vencimiento
+                                            {% else %}
+                                                {{ organizacion.fecha_vencimiento|date:"d/m/Y"|default:'-' }}
+                                            {% endif %}
                                             {% if organizacion.fecha_vencimiento %}
                                                 {% now "Y-m-d" as today %}
                                                 {% if organizacion.fecha_vencimiento|date:"Y-m-d" >= today %}
@@ -469,6 +489,7 @@
                                             <th>Nombre</th>
                                             <th>Rol</th>
                                             <th>CUIT</th>
+                                            <th>Programa</th>
                                             {% if puede_gestionar_organizaciones %}<th class="text-end">Acciones</th>{% endif %}
                                         </tr>
                                     </thead>
@@ -489,6 +510,7 @@
                                                     {% endif %}
                                                 </td>
                                                 <td>{{ firmante.cuit|default:'-' }}</td>
+                                                <td>{{ firmante.programa.nombre|default:'-' }}</td>
                                                 {% if puede_gestionar_organizaciones %}
                                                     <td class="text-end">
                                                         <a href="{% url 'firmante_editar' firmante.pk %}"
@@ -662,9 +684,7 @@
                                                                 </select>
                                                             {% elif not puede_validar_documentacion_organizacion and archivo.estado != "Aceptado" %}
                                                                 <select class="form-control form-control-sm org-doc-state-select{% if archivo.estado == 'Rectificar' %} border border-danger border-2{% endif %}" data-url="{% url 'organizacion_documento_estado' archivo.id %}" data-current-value="{{ archivo.estado }}" data-requires-observacion="0">
-                                                                    {% if archivo.estado == "Rectificar" %}
-                                                                        <option value="Rectificar" selected disabled>Rectificar</option>
-                                                                    {% endif %}
+                                                                    {% if archivo.estado == "Rectificar" %}<option value="Rectificar" selected disabled>Rectificar</option>{% endif %}
                                                                     <option value="Documento adjunto" {% if archivo.estado == "Documento adjunto" %}selected{% endif %}>Documento adjunto</option>
                                                                     <option value="A Validar Abogado" {% if archivo.estado == "A Validar Abogado" %}selected{% endif %}>A Validar Abogado</option>
                                                                 </select>
@@ -840,6 +860,7 @@
                                         <tr>
                                             <th>Nombre</th>
                                             <th>Tipo</th>
+                                            <th>Programa</th>
                                             <th>Ubicación</th>
                                             <th>Dirección</th>
                                             <th>Referente</th>
@@ -854,8 +875,17 @@
                                                     <a href="{% url 'comedor_detalle' comedor.id %}"
                                                        style="color: #E7BA61;
                                                               text-decoration: underline">{{ comedor.nombre }}</a>
+                                                    {% if comedor.es_caritas %}
+                                                        <span class="badge ms-1"
+                                                              style="background: rgba(13, 110, 253, 0.2);
+                                                                     color: #3498db;
+                                                                     border: 1px solid #3498db">
+                                                            <i class="fas fa-heart"></i> CARITAS
+                                                        </span>
+                                                    {% endif %}
                                                 </td>
                                                 <td>{{ comedor.tipocomedor.nombre|default:'-' }}</td>
+                                                <td>{{ comedor.programa.nombre|default:'-' }}</td>
                                                 <td>
                                                     <div>
                                                         <div style="font-size: 0.9rem;">{{ comedor.provincia.nombre|default:'-' }}</div>
@@ -910,6 +940,128 @@
                                 </table>
                             {% else %}
                                 <p style="color: rgba(255,255,255,0.5);">No hay comedores asociados a esta organización.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: Rendiciones Presentadas -->
+            <div class="tab-pane fade{% if rendiciones_tab_activo %} show active{% endif %}"
+                 id="rendiciones-presentadas">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="tabla-legajo" style="border: 2px solid var(--gold);">
+                            <div class="d-flex justify-content-between align-items-end flex-wrap gap-3 mb-3">
+                                <h5 class="mb-0">Rendiciones Presentadas</h5>
+                                {% if proyectos_rendiciones|length > 1 %}
+                                    <form method="get" class="d-flex align-items-end gap-2">
+                                        <div>
+                                            <label for="proyecto-rendiciones" class="form-label mb-1">Código de Proyecto</label>
+                                            <select id="proyecto-rendiciones"
+                                                    name="proyecto"
+                                                    class="form-select form-select-sm">
+                                                <option value="">Todos los proyectos</option>
+                                                {% for proyecto in proyectos_rendiciones %}
+                                                    <option value="{{ proyecto }}"
+                                                            {% if proyecto == proyecto_rendiciones_seleccionado %}selected{% endif %}>
+                                                        {{ proyecto }}
+                                                    </option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <button type="submit" class="btn btn-sm btn-outline-light">Filtrar</button>
+                                    </form>
+                                {% elif proyectos_rendiciones %}
+                                    <div>
+                                        <small class="d-block text-white-50">Código de Proyecto</small>
+                                        <strong>{{ proyectos_rendiciones.0 }}</strong>
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            {% if rendiciones_presentadas %}
+                                <div class="table-responsive">
+                                    <table class="table table-sm align-middle">
+                                        <thead>
+                                            <tr>
+                                                <th>Conv.</th>
+                                                <th>N° de Rend.</th>
+                                                <th>Período</th>
+                                                <th>Monto rendido</th>
+                                                <th>Validación Territorial</th>
+                                                <th>Validación Auditoría</th>
+                                                <th>Cargada para Auditoría</th>
+                                                <th>Auditada</th>
+                                                <th>Observaciones</th>
+                                                <th>Detalle</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for rendicion in rendiciones_presentadas %}
+                                                <tr>
+                                                    <td>{{ rendicion.convenio|default:"-" }}</td>
+                                                    <td>{{ rendicion.numero_rendicion|default:"-" }}</td>
+                                                    <td>
+                                                        {% if rendicion.periodo_inicio and rendicion.periodo_fin %}
+                                                            {{ rendicion.periodo_inicio|date:"d/m/Y" }} al {{ rendicion.periodo_fin|date:"d/m/Y" }}
+                                                        {% else %}
+                                                            {{ rendicion.get_mes_display }} {{ rendicion.anio }}
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>
+                                                        {% if rendicion.monto_rendido != None %}
+                                                            ${{ rendicion.monto_rendido|floatformat:2 }}
+                                                        {% else %}
+                                                            -
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>
+                                                        {% if rendicion.validacion_territorial_finalizada %}
+                                                            ✔
+                                                        {% else %}
+                                                            -
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>
+                                                        {% if rendicion.validacion_auditoria_finalizada %}
+                                                            ✔
+                                                        {% else %}
+                                                            -
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>
+                                                        {% if rendicion.cargada_para_auditoria %}
+                                                            ✔
+                                                        {% else %}
+                                                            -
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>
+                                                        {% if rendicion.auditada %}
+                                                            ✔
+                                                        {% else %}
+                                                            -
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>
+                                                        {% if rendicion.observaciones %}
+                                                            ✔
+                                                        {% else %}
+                                                            -
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>
+                                                        <a class="btn btn-sm btn-outline-light"
+                                                           href="{% url 'organizacion_rendicion_detalle' organizacion.id rendicion.id %}">Ver</a>
+                                                    </td>
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <p class="mb-0 text-white-50">No hay rendiciones presentadas para la selección actual.</p>
                             {% endif %}
                         </div>
                     </div>

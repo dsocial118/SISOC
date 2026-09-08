@@ -34,12 +34,12 @@
       │ - Google Maps API key (opcional)       │
       └────────────────────────────────────────┘
 ```
-Evidencia: config/settings.py:42-389; config/urls.py:12-44; comedores/tasks.py:1-249; relevamientos/tasks.py:1-144; centrodefamilia/services/consulta_renaper.py:13-170; docker-compose.yml:1-34.
+Evidencia: config/settings.py; config/urls.py; comedores/tasks.py; relevamientos/tasks.py; core/integrations/renaper.py; core/services/renaper.py; docker-compose.yml.
 
 ## 2) Capas existentes
 - Presentación: vistas Django y DRF (urls en `config/urls.py`), plantillas en `templates/` y apps propias. Evidencia: config/urls.py:12-44; config/settings.py:105-120.
 - Middleware: seguridad, sesiones, CORS, CSRF, autenticación, auditlog, mensajes, XFrame, XSS custom, threadlocals; en DEBUG se agregan debug_toolbar y silk. Evidencia: config/settings.py:85-99,359-366.
-- Servicios/negocio: servicios en apps (ej. `comedores/services`, `centrodefamilia/services`), sincronización con GESTIONAR/RENAPER en `tasks.py` y `consulta_renaper.py`. Evidencia: comedores/tasks.py:1-249; centrodefamilia/services/consulta_renaper.py:13-170.
+- Servicios/negocio: servicios en apps (ej. `comedores/services`, `centrodefamilia/services`), sincronización con GESTIONAR en `tasks.py` y consulta técnica compartida de RENAPER en `core/integrations/renaper.py` con fachada `core/services/renaper.py`.
 - Dominio/persistencia: modelos en cada app; DB configurada a MySQL. Evidencia: config/settings.py:153-168; apps listadas en config/settings.py:42-83.
 - Serialización/API schema: DRF + drf-spectacular. Evidencia: config/settings.py:195-234.
 

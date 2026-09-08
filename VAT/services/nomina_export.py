@@ -6,6 +6,8 @@ from django.utils.text import slugify
 from openpyxl import Workbook
 from openpyxl.styles import Font
 
+from VAT.services.tipo_alumno_service import anotar_tipo_alumno
+
 
 NOMINA_HEADERS = [
     "Apellido",
@@ -13,6 +15,7 @@ NOMINA_HEADERS = [
     "DNI / CUIL",
     "Fecha de Nacimiento",
     "Género",
+    "Tipo de alumno",
     "Comisión",
     "Curso",
     "Centro de Formación",
@@ -88,7 +91,7 @@ def build_comision_curso_nomina_excel(comision, inscripciones):
     for cell in worksheet[1]:
         cell.font = Font(bold=True)
 
-    for inscripcion in inscripciones:
+    for inscripcion in anotar_tipo_alumno(list(inscripciones)):
         ciudadano = inscripcion.ciudadano
         observaciones = _parse_observaciones_json(inscripcion)
         worksheet.append(
@@ -98,6 +101,7 @@ def build_comision_curso_nomina_excel(comision, inscripciones):
                 _resolve_document(ciudadano, observaciones),
                 _format_date(ciudadano.fecha_nacimiento),
                 ciudadano.sexo.sexo if ciudadano.sexo_id and ciudadano.sexo else "",
+                inscripcion.tipo_alumno,
                 str(comision),
                 comision.curso.nombre,
                 comision.curso.centro.nombre,

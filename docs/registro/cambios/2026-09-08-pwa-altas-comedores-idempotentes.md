@@ -38,7 +38,7 @@ jerarquía provincia → municipio → localidad inconsistente.
 
 ## Migración y entrega
 
-Aplicar primero la migración `comedores.0051_comedorpwacreateoperation` junto con
+Aplicar primero la migración `comedores.0059_comedorpwacreateoperation` junto con
 el backend. Después publicar el frontend que envía `client_uuid`, usa las rutas
 territoriales y hace `PATCH` para edición. El backend nuevo acepta clientes
 anteriores para lectura, pero un frontend nuevo no debe publicarse antes de la

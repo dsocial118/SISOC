@@ -5,6 +5,7 @@ from typing import Any, Dict
 
 from django.core.cache import cache
 
+from rendicioncuentasmensual.models import RendicionCuentaMensual
 
 FIELD_MAP: Dict[str, str] = {
     "codigo_proyecto": "comedor__codigo_de_proyecto",
@@ -18,6 +19,7 @@ FIELD_MAP: Dict[str, str] = {
     "periodo_fin": "periodo_fin",
     "linea_programatica": "linea_programatica",
     "estado": "estado",
+    "etapa_proceso": "etapa_proceso",
     "documento_adjunto": "documento_adjunto",
     "fecha_creacion": "fecha_creacion__date",
     "ultima_modificacion": "ultima_modificacion__date",
@@ -35,6 +37,7 @@ FIELD_TYPES: Dict[str, str] = {
     "periodo_fin": "date",
     "linea_programatica": "choice",
     "estado": "choice",
+    "etapa_proceso": "choice",
     "documento_adjunto": "boolean",
     "fecha_creacion": "date",
     "ultima_modificacion": "date",
@@ -46,17 +49,39 @@ DATE_OPS = ["eq", "ne", "gt", "lt", "empty"]
 CHOICE_OPS = ["eq", "ne"]
 BOOL_OPS = ["eq", "ne"]
 
-LINEA_PROGRAMATICA_CHOICES = [
-    ("secos", "Abordaje Comunitario - Linea Secos"),
-    ("tradicional", "Abordaje Comunitario - Linea Tradicional"),
-]
+LINEA_PROGRAMATICA_CHOICES = list(RendicionCuentaMensual.LINEA_PROGRAMATICA_CHOICES)
 
-ESTADO_CHOICES = [
-    ("elaboracion", "Presentacion en elaboracion"),
-    ("revision", "Presentacion en revision"),
-    ("subsanar", "Presentacion a subsanar"),
-    ("finalizada", "Presentacion finalizada"),
+ESTADO_CHOICES = list(RendicionCuentaMensual.ESTADO_CHOICES)
+
+# El valor combina los dos campos que construyen ``estado_proceso_display``.
+# Se exponen solamente las combinaciones alcanzables por el flujo de negocio.
+ESTADO_PROCESO_CHOICES = [
+    ("carga_documentacion:en_curso", "Carga de documentación en curso"),
+    ("revision_documentacion:pendiente", "Revisión Territorial pendiente"),
+    ("revision_documentacion:en_curso", "Revisión Territorial en curso"),
+    (
+        "revision_documentacion:pendiente_correcciones",
+        "Revisión Territorial pendiente de correcciones",
+    ),
+    ("revision_documentacion:subsanado", "Revisión Territorial subsanado"),
+    ("revision_auditoria:pendiente", "Revisión de Auditoría pendiente"),
+    ("revision_auditoria:en_curso", "Revisión de Auditoría en curso"),
+    (
+        "revision_auditoria:pendiente_correcciones",
+        "Revisión de Auditoría pendiente de correcciones",
+    ),
+    ("revision_auditoria:subsanado", "Revisión de Auditoría subsanado"),
+    ("auditoria:pendiente", "Auditoría pendiente"),
+    ("auditoria:en_curso", "Auditoría en curso"),
+    ("auditoria:finalizada", "Auditoría finalizada sin observaciones"),
+    (
+        "auditoria:finalizada_con_observaciones",
+        "Auditoría finalizada con observaciones",
+    ),
+    ("regularizacion:en_curso", "Regularización en curso"),
+    ("regularizacion:finalizada", "Rendición regularizada tras Auditoría"),
 ]
+ETAPA_CHOICES = list(RendicionCuentaMensual.ETAPA_PROCESO_CHOICES)
 
 FILTER_FIELDS = [
     {"name": "codigo_proyecto", "label": "Proyecto", "type": "text"},
@@ -83,12 +108,26 @@ FILTER_FIELDS = [
         ],
     },
     {
-        "name": "estado",
+        "name": "estado_proceso",
         "label": "Estado",
+        "type": "choice",
+        "choices": [
+            {"value": value, "label": label} for value, label in ESTADO_PROCESO_CHOICES
+        ],
+    },
+    {
+        "name": "estado",
+        "label": "Estado general",
         "type": "choice",
         "choices": [
             {"value": value, "label": label} for value, label in ESTADO_CHOICES
         ],
+    },
+    {
+        "name": "etapa_proceso",
+        "label": "Etapa",
+        "type": "choice",
+        "choices": [{"value": value, "label": label} for value, label in ETAPA_CHOICES],
     },
     {"name": "documento_adjunto", "label": "Documento adjunto", "type": "boolean"},
     {"name": "fecha_creacion", "label": "Fecha de creacion", "type": "date"},
@@ -96,7 +135,7 @@ FILTER_FIELDS = [
 ]
 
 DEFAULT_FIELD = "codigo_proyecto"
-FILTERS_UI_CONFIG_CACHE_KEY = "rendiciones:filters_ui_config:v1"
+FILTERS_UI_CONFIG_CACHE_KEY = "rendiciones:filters_ui_config:v3"
 FILTERS_UI_CONFIG_CACHE_TTL = 60 * 15
 
 

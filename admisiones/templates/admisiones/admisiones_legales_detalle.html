@@ -26,6 +26,8 @@
 {% endblock %}
 ;
 {% block content %}
+    <link rel="stylesheet"
+          href="{% static 'custom/css/numeroExpedienteModal.css' %}" />
     <div class="row justify-content-between d-print-none mx-1 mb-3">
         <div class="col-auto">
             <a href="{% url 'admisiones_legales_listar' %}"
@@ -612,7 +614,7 @@
          tabindex="-1"
          aria-labelledby="modalLegalesNumIFLabel"
          aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-dialog modal-dialog-centered modal-expediente-amplio">
             <div class="modal-content">
                 <form method="POST" action="">
                     {% csrf_token %}
@@ -623,7 +625,10 @@
                                 data-bs-dismiss="modal"
                                 aria-label="Close"></button>
                     </div>
-                    <div class="modal-body">{{ form_legales_num_if.legales_num_if|as_crispy_field }}</div>
+                    <div class="modal-body">
+                        {% include "admisiones/partials/numero_expediente_estructurado.html" with numero_expediente_form=form_legales_num_if %}
+                        <small class="text-muted">Legales puede rectificar el dato; el cambio se aplicar&aacute; a las etapas siguientes.</small>
+                    </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                         <button type="submit"
@@ -766,5 +771,15 @@
     </div>
 {% endblock %}
 {% block customJS %}
+    {% if abrir_modal_legales_num_if %}
+        <script nonce="{{ request.csp_nonce }}">
+            document.addEventListener("DOMContentLoaded", function() {
+                var modalElement = document.getElementById("modalLegalesNumIF");
+                if (modalElement) {
+                    new bootstrap.Modal(modalElement).show();
+                }
+            });
+        </script>
+    {% endif %}
     <script src="{% static 'custom/js/admisioneslegalesdetail.js' %}"></script>
 {% endblock %}

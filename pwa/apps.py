@@ -16,3 +16,13 @@ class PwaConfig(AppConfig):
             sender=self,
             dispatch_uid="pwa.bootstrap_catalogo",
         )
+        from pwa.ciudadano_detail import (  # pylint: disable=import-outside-toplevel
+            registrar_contribucion_ciudadano,
+        )
+
+        registrar_contribucion_ciudadano()
+        from pwa.auth_audit import (  # pylint: disable=import-outside-toplevel
+            registrar_auditoria_auth_pwa,
+        )
+
+        registrar_auditoria_auth_pwa()

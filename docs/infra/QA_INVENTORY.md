@@ -1,8 +1,9 @@
 # QA - Inventario inicial de infraestructura
 
-Estado: Fases 1 a 4 completadas, corte 2026-07-13. La auditoria inicial fue solo
-lectura; luego se aplicaron el mantenimiento de disco, su cron y el Stage 1
-aprobado de retiro del MySQL local. No se reinicio la aplicacion, no se editaron
+Estado: Fases 1 a 4 completadas el 2026-07-13 y retiro Stage 2 del MySQL local
+aplicado el 2026-07-21. La auditoria inicial fue solo lectura; luego se
+aplicaron el mantenimiento de disco, su cron, el Stage 1 reversible y el
+retiro irreversible aprobado. No se reinicio la aplicacion, no se editaron
 configuraciones criticas, no se ejecutaron deploys/migraciones ni se imprimieron
 secretos.
 
@@ -34,7 +35,7 @@ cutover hacia AWS.
 | Aplicacion | Django/Gunicorn en Docker Compose, NGINX como reverse proxy |
 | URL comprobada | `http://10.80.9.15/` |
 | Health comprobado | `http://127.0.0.1/health/`, HTTP 200 |
-| Filesystem raiz | Antes: 93%, 7.2 GiB libres. Cierre: 77%, 22 GiB libres |
+| Filesystem raiz | Antes: 93%, 7.2 GiB libres. Tras Stage 2: 34%, 62 GB libres |
 | Inodos | 7% usados al cierre; el riesgo era capacidad, no inodos |
 | TLS | No detectado en esta huella; NGINX escucha HTTP/80 |
 
@@ -45,7 +46,7 @@ cutover hacia AWS.
 | `docker` | activo | habilitado | Docker Engine 27.3.1 |
 | `containerd` | activo | habilitado | Runtime de contenedores |
 | `nginx` | activo | habilitado | NGINX 1.18.0 |
-| `mysql` | inactivo | deshabilitado | Stage 1 aplicado; datadir/paquetes conservados para rollback |
+| MySQL server local | no instalado | no aplica | Stage 2 retiro unidad, paquetes y datadir; no hay rollback local |
 | `cron` | activo | habilitado | `sisoc-deploy` tiene una tarea semanal de mantenimiento Docker; cron de root no auditado |
 | `actions.runner.dsocial118-SISOC.sisoc-qa` | activo | habilitado | Corre como `sisoc-deploy` desde `/home/sisoc-deploy/actions-runner/` |
 | `apache2` | fallido | habilitado | Apache esta instalado pero no sirve la app observada |
@@ -67,8 +68,8 @@ acotada. Con `sisoc-deploy` se confirmaron dos contenedores activos,
 | 22/tcp | `0.0.0.0` y `::` | SSH |
 | 80/tcp | `0.0.0.0` | NGINX |
 | 8001/tcp | `0.0.0.0` y `::` | `docker-proxy`, Django/Gunicorn por contrato Compose |
-| 3306/tcp | sin listener al cierre | MySQL local detenido; DB remota en `10.80.9.18:3306` |
-| 33060/tcp | sin listener al cierre | MySQL X Protocol local detenido |
+| 3306/tcp | sin listener | MySQL local retirado; DB remota en `10.80.9.18:3306` |
+| 33060/tcp | sin listener | MySQL X Protocol local retirado |
 | 10000/tcp y udp | `0.0.0.0` | Proceso no confirmado con los permisos actuales |
 | 10050/tcp | `0.0.0.0` y `::` | Proceso no confirmado con los permisos actuales |
 
@@ -91,7 +92,7 @@ reglas de red/ACL externas para evaluar la exposicion real.
 | `/home/sisoc-deploy/actions-runner/` | GitHub Actions runner | servicio systemd activo |
 | `/home/sisoc-deploy/bin/` | Scripts operativos instalados | owner `sisoc-deploy`, scripts modo 750 |
 | `/home/sisoc-deploy/backups/infra/qa/` | Backups de configuracion fuera del repo | directorios 700, archivos 600 |
-| `/var/lib/mysql` | Clon MySQL local heredado | 43 GB, conservado intacto hasta 2026-07-20 |
+| `/var/lib/mysql` | Datadir del clon MySQL local heredado | Eliminado en Stage 2 el 2026-07-21 |
 | `/var/lib/docker` | Datos Docker | contenido no legible sin privilegios |
 
 Existian dos dumps SQL antiguos y grandes fuera del checkout:
@@ -144,7 +145,7 @@ Apache 2.4.52 esta instalado y habilitado, pero la unidad esta fallida.
 | Imagen Python declarada | `python:3.11.15-slim-bookworm`; runtime de contenedor no verificado directamente |
 | Docker Engine | 27.3.1 |
 | Docker Compose | 2.29.7 |
-| MySQL server/client | 8.0.46 |
+| MySQL server local | Retirado en Stage 2; sin unidad ni binario `mysqld` |
 | NGINX | 1.18.0 |
 | Apache | 2.4.52, unidad fallida |
 | Certbot | comando 5.6.0; tambien existe paquete apt 1.21 y timer snap |
@@ -201,24 +202,26 @@ migraciones y otros comandos con escritura de DB no quedan desactivados.
 
 Confirmado en `qa-old`:
 
-- MySQL 8.0.46 local quedo inactivo y deshabilitado en Stage 1.
-- no queda proceso `mysqld` ni listener local 3306/33060.
+- Stage 2 retiro `mysql-server`, `mysql-server-8.0` y
+  `mysql-server-core-8.0`, sin `autoremove`.
+- no queda unidad MySQL local, binario `mysqld`, proceso ni listener local
+  3306/33060.
+- `/var/lib/mysql` fue eliminado; el uso de `/` bajo de 80% a 34%, con
+  62 GB libres.
 - Django no apunta al MySQL local: su configuracion usa `10.80.9.18:3306` y el
   schema `sisoc_local`.
 - El responsable confirmo que todos los entornos usan DB separada: QA
   `10.80.9.18`, HML `10.80.5.48` y PRD `10.80.5.46`.
 - `10.80.9.18:3306` es alcanzable desde el host QA.
 - Tres muestras no mostraron conexiones establecidas al puerto local 3306.
-- El datadir local `/var/lib/mysql` ocupa 43 GB. Aloja 25 schemas de aplicacion o
-  analiticos; los cinco mayores suman aproximadamente 32.4 GB.
-- El preflight root confirmo cero clientes inesperados, eventos, replicas o
-  miembros de Group Replication. La conexion inicial era interna.
-- Backup Stage 1 root-only:
-  `/var/backups/sisoc/mysql-local-retirement/20260713_115645`.
+- El preflight previo a Stage 1 confirmo cero clientes inesperados, eventos,
+  replicas o miembros de Group Replication. La conexion inicial era interna.
+- Backup Stage 1 root-only conservado:
+  `/var/backups/sisoc/mysql-local-retirement/20260713_115645`. Contiene
+  metadatos, no una copia recuperable de los 43 GB eliminados.
 
 No confirmado:
 
-- politica de archivo/eliminacion del datadir local despues de la observacion;
 - tamanio, retencion y estrategia de backup de la DB remota `10.80.9.18`;
 - ultimo backup valido y ultimo restore probado.
 

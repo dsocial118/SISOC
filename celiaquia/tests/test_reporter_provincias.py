@@ -2,6 +2,7 @@ from datetime import date
 
 import pytest
 from django.contrib.auth.models import Permission, User
+from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
 
 from ciudadanos.models import Ciudadano
@@ -16,13 +17,29 @@ from celiaquia.models import (
 )
 
 
+def _permiso(codename):
+    """`view_reporte_provincias` es un permiso declarado en `Meta.permissions`;
+    se siembra acá por si la base de tests no corrió el `post_migrate`."""
+    try:
+        return Permission.objects.get(
+            content_type__app_label="celiaquia",
+            codename=codename,
+        )
+    except Permission.DoesNotExist:
+        content_type = ContentType.objects.get_or_create(
+            app_label="celiaquia", model="expediente"
+        )[0]
+        return Permission.objects.create(
+            content_type=content_type,
+            codename=codename,
+            name=codename,
+        )
+
+
 def _create_user_with_permission(username, provincia=None, es_provincial=False):
     user = User.objects.create_user(username=username, password="pass")
-    permission = Permission.objects.get(
-        content_type__app_label="celiaquia",
-        codename="view_expediente",
-    )
-    user.user_permissions.add(permission)
+    user.user_permissions.add(_permiso("view_expediente"))
+    user.user_permissions.add(_permiso("view_reporte_provincias"))
     profile, _ = Profile.objects.get_or_create(user=user)
     profile.es_usuario_provincial = es_provincial
     profile.provincia = provincia

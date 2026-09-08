@@ -1,7 +1,7 @@
 {% extends "includes/main.html" %};
 {% load static %}
 ;
-{% block title %}Comedor: {{ comedor.nombre }}{% endblock %}
+{% block title %}Espacio Comunitario: {{ comedor.nombre }}{% endblock %}
 ;
 <div class="col-md-2 pt-5">
     <c-dashboard.v-info-box titulo='Beneficiarios' valor='{{ tipo_comedor }}' color='success'>
@@ -13,7 +13,7 @@
 {% block breadcrumb %}
     <ol class="breadcrumb float-sm-right">
         <div class="breadcrumb-item">
-            <a href="{% url 'comedores' %}">Comedores</a>
+            <a href="{% url 'comedores' %}">Espacios Comunitarios</a>
         </div>
         <div class="breadcrumb-item active">
             <a href="{% url 'comedor_detalle' comedor.id %}">{{ comedor.nombre }}</a>

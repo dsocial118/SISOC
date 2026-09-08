@@ -1,31 +1,31 @@
 # Flujo: Consulta a RENAPER para datos de ciudadanos
 
 ## Objetivo
-Obtener datos de ciudadanos desde RENAPER con cache de token y mapping de campos para usos en centro de familia/ciudadanos.
+Obtener datos de ciudadanos desde RENAPER mediante una integración compartida y
+una fachada compatible para los dominios consumidores.
 
 ## Entrada / Salida
-- Entrada: DNI y sexo solicitados al servicio RENAPER. Evidencia: centrodefamilia/services/consulta_renaper.py:13-70.
-- Salida: diccionario con datos de RENAPER mapeados (`nombre`, `apellido`, `cuil`, ubicación API, etc.) o error. Evidencia: centrodefamilia/services/consulta_renaper.py:107-172.
+- Entrada: DNI y sexo solicitados al servicio RENAPER. Evidencia: `core/integrations/renaper.py`.
+- Salida: diccionario compatible con datos de RENAPER mapeados (`nombre`, `apellido`, `cuil`, ubicación API, etc.) o un error clasificado. Evidencia: `core/services/renaper.py`.
 
 ## Pasos
-1. `APIClient.get_token()` obtiene token desde cache (`renaper_token`) o hace login a `/auth/login` con `RENAPER_API_USERNAME/PASSWORD`. Evidencia: centrodefamilia/services/consulta_renaper.py:24-51.
-2. `consultar_ciudadano` llama a `/consultarenaper` con `dni` y `sexo`, usando token en header Authorization. Evidencia: centrodefamilia/services/consulta_renaper.py:53-93.
-3. `consultar_datos_renaper` envuelve la llamada, valida respuesta y mapea campos a formato interno (incluye `cuil`, `dni`, nombres, ubicación API, etc.). Evidencia: centrodefamilia/services/consulta_renaper.py:107-172.
-4. Maneja valores especiales (fallecido, códigos en cero) y normaliza ints con `safe_int`. Evidencia: centrodefamilia/services/consulta_renaper.py:119-171.
+1. `APIClient.get_token()` hace login a `/auth/login` con `RENAPER_API_USERNAME/PASSWORD` y mantiene el token sólo durante la consulta actual.
+2. `APIClient.consultar_ciudadano()` llama a `/consultarenaper` con `dni` y `sexo`, usando token en header Authorization.
+3. `core.services.renaper.consultar_datos_renaper()` mantiene el contrato compatible y mapea los campos compartidos.
+4. La integración clasifica timeout, errores remotos, autenticación, respuesta inválida y falta de coincidencia; la fachada conserva el caso funcional de persona fallecida.
 
 ## Validaciones y reglas
-- Token cacheado por 50 minutos; falla si login no responde. Evidencia: centrodefamilia/services/consulta_renaper.py:24-51.
-- Si `mensaf` indica “FALLECIDO”, retorna error. Evidencia: centrodefamilia/services/consulta_renaper.py:119-123.
-- Normaliza enteros evitando “0” o vacío. Evidencia: centrodefamilia/services/consulta_renaper.py:134-143.
+- El timeout se configura con `RENAPER_REQUEST_TIMEOUT_SECONDS` y debe ser positivo; los tokens no se persisten en cache local.
+- Si `mensaf` indica “FALLECIDO”, retorna error.
+- Normaliza enteros evitando “0” o vacío.
 
 ## Side effects
-- Cache de token en `cache.set("renaper_token", ..., 3000)`. Evidencia: centrodefamilia/services/consulta_renaper.py:24-51.
-- Logs de errores en login/consulta/JSON. Evidencia: centrodefamilia/services/consulta_renaper.py:40-92.
+- Logs estructurados de operación, tipo de error y status HTTP, sin DNI, token, payload remoto ni credenciales.
 
 ## Errores comunes y debug
-- Login fallido: revisar credenciales `RENAPER_API_USERNAME/PASSWORD` y conectividad; ver logs “Error en login RENAPER”. Evidencia: centrodefamilia/services/consulta_renaper.py:40-44.
-- Error decodificar JSON o sin coincidencia: revisar logs “Error decodificar JSON” o “No se encontró coincidencia”. Evidencia: centrodefamilia/services/consulta_renaper.py:69-90.
-- Datos incompletos (cuil/ubicación): revisar `raw_response` devuelto en error. Evidencia: centrodefamilia/services/consulta_renaper.py:114-117.
+- Login fallido: revisar credenciales `RENAPER_API_USERNAME/PASSWORD`, conectividad y el evento `renaper.integration.failure`.
+- Error decodificar JSON o sin coincidencia: revisar el tipo de error del resultado; los payloads remotos no se exponen ni se registran en errores o logs. La respuesta exitosa conserva `datos_api` por compatibilidad de la fachada.
+- Datos incompletos: revisar la respuesta funcional del consumidor con datos sintéticos en un entorno de prueba.
 
 ## Tests existentes
-- No se encontraron tests para este servicio. Evidencia: DESCONOCIDO (no hay tests/centrodefamilia).***
+- `tests/test_consulta_renaper_unit.py` cubre el cliente mockeado, autenticación efímera sin cache, timeout, fallas remotas y normalización.

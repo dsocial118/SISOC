@@ -1,7 +1,6 @@
 """Tests for test users signals unit."""
 
-import sys
-from types import ModuleType, SimpleNamespace
+from types import SimpleNamespace
 
 from users import signals
 
@@ -30,65 +29,6 @@ def test_ensure_user_profile_get_or_create_and_save_for_existing_user(mocker):
 
     mock_get_or_create.assert_called_once_with(user=user)
     profile.save.assert_called_once_with()
-
-
-def test_sync_profile_duplas_post_add_updates_coordinador(mocker):
-    dupla_manager = mocker.Mock()
-    fake_dupla = SimpleNamespace(objects=dupla_manager)
-    fake_module = ModuleType("duplas.models")
-    fake_module.Dupla = fake_dupla
-    mocker.patch.dict(sys.modules, {"duplas.models": fake_module})
-    profile = SimpleNamespace(user="user-1")
-
-    signals.sync_profile_duplas_to_dupla_coordinador(
-        sender=None,
-        instance=profile,
-        action="post_add",
-        pk_set={1, 2},
-    )
-
-    dupla_manager.filter.assert_called_once_with(pk__in={1, 2})
-    dupla_manager.filter.return_value.update.assert_called_once_with(
-        coordinador="user-1"
-    )
-
-
-def test_sync_profile_duplas_post_remove_clears_coordinador(mocker):
-    dupla_manager = mocker.Mock()
-    fake_dupla = SimpleNamespace(objects=dupla_manager)
-    fake_module = ModuleType("duplas.models")
-    fake_module.Dupla = fake_dupla
-    mocker.patch.dict(sys.modules, {"duplas.models": fake_module})
-    profile = SimpleNamespace(user="user-2")
-
-    signals.sync_profile_duplas_to_dupla_coordinador(
-        sender=None,
-        instance=profile,
-        action="post_remove",
-        pk_set={3},
-    )
-
-    dupla_manager.filter.assert_called_once_with(pk__in={3}, coordinador="user-2")
-    dupla_manager.filter.return_value.update.assert_called_once_with(coordinador=None)
-
-
-def test_sync_profile_duplas_post_clear_clears_all_for_user(mocker):
-    dupla_manager = mocker.Mock()
-    fake_dupla = SimpleNamespace(objects=dupla_manager)
-    fake_module = ModuleType("duplas.models")
-    fake_module.Dupla = fake_dupla
-    mocker.patch.dict(sys.modules, {"duplas.models": fake_module})
-    profile = SimpleNamespace(user="user-3")
-
-    signals.sync_profile_duplas_to_dupla_coordinador(
-        sender=None,
-        instance=profile,
-        action="post_clear",
-        pk_set=None,
-    )
-
-    dupla_manager.filter.assert_called_once_with(coordinador="user-3")
-    dupla_manager.filter.return_value.update.assert_called_once_with(coordinador=None)
 
 
 def test_assign_inherited_groups_adds_only_missing_groups(mocker):

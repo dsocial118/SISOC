@@ -1,12 +1,5 @@
-body {
-    overflow-y:hidden;
-}
-
 body .app-main {
     background-color: white !important;
-    margin-top: 72px;
-    min-height: calc(100vh - 182px);
-    margin-left: 300px;
 }
 
 .inicio-presentacion {
@@ -47,10 +40,6 @@ body .app-main {
 }
 
 @media (max-width: 768px) {
-    body .app-main {
-        margin-left: 0;
-    }
-
     .inicio-presentacion__inet-card {
         min-height: 260px;
         padding: 1.5rem;

@@ -10,6 +10,7 @@ from comedores.models import (
     AuditColaboradorEspacio,
     ColaboradorEspacio,
     Comedor,
+    Programas,
 )
 from core.models import Provincia, Sexo
 from users.models import AccesoComedorPWA
@@ -26,7 +27,12 @@ def _grant_pwa_permission(user, codename):
 @pytest.fixture
 def comedor(db):
     provincia = Provincia.objects.create(nombre="Buenos Aires")
-    return Comedor.objects.create(nombre="Comedor Colaboradores", provincia=provincia)
+    programa = Programas.objects.create(nombre="Abordaje Comunitario")
+    return Comedor.objects.create(
+        nombre="Comedor Colaboradores",
+        provincia=provincia,
+        programa=programa,
+    )
 
 
 @pytest.fixture

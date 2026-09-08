@@ -1,6 +1,164 @@
+import re
 import unicodedata
 
 from django import forms
+from django.core.exceptions import ValidationError
+from django.db.models import Q
+
+from core.models import Localidad, Provincia
+from comedores.services.comedor_service import ComedorService
+from comedores.services.capacitaciones_certificados_service import (
+    is_alimentar_comunidad_program,
+)
+
+
+class CatalogoNombreSelectField(forms.ChoiceField):
+    """Select que guarda el nombre del catálogo en los campos históricos de texto."""
+
+    widget = forms.Select
+
+    def __init__(
+        self, *, queryset, empty_label, include_queryset_choices=False, **kwargs
+    ):
+        self.queryset = queryset
+        self.empty_label = empty_label
+        self.legacy_values = {}
+        super().__init__(**kwargs)
+        self.choices = [("", empty_label)]
+        if include_queryset_choices:
+            self.choices = [
+                *self.choices,
+                *[
+                    (str(pk), nombre)
+                    for pk, nombre in queryset.order_by("nombre", "pk").values_list(
+                        "pk", "nombre"
+                    )
+                ],
+            ]
+
+    def set_selected_value(self, value):
+        value = getattr(value, "nombre", value)
+        if value in (None, ""):
+            return
+        value = str(value)
+        selected = None
+        if value.isdigit():
+            selected = self.queryset.filter(pk=value).first()
+        if not selected:
+            selected = self.queryset.filter(nombre=value).order_by("pk").first()
+        if selected:
+            selected_value = str(selected.pk)
+            if selected_value not in {choice[0] for choice in self.choices}:
+                self.choices = [*self.choices, (selected_value, selected.nombre)]
+            self.initial = selected_value
+            return
+
+        legacy_key = f"legacy:{value}"
+        self.legacy_values[legacy_key] = value
+        self.choices = [
+            *self.choices,
+            (legacy_key, f"{value} (valor histórico fuera del catálogo)"),
+        ]
+        self.initial = legacy_key
+
+    def clean(self, value):
+        value = forms.Field.clean(self, value)
+        if not value:
+            return ""
+        if value in self.legacy_values:
+            return self.legacy_values[value]
+        selected = (
+            self.queryset.filter(pk=value).values_list("nombre", flat=True).first()
+        )
+        if selected is None:
+            raise ValidationError("Seleccione una opción válida del catálogo.")
+        return selected
+
+
+def _configurar_selectores_geograficos(form):
+    """Convierte los campos territoriales históricos a selects del catálogo SISOC."""
+
+    configuraciones = {
+        "provincia_organizacion": (
+            Provincia.objects.all(),
+            "Seleccione una provincia",
+            None,
+        ),
+        "localidad_organizacion": (
+            Localidad.objects.select_related("municipio__provincia"),
+            "Seleccione una localidad",
+            "provincia_organizacion",
+        ),
+        "provincia_espacio": (
+            Provincia.objects.all(),
+            "Seleccione una provincia",
+            None,
+        ),
+        "localidad_espacio": (
+            Localidad.objects.select_related("municipio__provincia"),
+            "Seleccione una localidad",
+            "provincia_espacio",
+        ),
+        "responsable_tarjeta_provincia": (
+            Provincia.objects.all(),
+            "Seleccione una provincia",
+            None,
+        ),
+        "responsable_tarjeta_localidad": (
+            Localidad.objects.select_related("municipio__provincia"),
+            "Seleccione una localidad",
+            "responsable_tarjeta_provincia",
+        ),
+        "provincia_poblacion_destinataria": (
+            Provincia.objects.all(),
+            "Seleccione una provincia",
+            None,
+        ),
+    }
+
+    for nombre, (
+        queryset,
+        empty_label,
+        provincia_relacionada,
+    ) in configuraciones.items():
+        field = form.fields.get(nombre)
+        if not field:
+            continue
+        selected_value = (
+            form.data.get(nombre)
+            if form.is_bound
+            else field.initial
+            or form.initial.get(nombre)
+            or getattr(form.instance, nombre, "")
+        )
+        selector = CatalogoNombreSelectField(
+            queryset=queryset,
+            empty_label=empty_label,
+            include_queryset_choices=not bool(provincia_relacionada),
+            label=field.label,
+            help_text=field.help_text,
+            required=field.required,
+            widget=forms.Select(attrs=field.widget.attrs),
+        )
+        if provincia_relacionada:
+            selector.widget.attrs["data-geografia-localidad"] = "true"
+        else:
+            localidad_relacionada = next(
+                (
+                    localidad
+                    for localidad, (_, _, provincia) in configuraciones.items()
+                    if provincia == nombre
+                ),
+                None,
+            )
+            if localidad_relacionada:
+                selector.widget.attrs["data-geografia-provincia"] = (
+                    f"id_{localidad_relacionada}"
+                )
+        selector.set_selected_value(selected_value)
+        form.fields[nombre] = selector
+        form.initial[nombre] = selector.initial
+
 
 from admisiones.models.admisiones import (
     Admision,
@@ -42,6 +200,219 @@ def _ultimo_numero_gde(admision, documentacion_nombre):
         .values_list("numero_gde", flat=True)
         .first()
     )
+
+
+def _configurar_campos_informe_2233(form, admision, tipo_informe):
+    form._antecedentes_renovaciones_nombres = []
+    form.fields.pop("antecedentes_renovaciones", None)
+    for nombre in ["conclusiones", "acreditaciones_ultimo_convenio"] + [
+        item
+        for numero in range(1, 7)
+        for item in (f"resolucion_de_pago_{numero}", f"monto_{numero}")
+    ]:
+        form.fields.pop(nombre, None)
+
+    if "finalizacion_convenio_pnud_vigente" in form.fields:
+        form.fields["finalizacion_convenio_pnud_vigente"].widget = forms.DateInput(
+            format="%Y-%m-%d", attrs={"type": "date", "class": "form-control"}
+        )
+
+    es_renovacion = bool(admision and admision.tipo == "renovacion")
+    es_pnud_vigente = bool(
+        admision
+        and admision.tipo == "incorporacion"
+        and admision.es_ex_pnud == "si"
+        and admision.estado_convenio_pnud == "vigente"
+    )
+    financiamiento = getattr(admision, "estado_financiamiento", None)
+    condiciones = {
+        "finalizacion_convenio_pnud_vigente": es_pnud_vigente,
+        "monto_total_conveniado_informe": es_renovacion and financiamiento == "vigente",
+        "monto_total_conveniado": es_renovacion and financiamiento == "finalizado",
+        "expediente_incorporacion": es_renovacion,
+        "convenio_incorporacion": es_renovacion,
+        "presentacion_avales": es_renovacion and tipo_informe == "base",
+        "informe_tecnico_complementario_modificacion_prestaciones": (
+            es_renovacion
+            and getattr(admision, "informe_complementario_modifica_prestaciones", None)
+            == "si"
+        ),
+        "if_it_complementario": (
+            es_renovacion
+            and getattr(admision, "informe_complementario_modifica_prestaciones", None)
+            == "si"
+        ),
+    }
+    for nombre, aplica in condiciones.items():
+        if not aplica:
+            form.fields.pop(nombre, None)
+        elif form.require_full:
+            form.fields[nombre].required = True
+
+    if "criterio_seleccionado" in form.fields:
+        form.fields["criterio_seleccionado"].required = form.require_full
+
+    if es_renovacion and admision.comedor_id:
+        incorporacion = (
+            Admision.objects.filter(
+                comedor_id=admision.comedor_id,
+                tipo="incorporacion",
+            )
+            .exclude(pk=admision.pk)
+            .order_by("creado", "pk")
+            .first()
+        )
+        if incorporacion:
+            if "expediente_incorporacion" in form.fields:
+                form.fields["expediente_incorporacion"].initial = (
+                    incorporacion.num_expediente
+                )
+            if "convenio_incorporacion" in form.fields:
+                form.fields["convenio_incorporacion"].initial = (
+                    incorporacion.numero_convenio
+                )
+
+    if not (
+        es_renovacion
+        and getattr(admision, "tipo_renovacion", None) == "segunda_o_posterior"
+        and admision.comedor_id
+    ):
+        return
+
+    guardados = {
+        str(item.get("admision_id")): item
+        for item in (getattr(form.instance, "antecedentes_renovaciones", None) or [])
+    }
+    anteriores = (
+        Admision.objects.filter(comedor_id=admision.comedor_id, tipo="renovacion")
+        .exclude(pk=admision.pk)
+        .order_by("creado", "pk")
+    )
+    for anterior in anteriores:
+        datos = guardados.get(str(anterior.pk), {})
+        nombres = {}
+        for clave, etiqueta, valor in (
+            (
+                "resolucion",
+                "Resolución / Disposición de Renovación",
+                anterior.numero_disposicion,
+            ),
+            ("convenio", "Convenio de Renovación", anterior.numero_convenio),
+            ("expediente", "Expediente de Renovación", anterior.num_expediente),
+        ):
+            nombre = f"antecedente_{anterior.pk}_{clave}"
+            form.fields[nombre] = forms.CharField(
+                label=etiqueta,
+                max_length=255,
+                required=form.require_full,
+                initial=datos.get(clave) or valor,
+            )
+            nombres[clave] = nombre
+        incluir_nombre = f"antecedente_{anterior.pk}_incluir"
+        form.fields[incluir_nombre] = forms.BooleanField(
+            label="Incluir en el informe",
+            required=False,
+            initial=datos.get("incluida", True),
+        )
+        nombres["incluida"] = incluir_nombre
+        form._antecedentes_renovaciones_nombres.append(
+            {"admision": anterior, "campos": nombres}
+        )
+    form.antecedentes_renovaciones_campos = [
+        {
+            "admision": item["admision"],
+            "incluida": form[item["campos"]["incluida"]],
+            "resolucion": form[item["campos"]["resolucion"]],
+            "convenio": form[item["campos"]["convenio"]],
+            "expediente": form[item["campos"]["expediente"]],
+        }
+        for item in form._antecedentes_renovaciones_nombres
+    ]
+
+
+def _guardar_antecedentes_informe_2233(form, informe):
+    criterio = form.cleaned_data.get("criterio_seleccionado")
+    informe.conclusiones = dict(InformeTecnico.CRITERIOS).get(criterio, "")
+    antecedentes = []
+    for item in form._antecedentes_renovaciones_nombres:
+        antecedentes.append(
+            {
+                "admision_id": item["admision"].pk,
+                "incluida": form.cleaned_data.get(item["campos"]["incluida"], False),
+                "resolucion": form.cleaned_data.get(item["campos"]["resolucion"], ""),
+                "convenio": form.cleaned_data.get(item["campos"]["convenio"], ""),
+                "expediente": form.cleaned_data.get(item["campos"]["expediente"], ""),
+            }
+        )
+    informe.antecedentes_renovaciones = antecedentes
+    return informe
+
+
+def _prellenar_informe_nuevo(form, admision):
+    if not admision or form.instance.pk:
+        return
+    comedor = getattr(admision, "comedor", None)
+    if not comedor:
+        return
+    if is_alimentar_comunidad_program(comedor):
+        for destino, origen in (
+            ("responsable_tarjeta_nombre", "responsable_tarjeta_nombre"),
+            ("responsable_tarjeta_cuit", "responsable_tarjeta_cuit"),
+            ("responsable_tarjeta_dni", "responsable_tarjeta_dni"),
+            ("responsable_tarjeta_domicilio", "responsable_tarjeta_domicilio"),
+            ("responsable_tarjeta_telefono", "responsable_tarjeta_telefono"),
+            ("responsable_tarjeta_mail", "responsable_tarjeta_mail"),
+        ):
+            if destino in form.fields:
+                form.fields[destino].initial = getattr(comedor, origen, "") or ""
+        if "responsable_tarjeta_localidad" in form.fields:
+            form.fields["responsable_tarjeta_localidad"].initial = getattr(
+                getattr(comedor, "responsable_tarjeta_localidad", None), "nombre", ""
+            )
+        if "responsable_tarjeta_provincia" in form.fields:
+            form.fields["responsable_tarjeta_provincia"].initial = getattr(
+                getattr(comedor, "responsable_tarjeta_provincia", None), "nombre", ""
+            )
+    if admision.tipo != "renovacion":
+        return
+    anteriores = (
+        Admision.objects.filter(comedor=comedor, activa=True)
+        .filter(
+            Q(creado__lt=admision.creado)
+            | Q(creado=admision.creado, pk__lt=admision.pk)
+        )
+        .exclude(pk=admision.pk)
+        .order_by("-creado", "-pk")
+    )
+    efectivo = next(
+        (
+            informe
+            for anterior in anteriores
+            if (
+                informe := ComedorService.get_informe_tecnico_finalizado_efectivo(
+                    anterior
+                )
+            )
+        ),
+        None,
+    )
+    if not efectivo:
+        return
+    for tipo in ("desayuno", "almuerzo", "merienda", "cena"):
+        for dia in (
+            "lunes",
+            "martes",
+            "miercoles",
+            "jueves",
+            "viernes",
+            "sabado",
+            "domingo",
+        ):
+            destino = f"aprobadas_ultimo_convenio_{tipo}_{dia}"
+            if destino in form.fields:
+                form.fields[destino].initial = getattr(
+                    efectivo, f"aprobadas_{tipo}_{dia}", 0
+                )
 
 
 def _if_relevamiento_a_pac(fields, admision):
@@ -123,6 +494,64 @@ class AdmisionForm(forms.ModelForm):
         fields = "__all__"
 
 
+class ValidacionesTemplateAdmisionForm(forms.ModelForm):
+    class Meta:
+        model = Admision
+        fields = [
+            "es_ex_pnud",
+            "estado_convenio_pnud",
+            "tipo_renovacion",
+            "estado_financiamiento",
+            "informe_complementario_modifica_prestaciones",
+        ]
+        widgets = {
+            "es_ex_pnud": forms.Select(attrs={"class": "form-select"}),
+            "estado_convenio_pnud": forms.Select(attrs={"class": "form-select"}),
+            "tipo_renovacion": forms.Select(attrs={"class": "form-select"}),
+            "estado_financiamiento": forms.Select(attrs={"class": "form-select"}),
+            "informe_complementario_modifica_prestaciones": forms.Select(
+                attrs={"class": "form-select"}
+            ),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        tipo_admision = getattr(self.instance, "tipo", None)
+
+        if tipo_admision == "incorporacion":
+            self.fields["es_ex_pnud"].required = True
+        elif tipo_admision == "renovacion":
+            self.fields["tipo_renovacion"].required = True
+            self.fields["estado_financiamiento"].required = True
+            self.fields["informe_complementario_modifica_prestaciones"].required = True
+
+    def clean(self):
+        cleaned_data = super().clean()
+        tipo_admision = getattr(self.instance, "tipo", None)
+
+        if tipo_admision == "incorporacion":
+            es_ex_pnud = cleaned_data.get("es_ex_pnud")
+            estado_convenio_pnud = cleaned_data.get("estado_convenio_pnud")
+
+            cleaned_data["tipo_renovacion"] = None
+            cleaned_data["estado_financiamiento"] = None
+            cleaned_data["informe_complementario_modifica_prestaciones"] = None
+
+            if es_ex_pnud == "si" and not estado_convenio_pnud:
+                self.add_error(
+                    "estado_convenio_pnud",
+                    "Debe indicar el estado del convenio PNUD.",
+                )
+            elif es_ex_pnud == "no":
+                cleaned_data["estado_convenio_pnud"] = None
+
+        elif tipo_admision == "renovacion":
+            cleaned_data["es_ex_pnud"] = None
+            cleaned_data["estado_convenio_pnud"] = None
+
+        return cleaned_data
+
+
 class InformeTecnicoJuridicoForm(forms.ModelForm):
     class Meta:
         model = InformeTecnico
@@ -167,6 +596,9 @@ class InformeTecnicoJuridicoForm(forms.ModelForm):
         admision = kwargs.pop("admision", None)
         self.require_full = kwargs.pop("require_full", False)
         super().__init__(*args, **kwargs)
+        for numero in range(1, 7):
+            self.fields.pop(f"resolucion_de_pago_{numero}", None)
+            self.fields.pop(f"monto_{numero}", None)
         self.permite_no_corresponde_fecha_vencimiento = (
             _permite_no_corresponde_fecha_vencimiento(admision)
         )
@@ -308,6 +740,10 @@ class InformeTecnicoJuridicoForm(forms.ModelForm):
                         organizacion.fecha_vencimiento
                     )
 
+        _prellenar_informe_nuevo(self, admision)
+        _configurar_selectores_geograficos(self)
+        _configurar_campos_informe_2233(self, admision, "juridico")
+
     def clean(self):
         cleaned_data = super().clean()
         no_corresponde = cleaned_data.get("no_corresponde_fecha_vencimiento")
@@ -335,6 +771,14 @@ class InformeTecnicoJuridicoForm(forms.ModelForm):
             cleaned_data["fecha_vencimiento_mandatos"] = None
 
         return cleaned_data
+
+    def save(self, commit=True):
+        informe = super().save(commit=False)
+        _guardar_antecedentes_informe_2233(self, informe)
+        if commit:
+            informe.save()
+            self.save_m2m()
+        return informe
 
 
 class InformeTecnicoBaseForm(forms.ModelForm):
@@ -374,6 +818,9 @@ class InformeTecnicoBaseForm(forms.ModelForm):
         admision = kwargs.pop("admision", None)
         self.require_full = kwargs.pop("require_full", False)
         super().__init__(*args, **kwargs)
+        for numero in range(1, 7):
+            self.fields.pop(f"resolucion_de_pago_{numero}", None)
+            self.fields.pop(f"monto_{numero}", None)
         self.permite_no_corresponde_fecha_vencimiento = (
             _permite_no_corresponde_fecha_vencimiento(admision)
         )
@@ -509,6 +956,10 @@ class InformeTecnicoBaseForm(forms.ModelForm):
                         organizacion.fecha_vencimiento
                     )
 
+        _prellenar_informe_nuevo(self, admision)
+        _configurar_selectores_geograficos(self)
+        _configurar_campos_informe_2233(self, admision, "base")
+
     def clean(self):
         cleaned_data = super().clean()
         no_corresponde = cleaned_data.get("no_corresponde_fecha_vencimiento")
@@ -536,6 +987,14 @@ class InformeTecnicoBaseForm(forms.ModelForm):
             cleaned_data["fecha_vencimiento_mandatos"] = None
 
         return cleaned_data
+
+    def save(self, commit=True):
+        informe = super().save(commit=False)
+        _guardar_antecedentes_informe_2233(self, informe)
+        if commit:
+            informe.save()
+            self.save_m2m()
+        return informe
 
 
 class InformeTecnicoEstadoForm(forms.Form):
@@ -571,13 +1030,128 @@ class InformeTecnicoEstadoForm(forms.Form):
         return cleaned_data
 
 
-class CaratularForm(forms.ModelForm):
+class NumeroExpedienteMixin:
+    @staticmethod
+    def _campos_numero_expediente():
+        attrs_base = {"class": "form-control", "autocomplete": "off"}
+        return {
+            "expediente_anio": forms.CharField(
+                label="Año",
+                min_length=4,
+                max_length=4,
+                widget=forms.TextInput(
+                    attrs={
+                        **attrs_base,
+                        "inputmode": "numeric",
+                        "placeholder": "2025",
+                    }
+                ),
+            ),
+            "expediente_numero": forms.CharField(
+                label="Número",
+                min_length=9,
+                max_length=9,
+                widget=forms.TextInput(
+                    attrs={
+                        **attrs_base,
+                        "inputmode": "numeric",
+                        "placeholder": "112100154",
+                    }
+                ),
+            ),
+            "expediente_reparticion": forms.CharField(
+                label="Repartición",
+                max_length=50,
+                widget=forms.TextInput(
+                    attrs={
+                        **attrs_base,
+                        "class": "form-control text-uppercase",
+                        "placeholder": "DDNAYF",
+                    }
+                ),
+            ),
+            "expediente_organismo": forms.CharField(
+                label="Organismo",
+                max_length=50,
+                initial="MCH",
+                widget=forms.TextInput(
+                    attrs={
+                        **attrs_base,
+                        "class": "form-control text-uppercase",
+                        "placeholder": "MCH",
+                    }
+                ),
+            ),
+        }
 
-    num_expediente = forms.CharField(required=True, label="Número de Expediente")
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields.update(self._campos_numero_expediente())
+        match = re.fullmatch(
+            r"EX-(\d{4})-(\d{9})- -APN-([A-Z0-9]+)#([A-Z0-9]+)",
+            self._numero_actual() or "",
+            re.IGNORECASE,
+        )
+        if match:
+            for campo, dato in zip(
+                (
+                    "expediente_anio",
+                    "expediente_numero",
+                    "expediente_reparticion",
+                    "expediente_organismo",
+                ),
+                match.groups(),
+            ):
+                self.initial[campo] = dato
 
+    def _numero_actual(self):
+        return self.instance.num_expediente if self.instance else ""
+
+    def clean(self):
+        cleaned_data = super().clean()
+        anio = cleaned_data.get("expediente_anio", "").strip()
+        numero = cleaned_data.get("expediente_numero", "").strip()
+        reparticion = cleaned_data.get("expediente_reparticion", "").strip().upper()
+        organismo = cleaned_data.get("expediente_organismo", "").strip().upper()
+        if anio and not anio.isdigit():
+            self.add_error("expediente_anio", "Debe contener exactamente 4 dígitos.")
+        if numero and not numero.isdigit():
+            self.add_error("expediente_numero", "Debe contener exactamente 9 dígitos.")
+        if reparticion and not re.fullmatch(r"[A-Z0-9]+", reparticion):
+            self.add_error("expediente_reparticion", "Use solamente letras y números.")
+        if organismo and not re.fullmatch(r"[A-Z0-9]+", organismo):
+            self.add_error("expediente_organismo", "Use solamente letras y números.")
+        if self.errors:
+            return cleaned_data
+
+        valor = f"EX-{anio}-{numero}- -APN-{reparticion}#{organismo}"
+        duplicada = (
+            Admision.objects.filter(num_expediente__iexact=valor)
+            .exclude(pk=self.instance.pk)
+            .select_related("comedor__organizacion")
+            .first()
+        )
+        if duplicada:
+            comedor = duplicada.comedor
+            organizacion = comedor.organizacion if comedor else None
+            tipo = duplicada.get_tipo_display() if duplicada.tipo else "Sin tipo"
+            raise forms.ValidationError(
+                f"El expediente ya pertenece a la admisión #{duplicada.pk}; "
+                f"comedor: {comedor or 'Sin comedor'}; organización: "
+                f"{organizacion or 'Sin organización'}; tipo: {tipo}."
+            )
+        cleaned_data["numero_expediente_compilado"] = valor
+        return cleaned_data
+
+
+class CaratularForm(NumeroExpedienteMixin, forms.ModelForm):
     class Meta:
         model = Admision
-        fields = ["num_expediente"]
+        fields = []
+
+    def save(self, commit=True):
+        self.instance.num_expediente = self.cleaned_data["numero_expediente_compilado"]
+        return super().save(commit=commit)
 
 
 class LegalesRectificarForm(forms.ModelForm):
@@ -636,34 +1210,27 @@ class ProyectoConvenioForm(forms.ModelForm):
             field.required = True
 
 
-class LegalesNumIFForm(forms.ModelForm):
+class LegalesNumIFForm(NumeroExpedienteMixin, forms.ModelForm):
     class Meta:
         model = Admision
-        fields = ["legales_num_if"]
-        labels = {
-            "legales_num_if": "Número de expediente",
-        }
+        fields = []
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # Precargar legales_num_if desde num_expediente si está vacío
-        if (
-            self.instance
-            and self.instance.num_expediente
-            and not self.instance.legales_num_if
-        ):
-            self.initial["legales_num_if"] = self.instance.num_expediente
-
         for field in self.fields.values():
             field.required = True
 
-        # Hacer campo readonly para evitar errores de carga
-        if self.instance and self.instance.num_expediente:
-            self.fields["legales_num_if"].widget.attrs["readonly"] = True
-            self.fields["legales_num_if"].help_text = (
-                "Este número fue precargado desde el Informe Técnico"
-            )
+    def _numero_actual(self):
+        if not self.instance:
+            return ""
+        return self.instance.legales_num_if or self.instance.num_expediente
+
+    def save(self, commit=True):
+        valor = self.cleaned_data["numero_expediente_compilado"]
+        self.instance.num_expediente = valor
+        self.instance.legales_num_if = valor
+        return super().save(commit=commit)
 
 
 class DocumentosExpedienteForm(forms.ModelForm):

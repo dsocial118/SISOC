@@ -5,16 +5,20 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import IntegrityError
 
-from comedores.models import Comedor
+from comedores.models import Comedor, Programas
 from core.models import Provincia
+from duplas.models import Dupla
 from organizaciones.models import Organizacion
 from users.models import AccesoComedorPWA
 from users.models import AuditAccesoComedorPWA
+from users.models import CoordinadorEquipoTecnicoPWA
 from users.services_pwa import (
     create_operador_for_comedor,
+    get_pwa_context,
     deactivate_operador,
     get_accessible_comedor_ids,
     is_pwa_user,
+    sync_coordinador_equipo_tecnico_pwa_access,
     sync_representante_accesses,
     update_operador_permissions,
 )
@@ -23,17 +27,20 @@ from users.services_pwa import (
 @pytest.fixture
 def comedores(db):
     provincia = Provincia.objects.create(nombre="Santa Fe")
+    programa = Programas.objects.create(nombre="Abordaje Comunitario")
     organizacion_1 = Organizacion.objects.create(nombre="Organización 1")
     organizacion_2 = Organizacion.objects.create(nombre="Organización 2")
     comedor_1 = Comedor.objects.create(
         nombre="Comedor 1",
         provincia=provincia,
         organizacion=organizacion_1,
+        programa=programa,
     )
     comedor_2 = Comedor.objects.create(
         nombre="Comedor 2",
         provincia=provincia,
         organizacion=organizacion_2,
+        programa=programa,
     )
     return comedor_1, comedor_2
 
@@ -69,6 +76,58 @@ def test_is_pwa_user_and_accessible_comedores(comedores):
 
     assert is_pwa_user(user) is True
     assert set(get_accessible_comedor_ids(user)) == {comedor_1.id, comedor_2.id}
+
+
+@pytest.mark.django_db
+def test_coordinador_pwa_has_dynamic_scope_from_duplas_and_extra_spaces(comedores):
+    comedor_1, comedor_2 = comedores
+    coordinador = _create_user("coord_pwa")
+    abogado = _create_user("abogado_dupla")
+    tecnico = _create_user("tecnico_dupla")
+    dupla = Dupla.objects.create(
+        nombre="Dupla PWA",
+        estado="Activo",
+        abogado=abogado,
+    )
+    dupla.tecnico.add(tecnico)
+    comedor_1.dupla = dupla
+    comedor_1.save(update_fields=["dupla"])
+
+    scope = sync_coordinador_equipo_tecnico_pwa_access(
+        user=coordinador,
+        duplas=[dupla],
+        comedores_adicionales=[comedor_2],
+    )
+
+    assert scope.activo is True
+    assert is_pwa_user(coordinador) is True
+    assert set(get_accessible_comedor_ids(coordinador)) == {
+        comedor_1.id,
+        comedor_2.id,
+    }
+    assert get_pwa_context(coordinador)["roles"] == ["coordinador_equipo_tecnico"]
+    assert get_pwa_context(coordinador)["read_only"] is True
+
+    comedor_1.dupla = None
+    comedor_1.save(update_fields=["dupla"])
+
+    assert get_accessible_comedor_ids(coordinador) == [comedor_2.id]
+    assert CoordinadorEquipoTecnicoPWA.objects.get(user=coordinador) == scope
+
+
+@pytest.mark.django_db
+def test_sync_representante_accesses_rejects_active_coordinator(comedores):
+    comedor, _ = comedores
+    coordinador = _create_user("coord_no_representante")
+    scope = CoordinadorEquipoTecnicoPWA.objects.create(user=coordinador, activo=True)
+    scope.comedores_adicionales.add(comedor)
+
+    with pytest.raises(ValidationError, match="coordinador"):
+        sync_representante_accesses(
+            user=coordinador,
+            comedor_ids=[comedor.id],
+            actor=None,
+        )
 
 
 @pytest.mark.django_db

@@ -1,0 +1,269 @@
+# Contexto de feature PR #2289 - release: pre-deploy development -> main (2026-08-13)
+
+## Resumen
+
+- PR: https://github.com/dsocial118/SISOC/pull/2289
+- Base: `main`
+- Rama origen: `development`
+- Autor: `juanikitro`
+
+## Contexto funcional
+
+- release/predeploy semanal development -> main con sincronización downstream nativa.
+
+## Arquitectura tocada
+
+- El PR toca lógica en `services/`, por lo que impacta reglas de negocio u orquestación.
+- Hay cambios en capa API/DRF y conviene revisar contratos de request/response.
+- Hay cambios en vistas web y puede existir impacto en permisos o renderizado.
+- Se modifican templates, con posible impacto visual o de composición UI.
+- Existen cambios de persistencia o migraciones que requieren revisión de datos.
+- El alcance incluye automatización o tooling de CI/CD.
+
+## Decisiones y supuestos detectados
+
+- Tipo de cambio declarado: actualizacion.
+- Área principal declarada: release y plataforma transversal.
+- Impacto usuario declarado: Cambios funcionales y operativos transversales; la promoción queda bloqueada hasta completar sincronización y gates nativos.
+- Riesgos / rollback: Migraciones con datos, permisos y flujos web; rollback por PR nativo/tag previo con evaluación específica de datos.
+
+## Design system y UI
+
+- El PR toca piezas de UI y conviene revisar consistencia visual con el patrón existente.
+- Archivos visuales relevantes: VAT/templates/vat/centros/centro_list.html, acompanamientos/templates/lista_comedores.html, admisiones/templates/admisiones/admisiones_detalle.html, admisiones/templates/admisiones/admisiones_legales_detalle.html, admisiones/templates/admisiones/admisiones_legales_list.html, admisiones/templates/admisiones/admisiones_tecnicos_form.html, admisiones/templates/admisiones/admisiones_tecnicos_list.html, admisiones/templates/admisiones/informe_tecnico_form.html
+
+## Memoria operativa para agentes
+
+- Empezar por `docs/registro/prs/PR-2289.md` para contexto resumido del PR.
+- Revisar primero estos archivos del diff:
+- `.env.example`
+- `.github/workflows/architecture.yml`
+- `.github/workflows/deploy.yml`
+- `.github/workflows/pr-docs.yml`
+- `.importlinter`
+- `.importlinter_celiaquia_config`
+- `AGENT_REPO_MAP.md`
+- `VAT/apps.py`
+- `VAT/ciudadano_detail.py`
+- `VAT/favorite_filters.py`
+- `VAT/global_urls.py`
+- `VAT/services/consulta_renaper/__init__.py`
+- `VAT/services/consulta_renaper/impl.py`
+- `VAT/sidebar_access.py`
+- `VAT/templates/vat/centros/centro_list.html`
+- `acompanamientos/acompanamiento_service.py`
+- `acompanamientos/apps.py`
+- `acompanamientos/favorite_filters.py`
+- `acompanamientos/services/__init__.py`
+- `acompanamientos/services/filter_config.py`
+- ... y 550 archivo(s) adicional(es) relacionados.
+- Documentación sugerida para ampliar contexto:
+- `docs/indice.md`
+- `docs/ia/CONTEXT_HYGIENE.md`
+- `docs/ia/ARCHITECTURE.md`
+- `docs/ia/TESTING.md`
+- `docs/contexto/aplicaciones.md`
+- `docs/contexto/arquitectura.md`
+- `docs/contexto/features/pr-2141-mejora-descarga-de-datos-cdf.md`
+- `docs/contexto/features/pr-2144-fix-nomina-cdi-ninos.md`
+- `docs/contexto/features/pr-2150-docs-spec-backfill-source-of-truth-records.md`
+- `docs/contexto/features/pr-2155-fix-ci-desbloquear-auto-merge-de-sincronizaciones-descendentes.md`
+- `docs/contexto/features/pr-2156-fix-sidebar-mover-expedientes-de-pago-a-comedores.md`
+- `docs/contexto/features/pr-2157-fix-users-restringir-abm-cdi.md`
+- `docs/contexto/features/pr-2161-issues-2158-y-2159-pdfs-de-nomina-y-documentos-multiples.md`
+- `docs/contexto/features/pr-2162-issue-2149-ocultar-comedores-sin-programa-en-pwa.md`
+- `docs/contexto/features/pr-2165-feat-organizaciones-mostrar-programa-en-comedores-asociados.md`
+- `docs/contexto/features/pr-2166-fix-sidebar-mover-ocr-fuera-de-administracion.md`
+- `docs/contexto/features/pr-2167-feat-legajos-actualizar-categorias-de-organizaciones-y-espacios-comunitarios.md`
+- `docs/contexto/features/pr-2168-exp-imp-excel.md`
+- `docs/contexto/features/pr-2170-saque-la-opcion-del-side-bar.md`
+- `docs/contexto/features/pr-2171-fix-ci-esperar-disponibilidad-de-qa-y-hml.md`
+- `docs/contexto/features/pr-2172-fix-ci-recover-qa-deployment-validation.md`
+- `docs/contexto/features/pr-2173-chore-qa-inspect-blocked-legacy-height-safely.md`
+- `docs/contexto/features/pr-2174-fix-qa-clear-confirmed-invalid-legacy-height.md`
+- `docs/contexto/features/pr-2175-chore-qa-remove-temporary-legacy-height-workflow.md`
+- `docs/contexto/features/pr-2179-fix-organizaciones-corregir-simple-asociacion-como-subtipo.md`
+- `docs/contexto/features/pr-2180-fix-comedores-restringir-codigo-de-proyecto-por-programa.md`
+- `docs/contexto/features/pr-2181-feat-users-agregar-dni-cuil-y-tipo-informativo.md`
+- `docs/contexto/features/pr-2184-inet-vat-resultados-de-curso-2147-validaciones-de-cue-2146-aceptar-rechazar-en-lote-2132-y-lista-de-espera-2006.md`
+- `docs/contexto/features/pr-2186-feat-cdi-ocultar-funcionalidades-temporalmente.md`
+- `docs/contexto/features/pr-2189-inet-vat-tipo-de-alumno-vat-sin-plan-en-asistencia-y-exportaciones-correcciones-post-2184.md`
+- `docs/contexto/features/pr-2190-feat-comedores-habilitar-validadores-asignables.md`
+- `docs/contexto/features/pr-2193-fix-ci-destrabar-sincronizacion-descendente-pre-deploy-2026-07-29.md`
+- `docs/contexto/features/pr-2194-fix-ci-bloquear-promocion-cuando-fallan-tests-de-comedores.md`
+- `docs/contexto/features/pr-2195-fix-ci-manejar-respuesta-204-de-sincronizacion-descendente.md`
+- `docs/contexto/features/pr-2196-fix-ci-validar-respuesta-de-merge-descendente.md`
+- `docs/contexto/features/pr-2197-chore-sync-integrar-main-en-development.md`
+- `docs/contexto/features/pr-2198-chore-sync-integrar-main-en-development.md`
+- `docs/contexto/features/pr-2200-fix-deploy-bootstrap-seguro-del-helper-de-produccion.md`
+- `docs/contexto/features/pr-2202-chore-sync-integrar-main-en-development.md`
+- `docs/contexto/features/pr-2205-chore-sync-integrar-main-en-development.md`
+- `docs/contexto/features/pr-2208-chore-sync-integrar-main-en-development.md`
+- `docs/contexto/features/pr-2211-fix-nombre.md`
+- `docs/contexto/features/pr-2212-fix-organizaciones-restaurar-simple-asociacion-como-tipo.md`
+- `docs/contexto/features/pr-2215-fix-ci-formatear-test-de-deploy-con-black.md`
+- `docs/contexto/features/pr-2217-feat-centrodefamilia-fecha-de-nacimiento-y-cuil-del-responsable-en-preinscriptos.md`
+- `docs/contexto/features/pr-2222-feat-comedores-agregar-etiqueta-caritas.md`
+- `docs/contexto/features/pr-2227-chore-deps-migrar-django-4-2-a-5-2-lts.md`
+- `docs/contexto/features/pr-2228-fix-iam-restringe-accesos-de-ciudadanos-y-acompanamiento.md`
+- `docs/contexto/features/pr-2230-comedores-cambios-en-filtros-ordenamiento-columnas.md`
+- `docs/contexto/features/pr-2231-style-templates-corrige-formato-para-promocion-a-homologacion.md`
+- `docs/contexto/features/pr-2235-issues-1961-2005-2076-2079-y-2188.md`
+- `docs/contexto/features/pr-2237-ui-buscadores.md`
+- `docs/contexto/features/pr-2253-refactor-architecture-completar-ratchet-de-fase-0.md`
+- `docs/contexto/features/pr-2255-fixes-post-revision-issues-1961-2076-2079-y-2188.md`
+- `docs/contexto/features/pr-2260-cdi-nomina-restriccion.md`
+- `docs/contexto/features/pr-2261-mi-cuenta.md`
+- `docs/contexto/features/pr-2264-fix-ci-bloquear-prs-sin-artefactos-spec-as-source.md`
+- `docs/contexto/features/pr-2267-fixes-de-admisiones-rendiciones-y-pwa.md`
+- `docs/contexto/features/pr-2270-fix-ci-permitir-promociones-entre-ramas-protegidas.md`
+- `docs/contexto/features/pr-2271-refactor-enforce-domain-boundaries-for-phase-3.md`
+- `docs/contexto/features/pr-2273-comedores-2142.md`
+- `docs/contexto/features/pr-2274-fix-buscadores.md`
+- `docs/contexto/features/pr-2275-fix-en-el-modal-mi-cuenta.md`
+- `docs/contexto/features/pr-2276-refactor-sellar-bounded-context-comedores-core.md`
+- `docs/contexto/features/pr-2277-fix-corregir-issues-reabiertos-de-rendiciones.md`
+- `docs/contexto/features/pr-2279-feat-admisiones-corregir-expedientes-del-issue-2272.md`
+- `docs/contexto/features/pr-2283-fix-comedores-generar-certificaciones-sin-fuente.md`
+- `docs/contexto/panorama.md`
+- `docs/flujos/consulta_renaper.md`
+- `docs/flujos/derivar_nomina_centros.md`
+- `docs/ia/MODULAR_BOUNDARIES.md`
+- `docs/implementaciones/centrodefamilia_preinscriptos.md`
+- `docs/implementaciones/centrodeinfancia_nomina_renaper.md`
+- `docs/implementaciones/usuarios_perfil_iam.md`
+- `docs/operacion/comandos_administracion.md`
+- `docs/operacion/correccion_expedientes_issue_2272.md`
+- `docs/operacion/deploy_automatizado.md`
+- `docs/operacion/integraciones.md`
+- `docs/plans/2026-07-31-templates-dinamicos-informes-tecnicos.md`
+- `docs/plans/2026-08-04-issue-1776-django-52-design.md`
+- `docs/plans/2026-08-13-certificacion-prestaciones-fallback-design.md`
+- `docs/registro/cambios/2026-07-27-cdf-exportacion-beneficiarios.md`
+- `docs/registro/cambios/2026-07-29-issue-2163-simple-asociacion.md`
+- `docs/registro/cambios/2026-07-31-buscador-transversal-lupa-y-cta.md`
+- `docs/registro/cambios/2026-07-31-catalogo-variables-templates.md`
+- `docs/registro/cambios/2026-07-31-cdf-beneficiarios-columnas-y-export-sse.md`
+- `docs/registro/cambios/2026-07-31-estilo-tablas-docx-templates.md`
+- `docs/registro/cambios/2026-07-31-gestor-templates-nucleo.md`
+- `docs/registro/cambios/2026-07-31-restaurar-adjuntos-admision.md`
+- `docs/registro/cambios/2026-07-31-seleccion-dinamica-docx-informe-tecnico.md`
+- `docs/registro/cambios/2026-07-31-tipos-convenio-gestor-templates.md`
+- `docs/registro/cambios/2026-07-31-ui-gestor-templates.md`
+- `docs/registro/cambios/2026-07-31-validaciones-iniciales-templates.md`
+- `docs/registro/cambios/2026-07-31-vista-previa-incidencias-templates.md`
+- `docs/registro/cambios/2026-08-03-experiencia-versiones-templates.md`
+- `docs/registro/cambios/2026-08-03-filtros-gestor-templates.md`
+- `docs/registro/cambios/2026-08-03-filtros-ordenamiento-listados-comedores.md`
+- `docs/registro/cambios/2026-08-04-django-52-lts.md`
+- `docs/registro/cambios/2026-08-04-etiqueta-caritas-comedores.md`
+- `docs/registro/cambios/2026-08-04-issue-1776-compatibilidad-django-52.md`
+- `docs/registro/cambios/2026-08-04-issue-2005-rendiciones-en-organizaciones.md`
+- `docs/registro/cambios/2026-08-04-issue-2225-permisos-grupos.md`
+- `docs/registro/cambios/2026-08-04-issues-1961-2076-2079-2188.md`
+- `docs/registro/cambios/2026-08-06-issue-1961-proyectos-alta-comedor.md`
+- `docs/registro/cambios/2026-08-06-issue-2076-edicion-expediente.md`
+- `docs/registro/cambios/2026-08-06-issue-2079-subsanacion-auditoria.md`
+- `docs/registro/cambios/2026-08-06-issue-2188-capacitaciones-actividades-pnud.md`
+- `docs/registro/cambios/2026-08-06-mi-cuenta-confirmacion-datos.md`
+- `docs/registro/cambios/2026-08-07-cdi-nomina-vigente-en-un-solo-centro.md`
+- `docs/registro/cambios/2026-08-10-alta-ciudadano-sin-dni-nomina.md`
+- `docs/registro/cambios/2026-08-10-ci-artefactos-pr-no-trackeados.md`
+- `docs/registro/cambios/2026-08-10-fixes-admisiones-pwa-rendiciones.md`
+- `docs/registro/cambios/2026-08-10-select2-formulario-comedores.md`
+- `docs/registro/cambios/2026-08-12-correcciones-issues-reabiertos.md`
+- `docs/registro/cambios/2026-08-12-issue-2272-correccion-expedientes.md`
+- `docs/registro/cambios/2026-08-13-certificaciones-prestaciones-sin-fuente.md`
+- `docs/registro/decisiones/2026-07-31-catalogo-variables-templates.md`
+- `docs/registro/decisiones/2026-07-31-estilo-tablas-docx-templates.md`
+- `docs/registro/decisiones/2026-07-31-formato-pagina-docx-templates.md`
+- `docs/registro/decisiones/2026-07-31-incidencias-por-combinacion-template.md`
+- `docs/registro/decisiones/2026-07-31-navegacion-gestor-templates.md`
+- `docs/registro/decisiones/2026-07-31-render-docx-dinamico-templates.md`
+- `docs/registro/decisiones/2026-07-31-templates-dinamicos-informes-tecnicos.md`
+- `docs/registro/decisiones/2026-07-31-unicidad-publicacion-templates.md`
+- `docs/registro/decisiones/2026-08-06-capacidad-comedores-pwa-fase-0.md`
+- `docs/registro/decisiones/2026-08-06-catalogos-formularios-users-fase-0.md`
+- `docs/registro/decisiones/2026-08-06-cierre-ratchet-fase-0.md`
+- `docs/registro/decisiones/2026-08-06-contribuciones-ciudadano-360-fase-0.md`
+- `docs/registro/decisiones/2026-08-06-endpoint-organizaciones-fase-0.md`
+- `docs/registro/decisiones/2026-08-06-puerto-auditoria-auth-pwa-fase-0.md`
+- `docs/registro/decisiones/2026-08-06-puerto-renaper-fase-0.md`
+- `docs/registro/decisiones/2026-08-06-registro-filtros-favoritos-fase-0.md`
+- `docs/registro/decisiones/2026-08-06-registro-post-fixture-intervenciones-fase-0.md`
+- `docs/registro/decisiones/2026-08-06-registro-sidebar-vat-fase-0.md`
+- `docs/registro/decisiones/2026-08-06-registro-soft-delete-vat-fase-0.md`
+- `docs/registro/decisiones/2026-08-06-resolvedor-importacion-pwa-fase-0.md`
+- `docs/registro/decisiones/2026-08-06-senal-coordinador-duplas-fase-0.md`
+- `docs/registro/decisiones/2026-08-06-tests-alcance-territorial-ciudadanos-fase-0.md`
+- `docs/registro/decisiones/2026-08-07-contrato-publico-celiaquia.md`
+- `docs/registro/decisiones/2026-08-10-integracion-renaper-compartida.md`
+- `docs/registro/decisiones/2026-08-11-boundaries-fase-3.md`
+- `docs/registro/decisiones/2026-08-12-bounded-context-comedores-core.md`
+- `docs/registro/prs/PR-2141.md`
+- `docs/registro/prs/PR-2144.md`
+- `docs/registro/prs/PR-2150.md`
+- `docs/registro/prs/PR-2155.md`
+- `docs/registro/prs/PR-2156.md`
+- `docs/registro/prs/PR-2157.md`
+- `docs/registro/prs/PR-2161.md`
+- `docs/registro/prs/PR-2162.md`
+- `docs/registro/prs/PR-2165.md`
+- `docs/registro/prs/PR-2166.md`
+- `docs/registro/prs/PR-2167.md`
+- `docs/registro/prs/PR-2168.md`
+- `docs/registro/prs/PR-2170.md`
+- `docs/registro/prs/PR-2171.md`
+- `docs/registro/prs/PR-2172.md`
+- `docs/registro/prs/PR-2173.md`
+- `docs/registro/prs/PR-2174.md`
+- `docs/registro/prs/PR-2175.md`
+- `docs/registro/prs/PR-2179.md`
+- `docs/registro/prs/PR-2180.md`
+- `docs/registro/prs/PR-2181.md`
+- `docs/registro/prs/PR-2184.md`
+- `docs/registro/prs/PR-2186.md`
+- `docs/registro/prs/PR-2189.md`
+- `docs/registro/prs/PR-2190.md`
+- `docs/registro/prs/PR-2193.md`
+- `docs/registro/prs/PR-2194.md`
+- `docs/registro/prs/PR-2195.md`
+- `docs/registro/prs/PR-2196.md`
+- `docs/registro/prs/PR-2197.md`
+- `docs/registro/prs/PR-2198.md`
+- `docs/registro/prs/PR-2200.md`
+- `docs/registro/prs/PR-2202.md`
+- `docs/registro/prs/PR-2205.md`
+- `docs/registro/prs/PR-2208.md`
+- `docs/registro/prs/PR-2211.md`
+- `docs/registro/prs/PR-2212.md`
+- `docs/registro/prs/PR-2215.md`
+- `docs/registro/prs/PR-2217.md`
+- `docs/registro/prs/PR-2222.md`
+- `docs/registro/prs/PR-2227.md`
+- `docs/registro/prs/PR-2228.md`
+- `docs/registro/prs/PR-2230.md`
+- `docs/registro/prs/PR-2231.md`
+- `docs/registro/prs/PR-2235.md`
+- `docs/registro/prs/PR-2237.md`
+- `docs/registro/prs/PR-2253.md`
+- `docs/registro/prs/PR-2255.md`
+- `docs/registro/prs/PR-2260.md`
+- `docs/registro/prs/PR-2261.md`
+- `docs/registro/prs/PR-2264.md`
+- `docs/registro/prs/PR-2267.md`
+- `docs/registro/prs/PR-2270.md`
+- `docs/registro/prs/PR-2271.md`
+- `docs/registro/prs/PR-2273.md`
+- `docs/registro/prs/PR-2274.md`
+- `docs/registro/prs/PR-2275.md`
+- `docs/registro/prs/PR-2276.md`
+- `docs/registro/prs/PR-2277.md`
+- `docs/registro/prs/PR-2279.md`
+- `docs/registro/prs/PR-2283.md`
+- `docs/vat/VOUCHER_SETUP.md`
+
+## Trazabilidad
+
+- Documento generado automáticamente desde el evento de `pull_request`.
+- Si este PR cambia de título, el archivo se renombrará para mantener el slug alineado.

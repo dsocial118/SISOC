@@ -21,6 +21,10 @@ No cargar contexto amplio por defecto. Leer:
 5. tests del modulo o flujo afectado
 6. una sola guia de `docs/ia/` segun la tarea
 
+Para crear un modulo de dominio nuevo, agregar una dependencia interdominio o
+preparar una extraccion, leer antes de disenar
+`docs/ia/MODULAR_BOUNDARIES.md`.
+
 Usar `docs/ia/CONTEXT_HYGIENE.md` para decidir si hace falta ampliar. Abrir mas docs, callers o settings solo con evidencia concreta.
 
 ## Implementacion
@@ -53,6 +57,7 @@ Si el cambio modifica comportamiento, agregar o actualizar tests cercanos cuando
 - `docs/ia/CONTRIBUTING_AI.md`
 - `docs/ia/STYLE_GUIDE.md`
 - `docs/ia/ARCHITECTURE.md`
+- `docs/ia/MODULAR_BOUNDARIES.md`
 - `docs/ia/TESTING.md`
 - `docs/ia/SECURITY_AI.md`
 - `docs/ia/ERRORS_LOGGING.md`

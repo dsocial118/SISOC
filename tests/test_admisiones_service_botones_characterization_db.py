@@ -112,7 +112,7 @@ def _informe(**overrides):
             ),
             _informe(estado="Validado"),
             False,
-            ["if_informe_tecnico"],
+            ["descargar_informe_tecnico_gde", "if_informe_tecnico"],
         ),
         (
             _admision(
@@ -122,7 +122,7 @@ def _informe(**overrides):
             ),
             _informe(estado="Validado"),
             False,
-            ["mandar_a_legales"],
+            ["descargar_informe_tecnico_gde", "mandar_a_legales"],
         ),
         (
             _admision(
@@ -199,6 +199,7 @@ def test_get_botones_disponibles_preserva_orden_en_combinacion_tecnica():
     assert botones == [
         "comenzar_acompaniamiento",
         "rectificar_documentacion",
+        "descargar_informe_tecnico_gde",
         "mandar_a_legales",
         "informe_tecnico_complementario",
     ]

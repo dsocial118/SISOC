@@ -7,6 +7,7 @@ from django.test import TestCase
 from django.urls import reverse
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Permission
 from django.core.exceptions import ValidationError
 
 from importarexpediente.models import (
@@ -25,6 +26,12 @@ User = get_user_model()
 class ImportarExpedienteViewsTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(username="tester", password="pass1234")
+        self.user.user_permissions.add(
+            Permission.objects.get(
+                content_type__app_label="importarexpediente",
+                codename="view_archivosimportados",
+            )
+        )
         self.client.login(username="tester", password="pass1234")
         # Crear un comedor que pueda resolverse por ID o nombre
         self.comedor = Comedor.objects.create(nombre="ADONAI")
@@ -47,7 +54,7 @@ class ImportarExpedienteViewsTests(TestCase):
         mock_full_clean.side_effect = side_effect
 
         csv_text = (
-            "ID;COMEDOR;ORGANIZACIÓN;EXPEDIENTE del CONVENIO;Expediente de Pago;TOTAL;Mes de Pago;Año\n"
+            "ID;COMEDOR;ORGANIZACIÃƒÆ’Ã¢â‚¬Å“N;EXPEDIENTE del CONVENIO;Expediente de Pago;TOTAL;Mes de Pago;Año\n"
             # Dos filas válidas a nivel de datos; el mock fuerza error en la segunda
             f'{self.comedor.id};{self.comedor.nombre};Org;EX-2024-X;EX-2025-AAA;"$ 1.000,00";enero;2025\n'
             f'{self.comedor.id};{self.comedor.nombre};Org;EX-2024-Y;EX-2025-BBB;"$ 2.000,00";enero;2025\n'
@@ -106,7 +113,7 @@ class ImportarExpedienteViewsTests(TestCase):
         mock_full_clean.return_value = None
         # CSV almacenado en el FileField del maestro
         csv_text = (
-            "ID;COMEDOR;ORGANIZACIÓN;EXPEDIENTE del CONVENIO;Expediente de Pago;TOTAL;Mes de Pago;Año\n"
+            "ID;COMEDOR;ORGANIZACIÃƒÆ’Ã¢â‚¬Å“N;EXPEDIENTE del CONVENIO;Expediente de Pago;TOTAL;Mes de Pago;Año\n"
             f'{self.comedor.id};{self.comedor.nombre};Org;EX-2024-Z;EX-2025-CCC;"$ 3.000,00";enero;2025\n'
         )
         uploaded = self._make_csv_file(csv_text, name="stored.csv")
