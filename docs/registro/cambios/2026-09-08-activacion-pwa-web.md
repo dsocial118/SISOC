@@ -95,3 +95,14 @@ consulta catalogos geograficos sin marca django_db/fixture de base en esos tests
 Este PR no modifica esos archivos; deploy_guard falla como consecuencia del job
 pytest. Los 29 tests operativos pasan. No se mezclo una correccion de Admisiones
 en la integracion de infraestructura.
+
+## Correccion autorizada de los tres tests bloqueantes
+
+Se reprodujeron los tres fallos en un contenedor local aislado. Los tests prueban
+reglas de fecha de mandato y ya simulan BaseModelForm.clean; el constructor ahora
+carga catalogos geograficos, una responsabilidad ajena a esas reglas. Se simula
+solo `_configurar_selectores_geograficos` en esos tres casos, conservando intactas
+las aserciones y la logica de los formularios. Resultado: los 33 tests unitarios
+sin marca django_db del archivo pasan; cuatro pruebas con DB quedan para la CI.
+No se modifica el acceso a catalogos del producto ni se relaja el bloqueo de DB
+de pytest. La nueva ejecucion de CI debe validar la suite completa.
