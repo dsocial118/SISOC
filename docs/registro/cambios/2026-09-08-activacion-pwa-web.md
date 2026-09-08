@@ -112,3 +112,10 @@ deriva del nombre de indice de ComedorPwaCreateOperation: el modelo lo generaba
 automaticamente y la migracion 0059 ya fijaba otro nombre. Se explicita en el
 modelo el nombre versionado en 0059, sin alterar el indice de la base ni agregar
 una migracion. Esta correccion tambien forma parte de la sincronizacion de main.
+
+Pylint tambien detecto cuatro avisos en api_views_territorial despues de #2473.
+Se mueve TerritorialComedorWriteSerializer al modulo api_serializers existente,
+manteniendo su import desde la vista y el decorador OpenAPI del ViewSet. Se
+separan dos validaciones privadas (jerarquia en edicion y normalizacion de anio)
+sin cambiar orden, mensajes ni permisos, y se retiran imports ya sin uso. No se
+deshabilitan reglas de lint nuevas. Pylint de ambos modulos: 10/10.

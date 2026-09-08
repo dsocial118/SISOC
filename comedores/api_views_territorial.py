@@ -7,9 +7,7 @@ sus comedores asignados con scope por las provincias que tiene cargadas en
 
 import hashlib
 import json
-from datetime import date
 
-from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.files.storage import default_storage
 from django.db import IntegrityError, transaction
 from django.db.models import Prefetch
@@ -23,17 +21,17 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from comedores.api_serializers import ComedorDetailSerializer, NoSaveSerializer
+from comedores.api_serializers import (
+    ComedorDetailSerializer,
+    NoSaveSerializer,
+    TerritorialComedorWriteSerializer,
+)
 from comedores.models import (
     Comedor,
     ComedorPwaCreateOperation,
-    Programas,
-    TipoDeComedor,
 )
 from comedores.services.comedor_service import ComedorService
-from core.models import Localidad, Municipio, Provincia
 from core.utils import format_fecha_django
-from organizaciones.models import Organizacion
 from relevamientos.models import (
     ActaComplementaria,
     MotivoExcepcionSeguimiento,
@@ -165,174 +163,6 @@ class TerritorialComedorSerializer(NoSaveSerializer):
                     }
                 )
         return {"total": len(items), "items": items}
-
-
-class TerritorialComedorWriteSerializer(serializers.Serializer):
-    """Contrato de escritura de Gestionar, separado del detalle web de SISOC."""
-
-    client_uuid = serializers.CharField(max_length=100, write_only=True, required=False)
-    nombre = serializers.CharField(max_length=255)
-    tipo = serializers.CharField(max_length=255)
-    programa = serializers.CharField(max_length=255, required=False, allow_blank=True)
-    organizacion = serializers.CharField(
-        max_length=255, required=False, allow_blank=True
-    )
-    comienzo = serializers.CharField(max_length=10, required=False, allow_blank=True)
-    provincia = serializers.CharField(max_length=255, required=False)
-    municipio = serializers.CharField(max_length=255, required=False, allow_blank=True)
-    localidad = serializers.CharField(max_length=255, required=False, allow_blank=True)
-    calle = serializers.CharField(max_length=255, required=False, allow_blank=True)
-    numero = serializers.IntegerField(required=False, allow_null=True)
-    entre_calle_1 = serializers.CharField(
-        max_length=255, required=False, allow_blank=True
-    )
-    entre_calle_2 = serializers.CharField(
-        max_length=255, required=False, allow_blank=True
-    )
-    barrio = serializers.CharField(max_length=255, required=False, allow_blank=True)
-    codigo_postal = serializers.IntegerField(required=False, allow_null=True)
-    latitud = serializers.FloatField(required=False, allow_null=True)
-    longitud = serializers.FloatField(required=False, allow_null=True)
-
-    @staticmethod
-    def _single_by_name(model, value, field, **filters):
-        if value in (None, ""):
-            return None
-        matches = list(
-            model.objects.filter(nombre__iexact=value, **filters).order_by("id")[:2]
-        )
-        if len(matches) != 1:
-            raise serializers.ValidationError(
-                {field: "Debe indicar un valor existente y no ambiguo en SISOC."}
-            )
-        return matches[0]
-
-    def validate(self, attrs):
-        if self.instance and "client_uuid" in attrs:
-            raise serializers.ValidationError(
-                {"client_uuid": "Solo se acepta al crear un comedor."}
-            )
-
-        scope_ids = set(
-            get_territorial_comedor_provincia_ids(self.context["request"].user)
-        )
-        province_name = attrs.pop("provincia", None)
-        if province_name is not None:
-            provincia = self._single_by_name(Provincia, province_name, "provincia")
-        elif self.instance:
-            provincia = self.instance.provincia
-        else:
-            raise serializers.ValidationError(
-                {"provincia": "Este campo es obligatorio."}
-            )
-
-        if provincia is None or provincia.id not in scope_ids:
-            raise PermissionDenied(
-                "La provincia indicada no pertenece a su alcance territorial."
-            )
-        attrs["provincia"] = provincia
-
-        if "tipo" in attrs:
-            attrs["tipocomedor"] = self._single_by_name(
-                TipoDeComedor, attrs.pop("tipo"), "tipo"
-            )
-        if "programa" in attrs:
-            attrs["programa"] = self._single_by_name(
-                Programas, attrs["programa"], "programa"
-            )
-        if "organizacion" in attrs:
-            attrs["organizacion"] = self._single_by_name(
-                Organizacion, attrs["organizacion"], "organizacion"
-            )
-
-        municipio_was_provided = "municipio" in attrs
-        localidad_was_provided = "localidad" in attrs
-        if municipio_was_provided:
-            attrs["municipio"] = self._single_by_name(
-                Municipio,
-                attrs["municipio"],
-                "municipio",
-                provincia=provincia,
-            )
-        municipio = attrs.get(
-            "municipio", self.instance.municipio if self.instance else None
-        )
-        if localidad_was_provided:
-            if attrs["localidad"] and municipio is None:
-                raise serializers.ValidationError(
-                    {"localidad": "Requiere un municipio válido."}
-                )
-            attrs["localidad"] = self._single_by_name(
-                Localidad,
-                attrs["localidad"],
-                "localidad",
-                municipio=municipio,
-            )
-
-        if self.instance:
-            if (
-                provincia.pk != self.instance.provincia_id
-                and not municipio_was_provided
-            ):
-                raise serializers.ValidationError(
-                    {
-                        "municipio": (
-                            "Debe indicarlo al cambiar la provincia para conservar "
-                            "la jerarquía territorial."
-                        )
-                    }
-                )
-            municipio_id = getattr(municipio, "pk", None)
-            if (
-                municipio_was_provided
-                and municipio_id != self.instance.municipio_id
-                and not localidad_was_provided
-            ):
-                raise serializers.ValidationError(
-                    {
-                        "localidad": (
-                            "Debe indicarla o limpiarla al cambiar el municipio."
-                        )
-                    }
-                )
-
-        if "comienzo" in attrs:
-            raw_comienzo = attrs["comienzo"]
-            if not raw_comienzo:
-                attrs["comienzo"] = None
-            elif len(raw_comienzo) == 4 and raw_comienzo.isdigit():
-                attrs["comienzo"] = int(raw_comienzo)
-            else:
-                try:
-                    attrs["comienzo"] = date.fromisoformat(raw_comienzo).year
-                except ValueError as exc:
-                    raise serializers.ValidationError(
-                        {"comienzo": "Use YYYY o una fecha ISO YYYY-MM-DD."}
-                    ) from exc
-
-        return attrs
-
-    @staticmethod
-    def _validate_model(instance):
-        try:
-            instance.full_clean()
-        except ValidationError as exc:
-            raise serializers.ValidationError(exc.message_dict) from exc
-
-    def create(self, validated_data):
-        validated_data.pop("client_uuid", None)
-        instance = Comedor(**validated_data)
-        self._validate_model(instance)
-        instance.save()
-        return instance
-
-    def update(self, instance, validated_data):
-        validated_data.pop("client_uuid", None)
-        for field, value in validated_data.items():
-            setattr(instance, field, value)
-        self._validate_model(instance)
-        instance.save()
-        return instance
 
 
 @extend_schema(tags=["Territorial"])
