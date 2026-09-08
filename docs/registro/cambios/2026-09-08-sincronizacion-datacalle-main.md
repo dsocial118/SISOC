@@ -27,6 +27,10 @@ API ni sustituye la sincronizacion por copias de archivos de produccion.
 - users/0051_merge_mobile_configuration_and_datacalle une las dos hojas 0050
   existentes. No tiene operaciones de schema ni de datos. Los cambios de schema
   de DataCalle ya versionados en main se aplicaran normalmente donde falten.
+- La comprobacion global detecto que ComedorPwaCreateOperation (incorporado a
+  development por #2473) tenia un indice sin nombre en el modelo y con nombre
+  explicito en 0059. Se fija en el modelo el nombre ya migrado para evitar que
+  Django proponga renombrarlo. No se cambia el indice ni se crea otra migracion.
 
 ## Validacion y limites
 
