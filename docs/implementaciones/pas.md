@@ -23,7 +23,7 @@ descargar el mismo resultado más tarde.
 - La exportación reutiliza la política central CSV UTF-8 con BOM y neutraliza
   prefijos de fórmula antes de entregar el archivo.
 - Las descargas requieren el permiso transversal de exportación CSV, además
-  de los permisos Django de consulta y generación del informe.
+  de los permisos Django de consulta del padrón y del informe.
 
 ## Privacidad, permisos y rollback
 
