@@ -55,9 +55,17 @@ versionado no equivale a un despliegue. Ver evidencia inicial en
    del snippet en PRD, manteniendo su gate de autorizacion.
 
 Los builds locales HML/PRD y el arranque HTTP estan verificados; esos resultados
-no sustituyen el build en los hosts ni los flujos autenticados. El permiso sudo
-temporal de aprovisionamiento fue revocado y debe volver a habilitarse para la
-instalacion operativa, retirandolo al terminar.
+no sustituyen el build en los hosts ni los flujos autenticados.
+
+Actualizacion operativa del 2026-09-08: el usuario restablecio el permiso temporal
+y se verifico acceso como sisoc-deploy en ambos hosts. Se crearon los `.env` de
+DataCalle y Gestionar en la raiz de sus checkouts, propietario sisoc-deploy y modo
+600, con un comentario y sin secretos. Gestionar ya incorpora el empaquetado en
+main (`df4bce1a267e486326a2d3dd068268d7b618f8f0`); DataCalle sigue pendiente del PR #1.
+No se iniciaron builds ni se modifico Nginx: HML tiene 2,6 GB libres y 98% de uso.
+Docker informa 9,896 GB de cache de build recuperable; no se elimino cache,
+imagenes ni volumenes. Resolver capacidad antes de construir. El acceso temporal
+queda pendiente de retiro al completar la instalacion o cerrar la intervencion.
 
 ### Restablecer acceso temporal para la instalacion
 
