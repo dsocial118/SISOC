@@ -1,0 +1,1579 @@
+{
+  "$comentario": "Catálogos canónicos del cuestionario DataCalle. 'codigo' es la clave estable para la nueva app y para SISOC; 'etiqueta' es el texto que ve el encuestador (idéntico al de AppSheet, corregidas ligaduras tipográficas); 'legacy' son variantes históricas que deben mapearse a este código al migrar. 'otro: true' habilita un campo de texto asociado. 'fragmentosIgnorar' son restos de opciones con coma que AppSheet partió al serializar listas.",
+  "siNo": {
+    "opciones": [
+      {
+        "codigo": "si",
+        "etiqueta": "Sí",
+        "legacy": [
+          "Y",
+          "Si",
+          "Sí",
+          "TRUE"
+        ]
+      },
+      {
+        "codigo": "no",
+        "etiqueta": "No",
+        "legacy": [
+          "N",
+          "No",
+          "FALSE"
+        ]
+      }
+    ]
+  },
+  "siNoNsnc": {
+    "opciones": [
+      {
+        "codigo": "si",
+        "etiqueta": "Sí",
+        "legacy": [
+          "Si",
+          "Sí"
+        ]
+      },
+      {
+        "codigo": "no",
+        "etiqueta": "No",
+        "legacy": [
+          "No"
+        ]
+      },
+      {
+        "codigo": "nsnc",
+        "etiqueta": "NS/NC",
+        "legacy": [
+          "NS/NC",
+          "Ns/Nc",
+          "Ns/nc"
+        ]
+      }
+    ]
+  },
+  "sexoAparente": {
+    "opciones": [
+      {
+        "codigo": "varon",
+        "etiqueta": "Varón"
+      },
+      {
+        "codigo": "mujer",
+        "etiqueta": "Mujer"
+      },
+      {
+        "codigo": "noSeObserva",
+        "etiqueta": "No se observa",
+        "legacy": [
+          "No se Observa"
+        ]
+      }
+    ]
+  },
+  "edadEstimada": {
+    "opciones": [
+      {
+        "codigo": "0a5",
+        "etiqueta": "Entre 0 a 5 años",
+        "legacy": [
+          "Entre 0 a 5 Años"
+        ]
+      },
+      {
+        "codigo": "6a12",
+        "etiqueta": "Entre 6 y 12 años"
+      },
+      {
+        "codigo": "13a17",
+        "etiqueta": "Entre 13 y 17 años"
+      },
+      {
+        "codigo": "18a29",
+        "etiqueta": "Entre 18 y 29 años"
+      },
+      {
+        "codigo": "30a45",
+        "etiqueta": "Entre 30 y 45 años"
+      },
+      {
+        "codigo": "46a64",
+        "etiqueta": "Entre 46 y 64 años"
+      },
+      {
+        "codigo": "65mas",
+        "etiqueta": "65 años o más"
+      },
+      {
+        "codigo": "noSeDetermina",
+        "etiqueta": "No se observa / determina"
+      }
+    ]
+  },
+  "motivoRechazo": {
+    "opciones": [
+      {
+        "codigo": "dormido",
+        "etiqueta": "i. Dormido",
+        "legacy": [
+          "i. Dormido."
+        ]
+      },
+      {
+        "codigo": "lugarInaccesible",
+        "etiqueta": "ii. El lugar de localización es inaccesible",
+        "legacy": [
+          "ii. El lugar de localización es inaccesible."
+        ]
+      },
+      {
+        "codigo": "seguridad",
+        "etiqueta": "iii. Problemas de seguridad",
+        "legacy": [
+          "iii. Problemas de seguridad.",
+          "Hay problemas de seguriidad",
+          "Hay problemas de seguridad"
+        ]
+      },
+      {
+        "codigo": "noOrientado",
+        "etiqueta": "iv. No se encuentra orientado en tiempo/espacio (Protocolo de emergencia)",
+        "legacy": [
+          "iv. No se encuentra orientado en tiempo/espacio. (Protocolo de emergencia)"
+        ]
+      },
+      {
+        "codigo": "noDeseaResponder",
+        "etiqueta": "v. No desea responder",
+        "legacy": [
+          "NO QUIERE CONTESTAR",
+          "v. No desea responder por problemas de conducta",
+          "No quiere"
+        ]
+      },
+      {
+        "codigo": "menor13",
+        "etiqueta": "No aplica por menor de 13 años"
+      },
+      {
+        "codigo": "otro",
+        "etiqueta": "vi. Otro (especificar)",
+        "otro": true,
+        "legacy": [
+          "Indicio de consumo",
+          "Falta respuesta",
+          "Esta apurado"
+        ]
+      }
+    ]
+  },
+  "tipoDni": {
+    "opciones": [
+      {
+        "codigo": "dniArgentino",
+        "etiqueta": "DNI/CI argentino"
+      },
+      {
+        "codigo": "documentoExtranjero",
+        "etiqueta": "Documento extranjero"
+      },
+      {
+        "codigo": "pasaporte",
+        "etiqueta": "Pasaporte"
+      },
+      {
+        "codigo": "residenciaPrecaria",
+        "etiqueta": "Residencia precaria"
+      },
+      {
+        "codigo": "nsnc",
+        "etiqueta": "NS/NC"
+      }
+    ]
+  },
+  "motivoNoTieneDni": {
+    "opciones": [
+      {
+        "codigo": "perdidoRobado",
+        "etiqueta": "Lo perdió o se lo robaron"
+      },
+      {
+        "codigo": "tramitando",
+        "etiqueta": "Está tramitando uno nuevo"
+      },
+      {
+        "codigo": "retenidoInstitucion",
+        "etiqueta": "Se lo retuvo una institución (policía, hospital, etc.)"
+      },
+      {
+        "codigo": "noSabeTramite",
+        "etiqueta": "No sabe cómo hacer el trámite"
+      },
+      {
+        "codigo": "nuncaTuvo",
+        "etiqueta": "Nunca lo tuvo / nunca lo tramitó"
+      },
+      {
+        "codigo": "noRecuerda",
+        "etiqueta": "No recuerda"
+      },
+      {
+        "codigo": "nsnc",
+        "etiqueta": "NS/NC"
+      }
+    ]
+  },
+  "identidadGenero": {
+    "opciones": [
+      {
+        "codigo": "varon",
+        "etiqueta": "Varón"
+      },
+      {
+        "codigo": "mujer",
+        "etiqueta": "Mujer"
+      },
+      {
+        "codigo": "varonTrans",
+        "etiqueta": "Varón trans"
+      },
+      {
+        "codigo": "mujerTrans",
+        "etiqueta": "Mujer trans"
+      },
+      {
+        "codigo": "noBinarie",
+        "etiqueta": "No binario",
+        "legacy": [
+          "No binarie"
+        ]
+      },
+      {
+        "codigo": "noSabe",
+        "etiqueta": "No sabe"
+      },
+      {
+        "codigo": "noContesta",
+        "etiqueta": "No contesta"
+      },
+      {
+        "codigo": "otra",
+        "etiqueta": "Otra"
+      },
+      {
+        "codigo": "prefiereNoResponder",
+        "etiqueta": "Prefiere no responder",
+        "legacy": [
+          "Preﬁere no responder"
+        ]
+      }
+    ]
+  },
+  "lugarProviene": {
+    "opciones": [
+      {
+        "codigo": "otraLocalidadProvincia",
+        "etiqueta": "De otra localidad de esta provincia"
+      },
+      {
+        "codigo": "otraProvincia",
+        "etiqueta": "De otra provincia"
+      },
+      {
+        "codigo": "otroPais",
+        "etiqueta": "De otro país"
+      }
+    ]
+  },
+  "nivelEducativo": {
+    "opciones": [
+      {
+        "codigo": "nuncaAsistio",
+        "etiqueta": "Nunca asistió"
+      },
+      {
+        "codigo": "primarioIncompleto",
+        "etiqueta": "Primario incompleto"
+      },
+      {
+        "codigo": "primarioCompleto",
+        "etiqueta": "Primario completo"
+      },
+      {
+        "codigo": "secundarioIncompleto",
+        "etiqueta": "Secundario incompleto"
+      },
+      {
+        "codigo": "secundarioCompleto",
+        "etiqueta": "Secundario completo"
+      },
+      {
+        "codigo": "terciarioIncompleto",
+        "etiqueta": "Terciario incompleto"
+      },
+      {
+        "codigo": "terciarioCompleto",
+        "etiqueta": "Terciario completo"
+      },
+      {
+        "codigo": "universitarioIncompleto",
+        "etiqueta": "Universitario incompleto"
+      },
+      {
+        "codigo": "universitarioCompleto",
+        "etiqueta": "Universitario completo"
+      },
+      {
+        "codigo": "educacionEspecial",
+        "etiqueta": "Educación especial"
+      },
+      {
+        "codigo": "otro",
+        "etiqueta": "Otro"
+      }
+    ]
+  },
+  "tipoDiscapacidad": {
+    "$comentario": "Categorías del Certificado Único de Discapacidad. Los diagnósticos tipeados (esquizofrenia, EPOC, diabetes…) van a 'otra' + texto.",
+    "opciones": [
+      {
+        "codigo": "fisica",
+        "etiqueta": "Física",
+        "legacy": [
+          "Fisica",
+          "Motora"
+        ]
+      },
+      {
+        "codigo": "intelectual",
+        "etiqueta": "Intelectual",
+        "legacy": [
+          "Retraso madurativo",
+          "Retraso Mental Leve"
+        ]
+      },
+      {
+        "codigo": "psicosocial",
+        "etiqueta": "Psicosocial / salud mental",
+        "legacy": [
+          "Psicosocial",
+          "Salud mental",
+          "PSIQUIATRICO",
+          "Psiquiatrico",
+          "Psiquiátrico"
+        ]
+      },
+      {
+        "codigo": "visual",
+        "etiqueta": "Visual"
+      },
+      {
+        "codigo": "auditiva",
+        "etiqueta": "Auditiva",
+        "legacy": [
+          "Sordo",
+          "Hipoacusia"
+        ]
+      },
+      {
+        "codigo": "sensorial",
+        "etiqueta": "Sensorial"
+      },
+      {
+        "codigo": "visceral",
+        "etiqueta": "Visceral"
+      },
+      {
+        "codigo": "otra",
+        "etiqueta": "Otra (especificar)",
+        "otro": true
+      }
+    ]
+  },
+  "motivoNoTieneCertificado": {
+    "opciones": [
+      {
+        "codigo": "noSabeComo",
+        "etiqueta": "No sabe cómo hacerlo"
+      },
+      {
+        "codigo": "enTramite",
+        "etiqueta": "Está en trámite",
+        "legacy": [
+          "Esta en trámite"
+        ]
+      },
+      {
+        "codigo": "sinDiagnostico",
+        "etiqueta": "No tiene diagnóstico o certificado médico requerido"
+      },
+      {
+        "codigo": "perdidoVencido",
+        "etiqueta": "Lo perdió / se le venció y no lo renovó"
+      },
+      {
+        "codigo": "negado",
+        "etiqueta": "Le negaron el certificado en una evaluación previa"
+      },
+      {
+        "codigo": "sinAccesoSalud",
+        "etiqueta": "No pudo acceder al sistema de salud para iniciar el trámite"
+      },
+      {
+        "codigo": "nsnc",
+        "etiqueta": "NS/NC",
+        "legacy": [
+          "Ns/Nc"
+        ]
+      }
+    ]
+  },
+  "conQuienesVive": {
+    "opciones": [
+      {
+        "codigo": "solo",
+        "etiqueta": "Solo"
+      },
+      {
+        "codigo": "pareja",
+        "etiqueta": "Pareja / cónyuge",
+        "legacy": [
+          "PAREJA"
+        ]
+      },
+      {
+        "codigo": "hijos",
+        "etiqueta": "Hijos"
+      },
+      {
+        "codigo": "padreMadre",
+        "etiqueta": "Padre / Madre"
+      },
+      {
+        "codigo": "otrosFamiliares",
+        "etiqueta": "Otro/s familiar/es",
+        "legacy": [
+          "Otro/S familiar/es",
+          "Hermana",
+          "HERMANO/A",
+          "Hermano/a",
+          "Tio",
+          "Hermanastro",
+          "Abuela",
+          "Sobrino"
+        ]
+      },
+      {
+        "codigo": "amigos",
+        "etiqueta": "Amigas/os o conocidos",
+        "legacy": [
+          "Amigo"
+        ]
+      },
+      {
+        "codigo": "companerosAlojamiento",
+        "etiqueta": "Compañeros de alojamiento",
+        "legacy": [
+          "ADULTOS MAYORES DE LA RESIDENCIA"
+        ]
+      },
+      {
+        "codigo": "personasDispositivo",
+        "etiqueta": "Personas que se encuentran habitando en el dispositivo de alojamiento",
+        "legacy": [
+          "´personas que se encuentran habitando en el dispositivo de alojamiento"
+        ]
+      },
+      {
+        "codigo": "mascotas",
+        "etiqueta": "Mascotas"
+      },
+      {
+        "codigo": "otraPersona",
+        "etiqueta": "Otra persona (especificar)",
+        "otro": true,
+        "legacy": [
+          "Otra persona (especiﬁcar):"
+        ]
+      },
+      {
+        "codigo": "nsnc",
+        "etiqueta": "NS/NC",
+        "legacy": [
+          "No especifica"
+        ]
+      }
+    ]
+  },
+  "dondeDuermeNoche": {
+    "opciones": [
+      {
+        "codigo": "viaPublica",
+        "etiqueta": "Vía pública (incluye estaciones, parques, plazas, etc.)"
+      },
+      {
+        "codigo": "dispositivoAlojamiento",
+        "etiqueta": "Dispositivo de alojamiento (parador, hogar, refugio, centro de integración social, etc.)"
+      },
+      {
+        "codigo": "pensionHotel",
+        "etiqueta": "Pensión/hotel por noche"
+      },
+      {
+        "codigo": "viviendaNoPropia",
+        "etiqueta": "Vivienda/habitación no propia"
+      },
+      {
+        "codigo": "otro",
+        "etiqueta": "Otro (especificar)",
+        "otro": true,
+        "legacy": [
+          "Otro (especiﬁcar):"
+        ]
+      },
+      {
+        "codigo": "nsnc",
+        "etiqueta": "NS/NC"
+      }
+    ]
+  },
+  "primeraVezCalle": {
+    "opciones": [
+      {
+        "codigo": "si",
+        "etiqueta": "Sí",
+        "legacy": [
+          "Si"
+        ]
+      },
+      {
+        "codigo": "no",
+        "etiqueta": "No"
+      },
+      {
+        "codigo": "prefiereNoContestar",
+        "etiqueta": "Prefiere no contestar"
+      }
+    ]
+  },
+  "desdeCuandoCalle": {
+    "opciones": [
+      {
+        "codigo": "menosSemana",
+        "etiqueta": "Menos de una semana"
+      },
+      {
+        "codigo": "semanaAMes",
+        "etiqueta": "Entre una semana y un mes"
+      },
+      {
+        "codigo": "1a6meses",
+        "etiqueta": "Entre 1 y 6 meses"
+      },
+      {
+        "codigo": "6mesesA1anio",
+        "etiqueta": "Entre 6 meses y 1 año"
+      },
+      {
+        "codigo": "1a2anios",
+        "etiqueta": "Entre 1 y 2 años"
+      },
+      {
+        "codigo": "mas2anios",
+        "etiqueta": "Más de 2 años"
+      },
+      {
+        "codigo": "nsnc",
+        "etiqueta": "NS/NC"
+      }
+    ]
+  },
+  "motivosVivirCalle": {
+    "$comentario": "'Por conflicto familiar' y 'Conflictos familiares' son dos redacciones de la misma opción (cambió durante la campaña). El resto de valores históricos (97 distintos) es texto libre y va a 'otras' + texto.",
+    "opciones": [
+      {
+        "codigo": "consumo",
+        "etiqueta": "Por consumo de sustancias o adicciones"
+      },
+      {
+        "codigo": "conflictoFamiliar",
+        "etiqueta": "Conflictos familiares",
+        "legacy": [
+          "Por conflicto familiar",
+          "Problemas familiares",
+          "Problemas Familiares",
+          "Por conflicto vincular"
+        ]
+      },
+      {
+        "codigo": "separacionPareja",
+        "etiqueta": "Separación de la pareja"
+      },
+      {
+        "codigo": "sinPlataAlojamiento",
+        "etiqueta": "Porque no tenían plata para el alojamiento",
+        "legacy": [
+          "No puedo pagar el alquiler",
+          "Economicos"
+        ]
+      },
+      {
+        "codigo": "perdioTrabajo",
+        "etiqueta": "Porque perdiste el trabajo",
+        "legacy": [
+          "Falta de trabajo"
+        ]
+      },
+      {
+        "codigo": "desalojo",
+        "etiqueta": "Por desalojo"
+      },
+      {
+        "codigo": "finAlquiler",
+        "etiqueta": "Finalizó el contrato de alquiler"
+      },
+      {
+        "codigo": "cambioLocalidad",
+        "etiqueta": "Porque cambiaste localidad/provincia/país",
+        "legacy": [
+          "Vino en busca de trabajo",
+          "Vino en busca de empleo",
+          "Viajero"
+        ]
+      },
+      {
+        "codigo": "violencia",
+        "etiqueta": "Por haber sufrido violencia física/sexual o sus hijos"
+      },
+      {
+        "codigo": "privacionLibertad",
+        "etiqueta": "Porque estuviste privado de la libertad"
+      },
+      {
+        "codigo": "exclusionHogar",
+        "etiqueta": "Exclusión del hogar"
+      },
+      {
+        "codigo": "egresoHospital",
+        "etiqueta": "Por egreso de un hospital/hospital psiquiátrico"
+      },
+      {
+        "codigo": "egresoInstitutoNNyA",
+        "etiqueta": "Por dejar de vivir en instituto de NNyA"
+      },
+      {
+        "codigo": "otras",
+        "etiqueta": "Por otras razones ¿Cuáles?",
+        "otro": true
+      },
+      {
+        "codigo": "nsnc",
+        "etiqueta": "NS/NC"
+      }
+    ]
+  },
+  "asisteComedor": {
+    "opciones": [
+      {
+        "codigo": "no",
+        "etiqueta": "No"
+      },
+      {
+        "codigo": "ocasional",
+        "etiqueta": "Sí, de manera ocasional"
+      },
+      {
+        "codigo": "algunasVecesSemana",
+        "etiqueta": "Sí, algunas veces por semana"
+      },
+      {
+        "codigo": "todosLosDias",
+        "etiqueta": "Sí, todos o casi todos los días"
+      },
+      {
+        "codigo": "nsnc",
+        "etiqueta": "NS/NC",
+        "legacy": [
+          "Ns/Nc"
+        ]
+      }
+    ]
+  },
+  "actividadEconomica": {
+    "fragmentosIgnorar": [
+      "etc.)"
+    ],
+    "opciones": [
+      {
+        "codigo": "changas",
+        "etiqueta": "Changas"
+      },
+      {
+        "codigo": "cuidaCoche",
+        "etiqueta": "Cuida coche"
+      },
+      {
+        "codigo": "ventaAmbulante",
+        "etiqueta": "Venta ambulante"
+      },
+      {
+        "codigo": "pedirDinero",
+        "etiqueta": "Pedir dinero"
+      },
+      {
+        "codigo": "cartonero",
+        "etiqueta": "Cartonero/reciclado de elementos"
+      },
+      {
+        "codigo": "construccion",
+        "etiqueta": "Actividades vinculadas con la construcción"
+      },
+      {
+        "codigo": "relacionDependencia",
+        "etiqueta": "Trabajo en relación de dependencia"
+      },
+      {
+        "codigo": "arteCallejero",
+        "etiqueta": "Arte callejero (malabares, etc.)",
+        "legacy": [
+          "Arte callejero (malabares"
+        ]
+      },
+      {
+        "codigo": "agricultura",
+        "etiqueta": "Actividades vinculadas con la agricultura"
+      },
+      {
+        "codigo": "casasParticulares",
+        "etiqueta": "Trabajo en casas particulares"
+      },
+      {
+        "codigo": "trabajoSexual",
+        "etiqueta": "Trabajo sexual"
+      },
+      {
+        "codigo": "cuidadoPersonas",
+        "etiqueta": "Actividades vinculadas con el cuidado de personas"
+      },
+      {
+        "codigo": "ninguna",
+        "etiqueta": "Ninguna"
+      },
+      {
+        "codigo": "otra",
+        "etiqueta": "Otra (especificar)",
+        "otro": true,
+        "legacy": [
+          "Otra (especiﬁcar):"
+        ]
+      },
+      {
+        "codigo": "nsnc",
+        "etiqueta": "NS/NC"
+      }
+    ]
+  },
+  "ingresoAdicional": {
+    "$comentario": "Las etiquetas originales incluían '(Fin de la encuesta)' para indicar el salto al cierre; en la nueva app el salto es una regla, no parte del texto.",
+    "opciones": [
+      {
+        "codigo": "si",
+        "etiqueta": "Sí",
+        "legacy": [
+          "Si"
+        ]
+      },
+      {
+        "codigo": "no",
+        "etiqueta": "No",
+        "legacy": [
+          "No (Fin de la encuesta)"
+        ]
+      },
+      {
+        "codigo": "nsnc",
+        "etiqueta": "NS/NC",
+        "legacy": [
+          "Ns/Nc (Fin de la encuesta)"
+        ]
+      }
+    ]
+  },
+  "tipoIngreso": {
+    "fragmentosIgnorar": [
+      "vejez",
+      "etc.)"
+    ],
+    "opciones": [
+      {
+        "codigo": "jubilacionContributiva",
+        "etiqueta": "Jubilación / pensión contributiva"
+      },
+      {
+        "codigo": "pensionNoContributiva",
+        "etiqueta": "Pensión no contributiva (por discapacidad, vejez, etc.)",
+        "legacy": [
+          "Pensión no contributiva (por discapacidad"
+        ]
+      },
+      {
+        "codigo": "programaSocial",
+        "etiqueta": "Programa Social"
+      },
+      {
+        "codigo": "programaSocialHijos",
+        "etiqueta": "Programa Social para sus hijos/as"
+      },
+      {
+        "codigo": "otro",
+        "etiqueta": "Otro (especificar)",
+        "otro": true
+      },
+      {
+        "codigo": "nsnc",
+        "etiqueta": "NS/NC",
+        "legacy": [
+          "Ns/Nc"
+        ]
+      }
+    ]
+  },
+  "programaSocial": {
+    "$comentario": "Detalle de programas (legacy otrosIngresos). Lista abierta: SISOC debería proveerla.",
+    "opciones": [
+      {
+        "codigo": "auh",
+        "etiqueta": "Asignación Universal por Hijo (AUH)",
+        "legacy": [
+          "Programa Social para sus hijos/as: Asignación Universal Por Hijo (AUH)"
+        ]
+      },
+      {
+        "codigo": "prestacionAlimentar",
+        "etiqueta": "Prestación Alimentar (ex Tarjeta Alimentar)",
+        "legacy": [
+          "Programa Social para sus hijos/as: Prestación Alimentar (Ex Tarjeta Alimentar)"
+        ]
+      },
+      {
+        "codigo": "volverAlTrabajo",
+        "etiqueta": "Volver al Trabajo",
+        "legacy": [
+          "Programa Social: Volver al trabajo"
+        ]
+      },
+      {
+        "codigo": "acompanamientoSocial",
+        "etiqueta": "Acompañamiento Social",
+        "legacy": [
+          "Programa Social: Acompañamiento Social"
+        ]
+      },
+      {
+        "codigo": "potenciarTrabajo",
+        "etiqueta": "Potenciar Trabajo",
+        "legacy": [
+          "Potenciar trabajo"
+        ]
+      },
+      {
+        "codigo": "pae",
+        "etiqueta": "Programa Acompañamiento al Egreso (PAE)"
+      },
+      {
+        "codigo": "tarjetaSocialProvincial",
+        "etiqueta": "Tarjeta social provincial / municipal",
+        "legacy": [
+          "Tarjeta Social Alimentaria",
+          "TARJETA SOCIAL CORDOBA"
+        ]
+      },
+      {
+        "codigo": "programaProvincial",
+        "etiqueta": "Programa provincial / municipal",
+        "legacy": [
+          "Servidores Urbanos",
+          "PROGRAMA ROSARIO",
+          "Plan paraná",
+          "Asistencia Directa"
+        ]
+      },
+      {
+        "codigo": "otro",
+        "etiqueta": "Otro (especificar)",
+        "otro": true,
+        "legacy": [
+          "otros"
+        ]
+      }
+    ]
+  },
+  "varianteCuestionario": {
+    "opciones": [
+      {
+        "codigo": "completo",
+        "etiqueta": "Cuestionario completo",
+        "legacy": [
+          "TODOS"
+        ]
+      },
+      {
+        "codigo": "sietePreguntas",
+        "etiqueta": "Cuestionario breve (7 preguntas)",
+        "legacy": [
+          "7P"
+        ]
+      },
+      {
+        "codigo": "finAnticipado",
+        "etiqueta": "Cierre anticipado",
+        "legacy": [
+          "FIN"
+        ]
+      }
+    ]
+  },
+  "relacionFamiliar": {
+    "opciones": [
+      {
+        "codigo": "padreMadreHijo",
+        "etiqueta": "Padre/Madre-Hijo/Hija"
+      },
+      {
+        "codigo": "pareja",
+        "etiqueta": "Esposo/a-Pareja"
+      },
+      {
+        "codigo": "abueloNieto",
+        "etiqueta": "Abuelo/a-Nieto/a"
+      },
+      {
+        "codigo": "hermanos",
+        "etiqueta": "Hermano/a"
+      },
+      {
+        "codigo": "tioSobrino",
+        "etiqueta": "Tio/a-Sobrino/a"
+      },
+      {
+        "codigo": "primos",
+        "etiqueta": "Primo/a"
+      },
+      {
+        "codigo": "cunados",
+        "etiqueta": "Cuñado/a"
+      },
+      {
+        "codigo": "otro",
+        "etiqueta": "Otro"
+      }
+    ]
+  },
+  "faseRelevamiento": {
+    "opciones": [
+      {
+        "codigo": "espacioPublico",
+        "etiqueta": "Espacio público"
+      },
+      {
+        "codigo": "dispositivoAlojamiento",
+        "etiqueta": "Dispositivo de alojamiento"
+      }
+    ]
+  },
+  "estadoRelevamiento": {
+    "$comentario": "D2: el relevamiento nace 'planificado' en SISOC; pasa a 'enProceso' (en_curso) con el primer caso y lo cierra el entrevistador.",
+    "opciones": [
+      {
+        "codigo": "planificado",
+        "etiqueta": "Planificado",
+        "legacy": []
+      },
+      {
+        "codigo": "enProceso",
+        "etiqueta": "En curso",
+        "legacy": [
+          "En Proceso",
+          "en_curso"
+        ]
+      },
+      {
+        "codigo": "finalizado",
+        "etiqueta": "Finalizado"
+      }
+    ]
+  },
+  "observacionAsentamiento": {
+    "opciones": [
+      {
+        "codigo": "consumoProblematico",
+        "etiqueta": "Indicios de consumo problemático",
+        "legacy": [
+          "Consumo Problemático."
+        ]
+      },
+      {
+        "codigo": "alteracionesSaludMental",
+        "etiqueta": "Indicios de alteraciones en la salud mental"
+      },
+      {
+        "codigo": "construccionPrecaria",
+        "etiqueta": "Construcción precaria",
+        "legacy": [
+          "Carpa",
+          "carpa cedida por los pescadores",
+          "nylon",
+          "galpon"
+        ]
+      },
+      {
+        "codigo": "mueblesEnseres",
+        "etiqueta": "Muebles/Enseres",
+        "legacy": [
+          "COLCHON FRAZADAS",
+          "COLCHONES",
+          "Colchón",
+          "Frazadas",
+          "COLCHA",
+          "Reposera",
+          "Balde",
+          "Mochila",
+          "MOCHILA",
+          "COLCHONETA DE CAMPING PEGALBLE.",
+          "Cartones"
+        ]
+      },
+      {
+        "codigo": "materialTrabajo",
+        "etiqueta": "Material de trabajo",
+        "legacy": [
+          "CARRO",
+          "ARTICULOS PARA LA VENTA)"
+        ]
+      },
+      {
+        "codigo": "mascotas",
+        "etiqueta": "Mascotas"
+      },
+      {
+        "codigo": "ninguno",
+        "etiqueta": "Ninguno",
+        "legacy": [
+          "NO TIENE NADA",
+          "Ninguno"
+        ]
+      },
+      {
+        "codigo": "otros",
+        "etiqueta": "Otros (especificar)",
+        "otro": true,
+        "legacy": [
+          "Otros"
+        ]
+      }
+    ]
+  },
+  "rolUsuario": {
+    "opciones": [
+      {
+        "codigo": "administrador",
+        "etiqueta": "Administrador"
+      },
+      {
+        "codigo": "coordinador",
+        "etiqueta": "Coordinador"
+      },
+      {
+        "codigo": "entrevistador",
+        "etiqueta": "Entrevistador"
+      }
+    ]
+  },
+  "provincia": {
+    "$comentario": "Códigos INDEC (provincia_id del catálogo de localidades).",
+    "opciones": [
+      {
+        "codigo": "02",
+        "etiqueta": "Ciudad Autónoma de Buenos Aires"
+      },
+      {
+        "codigo": "06",
+        "etiqueta": "Buenos Aires"
+      },
+      {
+        "codigo": "10",
+        "etiqueta": "Catamarca"
+      },
+      {
+        "codigo": "14",
+        "etiqueta": "Córdoba"
+      },
+      {
+        "codigo": "18",
+        "etiqueta": "Corrientes"
+      },
+      {
+        "codigo": "22",
+        "etiqueta": "Chaco"
+      },
+      {
+        "codigo": "26",
+        "etiqueta": "Chubut"
+      },
+      {
+        "codigo": "30",
+        "etiqueta": "Entre Ríos"
+      },
+      {
+        "codigo": "34",
+        "etiqueta": "Formosa"
+      },
+      {
+        "codigo": "38",
+        "etiqueta": "Jujuy"
+      },
+      {
+        "codigo": "42",
+        "etiqueta": "La Pampa"
+      },
+      {
+        "codigo": "46",
+        "etiqueta": "La Rioja"
+      },
+      {
+        "codigo": "50",
+        "etiqueta": "Mendoza"
+      },
+      {
+        "codigo": "54",
+        "etiqueta": "Misiones"
+      },
+      {
+        "codigo": "58",
+        "etiqueta": "Neuquén"
+      },
+      {
+        "codigo": "62",
+        "etiqueta": "Río Negro"
+      },
+      {
+        "codigo": "66",
+        "etiqueta": "Salta"
+      },
+      {
+        "codigo": "70",
+        "etiqueta": "San Juan"
+      },
+      {
+        "codigo": "74",
+        "etiqueta": "San Luis"
+      },
+      {
+        "codigo": "78",
+        "etiqueta": "Santa Cruz"
+      },
+      {
+        "codigo": "82",
+        "etiqueta": "Santa Fe"
+      },
+      {
+        "codigo": "86",
+        "etiqueta": "Santiago del Estero"
+      },
+      {
+        "codigo": "90",
+        "etiqueta": "Tucumán"
+      },
+      {
+        "codigo": "94",
+        "etiqueta": "Tierra del Fuego, Antártida e Islas del Atlántico Sur",
+        "legacy": [
+          "Tierra del Fuego"
+        ]
+      }
+    ]
+  },
+  "rangoEtario2026": {
+    "$comentario": "Instrumento 2026 - categorias etarias de CABA.",
+    "opciones": [
+      {
+        "codigo": "r0a14",
+        "etiqueta": "Entre 0 y 14 años"
+      },
+      {
+        "codigo": "r15a18",
+        "etiqueta": "Entre 15 y 18 años"
+      },
+      {
+        "codigo": "r19a59",
+        "etiqueta": "Entre 19 y 59 años"
+      },
+      {
+        "codigo": "r60mas",
+        "etiqueta": "60 años y más"
+      }
+    ]
+  },
+  "generoObservado": {
+    "opciones": [
+      {
+        "codigo": "varon",
+        "etiqueta": "Varón"
+      },
+      {
+        "codigo": "mujer",
+        "etiqueta": "Mujer"
+      },
+      {
+        "codigo": "noSeObserva",
+        "etiqueta": "No se observa"
+      }
+    ]
+  },
+  "realizaEntrevista": {
+    "$comentario": "Instrumento 2026, III.1. 'No rotundo' viene de Nación; 'no orientada' de CABA.",
+    "opciones": [
+      {
+        "codigo": "si",
+        "etiqueta": "Sí"
+      },
+      {
+        "codigo": "noRotundo",
+        "etiqueta": "No rotundo"
+      },
+      {
+        "codigo": "dormida",
+        "etiqueta": "Está dormida"
+      },
+      {
+        "codigo": "lugarInaccesible",
+        "etiqueta": "El lugar es inaccesible"
+      },
+      {
+        "codigo": "seguridad",
+        "etiqueta": "Hay problemas de seguridad"
+      },
+      {
+        "codigo": "yaEntrevistada",
+        "etiqueta": "Dice que ya fue entrevistada en esta ronda"
+      },
+      {
+        "codigo": "noOrientada",
+        "etiqueta": "No está orientada en tiempo/espacio (avisar a emergencias o 911)"
+      },
+      {
+        "codigo": "otro",
+        "etiqueta": "Otro (especificar)",
+        "otro": true
+      }
+    ]
+  },
+  "tipoDocumento": {
+    "$comentario": "Instrumento 2026, IV.3 (formato CABA sc25b). 'DNI en trámite' confirmado por negocio (2026-09-01): figura en la nota del instrumento, se incluye como opción.",
+    "opciones": [
+      {
+        "codigo": "dniArgentino",
+        "etiqueta": "DNI/CI argentino"
+      },
+      {
+        "codigo": "dniEnTramite",
+        "etiqueta": "DNI en trámite"
+      },
+      {
+        "codigo": "documentoExtranjero",
+        "etiqueta": "Documento extranjero"
+      },
+      {
+        "codigo": "residenciaPrecaria",
+        "etiqueta": "Residencia precaria"
+      },
+      {
+        "codigo": "noTiene",
+        "etiqueta": "No tiene documento"
+      },
+      {
+        "codigo": "otro",
+        "etiqueta": "Otro",
+        "otro": true
+      },
+      {
+        "codigo": "noSabe",
+        "etiqueta": "No sabe"
+      },
+      {
+        "codigo": "noContesta",
+        "etiqueta": "No contesta"
+      }
+    ]
+  },
+  "dondeNacio": {
+    "opciones": [
+      {
+        "codigo": "enEstaCiudad",
+        "etiqueta": "En esta ciudad"
+      },
+      {
+        "codigo": "provinciaBuenosAires",
+        "etiqueta": "En la Provincia de Buenos Aires"
+      },
+      {
+        "codigo": "otraProvincia",
+        "etiqueta": "En otra provincia"
+      },
+      {
+        "codigo": "otroPais",
+        "etiqueta": "En otro país"
+      },
+      {
+        "codigo": "noContesta",
+        "etiqueta": "No contesta"
+      }
+    ]
+  },
+  "gradoDificultad": {
+    "$comentario": "Set corto del Grupo de Washington (instrumento 2026, IV.11). `corta` = encabezado de columna del cuadro.",
+    "opciones": [
+      {
+        "codigo": "ninguna",
+        "etiqueta": "No, ninguna dificultad",
+        "corta": "Ninguna"
+      },
+      {
+        "codigo": "cierta",
+        "etiqueta": "Sí, cierta dificultad",
+        "corta": "Cierta"
+      },
+      {
+        "codigo": "mucha",
+        "etiqueta": "Sí, mucha dificultad",
+        "corta": "Mucha"
+      },
+      {
+        "codigo": "noPuede",
+        "etiqueta": "No puedo realizar esta actividad",
+        "corta": "No puede"
+      }
+    ]
+  },
+  "tiempoEnCalle2026": {
+    "$comentario": "Instrumento 2026, V.15 (pregunta de CABA sc10).",
+    "opciones": [
+      {
+        "codigo": "menosUnMes",
+        "etiqueta": "Menos de un mes"
+      },
+      {
+        "codigo": "unMesASeisMeses",
+        "etiqueta": "Entre un mes y seis meses"
+      },
+      {
+        "codigo": "seisMesesAUnAnio",
+        "etiqueta": "Más de seis meses a un año"
+      },
+      {
+        "codigo": "unAnioATresAnios",
+        "etiqueta": "Más de un año a tres años"
+      },
+      {
+        "codigo": "masTresAnios",
+        "etiqueta": "Más de tres años"
+      },
+      {
+        "codigo": "nsnc",
+        "etiqueta": "No sabe / no contesta"
+      }
+    ]
+  },
+  "diasDurmioSemana": {
+    "opciones": [
+      {
+        "codigo": "todosLosDias",
+        "etiqueta": "Todos los días"
+      },
+      {
+        "codigo": "soloHabiles",
+        "etiqueta": "Solo los días hábiles (lunes a viernes)"
+      },
+      {
+        "codigo": "soloFinDeSemana",
+        "etiqueta": "Solo el fin de semana"
+      },
+      {
+        "codigo": "algunosDias",
+        "etiqueta": "Algunos días"
+      },
+      {
+        "codigo": "ningunDia",
+        "etiqueta": "Ningún día"
+      },
+      {
+        "codigo": "soloUnDia",
+        "etiqueta": "Solo un día"
+      },
+      {
+        "codigo": "nsnc",
+        "etiqueta": "No sabe / no contesta"
+      }
+    ]
+  },
+  "dondePasoNoche": {
+    "opciones": [
+      {
+        "codigo": "paradorHogar",
+        "etiqueta": "En un parador u hogar"
+      },
+      {
+        "codigo": "pensionHotel",
+        "etiqueta": "En una pensión u hotel"
+      },
+      {
+        "codigo": "viviendaFamiliarAmigo",
+        "etiqueta": "En la vivienda de algún familiar o amigo"
+      },
+      {
+        "codigo": "otraJurisdiccion",
+        "etiqueta": "En un parador, pensión o vivienda en otra jurisdicción"
+      },
+      {
+        "codigo": "otroLugar",
+        "etiqueta": "Otro lugar"
+      },
+      {
+        "codigo": "nsnc",
+        "etiqueta": "No sabe / no contesta"
+      }
+    ]
+  },
+  "motivoPrincipalCalle": {
+    "$comentario": "Instrumento 2026, V.19 - UNA sola opción (redacción CABA sc30, agrupa las opciones de Nación).",
+    "opciones": [
+      {
+        "codigo": "conflictosFamiliares",
+        "etiqueta": "Conflictos familiares"
+      },
+      {
+        "codigo": "violencia",
+        "etiqueta": "Por haber sufrido violencia física/sexual, propia o de sus hijos/as"
+      },
+      {
+        "codigo": "emergencia",
+        "etiqueta": "Por situaciones de emergencia (derrumbe, incendio, vivienda inhabitable, desalojo)"
+      },
+      {
+        "codigo": "laboralesEconomicos",
+        "etiqueta": "Problemas laborales o económicos (fin de contrato de alquiler, pérdida del trabajo, falta de dinero para alojamiento)"
+      },
+      {
+        "codigo": "egresoInstitucional",
+        "etiqueta": "Egresos institucionales (hospital / hospital psiquiátrico, institución penitenciaria, instituto de NNyA)"
+      },
+      {
+        "codigo": "otro",
+        "etiqueta": "Otro motivo",
+        "otro": true
+      },
+      {
+        "codigo": "noContesta",
+        "etiqueta": "No contesta"
+      }
+    ]
+  },
+  "frecuenciaContactoFamiliar": {
+    "$comentario": "Instrumento 2026, V.20 (pregunta propia de CABA).",
+    "opciones": [
+      {
+        "codigo": "de1a5",
+        "etiqueta": "De 1 a 5 veces"
+      },
+      {
+        "codigo": "de6a10",
+        "etiqueta": "De 6 a 10 veces"
+      },
+      {
+        "codigo": "mas10",
+        "etiqueta": "Más de 10 veces"
+      },
+      {
+        "codigo": "ninguno",
+        "etiqueta": "No tuve ningún contacto"
+      },
+      {
+        "codigo": "nsnc",
+        "etiqueta": "No sabe / no contesta"
+      }
+    ]
+  },
+  "ingresoUltimoMes": {
+    "$comentario": "Instrumento 2026, VI.24 - unifica filtro + detalle del formulario anterior.",
+    "opciones": [
+      {
+        "codigo": "jubilacionContributiva",
+        "etiqueta": "Jubilación / pensión contributiva"
+      },
+      {
+        "codigo": "pensionNoContributiva",
+        "etiqueta": "Pensión no contributiva (por discapacidad, vejez, etc.)"
+      },
+      {
+        "codigo": "acompanamientoSocial",
+        "etiqueta": "Programa Acompañamiento Social"
+      },
+      {
+        "codigo": "auh",
+        "etiqueta": "Asignación Universal por Hijo (AUH)"
+      },
+      {
+        "codigo": "prestacionAlimentar",
+        "etiqueta": "Prestación Alimentar (ex Tarjeta Alimentar)"
+      },
+      {
+        "codigo": "programasProvinciales",
+        "etiqueta": "Programas provinciales / locales"
+      },
+      {
+        "codigo": "sinIngresosAdicionales",
+        "etiqueta": "No tiene ingresos adicionales"
+      },
+      {
+        "codigo": "nsnc",
+        "etiqueta": "No sabe / no contesta"
+      }
+    ]
+  },
+  "parentesco": {
+    "$comentario": "Parentesco con el/la entrevistado/a (grupo familiar presente, instrumento 2026 III.2). Opciones tomadas del catálogo de vínculos del formulario anterior (el papel no las especifica).",
+    "opciones": [
+      {
+        "codigo": "padreMadreHijo",
+        "etiqueta": "Padre/Madre - Hijo/Hija"
+      },
+      {
+        "codigo": "pareja",
+        "etiqueta": "Esposo/a - Pareja"
+      },
+      {
+        "codigo": "abueloNieto",
+        "etiqueta": "Abuelo/a - Nieto/a"
+      },
+      {
+        "codigo": "hermanos",
+        "etiqueta": "Hermano/a"
+      },
+      {
+        "codigo": "tioSobrino",
+        "etiqueta": "Tío/a - Sobrino/a"
+      },
+      {
+        "codigo": "primos",
+        "etiqueta": "Primo/a"
+      },
+      {
+        "codigo": "cunados",
+        "etiqueta": "Cuñado/a"
+      },
+      {
+        "codigo": "otro",
+        "etiqueta": "Otro"
+      }
+    ]
+  }
+}

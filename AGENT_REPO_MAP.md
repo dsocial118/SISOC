@@ -4,6 +4,11 @@ Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrollador
 
 ## Como leer este documento
 
+- Sincronizacion DataCalle: los cambios de main de #2452/#2453 se incorporan a
+  development conservando coordinadores PWA y su checkbox maestro. La migracion
+  users/0051 une las hojas de configuracion mobile y DataCalle sin operaciones.
+  Evidencia/conflictos: docs/registro/cambios/2026-09-08-sincronizacion-datacalle-main.md.
+
 - PWA privadas: `scripts/operacion/pwas.json` declara Espacios Comunitarios,
   DataCalle y Gestionar. `deploy_pwas.py` prepara snapshots/imagenes antes del
   downtime y activa despues del health del backend; las apps nuevas estan
