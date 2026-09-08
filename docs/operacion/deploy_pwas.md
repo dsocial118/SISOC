@@ -21,6 +21,12 @@ separado. Espacios conserva `/mobile/` hasta validar la migracion de sus cliente
 Fuente de configuracion: `scripts/operacion/pwas.json`. No renombrar las carpetas
 historicas ni los proyectos Compose al cambiar un nombre en GitHub.
 
+Estado del aprovisionamiento del 2026-09-08: acceso privado a los tres repos
+verificado en HML/PRD, include inicial de Nginx instalado y build de Espacios
+preparado en HML sin activacion. Los checkouts de las apps nuevas esperan la
+creacion de sus directorios por root. Ver evidencia y pendientes en
+[registro operativo](../registro/cambios/2026-09-08-coordinacion-pwa-privadas.md).
+
 ## Aprovisionamiento previo a fusionar/desplegar
 
 1. Como administrador del host, habilitar acceso al usuario operativo

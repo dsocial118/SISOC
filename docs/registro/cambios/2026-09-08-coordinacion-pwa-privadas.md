@@ -26,7 +26,7 @@ Los tres nombres oficiales son `dsocial118/Espacios-Comunitarios`,
 - Nginx tiene generador y candidatos; no modifica servidores. La migracion del
   SW de Espacios debe validarse antes de activar su ruta canonica.
 
-## Validacion
+## Validacion inicial, previa al aprovisionamiento
 
 - 28 pruebas pasaron: orquestacion con comandos simulados, helper Bash,
   orden/gates del workflow y generador de Nginx.
@@ -47,3 +47,42 @@ Los tres nombres oficiales son `dsocial118/Espacios-Comunitarios`,
   operativa en HML antes de produccion.
 
 Ver [operacion y contrato de build](../../operacion/deploy_pwas.md).
+
+## Aprovisionamiento ejecutado en HML y PRD
+
+- El administrador habilito permisos temporales para operar como sisoc-deploy e
+  instalar/validar/recargar los dos archivos previstos de Nginx.
+- Se reutilizo la deploy key existente de Espacios en HML y se registraron cinco
+  claves nuevas: Espacios PRD, DataCalle HML/PRD y Gestionar HML/PRD. Todas son de
+  solo lectura; las claves privadas permanecen en sus servidores.
+- Se verifico `ls-remote main` para las seis combinaciones app/entorno. Espacios
+  resolvio `f4f61ee61ce2ce7fe9e21475234ecf943c8227a0`; DataCalle y Gestionar
+  mantienen los SHA de sus copias iniciales.
+- El checkout operativo de Espacios tiene `core.sshCommand` con identidad
+  dedicada y una regla local `url.*.insteadOf` para convertir el HTTPS historico
+  de SISOC-Mobile a SSH. Esto conserva compatibilidad con el helper instalado,
+  que todavia fuerza la URL antigua. El repositorio sigue privado. Se probaron
+  fetch real, posibilidad de fast-forward y dry-run del helper en ambos hosts.
+- Se instalaron `/etc/nginx/snippets/sisoc-pwas.conf` y la referencia al include
+  en el vhost existente, conservando los otros bloques. `nginx -t`, reload y
+  servicio activo correctos en ambos hosts; upstream 8080 respondio HTTP 200.
+  No se publicaron DataCalle/Gestionar ni las rutas canonicas pendientes.
+  Las peticiones a las URLs publicas desde los hosts agotaron el limite de 15
+  segundos; no se afirma validacion de navegacion publica ni de TLS externo.
+- El coordinador construyo Espacios en HML con el SHA indicado y dejo estado
+  `prepared` en `~/.local/state/sisoc-pwa-build-hml-20260908`. No se ejecuto activate,
+  no se reiniciaron contenedores ni se desplego SISOC.
+- Los `.env` originales proporcionados se guardaron como
+  `~/.config/sisoc-pwa/{datacalle,gestionar}/original.env`, modo 600, en ambos
+  hosts. Son referencias privadas, no configuraciones de build activas. La
+  credencial APPSHEET_API_KEY de DataCalle debe permanecer fuera del frontend.
+- Respaldos del Git config de Mobile y del vhost en
+  `~/.local/state/sisoc-pwa-provision-20260908/` del runner.
+- La clave de host Ed25519 de GitHub se incorporo desde su
+  [documentacion oficial](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/githubs-ssh-key-fingerprints),
+  conservando StrictHostKeyChecking=yes.
+
+Pendiente: root debe crear `/sisoc/DataCalle` y `/sisoc/Gestionar` con owner
+sisoc-deploy y modo 0750 para completar los checkouts. El permiso temporal debe
+retirarse al terminar ese aprovisionamiento. El PR sigue sin fusionarse; la
+activacion del nuevo workflow y las pruebas funcionales son pasos separados.
