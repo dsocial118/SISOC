@@ -8,6 +8,9 @@
     {% elif boton == "ver_informe_tecnico" %}
         <a href="{% url 'informe_tecnico_ver' tipo=informe_tecnico.tipo pk=informe_tecnico.id %}"
            class="btn {{ clase }} mr-1">{{ texto }}</a>
+    {% elif boton == "descargar_informe_tecnico_gde" %}
+        <a href="{% url 'informe_tecnico_descargar_para_gde' tipo=informe_tecnico.tipo pk=informe_tecnico.id %}"
+           class="btn {{ clase }} mr-1">{{ texto }}</a>
     {% elif boton == "informe_tecnico_complementario" %}
         <a href="{% url 'informe_complementario_ver' tipo=informe_tecnico.tipo pk=informe_tecnico.id %}"
            class="btn {{ clase }} mr-1">{{ texto }}</a>
