@@ -240,9 +240,6 @@ class AdmisionesContextService:
             "finalizacion_convenio_pnud_vigente": getattr(
                 informe, "finalizacion_convenio_pnud_vigente", None
             ),
-            "acreditaciones_ultimo_convenio": getattr(
-                informe, "acreditaciones_ultimo_convenio", None
-            ),
             "monto_total_conveniado_informe": getattr(
                 informe, "monto_total_conveniado_informe", None
             ),
