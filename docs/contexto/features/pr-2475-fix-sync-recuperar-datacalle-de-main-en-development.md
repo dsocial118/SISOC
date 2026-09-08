@@ -37,6 +37,8 @@
 - Revisar primero estos archivos del diff:
 - `AGENT_REPO_MAP.md`
 - `CHANGELOG.md`
+- `comedores/api_serializers.py`
+- `comedores/api_views_territorial.py`
 - `comedores/models.py`
 - `config/settings.py`
 - `config/urls.py`
@@ -53,9 +55,7 @@
 - `datacalle/instrumento/diccionario-respuestas.json`
 - `datacalle/migrations/0001_initial.py`
 - `datacalle/migrations/0002_relevamiento_localidades.py`
-- `datacalle/migrations/0003_encuesta.py`
-- `datacalle/migrations/0004_encuesta_datacalle_e_relevam_c0184c_idx_and_more.py`
-- ... y 54 archivo(s) adicional(es) relacionados.
+- ... y 58 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
@@ -64,6 +64,7 @@
 - `docs/contexto/features/pr-2452-feat-datacalle-modulo-de-relevamientos-de-situacion-de-calle-y-api-para-la-app.md`
 - `docs/contexto/features/pr-2453-fix-datacalle-500-en-el-detalle-de-relevamiento-por-out-of-sort-memory-de-mysql.md`
 - `docs/contexto/features/pr-2474-feat-deploy-preparar-activacion-web-de-datacalle-y-gestionar.md`
+- `docs/contexto/features/pr-2475-fix-sync-recuperar-datacalle-de-main-en-development.md`
 - `docs/operacion/deploy_pwas.md`
 - `docs/operacion/nginx/README.md`
 - `docs/operacion/nginx/sisoc-pwas.conf`
@@ -75,6 +76,7 @@
 - `docs/registro/prs/PR-2452.md`
 - `docs/registro/prs/PR-2453.md`
 - `docs/registro/prs/PR-2474.md`
+- `docs/registro/prs/PR-2475.md`
 - `docs/registro/releases/pending/2026-09-09-pr-2452.md`
 - `docs/registro/releases/pending/2026-09-09-pr-2453.md`
 
