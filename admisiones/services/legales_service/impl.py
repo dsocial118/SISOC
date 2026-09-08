@@ -630,6 +630,37 @@ class LegalesService:
     VARIANTE_JUDICIALIZADOS = "judicializados"
 
     @staticmethod
+    def _bloquear_fuera_de_secuencia(request, admision, boton, etiqueta):
+        """Corta la acción si el botón no corresponde al estado actual.
+
+        La UI ya oculta el botón, pero sin esta validación un POST directo con
+        una sesión válida podía reemitir una providencia o pisar un número de
+        GDE ya asignado, dejando documento, identificador externo y estado en
+        contradicción. Se usa `get_botones_disponibles` como única fuente de
+        verdad de la secuencia.
+
+        Devuelve una respuesta de redirección si hay que cortar, o None si la
+        acción es válida.
+        """
+        if boton in LegalesService.get_botones_disponibles(admision):
+            return None
+
+        logger.warning(
+            "Acción de providencia fuera de secuencia",
+            extra={
+                "admision_pk": admision.pk,
+                "accion": boton,
+                "estado_legales": admision.estado_legales,
+            },
+        )
+        messages.error(
+            request,
+            f"No se puede {etiqueta}: el expediente está en estado "
+            f"'{admision.estado_legales or 'sin estado'}'.",
+        )
+        return LegalesService._safe_redirect(request, admision)
+
+    @staticmethod
     def _variante_providencia(providencia):
         """Elige la variante de template de la Primera Providencia.
 
@@ -731,6 +762,12 @@ class LegalesService:
     @staticmethod
     def guardar_primera_providencia(request, admision):
         """Genera la Primera Providencia y sus documentos descargables."""
+        bloqueo = LegalesService._bloquear_fuera_de_secuencia(
+            request, admision, "primera_providencia", "generar la Primera Providencia"
+        )
+        if bloqueo is not None:
+            return bloqueo
+
         try:
             with transaction.atomic():
                 existente = Providencia.objects.filter(
@@ -776,6 +813,12 @@ class LegalesService:
     @staticmethod
     def guardar_segunda_providencia(request, admision):
         """Genera la Segunda Providencia y sus documentos descargables."""
+        bloqueo = LegalesService._bloquear_fuera_de_secuencia(
+            request, admision, "segunda_providencia", "generar la Segunda Providencia"
+        )
+        if bloqueo is not None:
+            return bloqueo
+
         try:
             with transaction.atomic():
                 primera = Providencia.objects.filter(
@@ -827,6 +870,12 @@ class LegalesService:
     @staticmethod
     def _guardar_gde_pv(request, admision, orden, accion, etiqueta):
         """Guarda el número de GDE PV de una providencia ya generada."""
+        bloqueo = LegalesService._bloquear_fuera_de_secuencia(
+            request, admision, accion, f"cargar el número de GDE PV de la {etiqueta}"
+        )
+        if bloqueo is not None:
+            return bloqueo
+
         try:
             providencia = Providencia.objects.filter(
                 admision=admision, orden=orden
@@ -1526,7 +1575,6 @@ class LegalesService:
                 "form_legales_num_if": legales_num_if_form,
                 "documentos_form": DocumentosExpedienteForm(),
                 "convenio_num_if": convenio_num_if_form,
-                "documentos_form": DocumentosExpedienteForm(),
                 "form_intervencion_juridicos": IntervencionJuridicosForm(
                     instance=admision
                 ),
