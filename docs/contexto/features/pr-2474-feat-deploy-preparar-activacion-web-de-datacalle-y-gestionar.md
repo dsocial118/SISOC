@@ -31,9 +31,11 @@
 - Empezar por `docs/registro/prs/PR-2474.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
 - `AGENT_REPO_MAP.md`
+- `docs/contexto/features/pr-2474-feat-deploy-preparar-activacion-web-de-datacalle-y-gestionar.md`
 - `docs/operacion/deploy_pwas.md`
 - `docs/operacion/nginx/sisoc-pwas.conf`
 - `docs/registro/cambios/2026-09-08-activacion-pwa-web.md`
+- `docs/registro/prs/PR-2474.md`
 - `scripts/operacion/deploy_pwas.py`
 - `scripts/operacion/pwas.json`
 - `tests/test_deploy_pwas.py`
@@ -43,9 +45,11 @@
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`
+- `docs/contexto/features/pr-2474-feat-deploy-preparar-activacion-web-de-datacalle-y-gestionar.md`
 - `docs/operacion/deploy_pwas.md`
 - `docs/operacion/nginx/sisoc-pwas.conf`
 - `docs/registro/cambios/2026-09-08-activacion-pwa-web.md`
+- `docs/registro/prs/PR-2474.md`
 
 ## Trazabilidad
 
