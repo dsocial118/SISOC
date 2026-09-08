@@ -5,6 +5,11 @@ sus comedores asignados con scope por las provincias que tiene cargadas en
 ``TerritorialComedorProvincia``. Auth por DRF Token.
 """
 
+import hashlib
+import json
+from datetime import date
+
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.files.storage import default_storage
 from django.db import IntegrityError, transaction
 from django.db.models import Prefetch
@@ -12,15 +17,23 @@ from drf_spectacular.utils import extend_schema
 from rest_framework import filters, generics, mixins, serializers, status, viewsets
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from comedores.api_serializers import ComedorDetailSerializer, NoSaveSerializer
-from comedores.models import Comedor
+from comedores.models import (
+    Comedor,
+    ComedorPwaCreateOperation,
+    Programas,
+    TipoDeComedor,
+)
 from comedores.services.comedor_service import ComedorService
+from core.models import Localidad, Municipio, Provincia
 from core.utils import format_fecha_django
+from organizaciones.models import Organizacion
 from relevamientos.models import (
     ActaComplementaria,
     MotivoExcepcionSeguimiento,
@@ -58,12 +71,19 @@ class TerritorialUltimoRelevamientoSerializer(NoSaveSerializer):
 class TerritorialComedorSerializer(NoSaveSerializer):
     id = serializers.IntegerField()
     nombre = serializers.CharField()
+    tipo = serializers.SerializerMethodField()
+    programa = serializers.SerializerMethodField()
+    organizacion = serializers.SerializerMethodField()
+    comienzo = serializers.IntegerField(allow_null=True)
     provincia = serializers.SerializerMethodField()
     municipio = serializers.SerializerMethodField()
     localidad = serializers.SerializerMethodField()
     calle = serializers.CharField(allow_null=True)
     numero = serializers.IntegerField(allow_null=True)
+    entre_calle_1 = serializers.CharField(allow_null=True)
+    entre_calle_2 = serializers.CharField(allow_null=True)
     barrio = serializers.CharField(allow_null=True)
+    codigo_postal = serializers.IntegerField(allow_null=True)
     latitud = serializers.FloatField(allow_null=True)
     longitud = serializers.FloatField(allow_null=True)
     estado = serializers.CharField(allow_null=True)
@@ -72,6 +92,15 @@ class TerritorialComedorSerializer(NoSaveSerializer):
 
     def get_provincia(self, obj):
         return obj.provincia.nombre if obj.provincia_id else None
+
+    def get_tipo(self, obj):
+        return obj.tipocomedor.nombre if obj.tipocomedor_id else None
+
+    def get_programa(self, obj):
+        return obj.programa.nombre if obj.programa_id else None
+
+    def get_organizacion(self, obj):
+        return obj.organizacion.nombre if obj.organizacion_id else None
 
     def get_municipio(self, obj):
         return obj.municipio.nombre if obj.municipio_id else None
@@ -138,15 +167,189 @@ class TerritorialComedorSerializer(NoSaveSerializer):
         return {"total": len(items), "items": items}
 
 
+class TerritorialComedorWriteSerializer(serializers.Serializer):
+    """Contrato de escritura de Gestionar, separado del detalle web de SISOC."""
+
+    client_uuid = serializers.CharField(max_length=100, write_only=True, required=False)
+    nombre = serializers.CharField(max_length=255)
+    tipo = serializers.CharField(max_length=255)
+    programa = serializers.CharField(max_length=255, required=False, allow_blank=True)
+    organizacion = serializers.CharField(
+        max_length=255, required=False, allow_blank=True
+    )
+    comienzo = serializers.CharField(max_length=10, required=False, allow_blank=True)
+    provincia = serializers.CharField(max_length=255, required=False)
+    municipio = serializers.CharField(max_length=255, required=False, allow_blank=True)
+    localidad = serializers.CharField(max_length=255, required=False, allow_blank=True)
+    calle = serializers.CharField(max_length=255, required=False, allow_blank=True)
+    numero = serializers.IntegerField(required=False, allow_null=True)
+    entre_calle_1 = serializers.CharField(
+        max_length=255, required=False, allow_blank=True
+    )
+    entre_calle_2 = serializers.CharField(
+        max_length=255, required=False, allow_blank=True
+    )
+    barrio = serializers.CharField(max_length=255, required=False, allow_blank=True)
+    codigo_postal = serializers.IntegerField(required=False, allow_null=True)
+    latitud = serializers.FloatField(required=False, allow_null=True)
+    longitud = serializers.FloatField(required=False, allow_null=True)
+
+    @staticmethod
+    def _single_by_name(model, value, field, **filters):
+        if value in (None, ""):
+            return None
+        matches = list(
+            model.objects.filter(nombre__iexact=value, **filters).order_by("id")[:2]
+        )
+        if len(matches) != 1:
+            raise serializers.ValidationError(
+                {field: "Debe indicar un valor existente y no ambiguo en SISOC."}
+            )
+        return matches[0]
+
+    def validate(self, attrs):
+        if self.instance and "client_uuid" in attrs:
+            raise serializers.ValidationError(
+                {"client_uuid": "Solo se acepta al crear un comedor."}
+            )
+
+        scope_ids = set(
+            get_territorial_comedor_provincia_ids(self.context["request"].user)
+        )
+        province_name = attrs.pop("provincia", None)
+        if province_name is not None:
+            provincia = self._single_by_name(Provincia, province_name, "provincia")
+        elif self.instance:
+            provincia = self.instance.provincia
+        else:
+            raise serializers.ValidationError(
+                {"provincia": "Este campo es obligatorio."}
+            )
+
+        if provincia is None or provincia.id not in scope_ids:
+            raise PermissionDenied(
+                "La provincia indicada no pertenece a su alcance territorial."
+            )
+        attrs["provincia"] = provincia
+
+        if "tipo" in attrs:
+            attrs["tipocomedor"] = self._single_by_name(
+                TipoDeComedor, attrs.pop("tipo"), "tipo"
+            )
+        if "programa" in attrs:
+            attrs["programa"] = self._single_by_name(
+                Programas, attrs["programa"], "programa"
+            )
+        if "organizacion" in attrs:
+            attrs["organizacion"] = self._single_by_name(
+                Organizacion, attrs["organizacion"], "organizacion"
+            )
+
+        municipio_was_provided = "municipio" in attrs
+        localidad_was_provided = "localidad" in attrs
+        if municipio_was_provided:
+            attrs["municipio"] = self._single_by_name(
+                Municipio,
+                attrs["municipio"],
+                "municipio",
+                provincia=provincia,
+            )
+        municipio = attrs.get(
+            "municipio", self.instance.municipio if self.instance else None
+        )
+        if localidad_was_provided:
+            if attrs["localidad"] and municipio is None:
+                raise serializers.ValidationError(
+                    {"localidad": "Requiere un municipio válido."}
+                )
+            attrs["localidad"] = self._single_by_name(
+                Localidad,
+                attrs["localidad"],
+                "localidad",
+                municipio=municipio,
+            )
+
+        if self.instance:
+            if (
+                provincia.pk != self.instance.provincia_id
+                and not municipio_was_provided
+            ):
+                raise serializers.ValidationError(
+                    {
+                        "municipio": (
+                            "Debe indicarlo al cambiar la provincia para conservar "
+                            "la jerarquía territorial."
+                        )
+                    }
+                )
+            municipio_id = getattr(municipio, "pk", None)
+            if (
+                municipio_was_provided
+                and municipio_id != self.instance.municipio_id
+                and not localidad_was_provided
+            ):
+                raise serializers.ValidationError(
+                    {
+                        "localidad": (
+                            "Debe indicarla o limpiarla al cambiar el municipio."
+                        )
+                    }
+                )
+
+        if "comienzo" in attrs:
+            raw_comienzo = attrs["comienzo"]
+            if not raw_comienzo:
+                attrs["comienzo"] = None
+            elif len(raw_comienzo) == 4 and raw_comienzo.isdigit():
+                attrs["comienzo"] = int(raw_comienzo)
+            else:
+                try:
+                    attrs["comienzo"] = date.fromisoformat(raw_comienzo).year
+                except ValueError as exc:
+                    raise serializers.ValidationError(
+                        {"comienzo": "Use YYYY o una fecha ISO YYYY-MM-DD."}
+                    ) from exc
+
+        return attrs
+
+    @staticmethod
+    def _validate_model(instance):
+        try:
+            instance.full_clean()
+        except ValidationError as exc:
+            raise serializers.ValidationError(exc.message_dict) from exc
+
+    def create(self, validated_data):
+        validated_data.pop("client_uuid", None)
+        instance = Comedor(**validated_data)
+        self._validate_model(instance)
+        instance.save()
+        return instance
+
+    def update(self, instance, validated_data):
+        validated_data.pop("client_uuid", None)
+        for field, value in validated_data.items():
+            setattr(instance, field, value)
+        self._validate_model(instance)
+        instance.save()
+        return instance
+
+
 @extend_schema(tags=["Territorial"])
 class TerritorialComedorViewSet(
-    mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet
+    mixins.CreateModelMixin,
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.UpdateModelMixin,
+    viewsets.GenericViewSet,
 ):
-    """Comedores del alcance del territorial (por provincia).
+    """Comedores asignados y operaciones territoriales de Gestionar.
 
-    - ``GET /api/territorial/comedores/`` -> lista paginada (scope por provincia).
-    - ``GET /api/territorial/comedores/{id}/`` -> detalle scopeado (404 fuera de
-      scope).
+    - ``GET /api/territorial/comedores/`` -> lista asignada al usuario.
+    - ``GET /api/territorial/comedores/{id}/`` -> detalle asignado (404 fuera de
+      su asignación).
+    - ``POST /api/territorial/comedores/`` -> alta idempotente por ``client_uuid``.
+    - ``PATCH /api/territorial/comedores/{id}/`` -> edición por provincia asignada.
     - ``POST /api/territorial/comedores/{id}/imagenes/`` -> subida de foto
       (multipart, campo ``imagen``).
     """
@@ -154,6 +357,119 @@ class TerritorialComedorViewSet(
     serializer_class = TerritorialComedorSerializer
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated, IsTerritorialComedorUser]
+    http_method_names = ["get", "post", "patch", "head", "options"]
+    _CREATE_PAYLOAD_FIELDS = (
+        "nombre",
+        "tipo",
+        "programa",
+        "organizacion",
+        "comienzo",
+        "provincia",
+        "municipio",
+        "localidad",
+        "calle",
+        "numero",
+        "entre_calle_1",
+        "entre_calle_2",
+        "barrio",
+        "codigo_postal",
+        "latitud",
+        "longitud",
+    )
+
+    def get_serializer_class(self):
+        if self.action in {"create", "update", "partial_update"}:
+            return TerritorialComedorWriteSerializer
+        return TerritorialComedorSerializer
+
+    def _response_data(self, comedor):
+        return TerritorialComedorSerializer(
+            comedor, context=self.get_serializer_context()
+        ).data
+
+    def _replay_is_authorized(self, operation):
+        comedor = operation.comedor
+        scope_ids = set(get_territorial_comedor_provincia_ids(self.request.user))
+        if not comedor or comedor.provincia_id not in scope_ids:
+            raise PermissionDenied(
+                "La operación ya no pertenece a su alcance territorial actual."
+            )
+        return comedor
+
+    @classmethod
+    def _request_payload_digest(cls, payload):
+        """Huella durable del request, independiente de catálogos renombrables."""
+        normalized = {}
+        for field in cls._CREATE_PAYLOAD_FIELDS:
+            value = payload.get(field)
+            normalized[field] = value.strip() if isinstance(value, str) else value
+        return hashlib.sha256(
+            json.dumps(
+                normalized,
+                ensure_ascii=False,
+                separators=(",", ":"),
+                sort_keys=True,
+            ).encode("utf-8")
+        ).hexdigest()
+
+    @staticmethod
+    def _idempotency_conflict_response():
+        return Response(
+            {
+                "detail": "La clave de idempotencia ya fue usada con otro payload.",
+                "code": "idempotency_payload_conflict",
+            },
+            status=status.HTTP_409_CONFLICT,
+        )
+
+    def create(self, request, *args, **kwargs):
+        client_uuid = request.data.get("client_uuid")
+        if client_uuid:
+            payload_digest = self._request_payload_digest(request.data)
+            operation = (
+                ComedorPwaCreateOperation.objects.select_related("comedor")
+                .filter(user=request.user, client_uuid=client_uuid)
+                .first()
+            )
+            if operation is not None:
+                comedor = self._replay_is_authorized(operation)
+                if operation.payload_digest != payload_digest:
+                    return self._idempotency_conflict_response()
+                return Response(self._response_data(comedor), status=status.HTTP_200_OK)
+
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        client_uuid = serializer.validated_data.get("client_uuid")
+        if not client_uuid:
+            raise serializers.ValidationError(
+                {"client_uuid": "Este campo es obligatorio para crear un comedor."}
+            )
+
+        payload_digest = self._request_payload_digest(request.data)
+        try:
+            with transaction.atomic():
+                operation = ComedorPwaCreateOperation.objects.create(
+                    user=request.user,
+                    client_uuid=client_uuid,
+                    payload_digest=payload_digest,
+                )
+                comedor = serializer.save()
+                operation.comedor = comedor
+                operation.save(update_fields=["comedor"])
+        except IntegrityError:
+            operation = (
+                ComedorPwaCreateOperation.objects.select_related("comedor")
+                .filter(user=request.user, client_uuid=client_uuid)
+                .first()
+            )
+            if operation is None:
+                raise
+            comedor = self._replay_is_authorized(operation)
+            if operation.payload_digest != payload_digest:
+                return self._idempotency_conflict_response()
+            return Response(self._response_data(comedor), status=status.HTTP_200_OK)
+
+        return Response(self._response_data(comedor), status=status.HTTP_201_CREATED)
 
     def get_queryset(self):
         # Visibilidad "solo asignados a mí": el territorial ve los comedores que
@@ -270,6 +586,17 @@ class TerritorialComedorViewSet(
         return Comedor.objects.filter(
             pk=self.kwargs["pk"], provincia_id__in=provincia_ids
         ).first()
+
+    def partial_update(self, request, *args, **kwargs):
+        # La edición sigue la misma regla provincial que las altas N15/N18: no
+        # depende de una asignación previa de relevamiento.
+        comedor = self._comedor_de_mi_zona()
+        if comedor is None:
+            return self._fuera_de_zona()
+        serializer = self.get_serializer(comedor, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(self._response_data(comedor), status=status.HTTP_200_OK)
 
     @staticmethod
     def _fuera_de_zona():

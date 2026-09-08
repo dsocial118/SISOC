@@ -564,6 +564,40 @@ class Comedor(SoftDeleteModelMixin, models.Model):
         ordering = ["nombre"]
 
 
+class ComedorPwaCreateOperation(models.Model):
+    """Resultado durable de un alta offline de comedor desde Gestionar.
+
+    La clave pertenece al usuario autenticado, no al comedor ni al dispositivo.
+    Se reserva antes de crear el comedor para que la restricción única de la base
+    sea la barrera de concurrencia entre reintentos o instancias de la API.
+    """
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="pwa_comedor_create_operations",
+    )
+    client_uuid = models.CharField(max_length=100)
+    payload_digest = models.CharField(max_length=64)
+    comedor = models.OneToOneField(
+        Comedor,
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="pwa_create_operation",
+    )
+    creado_en = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "client_uuid"],
+                name="uniq_comedor_pwa_create_operation",
+            ),
+        ]
+        indexes = [models.Index(fields=["user", "creado_en"])]
+
+
 class AuditComedorPrograma(models.Model):
     comedor = models.ForeignKey(
         Comedor, on_delete=models.CASCADE, related_name="programa_changes"
