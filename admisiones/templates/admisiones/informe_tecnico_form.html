@@ -16,7 +16,9 @@
 
 {% block content %}
     <div class="container-fluid">
-        <form method="post" enctype="multipart/form-data" data-localidades-url="{% url 'ajax_load_localidades' %}">
+        <form method="post"
+              enctype="multipart/form-data"
+              data-localidades-url="{% url 'ajax_load_localidades' %}">
             {% csrf_token %}
 
             {% for message in messages %}
@@ -576,7 +578,11 @@
                             {% for antecedente in form.antecedentes_renovaciones_campos %}
                                 <div class="border rounded p-3 mb-3">
                                     <strong class="d-block mb-2">Admisi&oacute;n #{{ antecedente.admision.pk }}</strong>
-                                    <div class="form-check mb-2">{{ antecedente.incluida }} <label class="form-check-label" for="{{ antecedente.incluida.id_for_label }}">Incluir en el informe</label></div>
+                                    <div class="form-check mb-2">
+                                        {{ antecedente.incluida }}
+                                        <label class="form-check-label"
+                                               for="{{ antecedente.incluida.id_for_label }}">Incluir en el informe</label>
+                                    </div>
                                     <div class="row">
                                         <div class="col-md-4">{{ antecedente.resolucion|as_crispy_field }}</div>
                                         <div class="col-md-4">{{ antecedente.convenio|as_crispy_field }}</div>
