@@ -33,12 +33,14 @@
 - `.github/workflows/deploy.yml`
 - `.gitignore`
 - `AGENT_REPO_MAP.md`
+- `docs/contexto/features/pr-2471-feat-deploy-coordinar-pwa-privadas-y-preparar-rutas-de-nginx.md`
 - `docs/operacion/deploy_automatizado.md`
 - `docs/operacion/deploy_pwas.md`
 - `docs/operacion/nginx/sisoc-produccion.conf`
 - `docs/operacion/nginx/sisoc-pwas-preview.conf.example`
 - `docs/operacion/nginx/sisoc-pwas.conf`
 - `docs/registro/cambios/2026-09-08-coordinacion-pwa-privadas.md`
+- `docs/registro/prs/PR-2471.md`
 - `scripts/operacion/deploy_pwas.py`
 - `scripts/operacion/deploy_refresh.sh`
 - `scripts/operacion/pwas.json`
@@ -52,12 +54,14 @@
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`
+- `docs/contexto/features/pr-2471-feat-deploy-coordinar-pwa-privadas-y-preparar-rutas-de-nginx.md`
 - `docs/operacion/deploy_automatizado.md`
 - `docs/operacion/deploy_pwas.md`
 - `docs/operacion/nginx/sisoc-produccion.conf`
 - `docs/operacion/nginx/sisoc-pwas-preview.conf.example`
 - `docs/operacion/nginx/sisoc-pwas.conf`
 - `docs/registro/cambios/2026-09-08-coordinacion-pwa-privadas.md`
+- `docs/registro/prs/PR-2471.md`
 
 ## Trazabilidad
 
