@@ -28,6 +28,12 @@ correspondiente. El runner local:
    el SHA realmente desplegado en el summary del job; en HML/PRD activa luego
    las imagenes PWA preparadas y comprueba su salud.
 
+En **QA**, el workflow primero hace un fetch limitado de `development`, verifica
+que sea el SHA del evento y aplica `merge --ff-only` antes del downtime. Luego
+invoca `deploy_refresh.sh --skip-pull --expected-revision <SHA>`: el pull ya
+quedó realizado y no debe repetirse dentro del helper. Si el SHA remoto avanzó,
+el job se omite sin bajar Docker.
+
 Como el entrypoint del contenedor aplica migraciones durante el arranque, QA,
 homologación y producción consultan ambos checks mediante sondeo acotado: continúan apenas
 las migraciones y el healthcheck responden, o publican el último error después

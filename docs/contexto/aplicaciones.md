@@ -2,7 +2,7 @@
 
 ## Aplicaciones instaladas
 - Apps Django/3ros: admin, auth, sessions, messages, staticfiles, admindocs, crispy_forms/bootstrap5, django_extensions, import_export, auditlog, DRF/rest_framework_api_key, drf_spectacular, corsheaders. Evidencia: config/settings.py:42-62.
-- Apps propias: users, core, dashboard, comedores, organizaciones, centrodeinfancia, ciudadanos, duplas, admisiones, intervenciones, historial, acompanamientos, expedientespagos, relevamientos, rendicioncuentasfinal, rendicioncuentasmensual, centrodefamilia, celiaquia, audittrail, pwa, comunicados, ticketera y VAT. Evidencia: config/settings.py.
+- Apps propias: users, core, dashboard, comedores, organizaciones, centrodeinfancia, ciudadanos, duplas, admisiones, intervenciones, historial, acompanamientos, expedientespagos, relevamientos, rendicioncuentasfinal, rendicioncuentasmensual, centrodefamilia, celiaquia, audittrail, pwa, comunicados, ticketera, VAT, pas y encuestas. Evidencia: config/settings.py.
 - Apps de debug/performance agregadas solo con `DEBUG=True`: debug_toolbar y silk. Evidencia: config/settings.py:359-366.
 
 ## URL principales
@@ -60,3 +60,12 @@
   - usuarios PWA: por `AccesoComedorPWA` activo;
   - usuarios no PWA: se mantiene filtrado legacy de `ComedorService`.
 - Fuente de verdad funcional ampliada: `docs/implementaciones/pwa_backend.md`.
+
+## Módulos funcionales recientes
+
+- `pas`: padrón, declaración jurada e informes reproducibles; sus consultas y
+  exportaciones se documentan en `docs/implementaciones/pas.md`.
+- `encuestas`: encuestas periódicas con rondas, segmentación, anonimato,
+  obligatoriedad y resultados agregados; ver `docs/implementaciones/encuestas.md`.
+- Los comentarios técnicos de Celiaquía se integran al historial del legajo y
+  se rigen por `docs/implementaciones/celiaquia_comentarios_tecnicos.md`.
