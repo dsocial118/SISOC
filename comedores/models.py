@@ -595,7 +595,12 @@ class ComedorPwaCreateOperation(models.Model):
                 name="uniq_comedor_pwa_create_operation",
             ),
         ]
-        indexes = [models.Index(fields=["user", "creado_en"])]
+        indexes = [
+            models.Index(
+                fields=["user", "creado_en"],
+                name="comedores_c_user_id_4ce3c3_idx",
+            )
+        ]
 
 
 class AuditComedorPrograma(models.Model):
