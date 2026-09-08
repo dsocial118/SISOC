@@ -353,6 +353,21 @@
   border: 1px solid #59359a;
 }
 
+/* Celiaquía: previsualización de las observaciones técnicas en los modales de
+   Subsanar y Rechazar. Alto acotado porque un legajo puede acumular varias. */
+.motivo-preview {
+  background: rgba(255, 255, 255, .04);
+  border: 1px solid rgba(255, 255, 255, .12);
+  max-height: 12rem;
+  overflow-y: auto;
+}
+
+/* El motivo se guarda con un salto de línea por observación: sin esto el
+   navegador las colapsa en un párrafo corrido. */
+.motivo-multilinea {
+  white-space: pre-line;
+}
+
 /* Etapas de rendición: paleta pastel independiente del estado semántico. */
 .etapa-badge {
     border: 1px solid transparent;

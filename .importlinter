@@ -53,6 +53,7 @@ root_packages =
     iam
     insumos
     ocr
+    pas
 
 [importlinter:contract:core-no-domains]
 name = core no debe importar apps de dominio
@@ -88,6 +89,7 @@ forbidden_modules =
     healthcheck
     insumos
     ocr
+    pas
 ignore_imports =
     # Herramientas de diagnóstico locales: ejercitan vistas/modelos de dominio
     # fuera del runtime de la aplicación y no se cargan durante el arranque.
@@ -604,3 +606,86 @@ forbidden_modules =
 ignore_imports =
     centrodefamilia.models -> organizaciones.models
     core.debug_queries -> **
+
+[importlinter:contract:pas-public-boundary]
+name = los dominios solo consumen la API pública de PAS
+type = forbidden
+allow_indirect_imports = True
+source_modules =
+    core
+    users
+    ciudadanos
+    comedores
+    organizaciones
+    duplas
+    admisiones
+    audittrail
+    intervenciones
+    historial
+    acompanamientos
+    expedientespagos
+    relevamientos
+    rendicioncuentasfinal
+    rendicioncuentasmensual
+    centrodefamilia
+    VAT
+    celiaquia
+    importarexpediente
+    comunicados
+    centrodeinfancia
+    ver_para_ser_libre
+    dispositivos
+    pwa
+    ticketera
+    dashboard
+    healthcheck
+    iam
+    insumos
+    ocr
+forbidden_modules =
+    pas.admin
+    pas.apps
+    pas.favorite_filters
+    pas.forms
+    pas.management
+    pas.models
+    pas.services
+    pas.urls
+    pas.views
+ignore_imports =
+
+[importlinter:contract:pas-no-domain-internals]
+name = PAS no importa internals de otros dominios
+type = forbidden
+allow_indirect_imports = True
+source_modules =
+    pas
+forbidden_modules =
+    comedores
+    organizaciones
+    duplas
+    admisiones
+    audittrail
+    intervenciones
+    historial
+    acompanamientos
+    expedientespagos
+    relevamientos
+    rendicioncuentasfinal
+    rendicioncuentasmensual
+    centrodefamilia
+    VAT
+    celiaquia
+    importarexpediente
+    comunicados
+    centrodeinfancia
+    ver_para_ser_libre
+    dispositivos
+    pwa
+    ticketera
+    dashboard
+    healthcheck
+    iam
+    insumos
+    ocr
+ignore_imports =

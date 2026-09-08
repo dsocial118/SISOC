@@ -317,3 +317,13 @@ def test_load_localidad(mocker):
         ),
     )
     assert module.load_localidad(req).status_code == 200
+
+    req_provincia = rf.get("/core/localidades", {"provincia_id": "3"})
+    req_provincia.user = user
+    mocker.patch(
+        "core.views.Localidad.objects.filter",
+        return_value=SimpleNamespace(
+            values=lambda *_a, **_k: [{"id": 2, "nombre": "Otra localidad"}]
+        ),
+    )
+    assert module.load_localidad(req_provincia).status_code == 200

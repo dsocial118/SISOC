@@ -2,12 +2,18 @@ from decimal import Decimal
 from importlib import import_module
 
 import pytest
+from django import forms
 from django.apps import apps
 from django.db import models
 from django.template import Context, Engine
 from django.utils import timezone
 
-from admisiones.forms.admisiones_forms import InformeTecnicoBaseForm
+from core.models import Localidad, Municipio, Provincia
+from admisiones.forms.admisiones_forms import (
+    InformeTecnicoBaseForm,
+    InformeTecnicoJuridicoForm,
+    _configurar_selectores_geograficos,
+)
 from admisiones.models.admisiones import (
     Admision,
     InformeTecnico,
@@ -164,6 +170,7 @@ def test_renderiza_las_variables_documentales_desde_el_contexto(comedor):
     )
 
     assert contenido == "DI-INC-1|IF-2026-123"
+    assert "acreditaciones_ultimo_convenio" not in contexto
 
 
 @pytest.mark.django_db
@@ -188,6 +195,133 @@ def test_muestra_if_it_complementario_solo_para_renovacion_con_modificacion(come
     assert "if_it_complementario" in form_con_modificacion.fields
     assert not form_con_modificacion.fields["if_it_complementario"].required
     assert "if_it_complementario" not in form_sin_modificacion.fields
+
+
+@pytest.mark.django_db
+def test_informe_tecnico_usa_selects_del_catalogo_y_preserva_el_snapshot(comedor):
+    provincia = Provincia.objects.create(nombre="Provincia catálogo")
+    municipio = Municipio.objects.create(
+        nombre="Municipio catálogo", provincia=provincia
+    )
+    localidad = Localidad.objects.create(
+        nombre="Localidad catálogo", municipio=municipio
+    )
+    comedor.provincia = provincia
+    comedor.municipio = municipio
+    comedor.localidad = localidad
+    comedor.save(update_fields=["provincia", "municipio", "localidad"])
+    admision = Admision.objects.create(comedor=comedor, tipo="renovacion")
+
+    form = InformeTecnicoBaseForm(admision=admision)
+
+    assert form.fields["provincia_espacio"].widget.input_type == "select"
+    assert form.fields["localidad_espacio"].widget.input_type == "select"
+    assert form.initial["provincia_espacio"] == str(provincia.pk)
+    assert form.initial["localidad_espacio"] == str(localidad.pk)
+
+
+@pytest.mark.django_db
+def test_selectores_geograficos_listan_provincias_y_validan_localidades_dinamicas():
+    provincia = Provincia.objects.create(nombre="Provincia catálogo")
+    municipio = Municipio.objects.create(
+        nombre="Municipio catálogo", provincia=provincia
+    )
+    localidad = Localidad.objects.create(
+        nombre="Localidad catálogo", municipio=municipio
+    )
+
+    class FormularioGeografico(forms.Form):
+        responsable_tarjeta_provincia = forms.CharField(required=True)
+        responsable_tarjeta_localidad = forms.CharField(required=True)
+        provincia_poblacion_destinataria = forms.CharField(required=True)
+
+    form = FormularioGeografico(
+        data={
+            "responsable_tarjeta_provincia": provincia.pk,
+            "responsable_tarjeta_localidad": localidad.pk,
+            "provincia_poblacion_destinataria": provincia.pk,
+        }
+    )
+    _configurar_selectores_geograficos(form)
+
+    assert (str(provincia.pk), provincia.nombre) in list(
+        form.fields["responsable_tarjeta_provincia"].choices
+    )
+    assert (str(provincia.pk), provincia.nombre) in list(
+        form.fields["provincia_poblacion_destinataria"].choices
+    )
+    assert form.is_valid()
+    assert form.cleaned_data["responsable_tarjeta_provincia"] == provincia.nombre
+    assert form.cleaned_data["responsable_tarjeta_localidad"] == localidad.nombre
+
+
+@pytest.mark.django_db
+def test_informe_tecnico_no_muestra_acreditaciones_del_ultimo_convenio(comedor):
+    admision = Admision.objects.create(
+        comedor=comedor,
+        tipo="renovacion",
+        estado_financiamiento="vigente",
+    )
+
+    formularios = (
+        InformeTecnicoBaseForm(admision=admision),
+        InformeTecnicoJuridicoForm(admision=admision),
+    )
+
+    for form in formularios:
+        assert "acreditaciones_ultimo_convenio" not in form.fields
+        assert "monto_total_conveniado_informe" in form.fields
+
+
+@pytest.mark.django_db
+def test_informe_nuevo_copia_el_ultimo_antecedente_activo_con_informe_finalizado(
+    comedor,
+):
+    anterior_valido = Admision.objects.create(
+        comedor=comedor,
+        tipo="renovacion",
+        activa=True,
+    )
+    crear_informe(
+        anterior_valido,
+        aprobadas_desayuno_lunes=31,
+        aprobadas_cena_domingo=17,
+    )
+    Admision.objects.create(comedor=comedor, tipo="renovacion", activa=True)
+    actual = Admision.objects.create(comedor=comedor, tipo="renovacion", activa=True)
+
+    form = InformeTecnicoBaseForm(admision=actual)
+
+    assert form.fields["aprobadas_ultimo_convenio_desayuno_lunes"].initial == 31
+    assert form.fields["aprobadas_ultimo_convenio_cena_domingo"].initial == 17
+
+
+@pytest.mark.django_db
+def test_exclusion_de_antecedente_no_llega_a_las_variables_documentales(comedor):
+    actual = Admision.objects.create(comedor=comedor, tipo="renovacion")
+    informe = crear_informe(
+        actual,
+        antecedentes_renovaciones=[
+            {
+                "incluida": True,
+                "resolucion": "INCLUIDA",
+                "convenio": "CONV-INCLUIDO",
+                "expediente": "EXP-INCLUIDO",
+            },
+            {
+                "incluida": False,
+                "resolucion": "EXCLUIDA",
+                "convenio": "CONV-EXCLUIDO",
+                "expediente": "EXP-EXCLUIDO",
+            },
+        ],
+    )
+
+    valores = InformeTecnicoVariablesDocumentalesService.obtener_valores(informe)
+    antecedentes = str(valores["renovaciones_anteriores_detalladas"])
+
+    assert "INCLUIDA" in antecedentes
+    assert "EXCLUIDA" not in antecedentes
 
 
 @pytest.mark.django_db

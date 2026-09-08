@@ -19,6 +19,7 @@ from core.validators import solo_digitos, validate_cuit
 from users.form_catalogs import obtener_queryset_formulario
 from users.models import (
     AccesoComedorPWA,
+    CoordinadorEquipoTecnicoPWA,
     Profile,
     RelevadorCalleProvincia,
     TerritorialComedorProvincia,
@@ -29,9 +30,11 @@ from users.services_delegation import effective_delegatable_groups_qs
 from users.services_pwa import (
     PWA_ASSIGNABLE_PERMISSION_CODES,
     PWA_USUARIOS_PERMISSION_CODE,
+    deactivate_coordinador_equipo_tecnico_pwa_access,
     deactivate_representante_accesses,
     get_organizacion_ids,
     is_pwa_user,
+    sync_coordinador_equipo_tecnico_pwa_access,
     sync_representante_accesses,
 )
 from users.services_bulk_credentials import get_bulk_credentials_send_type_choices
@@ -91,6 +94,17 @@ ROLE_PERMISSION_QUERYSET = (
     .order_by("name")
 )
 
+PWA_SELECTION_FIELDS = (
+    "es_coordinador_equipo_tecnico_pwa",
+    "duplas_coordinador_pwa",
+    "comedores_adicionales_coordinador_pwa",
+    "puede_gestionar_rendiciones_mobile",
+    *PWA_OPERATION_PERMISSION_FIELDS,
+    "tipo_asociacion_pwa",
+    "organizaciones_pwa",
+    "comedores_pwa",
+)
+
 
 CDI_ABM_RESTRICTED_GROUPS = (
     UserGroups.SIMEPI_ADMINISTRADOR,
@@ -101,11 +115,7 @@ CDI_ABM_RESTRICTED_GROUPS = (
 
 CDI_ABM_RESTRICTED_FIELDS = (
     "es_representante_pwa",
-    "puede_gestionar_rendiciones_mobile",
-    *PWA_OPERATION_PERMISSION_FIELDS,
-    "tipo_asociacion_pwa",
-    "organizaciones_pwa",
-    "comedores_pwa",
+    *PWA_SELECTION_FIELDS,
     "user_permissions",
     "es_coordinador",
     "duplas_asignadas",
@@ -230,7 +240,9 @@ class BackofficeAuthenticationForm(AuthenticationForm):
 
     def confirm_login_allowed(self, user):
         super().confirm_login_allowed(user)
-        if is_pwa_user(user):
+        profile = get_profile_or_none(user)
+        saved_mobile = getattr(profile, "configuracion_mobile", {})
+        if is_pwa_user(user) or saved_mobile.get("es_coordinador_equipo_tecnico_pwa"):
             raise forms.ValidationError(
                 "Este usuario solo puede ingresar desde la PWA.",
                 code="pwa_only",
@@ -240,7 +252,6 @@ class BackofficeAuthenticationForm(AuthenticationForm):
                 "Este usuario solo puede ingresar desde SISOC - Mobile DataCalle.",
                 code="datacalle_only",
             )
-        profile = getattr(user, "profile", None)
         expires_at = getattr(profile, "initial_password_expires_at", None)
         if (
             getattr(profile, "must_change_password", False)
@@ -317,6 +328,26 @@ class PWAAccessMixin:
         self.fields["es_representante_pwa"] = forms.BooleanField(
             required=False,
             label="Habilitar acceso a SISOC - Mobile",
+        )
+        self.fields["es_coordinador_equipo_tecnico_pwa"] = forms.BooleanField(
+            required=False,
+            label="Coordinador de Equipo Técnico",
+            help_text="Acceso PWA exclusivo de solo lectura.",
+        )
+        self.fields["duplas_coordinador_pwa"] = forms.ModelMultipleChoiceField(
+            queryset=obtener_queryset_formulario("duplas_asignadas"),
+            required=False,
+            widget=forms.SelectMultiple(attrs={"class": "select2"}),
+            label="Equipos técnicos PWA",
+            help_text="El alcance se actualiza automáticamente según sus comedores.",
+        )
+        self.fields["comedores_adicionales_coordinador_pwa"] = (
+            forms.ModelMultipleChoiceField(
+                queryset=obtener_queryset_formulario("comedores_pwa"),
+                required=False,
+                widget=forms.SelectMultiple(attrs={"class": "select2"}),
+                label="Comedores adicionales PWA",
+            )
         )
         self.fields["puede_gestionar_rendiciones_mobile"] = forms.BooleanField(
             required=False,
@@ -398,6 +429,35 @@ class PWAAccessMixin:
         )
         self.fields["organizaciones_pwa"].initial = organizacion_ids
         self.fields["comedores_pwa"].initial = comedor_ids
+        coordinator_scope = CoordinadorEquipoTecnicoPWA.objects.filter(
+            user=self.instance, activo=True
+        ).first()
+        if coordinator_scope:
+            self.fields["es_representante_pwa"].initial = True
+            self.fields["es_coordinador_equipo_tecnico_pwa"].initial = True
+            self.fields["duplas_coordinador_pwa"].initial = (
+                coordinator_scope.duplas.all()
+            )
+            self.fields["comedores_adicionales_coordinador_pwa"].initial = (
+                coordinator_scope.comedores_adicionales.all()
+            )
+
+        profile = get_profile_or_none(self.instance)
+        selections = getattr(profile, "configuracion_mobile", {})
+        mobile_enabled = self.fields["es_representante_pwa"].initial
+        for name in PWA_SELECTION_FIELDS:
+            if name in selections and (
+                not mobile_enabled
+                or (
+                    coordinator_scope
+                    and name
+                    in (
+                        "puede_gestionar_rendiciones_mobile",
+                        *PWA_OPERATION_PERMISSION_FIELDS,
+                    )
+                )
+            ):
+                self.fields[name].initial = selections[name]
 
     def _is_active_pwa_operator(self) -> bool:
         if not self.instance or not self.instance.pk:
@@ -439,12 +499,61 @@ class PWAAccessMixin:
                 permission_ids.append(permission.id)
         return permission_ids
 
+    def _clean_mobile_access_switch(self, cleaned):
+        # The legacy field name now acts as the master mobile access switch.
+        # Remember selections before normalizing inactive roles and permissions.
+        self._mobile_selections = {}
+        for name in PWA_SELECTION_FIELDS:
+            value = cleaned.get(name)
+            if isinstance(self.fields[name], forms.ModelMultipleChoiceField):
+                value = (
+                    list(value.values_list("pk", flat=True))
+                    if value is not None
+                    else []
+                )
+            self._mobile_selections[name] = value
+        mobile_enabled = cleaned.get("es_representante_pwa", False)
+        if not mobile_enabled:
+            cleaned["es_coordinador_equipo_tecnico_pwa"] = False
+        if not mobile_enabled or cleaned.get("es_coordinador_equipo_tecnico_pwa"):
+            for name in (
+                "puede_gestionar_rendiciones_mobile",
+                *PWA_OPERATION_PERMISSION_FIELDS,
+            ):
+                cleaned[name] = False
+
     def _clean_pwa_fields(self, cleaned):
-        es_representante_pwa = cleaned.get("es_representante_pwa", False)
+        self._clean_mobile_access_switch(cleaned)
+        es_coordinador_pwa = cleaned.get("es_coordinador_equipo_tecnico_pwa", False)
+        es_representante_pwa = (
+            cleaned.get("es_representante_pwa", False) and not es_coordinador_pwa
+        )
         tipo_asociacion_pwa = cleaned.get("tipo_asociacion_pwa")
         organizaciones_pwa = cleaned.get("organizaciones_pwa")
         comedores_pwa = cleaned.get("comedores_pwa")
         es_coordinador = cleaned.get("es_coordinador", False)
+
+        if es_coordinador_pwa:
+            if not cleaned.get("duplas_coordinador_pwa"):
+                self.add_error(
+                    "duplas_coordinador_pwa",
+                    "Seleccione al menos un equipo técnico para el coordinador PWA.",
+                )
+            if es_coordinador:
+                self.add_error(
+                    "es_coordinador",
+                    "El coordinador PWA es independiente del coordinador SISOC.",
+                )
+            if cleaned.get("es_territorial_comedor"):
+                self.add_error(
+                    "es_territorial_comedor",
+                    "El coordinador PWA no puede tener acceso territorial.",
+                )
+            if self.instance and self.instance.pk and self._is_active_pwa_operator():
+                self.add_error(
+                    "es_coordinador_equipo_tecnico_pwa",
+                    "El coordinador PWA no puede tener rol operador activo.",
+                )
 
         if not es_representante_pwa:
             cleaned["tipo_asociacion_pwa"] = ""
@@ -488,6 +597,31 @@ class PWAAccessMixin:
         return cleaned
 
     def _sync_pwa_access(self, user):
+        if not self._is_active_pwa_operator():
+            Profile.objects.filter(user=user).update(
+                configuracion_mobile=self._mobile_selections
+            )
+        if self.cleaned_data.get("es_coordinador_equipo_tecnico_pwa"):
+            deactivate_representante_accesses(user)
+            sync_coordinador_equipo_tecnico_pwa_access(
+                user=user,
+                duplas=self.cleaned_data["duplas_coordinador_pwa"],
+                comedores_adicionales=self.cleaned_data[
+                    "comedores_adicionales_coordinador_pwa"
+                ],
+            )
+            return
+        deactivate_coordinador_equipo_tecnico_pwa_access(user)
+        if not self.cleaned_data.get(
+            "es_representante_pwa"
+        ) and self._mobile_selections.get("es_coordinador_equipo_tecnico_pwa"):
+            scope, _ = CoordinadorEquipoTecnicoPWA.objects.get_or_create(
+                user=user, defaults={"activo": False}
+            )
+            scope.duplas.set(self._mobile_selections["duplas_coordinador_pwa"])
+            scope.comedores_adicionales.set(
+                self._mobile_selections["comedores_adicionales_coordinador_pwa"]
+            )
         if self.cleaned_data.get("es_representante_pwa"):
             organization_ids = set(
                 self.cleaned_data["organizaciones_pwa"].values_list("id", flat=True)
@@ -777,13 +911,14 @@ class TerritorialComedorFormMixin:
     def _clean_territorial_comedor_fields(self, cleaned):
         es_territorial = cleaned.get("es_territorial_comedor", False)
         es_representante_pwa = cleaned.get("es_representante_pwa", False)
+        es_coordinador_pwa = cleaned.get("es_coordinador_equipo_tecnico_pwa", False)
         provincias = cleaned.get("provincias_territorial")
 
-        if es_territorial and es_representante_pwa:
+        if es_territorial and (es_representante_pwa or es_coordinador_pwa):
             self.add_error(
                 "es_territorial_comedor",
-                "Un usuario territorial no puede tener acceso como representante "
-                "de SISOC - Mobile a la vez.",
+                "Un usuario territorial no puede tener acceso PWA de coordinador "
+                "ni representante a la vez.",
             )
 
         if not es_territorial:
@@ -1042,7 +1177,9 @@ class UserCreationForm(
             return self._save_atomic(commit=commit)
 
     def _configure_created_user(self, user):
-        if self.cleaned_data.get("es_representante_pwa", False):
+        if self.cleaned_data.get(
+            "es_representante_pwa", False
+        ) or self.cleaned_data.get("es_coordinador_equipo_tecnico_pwa", False):
             self.generated_password = get_random_string(12)
             user.set_password(self.generated_password)
             user.is_staff = False
@@ -1058,7 +1195,11 @@ class UserCreationForm(
             user.is_staff = True
 
     def _save_user_security_and_permissions(self, user):
-        if self.cleaned_data.get("es_representante_pwa", False):
+        if self.cleaned_data.get("es_coordinador_equipo_tecnico_pwa", False):
+            user.groups.clear()
+            user.user_permissions.clear()
+            return
+        elif self.cleaned_data.get("es_representante_pwa", False):
             user.groups.clear()
             pwa_permission_ids = self._preserve_current_pwa_operation_permission_ids(
                 user
@@ -1289,7 +1430,13 @@ class CustomUserChangeForm(
             user.password = self._original_password_hash
 
         is_pwa_operator = self._is_active_pwa_operator()
-        if self.cleaned_data.get("es_representante_pwa", False):
+        is_pwa_read_only_coordinator = self.cleaned_data.get(
+            "es_coordinador_equipo_tecnico_pwa", False
+        )
+        if (
+            self.cleaned_data.get("es_representante_pwa", False)
+            or is_pwa_read_only_coordinator
+        ):
             user.is_staff = False
         elif self.cleaned_data.get("es_relevador_calle", False):
             user.is_staff = False
@@ -1298,7 +1445,10 @@ class CustomUserChangeForm(
 
         if commit:
             user.save()
-            if self.cleaned_data.get("es_representante_pwa", False):
+            if is_pwa_read_only_coordinator:
+                user.groups.clear()
+                user.user_permissions.clear()
+            elif self.cleaned_data.get("es_representante_pwa", False):
                 user.groups.clear()
                 pwa_permission_ids = (
                     self._preserve_current_pwa_operation_permission_ids(user)
@@ -1346,6 +1496,7 @@ class CustomUserChangeForm(
                 )
             elif (
                 not self.cleaned_data.get("es_representante_pwa", False)
+                and not is_pwa_read_only_coordinator
                 and not is_pwa_operator
             ):
                 profile.password_reset_requested_at = None

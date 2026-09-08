@@ -416,8 +416,16 @@ pyrightconfig.json
 # PWA
 mobile/
 
+# Releases PWA locales del runner: snapshots y estado privado de recuperacion.
+/.deploy/pwa/
+
 # Claude Code local settings (contienen permisos y config de máquina)
 .claude/settings.local.json
 
 # OCR eval temporales (no versionar: pueden contener datos personales)
 tmp_ocr_eval/
+
+# Artefactos locales de renderizado/validación PAS
+/output/pdf/ddjj_pas_muestra.pdf
+/tmp/pdfs/ddjj-generated/
+/tmp/pdfs/ddjj-reference/

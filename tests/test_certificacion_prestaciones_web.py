@@ -82,7 +82,11 @@ def test_historial_certificaciones_no_precarga_el_legajo_completo(
         )
 
     assert response.status_code == 200
-    assert len(queries) <= 8
+    # 8 propias de esta vista + 1 query global de encuestas.EncuestaObligatoriaMiddleware
+    # / context processor ronda_pendiente (comparten un único cache por
+    # request): ese chequeo corre en cualquier página autenticada del
+    # sistema, no es una regresión de este view en particular.
+    assert len(queries) <= 9
 
 
 @pytest.mark.django_db

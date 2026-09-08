@@ -120,6 +120,13 @@
                             </div>
                         {% else %}
                             <div id="mobile-toggle-wrapper">{{ form.es_representante_pwa | as_crispy_field }}</div>
+                            <div id="mobile-coordinator-toggle-wrapper" style="display: none">
+                                {{ form.es_coordinador_equipo_tecnico_pwa | as_crispy_field }}
+                            </div>
+                            <div id="mobile-coordinator-scope-wrapper" style="display: none">
+                                {{ form.duplas_coordinador_pwa | as_crispy_field }}
+                                {{ form.comedores_adicionales_coordinador_pwa | as_crispy_field }}
+                            </div>
                             <div id="mobile-rendicion-permission-wrapper" style="display: none">
                                 {{ form.puede_gestionar_rendiciones_mobile|as_crispy_field }}
                             </div>
@@ -663,7 +670,7 @@
     };
 
     const toggleAssociationFields = () => {
-      const isPwaUser = repCheckbox.checked;
+      const isPwaUser = repCheckbox.checked && !document.getElementById('id_es_coordinador_equipo_tecnico_pwa')?.checked;
 
       associationChoiceWrapper.style.display = isPwaUser ? '' : 'none';
 
@@ -688,32 +695,10 @@
       setActiveTab(activeTab);
     };
 
-    const toggleBackofficeFields = () => {
-      const isPwaRep = repCheckbox.checked;
-      if (permisosCard) {
-        permisosCard.style.display = isPwaRep ? 'none' : '';
-      }
-      if (mobileRendicionPermissionWrapper) {
-        mobileRendicionPermissionWrapper.style.display = isPwaRep ? '' : 'none';
-      }
-      if (mobilePwaPermissionsWrapper) {
-        mobilePwaPermissionsWrapper.style.display = isPwaRep ? '' : 'none';
-      }
-      if (configCard) {
-        configCard.style.display = isPwaRep ? 'none' : '';
-      }
-      if (passwordFieldWrapper) {
-        passwordFieldWrapper.style.display = isPwaRep ? 'none' : '';
-      }
-      if (mobilePasswordHelp) {
-        mobilePasswordHelp.style.display = isPwaRep ? '' : 'none';
-      }
-    };
-
-    repCheckbox.addEventListener('change', () => {
-      toggleBackofficeFields();
-      toggleAssociationFields();
-    });
+    repCheckbox.addEventListener('change', toggleAssociationFields);
+    document.getElementById('id_es_coordinador_equipo_tecnico_pwa')?.addEventListener(
+      'change', toggleAssociationFields,
+    );
     mobileTabs.addEventListener('click', (event) => {
       const target = event.target;
       if (!(target instanceof HTMLButtonElement) || !target.dataset.mobileTab) {
@@ -792,89 +777,9 @@
     if (getSelectedValues(organizacionesSelect).length === 0 && getSelectedValues(comedoresSelect).length > 0) {
       activeTab = 'espacios';
     }
-    toggleBackofficeFields();
     toggleAssociationFields();
   })();
     </script>
-    <script nonce="{{ request.csp_nonce }}">
-  (() => {
-    const terrCheckbox = document.getElementById('id_es_territorial_comedor');
-    if (!terrCheckbox) {
-      return;
-    }
-    const terrProvinciasWrapper = document.getElementById('territorial-comedor-provincias-wrapper');
-    const repCheckbox = document.getElementById('id_es_representante_pwa');
-
-    const syncTerritorialVisibility = () => {
-      if (terrProvinciasWrapper) {
-        terrProvinciasWrapper.style.display = terrCheckbox.checked ? '' : 'none';
-      }
-    };
-
-    terrCheckbox.addEventListener('change', () => {
-      // Territorial y representante mobile son mutuamente excluyentes.
-      if (terrCheckbox.checked && repCheckbox && repCheckbox.checked) {
-        repCheckbox.checked = false;
-        repCheckbox.dispatchEvent(new Event('change', { bubbles: true }));
-      }
-      syncTerritorialVisibility();
-    });
-
-    if (repCheckbox) {
-      repCheckbox.addEventListener('change', () => {
-        if (repCheckbox.checked && terrCheckbox.checked) {
-          terrCheckbox.checked = false;
-          syncTerritorialVisibility();
-        }
-      });
-    }
-
-    syncTerritorialVisibility();
-  })();
-    </script>
-    <script nonce="{{ request.csp_nonce }}">
-  (() => {
-    const relevadorCheckbox = document.getElementById('id_es_relevador_calle');
-    if (!relevadorCheckbox) {
-      return;
-    }
-    const relevadorDetalleWrapper = document.getElementById('relevador-calle-detalle-wrapper');
-    const repCheckbox = document.getElementById('id_es_representante_pwa');
-    const terrComedorCheckbox = document.getElementById('id_es_territorial_comedor');
-
-    const syncRelevadorVisibility = () => {
-      if (relevadorDetalleWrapper) {
-        relevadorDetalleWrapper.style.display = relevadorCheckbox.checked ? '' : 'none';
-      }
-    };
-
-    relevadorCheckbox.addEventListener('change', () => {
-      // DataCalle es solo-app: excluyente con los roles mobile de comedores.
-      if (relevadorCheckbox.checked) {
-        [repCheckbox, terrComedorCheckbox].forEach((otro) => {
-          if (otro && otro.checked) {
-            otro.checked = false;
-            otro.dispatchEvent(new Event('change', { bubbles: true }));
-          }
-        });
-      }
-      syncRelevadorVisibility();
-    });
-
-    [repCheckbox, terrComedorCheckbox].forEach((otro) => {
-      if (!otro) {
-        return;
-      }
-      otro.addEventListener('change', () => {
-        if (otro.checked && relevadorCheckbox.checked) {
-          relevadorCheckbox.checked = false;
-          syncRelevadorVisibility();
-        }
-      });
-    });
-
-    syncRelevadorVisibility();
-  })();
-    </script>
+    <script src="{% static 'custom/js/user_mobile_access.js' %}"></script>
     <script src="{% static 'custom/js/usuarioprovincial.js' %}?v=territorial-scopes-1737-2"></script>
 {% endblock customJS %}

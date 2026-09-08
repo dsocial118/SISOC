@@ -1,0 +1,21 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Declaración Jurada enviada · SISOC</title>
+        <link rel="stylesheet"
+              href="{% static 'custom/css/pas_ddjj.css' %}?v=20260831" />
+    </head>
+    <body class="pas-ddjj-public pas-ddjj-success-page">
+        <main class="pas-ddjj-modal-card is-success">
+            <span class="pas-ddjj-success-icon" aria-hidden="true">✓</span>
+            <div>
+                <h1>Declaración Jurada enviada con éxito</h1>
+                <p>Guardamos tu DDJJ con fecha y hora. Te vamos a avisar por correo si necesitamos algo más.</p>
+            </div>
+            <button class="pas-ddjj-button" type="button">OK</button>
+        </main>
+    </body>
+</html>

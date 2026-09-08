@@ -207,12 +207,14 @@ INSTALLED_APPS = [
     "comunicados",
     "centrodeinfancia",
     "ver_para_ser_libre",
+    "pas",
     "dispositivos",
     "datacalle",
     "insumos",
     "pwa",
     "ticketera",
     "ocr",
+    "encuestas",
 ]
 
 # Middleware (orden CORS correcto)
@@ -225,6 +227,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "users.middleware.FirstLoginPasswordChangeMiddleware",
     "users.middleware.ProfileConfirmationMiddleware",
+    "encuestas.middleware.EncuestaObligatoriaMiddleware",
     "sentry.middleware.SentryUserContextMiddleware",
     "auditlog.middleware.AuditlogMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
@@ -253,6 +256,7 @@ TEMPLATES = [
                 "django.contrib.messages.context_processors.messages",
                 "sentry.context_processors.sentry_frontend",
                 "core.context_processors.footer_version",
+                "encuestas.context_processors.ronda_pendiente",
             ],
         },
     },

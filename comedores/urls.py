@@ -18,6 +18,7 @@ from comedores.views import (
     ComedorTransaccionesDetailView,
     ComedorListView,
     ComedorUpdateView,
+    ResponsableTarjetaComedorUpdateView,
     CertificacionesPrestacionesHistorialView,
     CursoAppMobileCreateView,
     CursoAppMobileDeleteView,
@@ -125,6 +126,13 @@ urlpatterns = [
             ComedorUpdateView.as_view()
         ),
         name="comedor_editar",
+    ),
+    path(
+        "comedores/<int:pk>/responsable-tarjeta/editar",
+        permissions_any_required(["auth.role_tecnico_comedor"])(
+            ResponsableTarjetaComedorUpdateView.as_view()
+        ),
+        name="comedor_responsable_tarjeta_editar",
     ),
     path(
         "comedores/<int:pk>/eliminar",

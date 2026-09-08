@@ -1,15 +1,15 @@
-# Flujo: Relevamiento y primer seguimiento
+# Flujo: Relevamiento y ciclo de seguimiento
 
 ## Objetivo
 
-Registrar el relevamiento inicial de comedores y crear el primer seguimiento asociado al ultimo relevamiento activo del comedor sin romper el contrato vigente con GESTIONAR.
+Registrar el relevamiento inicial de comedores y el ciclo de seguimientos asociado, sin romper el contrato vigente con GESTIONAR.
 
 ## Entrada / salida
 
 - Entrada de relevamiento inicial: creacion/edicion de `relevamientos.models.Relevamiento` via UI o API.
-- Entrada de primer seguimiento: creacion desde el modal de relevamientos con `tipo_relevamiento=primer_seguimiento`, o actualizacion externa por `PATCH /api/relevamiento/primer-seguimiento`.
+- Entrada de seguimiento: creación asignada desde SISOC, creación territorial desde la app y actualización externa. El primer seguimiento conserva además el contrato histórico `PATCH /api/relevamiento/primer-seguimiento`.
 - Salida de relevamiento inicial: payload HTTP a GESTIONAR para crear/borrar relevamientos; si GESTIONAR devuelve `docPDF`, se actualiza el modelo.
-- Salida de primer seguimiento: payload HTTP especifico a GESTIONAR para crear/borrar primeros seguimientos.
+- Salida de seguimiento: payload HTTP específico a GESTIONAR para crear/borrar el primer seguimiento; las instancias posteriores se gobiernan por el ciclo local.
 
 ## Relevamiento inicial
 
@@ -17,6 +17,27 @@ Registrar el relevamiento inicial de comedores y crear el primer seguimiento aso
 2. El signal `send_relevamiento_to_gestionar` envia el alta con `AsyncSendRelevamientoToGestionar`.
 3. La baja usa `AsyncRemoveRelevamientoToGestionar`.
 4. La concurrencia se controla con `ThreadPoolExecutor` y `GESTIONAR_RELEVAMIENTOS_WORKERS` / `GESTIONAR_WORKERS`.
+
+## Asignación territorial en SISOC
+
+El relevamiento conserva los campos históricos `territorial_uid` y
+`territorial_nombre` para el contrato con AppSheet, y agrega
+`territorial_user` como referencia opcional al usuario territorial de SISOC.
+
+- Al crear un relevamiento inicial o ancla, si el valor recibido en
+  `gestionar_uid` es numérico, también se persiste como `territorial_user_id`.
+  Los UID alfanuméricos heredados de AppSheet no se fuerzan a un usuario local
+  y dejan ese campo en `null`.
+- La migración `relevamientos.0012_relevamiento_territorial_user` no hace
+  backfill: los datos históricos conservan su UID/nombre externo hasta que una
+  reasignación futura los relacione con un usuario SISOC.
+- `GET /api/territorial/comedores/` expone el identificador local en
+  `relevamientos.items[].territorial_user` cuando existe. Es una proyección de
+  lectura; no reemplaza ni modifica los campos externos del relevamiento.
+
+La elección del territorial debe seguir llegando por el flujo existente. No se
+debe inferir un usuario local desde un UID alfanumérico de AppSheet ni usar este
+campo como un mecanismo nuevo de autorización.
 
 ## Primer seguimiento
 
@@ -26,6 +47,31 @@ Registrar el relevamiento inicial de comedores y crear el primer seguimiento aso
 2. Crea `PrimerSeguimiento` en estado `Asignado`, guarda el tecnico (heredado o del formulario) en `tecnico` y lo vincula por `id_relevamiento`.
 3. Envia el alta con `AsyncSendPrimerSeguimientoToGestionar` usando `GESTIONAR_API_CREAR_PRIMER_SEGUIMIENTO`. El payload contiene `{"ID_Seguimiento1": "<pk>", "Id_Relevamiento": "<id>", "Id_SISOC": "<pk>"}`; `ID_Seguimiento1` viaja con el PK de SISOC para que ambos sistemas usen el mismo identificador. SISOC persiste lo que GESTIONAR devuelve en `Rows[0].ID_Seguimiento1` en `PrimerSeguimiento.gestionar_id` (en el flujo normal coincide con el sisoc_id; si GESTIONAR responde con otra cosa, queda registrado).
 4. La baja usa `AsyncRemovePrimerSeguimientoToGestionar` y `GESTIONAR_API_BORRAR_PRIMER_SEGUIMIENTO`, enviando el `gestionar_id` guardado. Si el seguimiento no tiene `gestionar_id` (por ejemplo el alta nunca llego a GESTIONAR), la baja se omite con un log informativo.
+
+## Ciclo territorial de seguimiento
+
+El seguimiento ya no termina en la primera instancia. Cada `Relevamiento` agrupa
+instancias ordenadas por `numero_orden`, con tipo, estado, origen y datos de
+revisión del coordinador. La API territorial lista todas las instancias del
+comedor y entrega el snapshot de la anterior para prellenar la siguiente; ese
+snapshot es una ayuda de interfaz, no una copia que reemplace los datos guardados.
+
+- El coordinador puede dejar una instancia en **A subsanar** con observaciones o
+  marcarla **Validado**. La aplicación sólo ofrece corregir y reenviar cuando
+  el estado lo permite.
+- Un usuario territorial puede iniciar un relevamiento o seguimiento en un
+  comedor de su provincia aunque aún no tenga una asignación previa. La creación
+  exige `client_uuid`: repetirlo devuelve el registro existente, incluso si fue
+  dado de baja lógica, y evita duplicados por reintentos offline.
+- Si ya hay un relevamiento activo para el comedor, el alta responde conflicto
+  con su identificador para que la app continúe el trabajo existente en vez de
+  crear otro ciclo.
+- `origen` y `asignado_desde_sisoc` distinguen una asignación del backoffice de
+  una autoactivación territorial. No son permisos ni sustituyen el alcance por
+  provincia.
+- Las actas complementarias son eventos extraordinarios del comedor, con sus
+  prestaciones, y se exponen junto al detalle territorial. No reemplazan una
+  instancia ordinaria del ciclo.
 
 ## API externa
 
@@ -64,9 +110,11 @@ Si no viene `documento` ni `sisoc_id`, cae al patron previo de busqueda por nomb
 ## Validaciones y reglas
 
 - No mas de un relevamiento con estado `Pendiente` o `Visita pendiente` por comedor.
-- No mas de un `PrimerSeguimiento` para el mismo `Relevamiento`, reforzado por `OneToOneField`.
+- No más de un primer seguimiento para el mismo `Relevamiento`; las instancias
+  posteriores pertenecen al mismo ciclo y respetan su orden.
 - El alta exige territorial cuando se crea un relevamiento (inicial o ancla de un primer seguimiento sin relevamiento previo). El primer seguimiento sobre un relevamiento existente NO pide territorial: lo hereda del relevamiento.
-- `Segundo seguimiento` queda rechazado hasta implementar la fase 2.
+- Las instancias posteriores forman parte del ciclo territorial y no deben ser
+  tratadas como un segundo seguimiento rechazado.
 - Los choices no confirmados se guardan como `CharField`; las escalas usan validadores 1..4 o 1..11.
 - Las firmas recibidas desde GESTIONAR se guardan como URL/string, no como `FileField`.
 

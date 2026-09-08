@@ -640,6 +640,8 @@ def _build_comedor_detail_queryset():
         "programa",
         "tipocomedor",
         "dupla",
+        "responsable_tarjeta_provincia",
+        "responsable_tarjeta_localidad",
         "ultimo_estado__estado_general__estado_actividad",
         "ultimo_estado__estado_general__estado_proceso",
         "ultimo_estado__estado_general__estado_detalle",

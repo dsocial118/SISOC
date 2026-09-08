@@ -1,0 +1,204 @@
+@import url("https://fonts.googleapis.com/css2?family=Lora:wght@600;700&family=Montserrat:wght@400;500;600;700&display=swap");
+
+:root {
+    --pas-blue: #232d4f;
+    --pas-secondary-blue: #3e5a7e;
+    --pas-yellow: #e7ba61;
+    --pas-green: #009045;
+    --pas-text: #3a3131;
+    --pas-mist: #f2f2f2;
+}
+
+* { box-sizing: border-box; }
+
+.pas-ddjj-public {
+    min-height: 100vh;
+    margin: 0;
+    background: #fff;
+    color: var(--pas-text);
+    font-family: "Montserrat", Arial, sans-serif;
+}
+
+.pas-ddjj-public-brand {
+    width: 100%;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 0 20px;
+    border-bottom: 5px solid var(--pas-yellow);
+    background: #242c4f;
+    color: #fff;
+}
+
+.pas-ddjj-logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-right: auto;
+    font: 700 13px/1.4 "Lora", serif;
+}
+
+.pas-ddjj-logo span:last-child { display: flex; flex-direction: column; }
+.pas-ddjj-logo-mark { width: 32px; height: 32px; border: 2px solid #fff; border-radius: 50%; }
+.pas-ddjj-public-brand > span { font-size: 12px; font-weight: 700; }
+
+.pas-ddjj-shell {
+    width: min(calc(100% - 40px), 760px);
+    min-height: calc(100vh - 106px);
+    margin: 0 auto;
+    padding: 40px 0 30px;
+}
+
+.pas-ddjj-shell > h1 {
+    margin: 0 0 31px;
+    color: var(--pas-blue);
+    font: 700 24px/120% "Lora", serif;
+}
+
+.pas-ddjj-card {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    padding: 20px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    background: #f5f5f5;
+}
+.pas-ddjj-header { margin: 0; }
+.pas-ddjj-progress-copy { display: flex; justify-content: space-between; color: var(--pas-blue); font-size: 12px; line-height: 18px; }
+.pas-ddjj-progress { height: 6px; display: flex; gap: 5px; margin-top: 5px; overflow: hidden; border-radius: 10px; background: #d9d9d9; }
+.pas-ddjj-progress span { display: block; height: 100%; border-radius: inherit; background: var(--pas-yellow); transition: width 180ms ease; }
+
+#pas-ddjj-form { display: flex; flex-direction: column; gap: 15px; }
+.pas-ddjj-step { min-height: 0; }
+.pas-ddjj-eyebrow { margin: 0; font-size: 14px; line-height: 150%; }
+.pas-ddjj-step h2 { margin: 0; font: 600 20px/150% "Lora", serif; }
+.pas-ddjj-help { margin: 0; font-size: 14px; line-height: 150%; }
+.pas-ddjj-step h2 + .pas-ddjj-help { margin-top: 0; }
+.pas-ddjj-fields-grid { display: grid; gap: 10px; margin-top: 10px; }
+.pas-ddjj-field { display: flex; flex-direction: column; gap: 5px; }
+.pas-ddjj-field label,
+.pas-ddjj-question h3,
+.pas-ddjj-contact-data label,
+.pas-ddjj-signature label { margin: 0; font-size: 14px; font-weight: 500; line-height: 150%; }
+
+.pas-ddjj-control input,
+.pas-ddjj-control select,
+.pas-ddjj-contact-data input,
+.pas-ddjj-signature input {
+    width: 100%;
+    height: 30px;
+    padding: 5px 10px;
+    border: 1px solid #d9d9d9;
+    border-radius: 5px;
+    background: #fff;
+    color: var(--pas-text);
+    font: 400 12px/150% "Montserrat", sans-serif;
+}
+
+.pas-ddjj-control :focus,
+.pas-ddjj-signature input:focus { border-color: var(--pas-blue); outline: 2px solid var(--pas-yellow); outline-offset: 1px; }
+.pas-ddjj-question { margin-top: 20px; }
+.pas-ddjj-options > div,
+.pas-ddjj-options ul { display: flex; gap: 20px; margin: 5px 0 0; padding: 0; list-style: none; }
+.pas-ddjj-options > div > div,
+.pas-ddjj-options li { flex: 1; }
+.pas-ddjj-options label {
+    width: 100%;
+    height: 31px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 5px 10px;
+    border: 1px solid #d9d9d9;
+    border-radius: 5px;
+    color: var(--pas-blue);
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 150%;
+    cursor: pointer;
+}
+.pas-ddjj-options input { width: 16px; height: 16px; accent-color: var(--pas-blue); }
+.pas-ddjj-options label:has(input:checked) { border-color: var(--pas-blue); background: #eef1f6; box-shadow: 0 0 0 2px var(--pas-yellow); }
+
+.pas-ddjj-notice {
+    min-height: 75px;
+    display: flex;
+    align-items: center;
+    margin: 10px 0;
+    padding: 15px 20px;
+    border: 1px solid #5a7290;
+    border-radius: 15px;
+    background: rgba(90, 114, 144, 0.2);
+    color: var(--pas-blue);
+    font-size: 12px;
+    line-height: 15px;
+    letter-spacing: .01em;
+}
+.pas-ddjj-market-question { margin-top: 14px; }
+
+.pas-ddjj-actions { height: 34px; display: flex; justify-content: flex-end; gap: 20px; }
+.pas-ddjj-button {
+    height: 34px;
+    flex: 1;
+    padding: 0;
+    border: 0;
+    border-radius: 20px;
+    background: var(--pas-secondary-blue);
+    color: #fff;
+    font: 700 14px/26px "Montserrat", sans-serif;
+    letter-spacing: .01em;
+    cursor: pointer;
+    box-shadow: 0 4px 4px rgba(0, 0, 0, .25);
+}
+.pas-ddjj-button.is-secondary { max-width: 61px; padding: 8px 12px; border: 3px solid var(--pas-mist); background: #fff; color: var(--pas-blue); font-weight: 600; line-height: 12px; letter-spacing: -.01em; box-shadow: 2px 2px 2px rgba(0, 0, 0, .25); }
+
+.pas-ddjj-contact-data { display: grid; gap: 10px; margin: 20px 0; }
+.pas-ddjj-contact-data > div { display: flex; flex-direction: column; gap: 5px; }
+.pas-ddjj-contact-data input { color: #a6a6a6; }
+.pas-ddjj-accept { display: flex; align-items: flex-start; gap: 8px; font-size: 12px; line-height: 15px; letter-spacing: .01em; }
+.pas-ddjj-accept input { width: 18px; height: 18px; flex: 0 0 auto; accent-color: var(--pas-blue); }
+.pas-ddjj-contact-accept { margin-top: 15px; }
+.pas-ddjj-legal-link { margin: 5px 0 0 26px; padding: 0; border: 0; background: none; color: var(--pas-text); font: 400 12px/15px "Montserrat"; text-decoration: underline; cursor: pointer; }
+
+.pas-ddjj-summary { display: flex; flex-direction: column; gap: 5px; height: auto; margin-top: 5px; }
+.pas-ddjj-summary div { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 41px; padding: 10px 0; border-bottom: 1px solid #a6a6a6; font-size: 14px; font-weight: 400; line-height: 150%; }
+.pas-ddjj-summary strong { font-weight: 400; }
+.pas-ddjj-summary span { flex: 0 1 55%; text-align: right; overflow-wrap: anywhere; }
+.pas-ddjj-signature { display: flex; flex-direction: column; gap: 5px; margin-top: 10px; }
+.pas-ddjj-signature input::placeholder { color: #a6a6a6; opacity: 1; }
+.errorlist,
+.pas-ddjj-errors { margin: 4px 0 0; padding: 0; color: #b3261e; font-size: 11px; font-weight: 600; list-style: none; }
+
+.pas-ddjj-footer { height: 46px; display: flex; align-items: center; justify-content: center; padding: 0; border-top: 2px solid var(--pas-yellow); background: var(--pas-blue); color: #faf9fe; font: 700 14px/46px "Lora", serif; }
+.pas-ddjj-modal[hidden] { display: none; }
+.pas-ddjj-modal { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; padding: 6px; background: rgba(0, 0, 0, .55); }
+.pas-ddjj-modal-card { position: relative; display: flex; flex-direction: column; align-items: center; gap: 12px; width: min(100%, 400px); padding: 24px 18px; border-radius: 20px; background: #fff; text-align: center; }
+.pas-ddjj-modal-card h2 { margin: 0; color: var(--pas-blue); font: 600 20px/24px "Montserrat"; }
+.pas-ddjj-modal-card p { margin: 0; color: var(--pas-blue); font-size: 16px; line-height: 20px; }
+.pas-ddjj-modal-card.is-warning { min-height: 390px; justify-content: center; border: 2px solid var(--pas-yellow); }
+.pas-ddjj-modal-card.is-legal { width: min(100%, 372px); align-items: flex-start; text-align: left; }
+.pas-ddjj-modal-card.is-legal h2 { color: var(--pas-text); font-family: "Lora"; line-height: 30px; }
+.pas-ddjj-modal-card.is-legal p { color: var(--pas-text); font-size: 14px; line-height: 150%; }
+.pas-ddjj-info-icon { width: 73px; height: 73px; display: grid; place-items: center; border: 3px solid var(--pas-yellow); border-radius: 50%; color: var(--pas-yellow); font: 700 36px "Montserrat"; }
+.pas-ddjj-modal-actions { width: 296px; height: 41px; display: flex; gap: 20px; margin-top: 10px; }
+.pas-ddjj-modal-actions .is-secondary { max-width: 96px; height: 41px; border-radius: 25px; font-size: 16px; }
+.pas-ddjj-modal-actions .pas-ddjj-button:not(.is-secondary) { height: 36px; font-size: 16px; font-weight: 500; }
+.pas-ddjj-modal-close { position: absolute; top: 8px; right: 12px; border: 0; background: none; color: var(--pas-blue); font-size: 26px; cursor: pointer; }
+
+.pas-ddjj-success-page { display: grid; place-items: center; padding: 20px; background: #f5f5f5; }
+.pas-ddjj-modal-card.is-success { width: 350px; height: 350px; justify-content: space-between; padding: 40px 20px; border: 2px solid #2e7d33; box-shadow: 4px 4px 4px rgba(0, 0, 0, .25); }
+.pas-ddjj-modal-card.is-success h1 { margin: 0; color: var(--pas-blue); font-size: 20px; line-height: 24px; }
+.pas-ddjj-modal-card.is-success p { margin-top: 12px; font-size: 16px; line-height: 20px; }
+.pas-ddjj-success-icon { width: 52px; height: 52px; display: grid; place-items: center; border: 3px solid var(--pas-green); border-radius: 50%; color: var(--pas-green); font-size: 30px; }
+.pas-ddjj-modal-card.is-success .pas-ddjj-button { width: 64px; flex: none; padding: 5px 20px; font-size: 16px; font-weight: 500; line-height: 24px; text-decoration: none; }
+
+@media (max-width: 640px) {
+    .pas-ddjj-shell { width: 372px; max-width: calc(100% - 40px); padding-top: 40px; }
+    .pas-ddjj-actions { width: 100%; }
+    .pas-ddjj-summary div { align-items: flex-start; }
+    .pas-ddjj-footer { padding: 0 10px; font-size: clamp(10px, 3vw, 14px); white-space: nowrap; }
+}

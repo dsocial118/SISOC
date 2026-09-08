@@ -160,6 +160,10 @@
             {% block customJS %}{% endblock %}
             <!-- Bloque de modales - renderizado fuera de la estructura principal -->
             {% block modals %}{% endblock %}
+            {% if ronda_pendiente %}
+                {% include "encuestas/partials/responder_modal.html" %}
+                <script src="{% static 'custom/js/encuestaPendienteModal.js' %}" defer></script>
+            {% endif %}
         </div>
     </body>
 </html>

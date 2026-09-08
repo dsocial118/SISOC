@@ -35,7 +35,7 @@ from users.services_auth import (
 )
 from users.services_datacalle import is_relevador_calle_user
 from users.services_pwa import (
-    get_access_rows,
+    get_pwa_context,
     is_pwa_user,
     is_territorial_comedor_user,
 )
@@ -180,11 +180,9 @@ class UserContextViewSet(viewsets.ViewSet):
             )
             profile = get_profile_or_none(request.user)
             try:
-                roles = sorted(
-                    set(get_access_rows(request.user).values_list("rol", flat=True))
-                )
+                pwa_context = get_pwa_context(request.user)
             except Exception:  # pragma: no cover - fallback ultra defensivo
-                roles = []
+                pwa_context = {"roles": [], "read_only": False}
             payload = {
                 "id": getattr(request.user, "id", None),
                 "username": getattr(request.user, "username", ""),
@@ -192,7 +190,8 @@ class UserContextViewSet(viewsets.ViewSet):
                 "first_name": getattr(request.user, "first_name", ""),
                 "last_name": getattr(request.user, "last_name", ""),
                 "pwa": {
-                    "roles": roles,
+                    "roles": pwa_context["roles"],
+                    "read_only": pwa_context["read_only"],
                     "must_change_password": bool(
                         getattr(profile, "must_change_password", False)
                     ),

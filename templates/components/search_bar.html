@@ -219,7 +219,7 @@ Layout (prototipo Figma "SISOC_ Versión UX", nodo 13501:32237):
                    class="poncho-btn poncho-btn--neutro"
                    {% if filters_mode %}data-restablecer-filtros-favoritos="true"{% endif %}>Resetear</a>
             {% endif %}
-            {% if add_url and show_add_button|default:True %}
+            {% if add_url and show_add_button|default_if_none:True %}
                 {% if add_url_full %}
                     <a href="{{ add_url_full }}" class="poncho-btn poncho-btn--cta">
                         <i class="fas fa-plus" aria-hidden="true"></i>{{ add_text|default:"Agregar" }}

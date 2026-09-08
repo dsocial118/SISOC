@@ -84,11 +84,14 @@ def load_municipios(request):
 @login_required
 @require_GET
 def load_localidad(request):
-    """Carga localidades filtradas por municipio."""
+    """Carga localidades filtradas por municipio o provincia."""
     municipio_id = request.GET.get("municipio_id")
+    provincia_id = request.GET.get("provincia_id")
 
     if municipio_id:
         localidades = Localidad.objects.filter(municipio=municipio_id)
+    elif provincia_id:
+        localidades = Localidad.objects.filter(municipio__provincia_id=provincia_id)
     else:
         localidades = Localidad.objects.none()
 

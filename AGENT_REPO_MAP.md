@@ -4,6 +4,24 @@ Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrollador
 
 ## Como leer este documento
 
+- Sincronizacion DataCalle: los cambios de main de #2452/#2453 se incorporan a
+  development conservando coordinadores PWA y su checkbox maestro. La migracion
+  users/0051 une las hojas de configuracion mobile y DataCalle sin operaciones.
+  Evidencia/conflictos: docs/registro/cambios/2026-09-08-sincronizacion-datacalle-main.md.
+
+- PWA privadas: `scripts/operacion/pwas.json` declara Espacios Comunitarios,
+  DataCalle y Gestionar. `deploy_pwas.py` prepara snapshots/imagenes antes del
+  downtime y activa despues del health del backend. Las apps nuevas estan
+  habilitadas en el registro: requieren Compose en main, .env privado en la raiz
+  y la API de HML disponible antes de promover. `PWA_API_BASE_URL` fija la URL
+  HTTPS del entorno para Expo; Espacios conserva /api y /mobile/. Contrato y orden:
+  `docs/operacion/deploy_pwas.md`. `render_pwa_nginx.py` genera un include de servidor
+  y una vista previa que no debe instalarse. No mover `/sisoc/SISOC-Mobile` ni
+  asumir acceso publico de Git. Estado privado de releases: `SISOC/.deploy/pwa/`.
+  El helper de backend corre con umask 022 en un subshell; el estado PWA conserva
+  077. Verificar tambien estabilidad de workers tras desplegar: el healthcheck
+  HTTP no detecta errores de lectura de codigo en otros UID de contenedores.
+
 - `Hecho observado`: confirmado leyendo codigo, config, workflows o docs del repo.
 - `Inferencia`: deduccion razonable por nombres, estructura o convenciones, pero no validada en profundidad.
 - `No confirmado`: no encontre evidencia suficiente en esta exploracion acotada.
@@ -91,7 +109,7 @@ Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrollador
 
 ### Hechos observados
 
-- `docker-compose.yml` levanta `mysql`, `django` y `ocr_worker`.
+- `docker-compose.yml` levanta `mysql`, `django`, `ocr_worker` y `encuestas_worker`.
 - El contenedor `django` monta el repo completo en `/sisoc/`.
 - `docker/django/entrypoint.py` espera MySQL, puede correr `makemigrations`, siempre corre `migrate`, `load_fixtures`, `create_test_users`, `create_groups`, y luego levanta `runserver` o `gunicorn` segun `ENVIRONMENT`.
 
@@ -181,6 +199,7 @@ SISOC/
 - `mailing_worker`
 - `user_import_worker`
 - `ocr_worker`
+- `encuestas_worker`: abre/cierra rondas de encuestas por fecha (ver `encuestas/services.py:run_encuestas_scheduler`, sin Celery).
 
 ## Configuracion y variables de entorno relevantes
 
@@ -202,7 +221,7 @@ SISOC/
 | Seguridad/CSP | `ENABLE_CSP`, `CSP_REPORT_ONLY`, `CSP_ALLOW_UNSAFE_INLINE_SCRIPTS`, `CSP_ALLOW_UNSAFE_EVAL` |
 | Async | `DISABLE_ASYNC_THREADS` |
 | Testing | `USE_SQLITE_FOR_TESTS`, `PYTEST_RUNNING` |
-| Integracion GESTIONAR | `GESTIONAR_API_KEY`, endpoints `GESTIONAR_API_*`, workers `GESTIONAR_*`, `DOMINIO` |
+| Integracion GESTIONAR | `GESTIONAR_INTEGRATION_ENABLED` (corte total de envíos, pulls y comandos), `GESTIONAR_API_KEY`, endpoints `GESTIONAR_API_*`, workers `GESTIONAR_*`, `DOMINIO` |
 | Ticketera | `TICKETERA_ENABLED` |
 | RENAPER | `RENAPER_API_USERNAME`, `RENAPER_API_PASSWORD`, `RENAPER_REQUEST_TIMEOUT_SECONDS`, retries/backoff; sin cache ni TTL de token |
 | Google Maps | `GOOGLE_MAPS_API_KEY` |
@@ -272,7 +291,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 | `users/` | autenticacion, perfiles, grupos, login/reset, import y credenciales masivas | `models.py`, `views.py`, `api_views.py`, `management/commands/`, `services_*` | Alto |
 | `core/` | utilidades transversales, helpers, soft delete, filtros/paginacion, comandos compartidos | `views.py`, `services/`, `management/commands/`, `utils.py` | Alto |
 | `dashboard/` | tableros internos | `urls.py`, `views.py`, templates | Medio |
-| `comedores/` | dominio fuerte: comedores, nomina, estados, sync GESTIONAR | `models.py`, `tasks.py`, `signals.py`, `api_views.py`, `services/`, `urls.py` | Alto |
+| `comedores/` | dominio fuerte: comedores, nomina, estados, sync GESTIONAR y API territorial PWA | `models.py`, `api_views.py`, `api_views_territorial.py`, `tasks.py`, `signals.py`, `services/`, `urls.py` | Alto |
 | `relevamientos/` | relevamientos y sync externo asociado | `models.py`, `tasks.py`, `views.py`, commands | Alto |
 | `ciudadanos/` | gestion de ciudadanos/beneficiarios | `models.py`, `views.py`, `api_views.py`, forms | Medio |
 | `centrodefamilia/` | beneficiarios/centros/familia + API | `models.py`, `views.py`, `api_views.py`, `services/` | Alto |
@@ -293,10 +312,12 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 | `importarexpediente/` | flujo de importacion de expedientes | `views.py`, `models.py`, urls, tests | Medio |
 | `ocr/` | OCR y procesamiento asociado | `models.py`, `views.py`, urls, tests | Medio |
 | `ver_para_ser_libre/` | modulo de negocio independiente dentro del monolito | `models.py`, `views.py`, `services/workflow.py` | Medio |
+| `pas/` | núcleo del Programa de Acompañamiento Social, circuito DDJJ —padrón, tokens, formulario público, PDF e importación CSV— e Informes PAS versionados | `models.py`, `api.py`, `services/ddjj_service.py`, `services/titulares_import_service.py`, `services/informe_service.py`, `urls.py`, `migrations/` | Alto |
 | `audittrail/` | auditoria interna | `models.py`, `views.py`, `services/query_service` | Alto |
 | `historial/` | historial de dominio | `models.py`, `services/` | Bajo |
 | `intervenciones/` | intervenciones sobre casos | tests + archivos del modulo | Bajo; exploracion parcial |
 | `sentry/` | soporte/integracion local de sentry | codigo del modulo si toca observabilidad | Bajo |
+| `encuestas/` | encuestas periodicas a usuarios logueados: preguntas con logica condicional, segmentacion, rondas recurrentes, bloqueo global si son obligatorias, resultados y export | `models.py`, `services.py`, `services_resultados.py`, `middleware.py`, `context_processors.py`, `management/commands/process_encuestas_rondas.py`, `tests/` | Alto (modulo propio, doc completa en `docs/registro/analisis/2026-08-28-modulo-encuestas.md`) |
 
 ## Patrones arquitectonicos y de codigo
 
@@ -360,6 +381,12 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - `users/bootstrap/groups_seed.py`
 - `users/management/commands/create_groups.py`
 - templates en `users/templates/`
+- En el ABM de usuarios, `es_representante_pwa` es el interruptor general de
+  acceso mobile, incluido el coordinador PWA. `Profile.configuracion_mobile`
+  conserva las selecciones al suspender el acceso; no otorga permisos.
+  La migración es `users.0050` y la visibilidad vive en
+  `static/custom/js/user_mobile_access.js`. Validar con
+  `tests/test_users_pwa_forms.py` y `node tests/js/user_mobile_access.test.js`.
 - La autogestión vive en `MiCuentaForm`, `MiCuentaView` y la ruta `/mi-cuenta/`.
   La confirmación inicial usa `/mi-cuenta/confirmar/` y
   `ProfileConfirmationMiddleware`, registrado después del cambio de contraseña.
@@ -429,6 +456,9 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - `comedores/signals.py`
 - `comedores/services/`
 - `comedores/api_views.py`
+- `comedores/api_views_territorial.py` (scope provincial PWA, altas idempotentes y edición)
+- `comedores/api_serializers.py::TerritorialComedorWriteSerializer` (validacion de
+  altas/ediciones territoriales, catalogos y jerarquia geografica)
 - tests del root `tests/test_comedor*`, `tests/test_comedores*`
 - docs de flujo: `docs/flujos/comedor_sync.md`
 - certificaciones mensuales de prestaciones: regla de pendiente en
@@ -438,9 +468,10 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 ### Si necesitas cambiar Relevamientos
 
 - `relevamientos/models.py`
+- `relevamientos/service.py` (asignación territorial local/legacy)
 - `relevamientos/tasks.py`
 - `relevamientos/views.py`
-- `tests/test_relevamientos*`
+- `tests/test_relevamientos*` y `tests/test_territorial_api.py`
 - docs: `docs/flujos/relevamiento_sync.md`
 
 ### Si necesitas cambiar importacion de expedientes de pago
@@ -507,6 +538,11 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - `pwa/models.py`
 - `pwa/api_urls.py`
 - `pwa/api_views.py`
+- `users/services_pwa.py`: alcance PWA, accesos y coordinador de equipo técnico PWA.
+- `users/api_permissions.py`: permisos de lectura y veto transversal de escritura
+  para roles PWA de solo lectura.
+- Toda mutación PWA debe incluir `IsPWAWriteAllowed`, excepto las acciones
+  personales expresamente permitidas (contraseña y suscripciones push).
 - `pwa/services/`
 - alcance de nómina por admisión vigente o comedor directo:
   `pwa/services/nomina_queryset_service.py`
@@ -559,6 +595,18 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - Los productores CSV nuevos deben reutilizar la política central; el guard
   vive en `tests/test_csv_export_architecture.py`.
 
+### Si necesitas cambiar Encuestas
+
+- `encuestas/models.py`: `Encuesta` (versionado por edicion, ver `version`/`version_de`), `Pregunta` (condicion de visibilidad via `pregunta_condicion`/`operador_condicion`/`valor_condicion`), `OpcionPregunta`, `SegmentacionEncuesta`/`SegmentacionDestinatario`, `RondaEncuesta`, `RespuestaRonda`/`RespuestaPregunta`, `RecordatorioUsuario`.
+- `encuestas/services.py`: ciclo de vida (crear/editar-nueva version/publicar/abrir-cerrar ronda), respuestas (`registrar_respuesta`, respeta anonimato), segmentacion (`actualizar_segmentacion`, `agregar_destinatario`/`quitar_destinatario`, aplican en caliente con ronda abierta), cola de pendientes (`get_rondas_pendientes_para_request`, cacheada por request) y el scheduler (`procesar_rondas_pendientes`, `run_encuestas_scheduler`).
+- `encuestas/services_resultados.py`: agregacion de resultados por pregunta y export CSV/Excel (nunca vincula contenido a identidad si la encuesta es anonima).
+- `encuestas/validators.py`: parseo del listado de segmentacion (Excel/CSV) y del payload JSON del editor de preguntas (no usa formsets de Django a proposito).
+- `encuestas/middleware.py` (`EncuestaObligatoriaMiddleware`): bloquea la navegacion de cualquier usuario con una encuesta obligatoria pendiente; registrado en `config/settings.py` despues de `ProfileConfirmationMiddleware`. Mismo patron que `users/middleware.py`.
+- `encuestas/context_processors.py`: expone la ronda pendiente al modal global (`templates/includes/base.html` + `encuestas/templates/encuestas/partials/responder_modal.html`); comparte cache de request con el middleware para no duplicar la consulta.
+- `encuestas/management/commands/process_encuestas_rondas.py` + servicio `encuestas_worker` en `docker-compose.yml`: abre/cierra rondas por fecha, sin Celery.
+- `users/bootstrap/groups_seed.py`: grupos `Gestor de Encuestas` y `Encuestas Resultados`.
+- Guía funcional canónica: `docs/implementaciones/encuestas.md`. El análisis histórico y sus decisiones de diseño quedan en `docs/registro/analisis/2026-08-28-modulo-encuestas.md`.
+- Limite conocido: la segmentacion por CUIT nunca matchea a un usuario individual (`users.Profile` no tiene CUIT propio, solo DNI/CUIL).
 ### Si necesitas auditar o reparar mojibake en datos
 
 - Reparación conservadora compartida: `core/services/text_encoding.py`.
@@ -590,7 +638,11 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 
 ### Si necesitas cambiar syncs externos
 
-- GESTIONAR: `comedores/tasks.py`, `relevamientos/tasks.py`, management commands relacionados, `.env.example`
+- GESTIONAR: `config/settings.py`, `comedores/tasks.py`,
+  `comedores/services/territorial_service/impl.py`, `relevamientos/tasks.py`,
+  management commands relacionados, `.env.example`. El flag
+  `GESTIONAR_INTEGRATION_ENABLED` corta todo el tráfico AppSheet/GESTIONAR; no
+  usarlo como interruptor parcial.
 - RENAPER: `core/integrations/renaper.py`, `core/services/renaper.py`, docs `docs/flujos/consulta_renaper.md`
 - Ticketera: `ticketera/`, `docs/integraciones/ticketera_api.md`
 
@@ -724,6 +776,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - `config/urls.py`: cualquier ajuste impacta routing global.
 - `docker/django/entrypoint.py`: side effects de arranque, migraciones, workers.
 - `users/bootstrap/groups_seed.py` y comandos de grupos: permisos globales.
+- `encuestas/middleware.py`: middleware global nuevo (registrado en `config/settings.py`), puede bloquear la navegacion de cualquier usuario autenticado en cualquier vista del sistema si tiene una encuesta obligatoria pendiente.
 - `comedores/tasks.py` y `relevamientos/tasks.py`: syncs externos, threads y side effects.
 - `signals.py` de varias apps: pueden disparar efectos colaterales no obvios.
 - `templates/includes/` y `templates/components/`: impacto transversal de UI.
@@ -823,6 +876,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 | docx/pdf | `admisiones/services/`, `comedores/services/certificacion_prestaciones_service.py`, `pwa/services/nomina_destinatarios_pdf_service.py`, `pwa/files/varios/` |
 | PWA | `pwa/api_views.py`, `pwa/services/`, tests `test_pwa_*` |
 | OCR | `ocr/`, `docker/django/entrypoint.py` |
+| encuestas | `encuestas/services.py`, `encuestas/middleware.py`, `docs/registro/analisis/2026-08-28-modulo-encuestas.md` |
 | auditoria | `audittrail/`, docs `audittrail_*` |
 | release/deploy | `docs/operacion/*.md`, workflows, compose deploy |
 | CI rota por estilo | `.github/workflows/lint.yml`, `scripts/ci/pr_lint_tools.py` |
