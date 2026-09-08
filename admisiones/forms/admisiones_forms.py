@@ -17,12 +17,24 @@ class CatalogoNombreSelectField(forms.ChoiceField):
 
     widget = forms.Select
 
-    def __init__(self, *, queryset, empty_label, **kwargs):
+    def __init__(
+        self, *, queryset, empty_label, include_queryset_choices=False, **kwargs
+    ):
         self.queryset = queryset
         self.empty_label = empty_label
         self.legacy_values = {}
         super().__init__(**kwargs)
         self.choices = [("", empty_label)]
+        if include_queryset_choices:
+            self.choices = [
+                *self.choices,
+                *[
+                    (str(pk), nombre)
+                    for pk, nombre in queryset.order_by("nombre", "pk").values_list(
+                        "pk", "nombre"
+                    )
+                ],
+            ]
 
     def set_selected_value(self, value):
         value = getattr(value, "nombre", value)
@@ -50,7 +62,7 @@ class CatalogoNombreSelectField(forms.ChoiceField):
         self.initial = legacy_key
 
     def clean(self, value):
-        value = super().clean(value)
+        value = forms.Field.clean(self, value)
         if not value:
             return ""
         if value in self.legacy_values:
@@ -122,6 +134,7 @@ def _configurar_selectores_geograficos(form):
         selector = CatalogoNombreSelectField(
             queryset=queryset,
             empty_label=empty_label,
+            include_queryset_choices=not bool(provincia_relacionada),
             label=field.label,
             help_text=field.help_text,
             required=field.required,
@@ -192,7 +205,7 @@ def _ultimo_numero_gde(admision, documentacion_nombre):
 def _configurar_campos_informe_2233(form, admision, tipo_informe):
     form._antecedentes_renovaciones_nombres = []
     form.fields.pop("antecedentes_renovaciones", None)
-    for nombre in ["conclusiones"] + [
+    for nombre in ["conclusiones", "acreditaciones_ultimo_convenio"] + [
         item
         for numero in range(1, 7)
         for item in (f"resolucion_de_pago_{numero}", f"monto_{numero}")
@@ -214,7 +227,6 @@ def _configurar_campos_informe_2233(form, admision, tipo_informe):
     financiamiento = getattr(admision, "estado_financiamiento", None)
     condiciones = {
         "finalizacion_convenio_pnud_vigente": es_pnud_vigente,
-        "acreditaciones_ultimo_convenio": es_renovacion and financiamiento == "vigente",
         "monto_total_conveniado_informe": es_renovacion and financiamiento == "vigente",
         "monto_total_conveniado": es_renovacion and financiamiento == "finalizado",
         "expediente_incorporacion": es_renovacion,
