@@ -336,15 +336,14 @@ def descargar_informe_tecnico_para_gde(request, tipo, pk):
         pk=pk,
         tipo=tipo,
     )
-    permisos = [
-        "comedores.view_comedor",
-        "admisiones.view_admision",
-        "acompanamientos.view_informacionrelevante",
-    ]
     if not (
         request.user.is_superuser
-        or user_has_any_permission_codes(request.user, permisos)
+        or AdmisionService._verificar_permiso_tecnico_dupla(
+            request.user, informe.admision.comedor
+        )
     ):
+        return HttpResponse(status=403)
+    if informe.estado != "Validado":
         return HttpResponse(status=403)
 
     documento_informe = InformeTecnicoPDF.objects.filter(
@@ -355,7 +354,7 @@ def descargar_informe_tecnico_para_gde(request, tipo, pk):
     archivo_docx = GdeDocxService.seleccionar_ultimo_archivo(documento_informe)
     if archivo_docx is None:
         messages.error(request, "No hay un DOCX disponible para preparar para GDE.")
-        return redirect("informe_tecnico_ver", tipo=tipo, pk=informe.pk)
+        return redirect("admisiones_tecnicos_editar", pk=informe.admision_id)
 
     docx_content = GdeDocxService.generar(
         archivo_docx,
@@ -363,7 +362,7 @@ def descargar_informe_tecnico_para_gde(request, tipo, pk):
     )
     if docx_content is None:
         messages.error(request, "No se pudo preparar el DOCX para GDE.")
-        return redirect("informe_tecnico_ver", tipo=tipo, pk=informe.pk)
+        return redirect("admisiones_tecnicos_editar", pk=informe.admision_id)
 
     return FileResponse(
         docx_content,

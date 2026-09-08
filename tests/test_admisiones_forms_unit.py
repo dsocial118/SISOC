@@ -189,6 +189,7 @@ def test_prellenar_campos_gde_no_consulta_sin_admision(mocker):
     spy.assert_not_called()
 
 
+@pytest.mark.django_db
 def test_informe_tecnico_juridico_clean_error_si_no_corresponde_invalido(mocker):
     """Agrega error cuando se marca no corresponde y el convenio no lo permite."""
     form = InformeTecnicoJuridicoForm()
@@ -210,6 +211,7 @@ def test_informe_tecnico_juridico_clean_error_si_no_corresponde_invalido(mocker)
     assert cleaned["fecha_vencimiento_mandatos"] is None
 
 
+@pytest.mark.django_db
 def test_informe_tecnico_juridico_clean_exige_fecha_o_check_si_require_full(mocker):
     """Exige fecha o marcar no corresponde cuando el flujo es completo."""
     form = InformeTecnicoJuridicoForm()
@@ -230,6 +232,7 @@ def test_informe_tecnico_juridico_clean_exige_fecha_o_check_si_require_full(mock
     assert "fecha_vencimiento_mandatos" in form.errors
 
 
+@pytest.mark.django_db
 def test_informe_tecnico_base_clean_setea_fecha_none_si_no_corresponde(mocker):
     """Al marcar no corresponde, limpia la fecha en el formulario base."""
     form = InformeTecnicoBaseForm()

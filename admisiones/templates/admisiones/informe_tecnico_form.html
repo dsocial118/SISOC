@@ -18,7 +18,7 @@
     <link rel="stylesheet"
           href="{% static 'custom/css/informeTecnicoSecciones.css' %}" />
     <div class="container-fluid">
-        <form method="post" enctype="multipart/form-data">
+        <form method="post" enctype="multipart/form-data" data-localidades-url="{% url 'ajax_load_localidades' %}">
             {% csrf_token %}
 
             {% for message in messages %}
@@ -74,6 +74,7 @@
 
 {% block customJS %}
     <script src="{% static 'custom/js/informeTecnicoSecciones.js' %}"></script>
+    <script src="{% static 'custom/js/geografiaProvinciaLocalidad.js' %}"></script>
 {% endblock %}
 
 {# NOTA: este bloque nunca se renderiza; la base declara `customJS`, no `extra_js`. #}

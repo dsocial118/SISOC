@@ -766,7 +766,10 @@
                     <h2 class="card-title fw-bold fs-3 mb-0">Informe Técnico y Carátula del Expediente</h2>
                 </div>
                 <div class="card-body">
-                    <form method="POST" action="" enctype="multipart/form-data">
+                    <form method="POST"
+                          action=""
+                          enctype="multipart/form-data"
+                          data-localidades-url="{% url 'ajax_load_localidades' %}">
                         {% csrf_token %}
                         <input type="hidden" name="btnInformeTecnicoCaratula" value="1" />
                         {% include "admisiones/caratula_expediente_form.html" with caratular_form=caratular_form_informe %}
@@ -1358,6 +1361,7 @@
     <script src="{% static 'custom/js/admisionesTecnicoCrear.js' %}"></script>
     <script src="{% static 'custom/js/admisionResyncConvenio.js' %}"></script>
     <script src="{% static 'custom/js/informeTecnicoSecciones.js' %}"></script>
+    <script src="{% static 'custom/js/geografiaProvinciaLocalidad.js' %}"></script>
     <script nonce="{{ request.csp_nonce }}">
                         document.addEventListener('DOMContentLoaded', function() {
                             const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));

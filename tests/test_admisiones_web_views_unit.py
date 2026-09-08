@@ -979,11 +979,12 @@ def test_informe_tecnico_detail_context_muestra_revision_tecnico(mocker):
 
 
 def test_descargar_informe_tecnico_para_gde_usa_el_docx_editado(mocker):
-    request = _Req(user=_user(superuser=True), method="GET")
+    request = _Req(user=_user(), method="GET")
     informe = SimpleNamespace(
         pk=44,
         id=44,
-        admision=SimpleNamespace(pk=12),
+        estado="Validado",
+        admision=SimpleNamespace(pk=12, comedor=SimpleNamespace()),
     )
     archivo_borrador = SimpleNamespace(name="borrador.docx")
     archivo_editado = SimpleNamespace(name="editado.docx")
@@ -995,6 +996,9 @@ def test_descargar_informe_tecnico_para_gde_usa_el_docx_editado(mocker):
     mocker.patch(
         "admisiones.views.web_views.InformeTecnicoPDF.objects.filter",
         return_value=SimpleNamespace(first=lambda: documento_informe),
+    )
+    mocker.patch.object(
+        module.AdmisionService, "_verificar_permiso_tecnico_dupla", return_value=True
     )
     generar = mocker.patch(
         "admisiones.views.web_views.GdeDocxService.generar",
@@ -1010,6 +1014,30 @@ def test_descargar_informe_tecnico_para_gde_usa_el_docx_editado(mocker):
     assert response.status_code == 200
     assert "informe-44-para-gde.docx" in response["Content-Disposition"]
     generar.assert_called_once_with(archivo_editado, informe_pk=44)
+
+
+def test_descargar_informe_tecnico_para_gde_requiere_tecnico_y_validacion(mocker):
+    request = _Req(user=_user(), method="GET")
+    informe = SimpleNamespace(
+        pk=44,
+        id=44,
+        estado="Validado",
+        admision=SimpleNamespace(comedor=SimpleNamespace()),
+    )
+    mocker.patch("admisiones.views.web_views.get_object_or_404", return_value=informe)
+    mocker.patch.object(
+        module.AdmisionService, "_verificar_permiso_tecnico_dupla", return_value=False
+    )
+
+    response = module.descargar_informe_tecnico_para_gde(request, tipo="base", pk=44)
+
+    assert response.status_code == 403
+
+    informe.estado = "Docx editado"
+    request.user = _user(superuser=True)
+    response = module.descargar_informe_tecnico_para_gde(request, tipo="base", pk=44)
+
+    assert response.status_code == 403
 
 
 def test_informe_tecnico_detail_post_subir_docx_branches(mocker):

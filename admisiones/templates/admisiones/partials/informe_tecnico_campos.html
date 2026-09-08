@@ -673,6 +673,11 @@ observacion y las claves de _get_template_informe_context.
                 {% for antecedente in form.antecedentes_renovaciones_campos %}
                     <div class="border rounded p-3 mb-3">
                         <strong class="d-block mb-2">Admisi&oacute;n #{{ antecedente.admision.pk }}</strong>
+                        <div class="form-check mb-2">
+                            {{ antecedente.incluida }}
+                            <label class="form-check-label"
+                                   for="{{ antecedente.incluida.id_for_label }}">Incluir en el informe</label>
+                        </div>
                         <div class="row">
                             <div class="col-md-4">{{ antecedente.resolucion|as_crispy_field }}</div>
                             <div class="col-md-4">{{ antecedente.convenio|as_crispy_field }}</div>
@@ -688,20 +693,19 @@ observacion y las claves de _get_template_informe_context.
             <button class="btn btn-link w-100 d-flex justify-content-between align-items-center text-decoration-none text-reset px-3 py-2 collapsed"
                     type="button"
                     data-bs-toggle="collapse"
-                    data-bs-target="#informeSeccionResolucionPago"
+                    data-bs-target="#informeSeccionMontoConveniado"
                     aria-expanded="false"
-                    aria-controls="informeSeccionResolucionPago">
-                <span class="h5 mb-0 text-start">Resolución de pago</span>
+                    aria-controls="informeSeccionMontoConveniado">
+                <span class="h5 mb-0 text-start">Monto total conveniado</span>
                 <i class="fas fa-chevron-down informe-seccion-chevron"
                    aria-hidden="true"></i>
             </button>
         </div>
         <div class="card-body collapse"
-             id="informeSeccionResolucionPago"
+             id="informeSeccionMontoConveniado"
              data-informe-seccion="1">
             <div class="row">
-                {% if form.acreditaciones_ultimo_convenio %}
-                    <div class="col-md-6 mb-3">{{ form.acreditaciones_ultimo_convenio|as_crispy_field }}</div>
+                {% if form.monto_total_conveniado_informe %}
                     <div class="col-md-6 mb-3">{{ form.monto_total_conveniado_informe|as_crispy_field }}</div>
                 {% else %}
                     <div class="col-md-6 mb-3">{{ form.monto_total_conveniado|as_crispy_field }}</div>

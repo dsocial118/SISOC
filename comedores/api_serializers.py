@@ -28,7 +28,7 @@ from admisiones.models.admisiones import (
     HistorialEstadosAdmision,
     InformeTecnico,
 )
-from relevamientos.models import ClasificacionComedor, Relevamiento
+from relevamientos.models import BLOQUES_SEGUIMIENTO, ClasificacionComedor, Relevamiento
 from relevamientos.service import RelevamientoService
 from rendicioncuentasmensual.models import DocumentacionAdjunta
 from rendicioncuentasmensual.models import RendicionCuentaMensual
@@ -865,6 +865,37 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
             )
 
         return items
+
+    def build_seguimiento_mobile(self, seguimiento):
+        """Snapshot de un seguimiento en el mismo formato que
+        ``relevamiento_actual_mobile``, para que la app prellene el seguimiento
+        siguiente con lo cargado en el anterior (N17).
+
+        Cada bloque del ciclo es una seccion; los items llevan ``campo`` +
+        ``valor`` crudo para prellenar 1:1, ademas de pregunta/respuesta.
+        """
+        if seguimiento is None:
+            return None
+
+        sections = []
+        for attr, label in BLOQUES_SEGUIMIENTO:
+            bloque = getattr(seguimiento, attr, None)
+            if bloque is None:
+                continue
+            items = self._collect_model_items(bloque)
+            if not items:
+                continue
+            sections.append({"titulo": label, "items": items})
+
+        return {
+            "id": seguimiento.id,
+            "tipo": seguimiento.tipo,
+            "numero_orden": seguimiento.numero_orden,
+            "estado": seguimiento.estado,
+            "fecha_hora": seguimiento.fecha_hora,
+            "items": [item for section in sections for item in section["items"]],
+            "sections": sections,
+        }
 
     def _normalize_relevamiento_mobile_text(self, value):
         return (

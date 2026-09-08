@@ -17,6 +17,7 @@ from django.utils.html import strip_tags
 from django.utils.text import slugify
 from docx import Document
 from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT, WD_TABLE_ALIGNMENT
+from docx.enum import text as docx_text
 from docx.oxml import OxmlElement, parse_xml
 from docx.oxml.ns import nsdecls, qn
 from docx.shared import Mm, Pt
@@ -94,6 +95,7 @@ class GdeDocxService:
                 archivo_docx.open("rb")
             contenido = archivo_docx.read()
             documento = Document(BytesIO(contenido))
+            cls._justificar_estilo_normal(documento)
             ancho_disponible = cls._ancho_disponible_documento_dxa(documento)
             for tabla in documento.tables:
                 cls._normalizar_tabla(tabla, ancho_disponible)
@@ -110,6 +112,14 @@ class GdeDocxService:
         finally:
             if hasattr(archivo_docx, "close"):
                 archivo_docx.close()
+
+    @staticmethod
+    def _justificar_estilo_normal(documento):
+        """Evita que el contenido sin alineación explícita quede a la izquierda."""
+
+        documento.styles["Normal"].paragraph_format.alignment = (
+            docx_text.WD_ALIGN_PARAGRAPH.JUSTIFY
+        )
 
     @staticmethod
     def _ancho_disponible_documento_dxa(documento):
@@ -459,7 +469,6 @@ class InformeService:
             "Prestaciones Aprobadas": [],
             "Información Adicional": [],
             titulo_campos_especificos: [],
-            "Resolución de pago": [],
         }
         valores = dict(InformeService.get_campos_visibles_informe(informe))
         es_renovacion = getattr(getattr(informe, "admision", None), "tipo", None) == (
@@ -476,12 +485,12 @@ class InformeService:
             "IF_relevamiento_territorial",
         }
         for field in informe._meta.fields:
+            if field.name.startswith(("resolucion_de_pago_", "monto_")):
+                continue
             nombre = str(field.verbose_name)
             if nombre not in valores:
                 continue
-            es_campo_renovacion = field.name.startswith(
-                ("aprobadas_ultimo_convenio_", "resolucion_de_pago_", "monto_")
-            )
+            es_campo_renovacion = field.name.startswith("aprobadas_ultimo_convenio_")
             if es_campo_renovacion and not es_renovacion:
                 continue
             if field.name in campos_especificos:
@@ -498,8 +507,6 @@ class InformeService:
                 grupo = "Solicitudes"
             elif field.name.startswith("aprobadas_"):
                 grupo = "Prestaciones Aprobadas"
-            elif field.name.startswith(("resolucion_de_pago_", "monto_")):
-                grupo = "Resolución de pago"
             elif field.name.endswith("_espacio") or field.name in {
                 "tipo_espacio",
                 "nombre_espacio",
@@ -1196,17 +1203,12 @@ class InformeService:
                 and informe.estado != "Validado"
                 else None
             )
-            documento_docx = pdf_final or pdf_borrador
-
             return {
                 "tipo": tipo,
                 "admision": informe.admision,
                 "campos": InformeService.get_campos_visibles_informe(informe),
                 "pdf": pdf_final,
                 "pdf_borrador": pdf_borrador,
-                "docx_para_gde_disponible": bool(
-                    GdeDocxService.seleccionar_ultimo_archivo(documento_docx)
-                ),
             }
         except Exception:
             logger.exception(
