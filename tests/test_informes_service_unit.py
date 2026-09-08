@@ -229,7 +229,7 @@ def test_campos_complementarios_renovacion_incluye_sus_secciones_y_avalistas(
     }
 
     assert "Prestaciones aprobadas en el último convenio" in grupos
-    assert "Resolución de pago" in grupos
+    assert "Resolución de pago" not in grupos
     assert grupos["Prestaciones aprobadas en el último convenio"]["tipo"] == "matriz"
     assert (
         grupos["Prestaciones aprobadas en el último convenio"]["filas"][0]["titulo"]
