@@ -13,6 +13,7 @@
 
 ## Arquitectura tocada
 
+- Hay cambios en capa API/DRF y conviene revisar contratos de request/response.
 - Existen cambios de persistencia o migraciones que requieren revisión de datos.
 
 ## Decisiones y supuestos detectados
@@ -31,6 +32,8 @@
 - Empezar por `docs/registro/prs/PR-2474.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
 - `AGENT_REPO_MAP.md`
+- `comedores/api_serializers.py`
+- `comedores/api_views_territorial.py`
 - `comedores/models.py`
 - `docs/contexto/features/pr-2474-feat-deploy-preparar-activacion-web-de-datacalle-y-gestionar.md`
 - `docs/operacion/deploy_pwas.md`
