@@ -146,6 +146,7 @@ def test_if_relevamiento_a_pac_no_modifica_si_no_hay_numero(mocker):
 
 def test_informe_tecnico_juridico_clean_error_si_no_corresponde_invalido(mocker):
     """Agrega error cuando se marca no corresponde y el convenio no lo permite."""
+    mocker.patch("admisiones.forms.admisiones_forms._configurar_selectores_geograficos")
     form = InformeTecnicoJuridicoForm()
     form.permite_no_corresponde_fecha_vencimiento = False
     form.require_full = False
@@ -167,6 +168,7 @@ def test_informe_tecnico_juridico_clean_error_si_no_corresponde_invalido(mocker)
 
 def test_informe_tecnico_juridico_clean_exige_fecha_o_check_si_require_full(mocker):
     """Exige fecha o marcar no corresponde cuando el flujo es completo."""
+    mocker.patch("admisiones.forms.admisiones_forms._configurar_selectores_geograficos")
     form = InformeTecnicoJuridicoForm()
     form.permite_no_corresponde_fecha_vencimiento = True
     form.require_full = True
@@ -187,6 +189,7 @@ def test_informe_tecnico_juridico_clean_exige_fecha_o_check_si_require_full(mock
 
 def test_informe_tecnico_base_clean_setea_fecha_none_si_no_corresponde(mocker):
     """Al marcar no corresponde, limpia la fecha en el formulario base."""
+    mocker.patch("admisiones.forms.admisiones_forms._configurar_selectores_geograficos")
     form = InformeTecnicoBaseForm()
     form.permite_no_corresponde_fecha_vencimiento = True
     form.require_full = False

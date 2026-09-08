@@ -53,6 +53,9 @@
 - `docs/implementaciones/centrodeinfancia_nomina_ninos_simepi.md`: autorización, alcance provincial, privacidad y contrato del PDF de nómina infantil SIMEPI.
 - `docs/implementaciones/comedores_nomina_ciudadanos.md`: alta de ciudadanos con DNI/Sin DNI desde nómina y transacción de datos sociales.
 - `docs/implementaciones/centrodefamilia_preinscriptos.md`: contrato del listado y exportación CSV de preinscriptos CDF, incluyendo columnas, ordenamiento y permisos.
+- `docs/implementaciones/pas.md`: contrato del padrón PAS, DDJJ e informes reproducibles.
+- `docs/implementaciones/encuestas.md`: ciclo funcional de encuestas, permisos, privacidad y operación de rondas.
+- `docs/implementaciones/celiaquia_comentarios_tecnicos.md`: comentarios técnicos, publicación a Provincia y vínculo con Subsanar/Rechazar.
 - `docs/vat/`: guías funcionales, API, operación de vouchers y desarrollo del módulo VAT.
 
 ### 5. Flujos y sincronizaciones
@@ -74,6 +77,7 @@
 - `docs/registro/decisiones/`: decisiones relevantes (ADR livianas).
 - `docs/registro/prs/`: documentación automática por pull request.
 - `docs/registro/releases/pending/`: release notes preliminares usadas para reconstruir `CHANGELOG.md` en PRs a `main`.
+- `docs/registro/analisis/` y `docs/analisis/`: hipótesis, relevamientos y propuestas; no reemplazan la documentación canónica ni un registro de cambio.
 
 ### 7. Testing y QA
 - `docs/testing/usuarios_test.md`: usuarios de prueba y alcance de testing manual.

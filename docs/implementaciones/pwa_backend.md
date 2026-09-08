@@ -95,6 +95,23 @@ Servicios de dominio: `users/services_pwa.py`
 - `sync_organizacion_accesses(organizacion_id=..., comedor_ids=..., actor=...)`
 - `apply_comedor_organizacion_change(...)`
 
+### Coordinador de Equipo Técnico PWA
+
+El rol `Coordinador de Equipo Técnico` es un usuario PWA exclusivo de
+**solo lectura**. Su alcance se calcula desde los comedores de una o más
+duplas más los comedores adicionales permanentes; no reutiliza ni migra el
+rol histórico `Profile.es_coordinador` del backoffice.
+
+- Puede consultar los módulos PWA incluidos rendiciones, actividades,
+  capacitaciones, subusuarios y mensajes.
+- La restricción no depende de ocultar controles en Mobile: el backend aplica
+  `IsPWAWriteAllowed` y rechaza mutaciones directas, incluido marcar mensajes
+  como vistos.
+- Mantiene únicamente las excepciones necesarias para la sesión: push y cambio
+  de contraseña. No adquiere permisos de representante, operador ni gestión.
+- La exclusividad se valida al crear o importar accesos para que no quede
+  combinado con roles PWA de escritura.
+
 ## Endpoints PWA activos
 
 ### 1) Auth + contexto
@@ -235,6 +252,9 @@ Lectura y auditoria:
   - usuarios no PWA: filtros existentes de `ComedorService`.
 - Gestión de `/usuarios/` protegida con `IsPWARepresentativeForComedor`.
 - Usuarios PWA bloqueados en login web por `BackofficeAuthenticationForm`.
+- El coordinador técnico PWA se autoriza para lectura por su alcance efectivo,
+  pero `IsPWAWriteAllowed` bloquea sus requests mutantes aunque invoque una URL
+  directamente.
 
 ## Auditoria de operaciones PWA
 

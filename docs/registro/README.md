@@ -25,6 +25,15 @@ Ampliar solo si el cambio toca reglas funcionales, permisos, seguridad o comport
 - `docs/registro/decisiones/`
 - `YYYY-MM-DD-<tema>.md`
 
+## Análisis y especificación vigente
+
+`docs/registro/analisis/` y `docs/analisis/` conservan hipótesis, requisitos
+en exploración y propuestas. Deben indicar su estado y no son, por sí solos,
+la fuente de verdad de un comportamiento ya entregado. Cuando una decisión o
+flujo se implementa, registrar el cambio en `docs/registro/cambios/` y enlazar
+o actualizar una guía canónica indexada bajo `docs/implementaciones/`,
+`docs/flujos/` u `docs/operacion/`.
+
 ## Artefactos obligatorios de pull request
 
 Cada PR debe conservar en su rama origen:
