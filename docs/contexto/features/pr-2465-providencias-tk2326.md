@@ -53,13 +53,15 @@
 - `admisiones/templates/admisiones/docx/segunda_providencia.docx`
 - `admisiones/templates/admisiones/partials/numero_pv_estructurado.html`
 - `admisiones/templates/admisiones/pdf/incorporacion_pdf_proyecto_disposicion.html`
-- ... y 10 archivo(s) adicional(es) relacionados.
+- ... y 12 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`
+- `docs/contexto/features/pr-2465-providencias-tk2326.md`
 - `docs/registro/cambios/2026-09-07-issue-2326-providencias.md`
+- `docs/registro/prs/PR-2465.md`
 
 ## Trazabilidad
 
