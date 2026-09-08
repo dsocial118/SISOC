@@ -281,7 +281,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 | `users/` | autenticacion, perfiles, grupos, login/reset, import y credenciales masivas | `models.py`, `views.py`, `api_views.py`, `management/commands/`, `services_*` | Alto |
 | `core/` | utilidades transversales, helpers, soft delete, filtros/paginacion, comandos compartidos | `views.py`, `services/`, `management/commands/`, `utils.py` | Alto |
 | `dashboard/` | tableros internos | `urls.py`, `views.py`, templates | Medio |
-| `comedores/` | dominio fuerte: comedores, nomina, estados, sync GESTIONAR | `models.py`, `tasks.py`, `signals.py`, `api_views.py`, `services/`, `urls.py` | Alto |
+| `comedores/` | dominio fuerte: comedores, nomina, estados, sync GESTIONAR y API territorial PWA | `models.py`, `api_views.py`, `api_views_territorial.py`, `tasks.py`, `signals.py`, `services/`, `urls.py` | Alto |
 | `relevamientos/` | relevamientos y sync externo asociado | `models.py`, `tasks.py`, `views.py`, commands | Alto |
 | `ciudadanos/` | gestion de ciudadanos/beneficiarios | `models.py`, `views.py`, `api_views.py`, forms | Medio |
 | `centrodefamilia/` | beneficiarios/centros/familia + API | `models.py`, `views.py`, `api_views.py`, `services/` | Alto |
@@ -446,6 +446,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - `comedores/signals.py`
 - `comedores/services/`
 - `comedores/api_views.py`
+- `comedores/api_views_territorial.py` (scope provincial PWA, altas idempotentes y edición)
 - tests del root `tests/test_comedor*`, `tests/test_comedores*`
 - docs de flujo: `docs/flujos/comedor_sync.md`
 - certificaciones mensuales de prestaciones: regla de pendiente en
