@@ -106,3 +106,9 @@ las aserciones y la logica de los formularios. Resultado: los 33 tests unitarios
 sin marca django_db del archivo pasan; cuatro pruebas con DB quedan para la CI.
 No se modifica el acceso a catalogos del producto ni se relaja el bloqueo de DB
 de pytest. La nueva ejecucion de CI debe validar la suite completa.
+
+Al actualizar la rama con development (#2473), la comprobacion global detecto
+deriva del nombre de indice de ComedorPwaCreateOperation: el modelo lo generaba
+automaticamente y la migracion 0059 ya fijaba otro nombre. Se explicita en el
+modelo el nombre versionado en 0059, sin alterar el indice de la base ni agregar
+una migracion. Esta correccion tambien forma parte de la sincronizacion de main.
