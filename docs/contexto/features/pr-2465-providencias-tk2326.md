@@ -59,9 +59,6 @@
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`
-- `docs/contexto/features/pr-2465-providencias-tk2326.md`
-- `docs/registro/cambios/2026-09-07-issue-2326-providencias.md`
-- `docs/registro/prs/PR-2465.md`
 
 ## Trazabilidad
 
