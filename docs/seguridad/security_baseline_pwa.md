@@ -28,6 +28,16 @@
 - `api/relevamiento` mantiene su esquema propio (`HasAPIKeyOrToken`) y queda fuera del flujo estricto PWA.
 - Nunca exponer API keys del backend en frontend público.
 
+## Autorización por rol y objeto
+
+- El frontend no es una frontera de autorización: cada endpoint debe validar
+  token, alcance de comedor y permiso de acción en el backend.
+- El `Coordinador de Equipo Técnico PWA` tiene acceso de solo lectura. Las
+  acciones mutantes se rechazan también ante llamados directos mediante
+  `IsPWAWriteAllowed`; ocultar botones no es suficiente.
+- Push y cambio de contraseña son excepciones de sesión explícitas. No deben
+  convertirse en permisos generales de escritura ni de representación.
+
 ## Caching y Service Worker
 
 - No cachear endpoints con datos personales o tokens. - Reduce exposicion offline y en disco.
