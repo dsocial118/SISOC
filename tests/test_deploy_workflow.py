@@ -1,8 +1,72 @@
 from pathlib import Path
+import os
+import re
+import shutil
+import stat
+import subprocess
+
+import pytest
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEPLOY_WORKFLOW = REPO_ROOT / ".github" / "workflows" / "deploy.yml"
+
+
+@pytest.mark.skipif(os.name != "posix", reason="Verifica permisos POSIX del deploy")
+@pytest.mark.parametrize("job", ["deploy-homologacion", "deploy-produccion"])
+def test_backend_code_readable_without_exposing_private_pwa_state(tmp_path, job):
+    """La umask privada de las PWA no debe impedir leer codigo a los workers."""
+    workflow = DEPLOY_WORKFLOW.read_text(encoding="utf-8")
+    job_source = workflow.split(f"    {job}:\n", 1)[1]
+    setup = (
+        "umask 077" + job_source.split("umask 077", 1)[1].split("wait_for() {", 1)[0]
+    )
+    mock_bin = tmp_path / "bin"
+    mock_bin.mkdir()
+    scripts = {
+        "git": (
+            "#!/bin/sh\n"
+            'case "$*" in\n'
+            '*deploy_refresh.sh*) printf \'touch "$SISOC_ROOT_DIR/backend-code"\\n'
+            'mkdir "$SISOC_ROOT_DIR/backend-directory"\\n\' ;;\n'
+            "*) printf '{}\\n' ;;\nesac\n"
+        ),
+        "python3": "#!/bin/sh\nexit 0\n",
+    }
+    for name, source in scripts.items():
+        executable = mock_bin / name
+        executable.write_text(source, encoding="utf-8")
+        executable.chmod(0o755)
+    app_root = tmp_path / "app"
+    app_root.mkdir()
+    env = {
+        **os.environ,
+        "APP_ROOT": str(app_root),
+        "EXPECTED_SHA": "a" * 40,
+        "GITHUB_STEP_SUMMARY": str(tmp_path / "summary"),
+        "PATH": str(mock_bin) + os.pathsep + os.environ["PATH"],
+    }
+    subprocess.run(
+        [
+            shutil.which("bash"),
+            "-c",
+            "set -eu\n" + setup + '\ntouch "$APP_ROOT/private-after"',
+        ],
+        env=env,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    def mode(path):
+        return stat.S_IMODE(path.stat().st_mode)
+
+    assert mode(app_root / "backend-code") == 0o644
+    assert mode(app_root / "backend-directory") == 0o755
+    assert mode(app_root / "private-after") == 0o600
+    state = next((app_root / ".deploy/pwa").iterdir())
+    assert mode(state) == 0o700
+    assert mode(state / "backend.sh") == 0o600
 
 
 def _production_deploy_step() -> str:
@@ -86,37 +150,33 @@ def test_deploy_produccion_inspeccion_legacy_no_contiene_escrituras():
         assert mutation not in recovery_source
 
 
-def test_deploy_produccion_actualiza_helper_obsoleto_antes_del_deploy_versionado():
-    """Un runner con helper previo debe poder alcanzar el deploy del SHA aprobado."""
-
-    production_step = _production_deploy_step()
-    remote_revision_check = 'remote_sha="$(git -C "$APP_ROOT" rev-parse origin/main)"'
-    stale_helper_guard = (
-        'if ! grep -q -- "--expected-revision" '
-        '"$APP_ROOT/scripts/operacion/deploy_refresh.sh"; then'
-    )
-    main_branch_guard = '[[ "$(git -C "$APP_ROOT" branch --show-current)" == "main" ]]'
-    fast_forward = 'git -C "$APP_ROOT" merge --ff-only origin/main'
-    deploy_versioned = (
-        "./scripts/operacion/deploy_refresh.sh --yes --expected-revision "
-        '"$EXPECTED_SHA" --with-mobile --mobile-dir /sisoc/SISOC-Mobile'
-    )
-
-    stale_helper_start = production_step.index(stale_helper_guard)
-    stale_helper_end = production_step.index(
-        "\n                  fi\n", stale_helper_start
-    )
-    deploy_start = production_step.index(deploy_versioned)
-    stale_helper_block = production_step[stale_helper_start:stale_helper_end]
-
-    assert remote_revision_check in production_step
-    assert main_branch_guard in stale_helper_block
-    assert fast_forward in stale_helper_block
-    assert production_step.index(remote_revision_check) < stale_helper_start
-    assert stale_helper_end < deploy_start
-    assert stale_helper_block.index(main_branch_guard) < stale_helper_block.index(
-        fast_forward
-    )
+def test_deploy_pwa_herramientas_del_sha_y_preparacion_antes_del_backend():
+    """La primera ejecucion no depende de actualizar el helper instalado."""
+    workflow = DEPLOY_WORKFLOW.read_text(encoding="utf-8")
+    assert "deploy_pwas.py" not in _qa_deploy_step()
+    for job, environment in (
+        ("deploy-homologacion", "hml"),
+        ("deploy-produccion", "prd"),
+    ):
+        # Read the full job (next job begins at four spaces, not nested steps).
+        step = re.split(
+            r"\n    [a-z][a-z-]+:\n", workflow.split(f"    {job}:\n", 1)[1]
+        )[0]
+        extract = 'show "$EXPECTED_SHA:scripts/operacion/deploy_pwas.py"'
+        prepare = '"$PWA_STATE/deploy_pwas.py" prepare'
+        backend = 'bash "$PWA_STATE/backend.sh"'
+        activate = '"$PWA_STATE/deploy_pwas.py" activate'
+        assert step.index('if [[ "$remote_sha" != "$EXPECTED_SHA" ]]') < step.index(
+            extract
+        )
+        assert step.index(extract) < step.index(prepare) < step.index(backend)
+        assert step.index("healthcheck_") < step.index(activate)
+        assert f"--environment {environment}" in step
+        assert "--without-mobile" in step
+        assert "chown" not in step
+    production = _production_deploy_step()
+    assert "environment: production" in production
+    assert "cancel-in-progress: false" in workflow
 
 
 def test_deploy_produccion_espera_migraciones_y_healthcheck_del_entrypoint():
@@ -124,8 +184,8 @@ def test_deploy_produccion_espera_migraciones_y_healthcheck_del_entrypoint():
 
     production_step = _production_deploy_step()
     deploy_versioned = (
-        "./scripts/operacion/deploy_refresh.sh --yes --expected-revision "
-        '"$EXPECTED_SHA" --with-mobile --mobile-dir /sisoc/SISOC-Mobile'
+        'bash "$PWA_STATE/backend.sh" --yes --expected-revision '
+        '"$EXPECTED_SHA" --without-mobile'
     )
     wait_for = "wait_for() {"
     diagnostics = "Diagnostico del servicio django de produccion"

@@ -5,6 +5,9 @@ sus comedores asignados con scope por las provincias que tiene cargadas en
 ``TerritorialComedorProvincia``. Auth por DRF Token.
 """
 
+import hashlib
+import json
+
 from django.core.files.storage import default_storage
 from django.db import IntegrityError, transaction
 from django.db.models import Prefetch
@@ -12,13 +15,21 @@ from drf_spectacular.utils import extend_schema
 from rest_framework import filters, generics, mixins, serializers, status, viewsets
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from comedores.api_serializers import ComedorDetailSerializer, NoSaveSerializer
-from comedores.models import Comedor
+from comedores.api_serializers import (
+    ComedorDetailSerializer,
+    NoSaveSerializer,
+    TerritorialComedorWriteSerializer,
+)
+from comedores.models import (
+    Comedor,
+    ComedorPwaCreateOperation,
+)
 from comedores.services.comedor_service import ComedorService
 from core.utils import format_fecha_django
 from relevamientos.models import (
@@ -58,12 +69,19 @@ class TerritorialUltimoRelevamientoSerializer(NoSaveSerializer):
 class TerritorialComedorSerializer(NoSaveSerializer):
     id = serializers.IntegerField()
     nombre = serializers.CharField()
+    tipo = serializers.SerializerMethodField()
+    programa = serializers.SerializerMethodField()
+    organizacion = serializers.SerializerMethodField()
+    comienzo = serializers.IntegerField(allow_null=True)
     provincia = serializers.SerializerMethodField()
     municipio = serializers.SerializerMethodField()
     localidad = serializers.SerializerMethodField()
     calle = serializers.CharField(allow_null=True)
     numero = serializers.IntegerField(allow_null=True)
+    entre_calle_1 = serializers.CharField(allow_null=True)
+    entre_calle_2 = serializers.CharField(allow_null=True)
     barrio = serializers.CharField(allow_null=True)
+    codigo_postal = serializers.IntegerField(allow_null=True)
     latitud = serializers.FloatField(allow_null=True)
     longitud = serializers.FloatField(allow_null=True)
     estado = serializers.CharField(allow_null=True)
@@ -72,6 +90,15 @@ class TerritorialComedorSerializer(NoSaveSerializer):
 
     def get_provincia(self, obj):
         return obj.provincia.nombre if obj.provincia_id else None
+
+    def get_tipo(self, obj):
+        return obj.tipocomedor.nombre if obj.tipocomedor_id else None
+
+    def get_programa(self, obj):
+        return obj.programa.nombre if obj.programa_id else None
+
+    def get_organizacion(self, obj):
+        return obj.organizacion.nombre if obj.organizacion_id else None
 
     def get_municipio(self, obj):
         return obj.municipio.nombre if obj.municipio_id else None
@@ -140,13 +167,19 @@ class TerritorialComedorSerializer(NoSaveSerializer):
 
 @extend_schema(tags=["Territorial"])
 class TerritorialComedorViewSet(
-    mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet
+    mixins.CreateModelMixin,
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.UpdateModelMixin,
+    viewsets.GenericViewSet,
 ):
-    """Comedores del alcance del territorial (por provincia).
+    """Comedores asignados y operaciones territoriales de Gestionar.
 
-    - ``GET /api/territorial/comedores/`` -> lista paginada (scope por provincia).
-    - ``GET /api/territorial/comedores/{id}/`` -> detalle scopeado (404 fuera de
-      scope).
+    - ``GET /api/territorial/comedores/`` -> lista asignada al usuario.
+    - ``GET /api/territorial/comedores/{id}/`` -> detalle asignado (404 fuera de
+      su asignación).
+    - ``POST /api/territorial/comedores/`` -> alta idempotente por ``client_uuid``.
+    - ``PATCH /api/territorial/comedores/{id}/`` -> edición por provincia asignada.
     - ``POST /api/territorial/comedores/{id}/imagenes/`` -> subida de foto
       (multipart, campo ``imagen``).
     """
@@ -154,6 +187,119 @@ class TerritorialComedorViewSet(
     serializer_class = TerritorialComedorSerializer
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated, IsTerritorialComedorUser]
+    http_method_names = ["get", "post", "patch", "head", "options"]
+    _CREATE_PAYLOAD_FIELDS = (
+        "nombre",
+        "tipo",
+        "programa",
+        "organizacion",
+        "comienzo",
+        "provincia",
+        "municipio",
+        "localidad",
+        "calle",
+        "numero",
+        "entre_calle_1",
+        "entre_calle_2",
+        "barrio",
+        "codigo_postal",
+        "latitud",
+        "longitud",
+    )
+
+    def get_serializer_class(self):
+        if self.action in {"create", "update", "partial_update"}:
+            return TerritorialComedorWriteSerializer
+        return TerritorialComedorSerializer
+
+    def _response_data(self, comedor):
+        return TerritorialComedorSerializer(
+            comedor, context=self.get_serializer_context()
+        ).data
+
+    def _replay_is_authorized(self, operation):
+        comedor = operation.comedor
+        scope_ids = set(get_territorial_comedor_provincia_ids(self.request.user))
+        if not comedor or comedor.provincia_id not in scope_ids:
+            raise PermissionDenied(
+                "La operación ya no pertenece a su alcance territorial actual."
+            )
+        return comedor
+
+    @classmethod
+    def _request_payload_digest(cls, payload):
+        """Huella durable del request, independiente de catálogos renombrables."""
+        normalized = {}
+        for field in cls._CREATE_PAYLOAD_FIELDS:
+            value = payload.get(field)
+            normalized[field] = value.strip() if isinstance(value, str) else value
+        return hashlib.sha256(
+            json.dumps(
+                normalized,
+                ensure_ascii=False,
+                separators=(",", ":"),
+                sort_keys=True,
+            ).encode("utf-8")
+        ).hexdigest()
+
+    @staticmethod
+    def _idempotency_conflict_response():
+        return Response(
+            {
+                "detail": "La clave de idempotencia ya fue usada con otro payload.",
+                "code": "idempotency_payload_conflict",
+            },
+            status=status.HTTP_409_CONFLICT,
+        )
+
+    def create(self, request, *args, **kwargs):
+        client_uuid = request.data.get("client_uuid")
+        if client_uuid:
+            payload_digest = self._request_payload_digest(request.data)
+            operation = (
+                ComedorPwaCreateOperation.objects.select_related("comedor")
+                .filter(user=request.user, client_uuid=client_uuid)
+                .first()
+            )
+            if operation is not None:
+                comedor = self._replay_is_authorized(operation)
+                if operation.payload_digest != payload_digest:
+                    return self._idempotency_conflict_response()
+                return Response(self._response_data(comedor), status=status.HTTP_200_OK)
+
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        client_uuid = serializer.validated_data.get("client_uuid")
+        if not client_uuid:
+            raise serializers.ValidationError(
+                {"client_uuid": "Este campo es obligatorio para crear un comedor."}
+            )
+
+        payload_digest = self._request_payload_digest(request.data)
+        try:
+            with transaction.atomic():
+                operation = ComedorPwaCreateOperation.objects.create(
+                    user=request.user,
+                    client_uuid=client_uuid,
+                    payload_digest=payload_digest,
+                )
+                comedor = serializer.save()
+                operation.comedor = comedor
+                operation.save(update_fields=["comedor"])
+        except IntegrityError:
+            operation = (
+                ComedorPwaCreateOperation.objects.select_related("comedor")
+                .filter(user=request.user, client_uuid=client_uuid)
+                .first()
+            )
+            if operation is None:
+                raise
+            comedor = self._replay_is_authorized(operation)
+            if operation.payload_digest != payload_digest:
+                return self._idempotency_conflict_response()
+            return Response(self._response_data(comedor), status=status.HTTP_200_OK)
+
+        return Response(self._response_data(comedor), status=status.HTTP_201_CREATED)
 
     def get_queryset(self):
         # Visibilidad "solo asignados a mí": el territorial ve los comedores que
@@ -270,6 +416,17 @@ class TerritorialComedorViewSet(
         return Comedor.objects.filter(
             pk=self.kwargs["pk"], provincia_id__in=provincia_ids
         ).first()
+
+    def partial_update(self, request, *args, **kwargs):
+        # La edición sigue la misma regla provincial que las altas N15/N18: no
+        # depende de una asignación previa de relevamiento.
+        comedor = self._comedor_de_mi_zona()
+        if comedor is None:
+            return self._fuera_de_zona()
+        serializer = self.get_serializer(comedor, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(self._response_data(comedor), status=status.HTTP_200_OK)
 
     @staticmethod
     def _fuera_de_zona():

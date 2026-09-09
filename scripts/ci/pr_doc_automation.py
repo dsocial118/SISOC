@@ -265,15 +265,10 @@ def detect_affected_areas(changed_files: list[str]) -> list[str]:
 
 
 def collect_related_docs(changed_files: list[str]) -> list[str]:
-    """Devuelve documentación relacionada que conviene mirar desde el PR."""
+    """Devuelve documentación contextual que no forma parte del diff."""
 
-    docs = [path for path in changed_files if path.startswith("docs/")]
-    related = DOCS_RECOMMENDED + docs
-    deduplicated: list[str] = []
-    for doc_path in related:
-        if doc_path not in deduplicated:
-            deduplicated.append(doc_path)
-    return deduplicated
+    changed = set(changed_files)
+    return [path for path in DOCS_RECOMMENDED if path not in changed]
 
 
 def build_architecture_notes(changed_files: list[str]) -> list[str]:
