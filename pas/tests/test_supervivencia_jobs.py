@@ -27,6 +27,21 @@ def acquired():
     yield True
 
 
+class RenaperResponse:
+    """Respuesta HTTP determinista para probar consultas y renovación del token."""
+
+    def __init__(self, payload, *, status_code=200):
+        self.payload = payload
+        self.status_code = status_code
+
+    def raise_for_status(self):
+        if self.status_code >= 400:
+            raise requests.HTTPError(response=self)
+
+    def json(self):
+        return self.payload
+
+
 @pytest.fixture
 def personas_supervivencia(db):
     provincia = Provincia.objects.create(nombre="Provincia jobs RENAPER")
@@ -81,26 +96,25 @@ def test_pedido_manual_y_programado_comparten_periodo():
 
 def test_cliente_autentica_una_vez_para_varias_personas():
     client = APIClient(reuse_token=True)
-    response = Mock()
-    response.json.return_value = {"isSuccess": True, "result": {}}
+    response = RenaperResponse({"isSuccess": True, "result": {}})
     with (
         patch.object(client, "_login", return_value="token") as login,
-        patch.object(client.session, "get", return_value=response),
+        patch.object(client.session, "get", return_value=response) as get,
     ):
         for number in range(20):
             client.consultar_ciudadano(str(number), "M")
     assert login.call_count == 1
+    assert get.call_count == 20
 
 
 def test_limitador_incluye_reintento_posterior_al_refresco_del_token():
     before_request = Mock()
     client = APIClient(reuse_token=True, before_request=before_request)
-    unauthorized = Mock(status_code=401)
-    unauthorized.raise_for_status.side_effect = requests.HTTPError(
-        response=unauthorized
+    unauthorized = RenaperResponse(
+        {"isSuccess": False},
+        status_code=401,
     )
-    success = Mock()
-    success.json.return_value = {"isSuccess": True, "result": {}}
+    success = RenaperResponse({"isSuccess": True, "result": {}})
     with (
         patch.object(client, "_login", side_effect=["old-token", "new-token"]) as login,
         patch.object(client.session, "get", side_effect=[unauthorized, success]),

@@ -1,4 +1,3 @@
-from pas.services.supervivencia_jobs import request_run, run_summary
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import ValidationError
@@ -65,6 +64,7 @@ from pas.services.persona_service import (
     get_personas_filtradas,
     registrar_persona,
 )
+from pas.services.supervivencia_jobs import request_run, run_summary
 from pas.services.titulares_import_service import (
     generar_excel_tokens_vigentes,
     importar_titulares_csv,

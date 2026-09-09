@@ -938,7 +938,9 @@ Marcar esas zonas como `A inferir` hasta relevarlas cuando una tarea real las to
   `git status --porcelain --untracked-files=all` para incluir archivos nuevos.
   Solo pushea en ramas internas no protegidas; `sync_pr_artifacts` verifica
   también forks y ramas protegidas. Los PRs hacia `main` requieren además
-  release note pendiente y `CHANGELOG.md` ya versionados.
+  release note pendiente y `CHANGELOG.md` ya versionados. Las ejecuciones se
+  serializan por PR y el push automático reintenta con `fetch` + `rebase` si
+  otra automatización hizo avanzar la rama; los conflictos reales bloquean.
 - `.github/workflows/deploy.yml`
 - `scripts/ai/codex_run.ps1`
 - `scripts/ai/codex_task.ps1`
