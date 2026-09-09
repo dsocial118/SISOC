@@ -476,9 +476,7 @@ def test_generar_pdf_descarga_rendicion_usa_placeholder_por_pdf_invalidos(
         side_effect=_lector,
     )
     logger_mock = mocker.patch("rendicioncuentasmensual.services.logger.warning")
-    pdf_buffer = RendicionCuentaMensualService.generar_pdf_descarga_rendicion(
-        rendicion
-    )
+    pdf_buffer = RendicionCuentaMensualService.generar_pdf_descarga_rendicion(rendicion)
     pdf = PdfReader(pdf_buffer)
 
     assert len(pdf.pages) == 2

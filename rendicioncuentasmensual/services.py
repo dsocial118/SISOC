@@ -656,9 +656,11 @@ class RendicionCuentaMensualService:  # pylint: disable=too-many-public-methods
                 exc_info=exc,
             )
             reader = PdfReader(
-                BytesIO(RendicionCuentaMensualService._generar_pdf_placeholder(
-                    documento.nombre
-                ))
+                BytesIO(
+                    RendicionCuentaMensualService._generar_pdf_placeholder(
+                        documento.nombre
+                    )
+                )
             )
             for page in reader.pages:
                 writer.add_page(page)

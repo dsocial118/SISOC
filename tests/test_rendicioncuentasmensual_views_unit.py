@@ -607,7 +607,9 @@ def test_download_pdf_view_devuelve_archivo(mocker):
 
 
 @pytest.mark.django_db
-def test_download_pdf_view_no_falla_por_pdf_invalido(settings, tmp_path, client, superuser):
+def test_download_pdf_view_no_falla_por_pdf_invalido(
+    settings, tmp_path, client, superuser
+):
     settings.MEDIA_ROOT = str(tmp_path)
     rendicion = module.RendicionCuentaMensual.objects.create(
         mes=6,
