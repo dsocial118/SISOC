@@ -31,10 +31,12 @@
 - Empezar por `docs/registro/prs/PR-2485.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
 - `AGENT_REPO_MAP.md`
+- `docs/contexto/features/pr-2485-feat-pwa-habilitar-ruta-de-espacios-conservando-mobile.md`
 - `docs/operacion/deploy_pwas.md`
 - `docs/operacion/nginx/sisoc-pwas.conf`
 - `docs/plans/2026-09-09-espacios-rutas-coexistentes-design.md`
 - `docs/registro/cambios/2026-09-09-espacios-rutas-coexistentes.md`
+- `docs/registro/prs/PR-2485.md`
 - `scripts/operacion/render_pwa_nginx.py`
 - `tests/test_pwa_nginx.py`
 - Documentación sugerida para ampliar contexto:
