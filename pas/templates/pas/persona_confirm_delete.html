@@ -1,0 +1,22 @@
+{% extends "includes/main.html" %}
+{% block title %}Eliminar PAS{% endblock %}
+{% block breadcrumb %}
+    {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
+{% endblock %}
+{% block content %}
+    <div class="card">
+        <div class="card-body">
+            <h2>Eliminar registro PAS</h2>
+            <p>
+                Desea eliminar el registro de
+                <strong>{{ persona.nombres }} {{ persona.apellidos }}</strong>?
+            </p>
+            <form method="post">
+                {% csrf_token %}
+                <a href="{% url 'pas_persona_detalle' persona.id %}"
+                   class="btn btn-secondary">Cancelar</a>
+                <button type="submit" class="btn btn-danger">Eliminar</button>
+            </form>
+        </div>
+    </div>
+{% endblock %}

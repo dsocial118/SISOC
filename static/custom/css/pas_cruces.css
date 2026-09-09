@@ -1,0 +1,86 @@
+.pas-cruces-page {
+    padding: 1.5rem;
+    color: #232d4f;
+}
+
+.pas-cruces-header,
+.pas-cruces-heading,
+.pas-cruces-actions,
+.pas-cruces-actions form {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.pas-cruces-header {
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    color: #fff;
+    background: #232d4f;
+    border-radius: .75rem;
+}
+
+.pas-cruces-header h1,
+.pas-cruces-heading h2 {
+    margin: 0;
+}
+
+.pas-cruces-card {
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    background: #fff;
+    border: 1px solid #d8dce6;
+    border-radius: .75rem;
+}
+
+.pas-cruces-actions form {
+    margin: 0;
+}
+
+.pas-cruces-steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+    padding: 0;
+    margin: 1.5rem 0 0;
+    list-style: none;
+}
+
+.pas-cruces-steps li {
+    display: flex;
+    gap: .75rem;
+    padding: 1rem;
+    background: #f5f6f9;
+    border-radius: .5rem;
+}
+
+.pas-cruces-steps li > span {
+    display: grid;
+    flex: 0 0 2rem;
+    height: 2rem;
+    color: #fff;
+    background: #6c757d;
+    border-radius: 50%;
+    place-items: center;
+}
+
+.pas-cruces-steps li.is-complete > span {
+    background: #2e7d33;
+}
+
+.pas-cruces-steps time,
+.pas-cruces-steps small {
+    display: block;
+    margin-top: .25rem;
+}
+
+@media (max-width: 768px) {
+    .pas-cruces-header,
+    .pas-cruces-heading,
+    .pas-cruces-actions,
+    .pas-cruces-actions form {
+        align-items: stretch;
+        flex-direction: column;
+    }
+}

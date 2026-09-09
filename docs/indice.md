@@ -75,6 +75,9 @@
 - `docs/registro/README.md`: reglas para registrar cambios y decisiones importantes en `docs/`.
 - `docs/registro/cambios/`: historial de cambios importantes.
 - `docs/registro/decisiones/`: decisiones relevantes (ADR livianas).
+- `docs/registro/decisiones/2026-07-28-pas-circuito-cruces.md`: alcance y límites del circuito mensual SINTyS de PAS.
+- `docs/registro/decisiones/2026-07-29-pas-supervivencia-renaper.md`: control diario RENAPER e incompatibilidades de supervivencia PAS.
+- `docs/registro/decisiones/2026-07-16-pas-formacion-vat.md`: Formación PAS permanece desacoplada hasta definir el contrato de integración.
 - `docs/registro/prs/`: documentación automática por pull request.
 - `docs/registro/releases/pending/`: release notes preliminares usadas para reconstruir `CHANGELOG.md` en PRs a `main`.
 - `docs/registro/analisis/` y `docs/analisis/`: hipótesis, relevamientos y propuestas; no reemplazan la documentación canónica ni un registro de cambio.
@@ -86,3 +89,5 @@
 - Stack: Django + MySQL con despliegue vía Docker Compose. Evidencia: README.md:1-4 y docker-compose.yml:1-34.
 - Variables de entorno documentadas en `.env.example` (incluye DB, GESTIONAR, RENAPER, puertos y dominio). Evidencia: .env.example:1-51.
 - Servicios externos activos: GESTIONAR (sincronización de comedores/relevamientos) y RENAPER (consulta de ciudadanos). Evidencia: comedores/tasks.py, relevamientos/tasks.py, core/integrations/renaper.py, core/services/renaper.py.
+
+- `docs/implementaciones/pas_control_mensual_celery.md`: funcionamiento, lotes, programación mensual, operación y retiro cron PAS.

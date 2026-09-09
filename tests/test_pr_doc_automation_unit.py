@@ -33,6 +33,17 @@ def test_pr_docs_workflow_detecta_artefactos_nuevos_no_trackeados():
     assert "contents: write" in workflow
     assert "github.event.sender.login != 'github-actions[bot]'" in workflow
     assert (
+        "group: pr-docs-${{ github.event.pull_request.number || github.ref }}"
+        in workflow
+    )
+    assert "cancel-in-progress: false" in workflow
+    assert 'git push origin "HEAD:${PR_HEAD_REF}"' in workflow
+    assert 'git rebase "refs/remotes/origin/${PR_HEAD_REF}"' in workflow
+    assert (
+        "No fue posible publicar los artefactos automaticos tras 3 intentos."
+        in workflow
+    )
+    assert (
         "head.repo.full_name == github.repository && "
         "github.event.pull_request.head.ref != 'development'"
     ) in workflow
