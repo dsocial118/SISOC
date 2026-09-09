@@ -109,6 +109,7 @@ def schedule_monthly():
 def _prepare(run):
     """Fija el padrón en una transacción; la web nunca carga la nómina completa."""
     with transaction.atomic():
+        run.batches.all().delete()
         run.active_slot = 1
         run.status = "running"
         run.save(update_fields=["active_slot", "status"])
@@ -252,8 +253,9 @@ def _pause_batch(batch, reason):
         batch.run.status = "paused"
         batch.run.save(update_fields=["status"])
         batch.heartbeat = now
+        batch.attempts = batch.attempts + 1
         batch.dispatched_at = None
-        batch.save(update_fields=["heartbeat", "dispatched_at"])
+        batch.save(update_fields=["heartbeat", "attempts", "dispatched_at"])
     logger.error(
         "pas.renaper.paused",
         extra={"data": {"run": batch.run_id, "batch": batch.pk, "reason": reason}},
