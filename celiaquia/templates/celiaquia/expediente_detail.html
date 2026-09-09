@@ -454,6 +454,10 @@
                                                     {% endif %}
                                                 {% endif %}
                                             {% endif %}
+                                            {% if leg.sin_responsable_alerta %}
+                                                <br />
+                                                <small class="badge bg-danger mt-1 alerta-intermitente">⚠️ Menor sin adulto responsable</small>
+                                            {% endif %}
                                         </div>
                                     </td>
                                     <td>

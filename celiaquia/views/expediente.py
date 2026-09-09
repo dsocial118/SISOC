@@ -78,6 +78,7 @@ from celiaquia.services.expediente_filter_config import (  # pylint: disable=no-
 from celiaquia.services.padron_final_service import (  # pylint: disable=no-name-in-module
     PadronFinalService,
 )
+from celiaquia.services.validacion_edad_service import ValidacionEdadService
 from django.utils import timezone
 from django.db import transaction
 from core.models import Nacionalidad, Provincia, Localidad
@@ -1420,6 +1421,15 @@ class ExpedienteDetailView(DetailView):
             for hijo in info.get("hijos", []):
                 hijo.legajo_relacionado = legajos_por_ciudadano.get(hijo.id)
 
+        # Menores sin adulto responsable vivo en el expediente: se marcan en la
+        # fila para que la provincia los ubique antes de intentar el envio, que
+        # es donde la validacion bloquea.
+        menores_sin_responsable_ids = {
+            leg.pk for leg in ValidacionEdadService.menores_sin_responsable(expediente)
+        }
+        for legajo in legajos_enriquecidos:
+            legajo.sin_responsable_alerta = legajo.pk in menores_sin_responsable_ids
+
         ctx["legajos_enriquecidos"] = legajos_enriquecidos
         ctx["estructura_familiar"] = estructura_familiar
 
@@ -2204,12 +2214,14 @@ class RevisarLegajoView(View):
                 "true",
                 "True",
             } and is_soft_deletable_instance(leg):
-                return JsonResponse(
-                    {
-                        "success": True,
-                        "preview": build_delete_preview(leg),
-                    }
-                )
+                payload = {
+                    "success": True,
+                    "preview": build_delete_preview(leg),
+                }
+                advertencia = ValidacionEdadService.advertencia_por_eliminacion(leg)
+                if advertencia:
+                    payload["menores_sin_responsable"] = advertencia
+                return JsonResponse(payload)
 
             estado_expediente = getattr(
                 getattr(leg.expediente, "estado", None), "nombre", ""

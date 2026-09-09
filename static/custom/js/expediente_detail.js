@@ -2116,6 +2116,18 @@ document.addEventListener('DOMContentLoaded', () => {
             .join('\n');
           previewMsg = `Se aplicará baja lógica en cascada.\nTotal afectados: ${previewData.preview.total_afectados}\n${desglose}`;
         }
+        // Aviso: la baja no se bloquea, pero deja el expediente sin poder
+        // enviarse si algun menor queda sin adulto responsable.
+        const aviso = previewData && previewData.menores_sin_responsable;
+        if (aviso && aviso.mensaje) {
+          const detalleAviso = (aviso.detalle || [])
+            .map((item) => `- ${item}`)
+            .join('\n');
+          previewMsg = `${previewMsg}\n\n⚠️ ${aviso.mensaje}`;
+          if (detalleAviso) {
+            previewMsg = `${previewMsg}\n${detalleAviso}`;
+          }
+        }
       } catch (error) {
         console.warn('No se pudo obtener preview de eliminación:', error);
       }
