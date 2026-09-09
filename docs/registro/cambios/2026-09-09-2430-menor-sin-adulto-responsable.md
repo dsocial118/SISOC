@@ -83,9 +83,10 @@ rechaza responsables menores de 18.
 ## Alcance de datos: medido en producción (2026-09-09)
 
 La validación corre sólo en el paso `EN_ESPERA → envío`, así que no afecta
-expedientes ya enviados ni requiere migración. Se midió el impacto antes de
-mergear con las consultas de `2026-09-09-2430-menores-sin-responsable.sql` y
-`2026-09-09-2430-control-datos.sql` (sólo lectura, verificadas contra MySQL 8.4).
+expedientes ya enviados ni requiere migración. Se midió el impacto en producción
+antes de mergear, con consultas de sólo lectura sobre
+`celiaquia_expedienteciudadano`, `celiaquia_expediente` y
+`ciudadanos_grupofamiliar`.
 
 Resultado: **cero expedientes bloqueados**.
 
