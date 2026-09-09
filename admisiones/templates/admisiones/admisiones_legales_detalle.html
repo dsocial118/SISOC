@@ -87,19 +87,47 @@
                         </li>
                         <li class="nav-item">
                             <div class="comment-text">
-                                Formulario Proyecto Disposición:
-                                {% if formulario_reso_completo %}
-                                    <a href="{{ formulario_reso.archivo.url }}" target="_blank">
-                                        <i class="bi bi-filetype-pdf text-info h5 mx-2 text-bold"></i>
-                                    </a>
-                                    {% if formulario_reso.archivo_docx %}
-                                        <a href="{{ formulario_reso.archivo_docx.url }}" target="_blank">
+                                Primera Providencia:
+                                {% if primera_providencia %}
+                                    {% if primera_providencia.archivo %}
+                                        <a href="{{ primera_providencia.archivo.url }}" target="_blank">
+                                            <i class="bi bi-filetype-pdf text-info h5 mx-2 text-bold"></i>
+                                        </a>
+                                    {% endif %}
+                                    {% if primera_providencia.archivo_docx %}
+                                        <a href="{{ primera_providencia.archivo_docx.url }}" target="_blank">
                                             <i class="bi bi-filetype-docx text-info h5 mx-2 text-bold"></i>
                                         </a>
                                     {% endif %}
-                                    {% if formulario_reso.numero_if %}
+                                    {% if primera_providencia.numero_gde_pv %}
                                         <br />
-                                        {{ formulario_reso.numero_if }}
+                                        {{ primera_providencia.numero_gde_pv }}
+                                        <i class="bi bi-check-circle-fill text-success"></i>
+                                    {% else %}
+                                        <i class="bi bi-exclamation-circle-fill text-warning"></i>
+                                    {% endif %}
+                                {% else %}
+                                    <i class="bi bi-x-circle-fill text-danger"></i>
+                                {% endif %}
+                            </div>
+                        </li>
+                        <li class="nav-item">
+                            <div class="comment-text">
+                                Segunda Providencia:
+                                {% if segunda_providencia %}
+                                    {% if segunda_providencia.archivo %}
+                                        <a href="{{ segunda_providencia.archivo.url }}" target="_blank">
+                                            <i class="bi bi-filetype-pdf text-info h5 mx-2 text-bold"></i>
+                                        </a>
+                                    {% endif %}
+                                    {% if segunda_providencia.archivo_docx %}
+                                        <a href="{{ segunda_providencia.archivo_docx.url }}" target="_blank">
+                                            <i class="bi bi-filetype-docx text-info h5 mx-2 text-bold"></i>
+                                        </a>
+                                    {% endif %}
+                                    {% if segunda_providencia.numero_gde_pv %}
+                                        <br />
+                                        {{ segunda_providencia.numero_gde_pv }}
                                         <i class="bi bi-check-circle-fill text-success"></i>
                                     {% else %}
                                         <i class="bi bi-exclamation-circle-fill text-warning"></i>
@@ -133,15 +161,15 @@
                         {% else %}
                             <li class="nav-item">
                                 <div class="comment-text">
-                                    Disposición:
                                     {% if admision.numero_disposicion %}
-                                        <a href="{{ admision.archivo_disposicion.url }}" target="_blank">
-                                            <i class="bi bi-file-earmark-check text-info h5 mx-2 text-bold"></i>
-                                        </a>
+                                        Disposición:
+                                        {% if admision.archivo_disposicion %}
+                                            <a href="{{ admision.archivo_disposicion.url }}" target="_blank">
+                                                <i class="bi bi-file-earmark-check text-info h5 mx-2 text-bold"></i>
+                                            </a>
+                                        {% endif %}
                                         <span class="fw-bold">{{ admision.numero_disposicion }}</span>
                                         <i class="bi bi-check-circle-fill text-success"></i>
-                                    {% else %}
-                                        <i class="bi bi-x-circle-fill text-danger"></i>
                                     {% endif %}
                                 </div>
                             </li>
@@ -425,28 +453,91 @@
             </div>
         </div>
     </div>
-    <!-- MODAL Formulario Disposición -->
+    <!-- MODAL Generar Primera Providencia -->
     <div class="modal fade"
-         id="modalFormReso"
+         id="modalPrimeraProvidencia"
          tabindex="-1"
-         aria-labelledby="modalFormResoLabel"
+         aria-labelledby="modalPrimeraProvidenciaLabel"
          aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <form method="POST" action="">
                     {% csrf_token %}
-                    <input type="hidden" name="tipo" value="{{ admision.tipo }}" />
                     <div class="modal-header">
-                        <h5 class="modal-title">Formulario Disposición</h5>
+                        <h5 class="modal-title">Generar Primera Providencia</h5>
                         <button type="button"
                                 class="btn-close"
                                 data-bs-dismiss="modal"
                                 aria-label="Close"></button>
                     </div>
-                    <div class="modal-body">Generará los archivos del Formulario Disposición de {{ admision.tipo|lower }}.</div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Número de Providencia</label>
+                            <input type="text" class="form-control" value="Primera Providencia" readonly />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Tipo de Admisión</label>
+                            <input type="text"
+                                   class="form-control"
+                                   value="{{ admision.get_tipo_display|default:'Sin información' }}"
+                                   readonly />
+                        </div>
+                        {{ primera_providencia_form.cantidad_espacios|as_crispy_field }}
+                        <div class="mb-3">
+                            <label class="form-label">¿Es Judicializado?</label>
+                            <input type="text"
+                                   class="form-control"
+                                   value="{% if es_judicializado %}Sí{% else %}No{% endif %}"
+                                   readonly />
+                        </div>
+                        {% if es_judicializado %}
+                            {{ primera_providencia_form.caratula_causa|as_crispy_field }}
+                            {{ primera_providencia_form.juzgado|as_crispy_field }}
+                            {{ primera_providencia_form.memo|as_crispy_field }}
+                        {% endif %}
+                    </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-primary" name="btnRESO" id="btnRESO_id">Aceptar</button>
+                        <button type="submit"
+                                class="btn btn-primary"
+                                name="btnPrimeraProvidencia"
+                                id="btnPrimeraProvidencia_id">Generar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- MODAL Generar Segunda Providencia -->
+    <div class="modal fade"
+         id="modalSegundaProvidencia"
+         tabindex="-1"
+         aria-labelledby="modalSegundaProvidenciaLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <form method="POST" action="">
+                    {% csrf_token %}
+                    <div class="modal-header">
+                        <h5 class="modal-title">Generar Segunda Providencia</h5>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Número de Providencia</label>
+                            <input type="text" class="form-control" value="Segunda Providencia" readonly />
+                        </div>
+                        <label class="form-label">Número de PV de la Primera Providencia</label>
+                        {% include "admisiones/partials/numero_pv_estructurado.html" with pv_form=segunda_providencia_form %}
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit"
+                                class="btn btn-primary"
+                                name="btnSegundaProvidencia"
+                                id="btnSegundaProvidencia_id">Generar</button>
                     </div>
                 </form>
             </div>
@@ -576,38 +667,6 @@
             </div>
         </div>
     </div>
-    <!-- MODAL Disposicion -->
-    <div class="modal fade"
-         id="modalDisposicion"
-         tabindex="-1"
-         aria-labelledby="modalDisposicionLabel"
-         aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <form method="POST" action="" enctype="multipart/form-data">
-                    {% csrf_token %}
-                    <div class="modal-header">
-                        <h5 class="modal-title">Disposición</h5>
-                        <button type="button"
-                                class="btn-close"
-                                data-bs-dismiss="modal"
-                                aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        {{ form_disposicion.numero_disposicion|as_crispy_field }}
-                        {{ form_disposicion.archivo_disposicion|as_crispy_field }}
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit"
-                                class="btn btn-primary"
-                                name="btnDisposicion"
-                                id="btnDisposicionID">Guardar</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
     <!-- MODAL Numero IF -->
     <div class="modal fade"
          id="modalLegalesNumIF"
@@ -669,30 +728,63 @@
             </div>
         </div>
     </div>
-    <!-- MODAL IF Proyecto Disposicion-->
+    <!-- MODAL GDE PV Primera Providencia -->
     <div class="modal fade"
-         id="modalDispoNumIF"
+         id="modalGDEPVPrimera"
          tabindex="-1"
-         aria-labelledby="modalDispoNumIFLabel"
+         aria-labelledby="modalGDEPVPrimeraLabel"
          aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">
                 <form method="POST" action="">
                     {% csrf_token %}
                     <div class="modal-header">
-                        <h5 class="modal-title">Agrege el número IF de Proyecto Disposición</h5>
+                        <h5 class="modal-title">Cargar número de GDE PV</h5>
                         <button type="button"
                                 class="btn-close"
                                 data-bs-dismiss="modal"
                                 aria-label="Close"></button>
                     </div>
-                    <div class="modal-body">{{ dispo_num_if.numero_if|as_crispy_field }}</div>
+                    <div class="modal-body">
+                        {% include "admisiones/partials/numero_pv_estructurado.html" with pv_form=gde_pv_primera_form %}
+                    </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                         <button type="submit"
                                 class="btn btn-primary"
-                                name="btnDispoNumIF"
-                                id="btnDispoNumIF_id">Guardar</button>
+                                name="btnGDEPVPrimera"
+                                id="btnGDEPVPrimera_id">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- MODAL GDE PV Segunda Providencia -->
+    <div class="modal fade"
+         id="modalGDEPVSegunda"
+         tabindex="-1"
+         aria-labelledby="modalGDEPVSegundaLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <form method="POST" action="">
+                    {% csrf_token %}
+                    <div class="modal-header">
+                        <h5 class="modal-title">Cargar número de GDE Segunda PV</h5>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        {% include "admisiones/partials/numero_pv_estructurado.html" with pv_form=gde_pv_segunda_form %}
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit"
+                                class="btn btn-primary"
+                                name="btnGDEPVSegunda"
+                                id="btnGDEPVSegunda_id">Guardar</button>
                     </div>
                 </form>
             </div>

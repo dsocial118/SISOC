@@ -15,7 +15,6 @@ from ...models.admisiones import (
     ArchivoAdmision,
     InformeTecnico,
     FormularioProyectoDeConvenio,
-    FormularioProyectoDisposicion,
 )
 
 
@@ -419,26 +418,6 @@ class TextFormatterService:
             "admision": admision,
             "comedor": admision.comedor,
             "formulario": formulario,
-            "informe": informe,
-            "fecha_actual": admision.creado.strftime("%d/%m/%Y"),
-            "fecha_generacion": admision.creado.strftime("%d/%m/%Y %H:%M"),
-        }
-
-    @staticmethod
-    def preparar_contexto_proyecto_disposicion(admision):
-        formulario = FormularioProyectoDisposicion.objects.filter(
-            admision=admision
-        ).first()
-        proyecto_convenio = FormularioProyectoDeConvenio.objects.filter(
-            admision=admision
-        ).first()
-        informe = InformeTecnico.objects.filter(admision=admision).first()
-
-        return {
-            "admision": admision,
-            "comedor": admision.comedor,
-            "formulario": formulario,
-            "proyecto_convenio": proyecto_convenio,
             "informe": informe,
             "fecha_actual": admision.creado.strftime("%d/%m/%Y"),
             "fecha_generacion": admision.creado.strftime("%d/%m/%Y %H:%M"),
