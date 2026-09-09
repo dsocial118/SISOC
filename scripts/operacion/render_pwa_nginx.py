@@ -7,9 +7,9 @@ from pathlib import Path
 from deploy_pwas import configuration
 
 
-def proxy(path, port):
+def proxy(path, port, upstream_path="/"):
     return f"""location ^~ {path} {{
-    proxy_pass http://127.0.0.1:{port}/;
+    proxy_pass http://127.0.0.1:{port}{upstream_path};
     proxy_http_version 1.1;
     proxy_set_header Host $host;
     proxy_set_header X-Real-IP $remote_addr;
@@ -54,7 +54,11 @@ def render(apps, *, preview=False):
                 "}\n"
             )
         elif path != app["canonical_path"]:
-            parts.append(f"# {app['canonical_path']} pending client migration.\n")
+            # Espacios ships both builds in one image. Keep /mobile/ intact and
+            # preserve the canonical prefix to select the second build.
+            canonical = app["canonical_path"]
+            parts.append(redirect_exact(canonical.rstrip("/"), canonical))
+            parts.append(proxy(canonical, app["port"], canonical))
     return "\n".join(parts)
 
 

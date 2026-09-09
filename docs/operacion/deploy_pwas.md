@@ -11,7 +11,15 @@ Esta entrega implementa la coordinacion y genera configuraciones Nginx; no
 aprovisiona credenciales, fusiona ramas ni modifica servidores automaticamente.
 DataCalle y Gestionar estan habilitadas en el registro de esta entrega; su
 activacion depende del empaquetado Compose en main y del orden indicado abajo.
-Espacios conserva `/mobile/` hasta validar la migracion de sus clientes.
+Espacios conserva `/mobile/` y esta entrega habilita ademas
+`/pwa/espacioscomunitarios/` sin redirigir la ruta anterior. Requiere primero
+la imagen con ambos builds de Espacios; ver el orden de instalacion abajo.
+
+Estado verificado el 2026-09-09: las tres PWA ya estan sirviendo en HML y PRD.
+Los bundles activos usan el backend correspondiente a cada entorno. Las notas
+de aprovisionamiento del 2026-09-08 siguientes son historicas, no pendientes
+actuales. La nueva ruta de Espacios requiere instalar el cambio de esta entrega;
+la aceptacion funcional, de instalacion y offline queda al equipo de testers.
 
 | ID | Repositorio privado | Checkout hermano de SISOC | Proyecto / puerto | Estado |
 | --- | --- | --- | --- | --- |
@@ -246,21 +254,32 @@ comprobar upstreams. Ejecutar `nginx -t` y recargar Nginx. Repetir por entorno,
 primero HML y luego PRD. El generador no instala nada ni ejecuta sudo/reloads.
 
 `docs/operacion/nginx/sisoc-pwas.conf` es el candidato activo de esta entrega:
-`/mobile/`, `/pwa/datacalle/` y `/pwa/gestionar/`, con aliases `/mobile2/` y
+`/mobile/`, `/pwa/espacioscomunitarios/`, `/pwa/datacalle/` y `/pwa/gestionar/`, con aliases `/mobile2/` y
 `/mobile3/`. El archivo del repositorio no acredita su instalacion en los hosts.
 `sisoc-pwas-preview.conf.example` muestra ademas la ruta final de Espacios;
 NO instalar esa vista previa mientras su migracion de clientes este pendiente.
 
 Las redirecciones de navegacion son inicialmente 302 y preservan sufijo/query.
 Usan rutas relativas al origen, de modo que HML no redirige hacia PRD. Las rutas
-canonicas conservan el proxy loopback y eliminan solo el prefijo externo.
+canonicas conservan el proxy loopback. DataCalle/Gestionar eliminan el prefijo
+externo; Espacios conserva el nuevo prefijo para seleccionar su segundo build.
 
-La migracion de Espacios a `/pwa/espacioscomunitarios/` requiere otra entrega
-coordinada con su cliente: identidad instalada, router, manifest, service worker
-anterior y assets. El generador bloquea esa activacion prematura. No redirigir
-el script del SW antiguo ni borrar datos pendientes para forzar una actualizacion.
-Se debe probar el cambio con una instalacion vieja y acordar su transicion antes
-de retirar este bloqueo. No depende de la conversion de DataCalle/Gestionar.
+Para activar la convivencia de Espacios:
+
+1. Incorporar el Dockerfile dual de Espacios a main y preparar su imagen. Esta
+   contiene la app anterior en la raiz y el build nuevo en
+   `/usr/share/nginx/html/pwa/espacioscomunitarios/`.
+2. Verificar imagen, ambas rutas, manifest y assets antes de reemplazar el
+   contenedor. Cada build usa su router y scope; ambos manifiestos conservan ID
+   `/mobile/`. El almacenamiento local sigue compartido por origen.
+3. Activar la imagen saludable, respaldar el include actual y agregar el proxy
+   nuevo hacia `127.0.0.1:8080/pwa/espacioscomunitarios/`. Validar Nginx y recargar.
+4. Repetir en PRD luego de HML. Conservar imagen/include anteriores para rollback.
+
+El generador sigue bloqueando reemplazar la base `/mobile/` o redirigirla por
+accidente. No se redirige su service worker ni se borran datos de navegadores.
+Las pruebas de clientes instalados y sincronizacion las realiza el equipo de
+testers. Diseno: `docs/plans/2026-09-09-espacios-rutas-coexistentes-design.md`.
 
 El empaquetado nuevo conserva la imagen anterior para rollback, pero no sirve
 assets exclusivos de builds anteriores desde la imagen nueva. Antes de releases
