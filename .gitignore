@@ -416,6 +416,9 @@ pyrightconfig.json
 # PWA
 mobile/
 
+# Releases PWA locales del runner: snapshots y estado privado de recuperacion.
+/.deploy/pwa/
+
 # Claude Code local settings (contienen permisos y config de máquina)
 .claude/settings.local.json
 

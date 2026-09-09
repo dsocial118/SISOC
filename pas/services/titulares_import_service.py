@@ -234,6 +234,15 @@ def _resolver_ubicacion(fila, provincias, municipios):
     return provincia, municipio
 
 
+def bloquear_catalogo_pas_para_importacion():
+    """Serializa la asignación de IdPersona entre importaciones simultáneas."""
+
+    return {
+        _normalizar_texto(estado.nombre): estado
+        for estado in PasEstado.objects.select_for_update().order_by("id")
+    }
+
+
 def _guardar_lote(personas, usuario):
     if not personas:
         return
@@ -303,10 +312,7 @@ def _guardar_lote(personas, usuario):
 # pylint: disable=too-many-locals
 def importar_titulares_csv(archivo, usuario=None):
     filas = _leer_filas(archivo)
-    estados = {
-        _normalizar_texto(estado.nombre): estado
-        for estado in PasEstado.objects.order_by("id")
-    }
+    estados = bloquear_catalogo_pas_para_importacion()
     estado_activo = estados.get("activo")
     if not estado_activo:
         raise ValidationError(

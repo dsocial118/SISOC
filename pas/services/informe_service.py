@@ -2,10 +2,10 @@ import csv
 from datetime import datetime, time
 
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import OuterRef, Q, Subquery
 from django.utils import timezone
 
-from core.services.csv_export import build_csv_response
+from core.services.csv_export import build_csv_response, neutralize_csv_formula
 from pas.models import PasHistorialEstado, PasInforme, PasPersona
 
 
@@ -47,15 +47,11 @@ def buscar_informes(request_get):
 
 
 def construir_resultado_informe(form):
-    personas = _filtrar_personas(form.cleaned_data)
-    cambios = _filtrar_cambios(form.cleaned_data, personas)
-    modo = "cambios" if _usa_filtros_de_cambios(form.cleaned_data) else "registros"
+    modo, personas, cambios = _construir_consulta_informe(form.cleaned_data)
 
-    if modo == "cambios":
-        personas = personas.filter(historial_estados__in=cambios).distinct()
-        rows = [_row_cambio(cambio) for cambio in cambios]
-    else:
-        rows = [_row_persona(persona) for persona in personas]
+    queryset_filas = cambios if modo == "cambios" else personas
+    row_builder = _row_cambio if modo == "cambios" else _row_persona
+    rows = [row_builder(objeto) for objeto in queryset_filas]
 
     return {
         "modo": modo,
@@ -65,6 +61,16 @@ def construir_resultado_informe(form):
         "total_personas": personas.count(),
         "total_cambios": cambios.count(),
     }
+
+
+def _construir_consulta_informe(cleaned_data):
+    personas = _filtrar_personas(cleaned_data)
+    cambios = _filtrar_cambios(cleaned_data, personas)
+    modo = "cambios" if _usa_filtros_de_cambios(cleaned_data) else "registros"
+
+    if modo == "cambios":
+        personas = personas.filter(historial_estados__in=cambios).distinct()
+    return modo, personas, cambios
 
 
 @transaction.atomic
@@ -88,20 +94,27 @@ def csv_response_for_informe(informe):
     writer = csv.writer(response)
     writer.writerow([label for _, label in CSV_COLUMNS])
     for row in informe.resultado:
-        writer.writerow([row.get(key, "") for key, _ in CSV_COLUMNS])
+        writer.writerow(
+            [neutralize_csv_formula(row.get(key, "")) for key, _ in CSV_COLUMNS]
+        )
     return response
 
 
 def preview_payload(form, limit=50):
-    resultado = construir_resultado_informe(form)
+    modo, personas, cambios = _construir_consulta_informe(form.cleaned_data)
+    total_personas = personas.count()
+    total_cambios = cambios.count()
+    queryset_filas = cambios if modo == "cambios" else personas
+    row_builder = _row_cambio if modo == "cambios" else _row_persona
+    rows = [row_builder(objeto) for objeto in queryset_filas[:limit]]
     return {
         "ok": True,
-        "modo": resultado["modo"],
-        "total": len(resultado["rows"]),
-        "total_personas": resultado["total_personas"],
-        "total_cambios": resultado["total_cambios"],
+        "modo": modo,
+        "total": total_cambios if modo == "cambios" else total_personas,
+        "total_personas": total_personas,
+        "total_cambios": total_cambios,
         "columns": [{"key": key, "label": label} for key, label in CSV_COLUMNS],
-        "rows": resultado["rows"][:limit],
+        "rows": rows,
         "limit": limit,
     }
 
@@ -117,9 +130,15 @@ def errors_payload(form):
 
 
 def _filtrar_personas(cleaned_data):
+    ultimo_cambio = (
+        PasHistorialEstado.objects.filter(persona_id=OuterRef("pk"))
+        .order_by("-fecha_cambio", "-id")
+        .values("fecha_cambio")[:1]
+    )
     personas = (
         PasPersona.objects.select_related("provincia", "municipio", "estado")
-        .prefetch_related("avisos", "historial_estados")
+        .prefetch_related("avisos")
+        .annotate(fecha_ultimo_cambio=Subquery(ultimo_cambio))
         .order_by("apellidos", "nombres", "id")
     )
 
@@ -147,6 +166,11 @@ def _filtrar_personas(cleaned_data):
 
 
 def _filtrar_cambios(cleaned_data, personas):
+    ultimo_cambio = (
+        PasHistorialEstado.objects.filter(persona_id=OuterRef("persona_id"))
+        .order_by("-fecha_cambio", "-id")
+        .values("fecha_cambio")[:1]
+    )
     cambios = (
         PasHistorialEstado.objects.select_related(
             "persona",
@@ -158,6 +182,7 @@ def _filtrar_cambios(cleaned_data, personas):
             "usuario",
         )
         .prefetch_related("persona__avisos", "avisos_nuevos")
+        .annotate(fecha_ultimo_cambio=Subquery(ultimo_cambio))
         .filter(persona__in=personas)
         .order_by("-fecha_cambio", "-id")
     )
@@ -187,7 +212,6 @@ def _filtrar_cambios(cleaned_data, personas):
 
 
 def _row_persona(persona):
-    ultimo = persona.historial_estados.order_by("-fecha_cambio", "-id").first()
     return {
         "id_persona": persona.id_persona,
         "apellido": persona.apellidos,
@@ -199,7 +223,7 @@ def _row_persona(persona):
         "estado_actual": persona.estado.nombre,
         "avisos_actuales": _join_avisos(persona.avisos.all()),
         "fecha_creacion": _format_dt(persona.fecha_creacion),
-        "fecha_ultimo_cambio": _format_dt(ultimo.fecha_cambio) if ultimo else "",
+        "fecha_ultimo_cambio": _format_dt(persona.fecha_ultimo_cambio),
         "fecha_cambio": "",
         "estado_anterior": "",
         "estado_resultante": "",
@@ -221,11 +245,7 @@ def _row_cambio(cambio):
         "estado_actual": persona.estado.nombre,
         "avisos_actuales": _join_avisos(persona.avisos.all()),
         "fecha_creacion": _format_dt(persona.fecha_creacion),
-        "fecha_ultimo_cambio": _format_dt(
-            persona.historial_estados.order_by("-fecha_cambio", "-id")
-            .first()
-            .fecha_cambio
-        ),
+        "fecha_ultimo_cambio": _format_dt(cambio.fecha_ultimo_cambio),
         "fecha_cambio": _format_dt(cambio.fecha_cambio),
         "estado_anterior": (
             cambio.estado_anterior.nombre if cambio.estado_anterior else ""

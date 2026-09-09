@@ -190,6 +190,24 @@ def test_detect_affected_areas_resume_apps_y_capas_transversales():
     assert "templates" in areas
 
 
+def test_collect_related_docs_omite_los_documentos_ya_listados_en_el_diff():
+    """El contexto complementa el diff, sin repetir sus documentos."""
+
+    related = pr_doc_automation.collect_related_docs(
+        [
+            "docs/indice.md",
+            "docs/implementaciones/pas.md",
+            "core/views.py",
+        ]
+    )
+
+    assert related == [
+        "docs/ia/CONTEXT_HYGIENE.md",
+        "docs/ia/ARCHITECTURE.md",
+        "docs/ia/TESTING.md",
+    ]
+
+
 def test_next_wednesday_devuelve_mismo_dia_si_ya_es_miercoles():
     """Usa el mismo día cuando la ejecución ya cae en miércoles."""
 

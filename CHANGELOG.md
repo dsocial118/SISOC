@@ -1,3 +1,22 @@
+<!-- AUTO-GENERATED RELEASE START: 2026-09-08 -->
+# Versión SISOC 08.09.2026
+
+## Nuevas Funcionalidades
+
+- [despliegue PWA] Desplegar DataCalle, Gestionar y Espacios Comunitarios junto con SISOC con configuración independiente por entorno. (PR #2477)
+<!-- AUTO-GENERATED RELEASE END: 2026-09-08 -->
+
+<!-- AUTO-GENERATED RELEASE START: 2026-09-09 -->
+# Versión SISOC 09.09.2026
+
+## Actualizaciones
+
+- [sin-area] feat: fase 2 del contrato territorial — lote N14–N19 completo (coordinador, huecos E2, instancias, prefill, zona y actas). (PR #2432)
+- [sin-area] feat(relevamientos): fase 3 - paridad del backoffice con el ciclo de seguimiento y actas complementarias. (PR #2449)
+- [sin-area] feat(datacalle): módulo de relevamientos de situación de calle y API para la app. (PR #2452)
+- [sin-area] fix(datacalle): 500 en el detalle de relevamiento por "Out of sort memory" de MySQL. (PR #2453)
+<!-- AUTO-GENERATED RELEASE END: 2026-09-09 -->
+
 <!-- AUTO-GENERATED RELEASE START: 2026-09-02 -->
 # Versión SISOC 02.09.2026
 
@@ -6,6 +25,9 @@
 - [sin-area] feat(relevamientos): asignación por usuario territorial + corte AppSheet por flag. (PR #2380)
 - [sin-area] fix(relevamientos): feedback QA territoriales (visibilidad, finalizar, estados, permisos). (PR #2386)
 - [sin-area] fix(territorial): excluir relevamientos borrados del scope por asignación. (PR #2389)
+- [sin-area] fix: reparar mojibake en datos y RENAPER. (PR #2415)
+- [sin-area] fix(encoding): reparar mojibake capitalizado histórico. (PR #2421)
+- [sin-area] fix(encoding): reparar mojibake capitalizado restante. (PR #2424)
 <!-- AUTO-GENERATED RELEASE END: 2026-09-02 -->
 
 <!-- AUTO-GENERATED RELEASE START: 2026-08-26 -->

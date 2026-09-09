@@ -871,9 +871,6 @@ class NominaCentroInfanciaBaseForm(forms.ModelForm):
 
     def _configure_boolean_fields(self):
         boolean_fields = {
-            "calendario_vacunacion_al_dia": {
-                "label": "Calendario de vacunación al día",
-            },
             "recibe_apoyo_discapacidad": {
                 "label": (
                     "Recibe actualmente algún tipo de apoyo, tratamiento o acompañamiento"
@@ -1727,14 +1724,17 @@ class NominaCentroInfanciaDestinatariosForm(NominaCentroInfanciaBaseForm):
 
     def clean_grupo_pertenencia(self):
         valores = self.cleaned_data.get("grupo_pertenencia") or []
-        if "ninguno" in valores and len(valores) > 1:
+        if {"ninguno", "no_sabe"}.intersection(valores) and len(valores) > 1:
             raise forms.ValidationError(
-                'No combine "Ninguno de los anteriores" con otras opciones.'
+                'No combine "Ninguno de los anteriores" ni "No sabe" con otras opciones.'
             )
         return valores
 
     def clean_lenguajes(self):
-        return self.cleaned_data.get("lenguajes") or []
+        valores = self.cleaned_data.get("lenguajes") or []
+        if "no_sabe" in valores and len(valores) > 1:
+            raise forms.ValidationError('No combine "No sabe" con otros lenguajes.')
+        return valores
 
     def clean_tipo_discapacidad(self):
         valores = self.cleaned_data.get("tipo_discapacidad") or []
@@ -1745,7 +1745,17 @@ class NominaCentroInfanciaDestinatariosForm(NominaCentroInfanciaBaseForm):
         return valores
 
     def clean_alergias_alimentarias(self):
-        return self.cleaned_data.get("alergias_alimentarias") or []
+        valores = self.cleaned_data.get("alergias_alimentarias") or []
+        if {
+            "sin_alergias_alimentarias",
+            "no_sabe",
+        }.intersection(
+            valores
+        ) and len(valores) > 1:
+            raise forms.ValidationError(
+                'No combine "No tiene alergias alimentarias" ni "No sabe" con otras opciones.'
+            )
+        return valores
 
     def clean_piso_domicilio(self):
         value = (self.cleaned_data.get("piso_domicilio") or "").strip()
@@ -1926,6 +1936,10 @@ class TrabajadorCDIForm(forms.ModelForm):
         "carga_horaria_semanal",
         "telefono",
         "calle_contacto",
+        "tipo_barrio",
+        "provincia_contacto",
+        "municipio_contacto",
+        "localidad_contacto",
         "grupo_pertenencia",
         "lenguajes",
         "es_interprete",
@@ -2295,14 +2309,17 @@ class TrabajadorCDIForm(forms.ModelForm):
 
     def clean_grupo_pertenencia(self):
         valores = self.cleaned_data.get("grupo_pertenencia") or []
-        if "ninguno" in valores and len(valores) > 1:
+        if {"ninguno", "no_sabe"}.intersection(valores) and len(valores) > 1:
             raise forms.ValidationError(
-                'No combine "Ninguno de los anteriores" con otras opciones.'
+                'No combine "Ninguno de los anteriores" ni "No sabe" con otras opciones.'
             )
         return valores
 
     def clean_lenguajes(self):
-        return self.cleaned_data.get("lenguajes") or []
+        valores = self.cleaned_data.get("lenguajes") or []
+        if "no_sabe" in valores and len(valores) > 1:
+            raise forms.ValidationError('No combine "No sabe" con otros lenguajes.')
+        return valores
 
     def clean_tipo_discapacidad(self):
         return self.cleaned_data.get("tipo_discapacidad") or []

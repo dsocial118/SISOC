@@ -95,6 +95,15 @@ class Profile(models.Model):
         PROVINCIAL = "provincial", "Provincial"
         EXTERNO = "externo", "Externo"
 
+    class DataCalleRol(models.TextChoices):
+        """Roles del relevamiento de situacion de calle (SISOC - Mobile DataCalle).
+
+        Por ahora solo existe el entrevistador; coordinador y administrador se
+        agregaran cuando se definan sus reglas de alcance.
+        """
+
+        ENTREVISTADOR = "entrevistador", "Entrevistador"
+
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     dni = models.CharField(max_length=16, blank=True)
     cuil = models.CharField(max_length=16, blank=True)
@@ -105,6 +114,12 @@ class Profile(models.Model):
         blank=True,
     )
     dark_mode = models.BooleanField(default=True)
+    configuracion_mobile = models.JSONField(
+        default=dict,
+        blank=True,
+        editable=False,
+        help_text="Selecciones del formulario mobile; no otorga permisos ni acceso.",
+    )
     es_usuario_provincial = models.BooleanField(default=False)
     provincia = models.ForeignKey(
         Provincia, on_delete=models.SET_NULL, null=True, blank=True
@@ -185,6 +200,26 @@ class Profile(models.Model):
             "Marca al usuario como territorial (relevador) de comedores en "
             "SISOC - Mobile. El alcance se define por provincia en "
             "TerritorialComedorProvincia."
+        ),
+    )
+    es_relevador_calle = models.BooleanField(
+        default=False,
+        verbose_name="Acceso SISOC - Mobile DataCalle",
+        help_text=(
+            "Marca al usuario como relevador de personas en situacion de calle "
+            "en SISOC - Mobile (DataCalle). El alcance se define por provincia "
+            "en RelevadorCalleProvincia."
+        ),
+    )
+    datacalle_rol = models.CharField(
+        max_length=20,
+        choices=DataCalleRol.choices,
+        blank=True,
+        default="",
+        verbose_name="Rol en DataCalle",
+        help_text=(
+            "Rol con el que el usuario opera en SISOC - Mobile DataCalle. "
+            "Obligatorio cuando es_relevador_calle esta activo."
         ),
     )
     duplas_asignadas = models.ManyToManyField(
@@ -342,6 +377,44 @@ class TerritorialComedorProvincia(models.Model):
         return f"{self.profile.user.username} / {self.provincia}"
 
 
+class RelevadorCalleProvincia(models.Model):
+    """Provincia de alcance de un relevador de DataCalle (SISOC - Mobile).
+
+    Espejo de ``TerritorialComedorProvincia`` para el modulo de situacion de
+    calle: mantiene el alcance del relevador desacoplado de
+    ``ProfileTerritorialScope`` (usuarios provinciales del backoffice) y de
+    ``AccesoComedorPWA`` (representantes PWA de comedores). Solo modela
+    provincia, que es el eje con el que se arman los operativos de relevamiento.
+    """
+
+    profile = models.ForeignKey(
+        Profile,
+        on_delete=models.CASCADE,
+        related_name="relevador_calle_provincias",
+    )
+    provincia = models.ForeignKey(
+        Provincia,
+        on_delete=models.PROTECT,
+        related_name="+",
+    )
+
+    class Meta:
+        verbose_name = "Provincia de relevador DataCalle"
+        verbose_name_plural = "Provincias de relevador DataCalle"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["profile", "provincia"],
+                name="uniq_relevador_calle_provincia",
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["provincia"]),
+        ]
+
+    def __str__(self):
+        return f"{self.profile.user.username} / {self.provincia}"
+
+
 class AccesoComedorPWA(models.Model):
     """Relación de alcance PWA entre usuario y comedor."""
 
@@ -460,6 +533,39 @@ class AccesoOrganizacionPWA(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - organización {self.organizacion_id}"
+
+
+class CoordinadorEquipoTecnicoPWA(models.Model):
+    """Alcance PWA de solo lectura derivado de equipos técnicos."""
+
+    user = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        related_name="coordinador_equipo_tecnico_pwa",
+    )
+    duplas = models.ManyToManyField(
+        "duplas.Dupla",
+        related_name="coordinadores_pwa",
+        blank=True,
+        verbose_name="Equipos técnicos",
+    )
+    comedores_adicionales = models.ManyToManyField(
+        "comedores.Comedor",
+        related_name="coordinadores_pwa_adicionales",
+        blank=True,
+        verbose_name="Comedores adicionales",
+    )
+    activo = models.BooleanField(default=True)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_actualizacion = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Coordinador de equipo técnico PWA"
+        verbose_name_plural = "Coordinadores de equipo técnico PWA"
+        indexes = [models.Index(fields=["user", "activo"])]
+
+    def __str__(self):
+        return f"{self.user.username} - Coordinador PWA"
 
 
 class AuditAccesoComedorPWA(models.Model):

@@ -289,6 +289,38 @@ def test_guardar_trabajador_con_email_crea_usuario_y_vinculo(client):
     assert trabajador.usuario.email == "ana.lopez@example.com"
     assert trabajador.usuario.groups.filter(name=UserGroups.CDI_TRABAJADOR).exists()
     assert not AccesoCDI.objects.filter(user=trabajador.usuario).exists()
+    assert any(
+        "no se pudieron enviar las credenciales" in str(message)
+        for message in get_messages(response.wsgi_request)
+    )
+
+
+@pytest.mark.django_db
+def test_guardar_trabajador_desde_interfaz_envia_credenciales(client, monkeypatch):
+    envios = []
+
+    def registrar_envio(**kwargs):
+        envios.append(kwargs)
+        return True
+
+    monkeypatch.setattr(
+        "users.services_generate_user._enviar_credenciales", registrar_envio
+    )
+    centro = CentroDeInfancia.objects.create(nombre="CDI Trabajador con correo")
+    actor = _referente_actor(centro)
+    client.force_login(actor)
+
+    response = _guardar_trabajador(client, centro, email="ana.credenciales@example.com")
+
+    trabajador = Trabajador.objects.get(centro=centro)
+    assert response.status_code == 302
+    assert len(envios) == 1
+    assert envios[0]["user"] == trabajador.usuario
+    assert envios[0]["request"].user == actor
+    assert any(
+        "credenciales enviadas" in str(message)
+        for message in get_messages(response.wsgi_request)
+    )
 
 
 @pytest.mark.django_db

@@ -132,7 +132,7 @@ def _post_completo(centro, **overrides):
         numero_cud="123456",
         cobertura_salud="obra_social",
         controles_sanitarios_ultimo_anio="3",
-        calendario_vacunacion_al_dia="true",
+        calendario_vacunacion_al_dia="si",
         peso="14.2",
         longitud_acostado="80.0",
         talla="95.0",

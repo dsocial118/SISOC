@@ -18,8 +18,18 @@ from comedores.models import Comedor
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
 from relevamientos.form import RelevamientoForm
 from relevamientos.helpers import RelevamientoFormManager
-from relevamientos.models import PrimerSeguimiento, Relevamiento
+from relevamientos.models import (
+    BLOQUES_SEGUIMIENTO,
+    ActaComplementaria,
+    PrimerSeguimiento,
+    Relevamiento,
+)
 from relevamientos.service import RelevamientoService
+from relevamientos.views.seguimiento_helpers import (
+    aplicar_revision_coordinador,
+    resolver_seguimiento,
+    seguimiento_queryset,
+)
 
 
 class RelevamientoCreateView(LoginRequiredMixin, CreateView):
@@ -79,7 +89,7 @@ class RelevamientoListView(LoginRequiredMixin, ListView):
         comedor = self.kwargs["comedor_pk"]
         return (
             Relevamiento.objects.filter(comedor=comedor)
-            .select_related("primer_seguimiento")
+            .prefetch_related("seguimientos")
             .order_by("-estado", "-id")
         )
 
@@ -109,7 +119,11 @@ class RelevamientoListView(LoginRequiredMixin, ListView):
 
         items = []
         for rel in context["relevamientos"]:
-            seguimiento = _get_primer_seguimiento(rel)
+            # Todas las instancias del ciclo, no solo la primera.
+            seguimientos = sorted(
+                rel.seguimientos.all(),
+                key=lambda seguimiento: seguimiento.numero_orden,
+            )
             items.append(
                 {
                     "id": rel.id,
@@ -118,16 +132,20 @@ class RelevamientoListView(LoginRequiredMixin, ListView):
                     "numero_if": rel.numero_if,
                     "is_child": False,
                     "parent_id": None,
-                    "has_seguimiento": seguimiento is not None,
+                    "has_seguimiento": bool(seguimientos),
+                    "origen": rel.origen,
                     "sincronizado_gestionar": rel.sincronizado_gestionar,
                 }
             )
-            if seguimiento is not None:
+            for seguimiento in seguimientos:
                 items.append(
                     {
                         "id": seguimiento.id,
                         "fecha": seguimiento.fecha_hora,
                         "estado": seguimiento.estado,
+                        "tipo": seguimiento.get_tipo_display(),
+                        "numero_orden": seguimiento.numero_orden,
+                        "origen": seguimiento.origen,
                         "numero_if": None,
                         "is_child": True,
                         "parent_id": rel.id,
@@ -135,14 +153,12 @@ class RelevamientoListView(LoginRequiredMixin, ListView):
                     }
                 )
         context["relevamientos_items"] = items
+        context["actas_complementarias"] = list(
+            ActaComplementaria.objects.filter(comedor_id=self.kwargs["comedor_pk"])
+            .select_related("tecnico")
+            .prefetch_related("prestaciones")
+        )
         return context
-
-
-def _get_primer_seguimiento(relevamiento):
-    try:
-        return relevamiento.primer_seguimiento
-    except PrimerSeguimiento.DoesNotExist:
-        return None
 
 
 class RelevamientoDetailView(LoginRequiredMixin, DetailView):
@@ -270,6 +286,11 @@ class RelevamientoDetailView(LoginRequiredMixin, DetailView):
         # Agregar los datos adicionales al contexto
         context["relevamiento_data"] = relevamiento_data
         context["relevamientos_timeline"] = timeline_items
+        # Todas las instancias del ciclo (primer, posteriores, virtuales, actas).
+        context["seguimientos"] = sorted(
+            relevamiento.seguimientos.all(),
+            key=lambda seguimiento: seguimiento.numero_orden,
+        )
 
         return context
 
@@ -404,24 +425,8 @@ class RelevamientoDeleteView(
         return reverse_lazy("comedor_detalle", kwargs={"pk": comedor.id})
 
 
-PRIMER_SEGUIMIENTO_BLOQUES = (
-    ("funcionamiento", "Funcionamiento"),
-    ("servicios_basicos", "Servicios básicos"),
-    ("almacenamiento_alimentos", "Almacenamiento de alimentos"),
-    ("condiciones_higiene", "Condiciones de higiene"),
-    ("tareas_comedor", "Tareas en el comedor"),
-    ("recursos", "Recursos"),
-    ("compras", "Compras"),
-    ("frecuencia_compra_alimentos", "Frecuencia de compra de alimentos"),
-    ("menu", "Menú"),
-    ("registro_asistencia", "Registro de asistencia"),
-    ("frecuencia_alimentos", "Frecuencia de alimentos"),
-    ("actividades_extras", "Actividades extras"),
-    ("tarjeta", "Tarjeta"),
-    ("rendicion_cuentas", "Rendición de cuentas"),
-    ("asistencia_tecnica", "Asistencia técnica"),
-    ("cierre", "Cierre"),
-)
+# Alias del mapa canonico del modelo (ver BLOQUES_SEGUIMIENTO).
+PRIMER_SEGUIMIENTO_BLOQUES = BLOQUES_SEGUIMIENTO
 
 
 def _display_value(instance, field):
@@ -468,42 +473,21 @@ class PrimerSeguimientoDetailView(LoginRequiredMixin, DetailView):
     context_object_name = "seguimiento"
 
     def get_object(self, queryset=None):
-        queryset = PrimerSeguimiento.objects.select_related(
-            "id_relevamiento",
-            "id_relevamiento__comedor",
-            "referente",
-            "funcionamiento",
-            "servicios_basicos",
-            "almacenamiento_alimentos",
-            "condiciones_higiene",
-            "tareas_comedor",
-            "tareas_comedor__tareas_comedor_cant_personas",
-            "recursos",
-            "recursos__fuente_recursos",
-            "compras",
-            "compras__fuente_compras",
-            "frecuencia_compra_alimentos",
-            "menu",
-            "menu__modalidad_prestacion_del_dia",
-            "registro_asistencia",
-            "frecuencia_alimentos",
-            "actividades_extras",
-            "tarjeta",
-            "rendicion_cuentas",
-            "asistencia_tecnica",
-            "cierre",
-        ).prefetch_related("prestaciones", "menu__receta_items")
-        return get_object_or_404(
-            queryset,
-            id_relevamiento_id=self.kwargs["relevamiento_pk"],
-            id_relevamiento__comedor_id=self.kwargs["comedor_pk"],
-        )
+        return resolver_seguimiento(self.kwargs, seguimiento_queryset())
 
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
         seguimiento = self.object
         context["relevamiento"] = seguimiento.id_relevamiento
         context["comedor"] = seguimiento.id_relevamiento.comedor
+        # Navegación entre las instancias del mismo ciclo.
+        context["instancias"] = list(
+            PrimerSeguimiento.objects.filter(
+                id_relevamiento_id=seguimiento.id_relevamiento_id
+            )
+            .only("id", "tipo", "numero_orden", "estado", "id_relevamiento_id")
+            .order_by("numero_orden", "id")
+        )
 
         bloques = []
         for attr, label in PRIMER_SEGUIMIENTO_BLOQUES:
@@ -524,27 +508,57 @@ class PrimerSeguimientoDetailView(LoginRequiredMixin, DetailView):
         return context
 
 
+class RelevamientoRevisionCoordinadorView(LoginRequiredMixin, View):
+    """Revisión del coordinador sobre un relevamiento (N16).
+
+    El coordinador aprueba (``Validado``) o devuelve el registro
+    (``A subsanar``) con observaciones para que el territorial lo corrija desde
+    la app. Solo POST: la confirmación se hace desde un modal del detalle.
+    """
+
+    http_method_names = ["post"]
+
+    def post(self, request, comedor_pk, pk):
+        relevamiento = get_object_or_404(Relevamiento, pk=pk, comedor_id=comedor_pk)
+        error = aplicar_revision_coordinador(request, relevamiento, "el relevamiento")
+        if error:
+            messages.error(request, error)
+        elif relevamiento.estado_validacion == Relevamiento.ESTADO_VALIDACION_VALIDADO:
+            messages.success(request, "Relevamiento validado correctamente.")
+        else:
+            messages.success(
+                request,
+                "Relevamiento devuelto al territorial para subsanar.",
+            )
+        return redirect(
+            reverse(
+                "relevamiento_detalle",
+                kwargs={"comedor_pk": comedor_pk, "pk": pk},
+            )
+        )
+
+
 class PrimerSeguimientoEliminarView(LoginRequiredMixin, View):
     """Borrado del primer seguimiento desde la UI.
 
-    La confirmacion se hace via modal en el detalle del relevamiento; por eso
-    no exponemos GET y solo aceptamos POST. El borrado dispara la signal
+    Acepta la ruta nueva (por pk de instancia) y la historica (primera
+    instancia del ciclo). La confirmacion se hace via modal en el detalle del
+    relevamiento; por eso no exponemos GET y solo aceptamos POST. El borrado dispara la signal
     pre_delete que envia la baja al endpoint de GESTIONAR.
     """
 
     http_method_names = ["post"]
 
-    def post(self, request, comedor_pk, relevamiento_pk):
-        seguimiento = get_object_or_404(
-            PrimerSeguimiento.objects.select_related("id_relevamiento"),
-            id_relevamiento_id=relevamiento_pk,
-            id_relevamiento__comedor_id=comedor_pk,
+    def post(self, request, **kwargs):
+        seguimiento = resolver_seguimiento(
+            self.kwargs, PrimerSeguimiento.objects.select_related("id_relevamiento")
         )
+        relevamiento_pk = seguimiento.id_relevamiento_id
         seguimiento.delete()
-        messages.success(request, "Primer seguimiento eliminado correctamente.")
+        messages.success(request, "Seguimiento eliminado correctamente.")
         return redirect(
             reverse(
                 "relevamiento_detalle",
-                kwargs={"comedor_pk": comedor_pk, "pk": relevamiento_pk},
+                kwargs={"comedor_pk": self.kwargs["comedor_pk"], "pk": relevamiento_pk},
             )
         )

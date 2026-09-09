@@ -1,6 +1,6 @@
 from django.urls import path
 
-from core.decorators import permissions_any_required
+from core.decorators import permissions_all_required, permissions_any_required
 from pas.views import (
     PasInformeDetailView,
     PasInformeDownloadView,
@@ -126,35 +126,39 @@ urlpatterns = [
     ),
     path(
         "pas/informes",
-        permissions_any_required(["pas.view_paspersona", "pas.view_pasinforme"])(
+        permissions_all_required(["pas.view_paspersona", "pas.view_pasinforme"])(
             PasInformeListView.as_view()
         ),
         name="pas_informe_listar",
     ),
     path(
         "pas/informes/generar",
-        permissions_any_required(["pas.view_paspersona", "pas.add_pasinforme"])(
+        permissions_all_required(["pas.view_paspersona", "pas.add_pasinforme"])(
             PasInformeGenerateView.as_view()
         ),
         name="pas_informe_generar",
     ),
     path(
         "pas/informes/previsualizar",
-        permissions_any_required(["pas.view_paspersona", "pas.add_pasinforme"])(
+        permissions_all_required(["pas.view_paspersona", "pas.add_pasinforme"])(
             PasInformePreviewView.as_view()
         ),
         name="pas_informe_previsualizar",
     ),
     path(
         "pas/informes/<int:pk>/descargar",
-        permissions_any_required(["pas.view_paspersona", "pas.view_pasinforme"])(
-            PasInformeDownloadView.as_view()
-        ),
+        permissions_all_required(
+            [
+                "pas.view_paspersona",
+                "pas.view_pasinforme",
+                "auth.role_exportar_a_csv",
+            ]
+        )(PasInformeDownloadView.as_view()),
         name="pas_informe_descargar",
     ),
     path(
         "pas/informes/<int:pk>",
-        permissions_any_required(["pas.view_paspersona", "pas.view_pasinforme"])(
+        permissions_all_required(["pas.view_paspersona", "pas.view_pasinforme"])(
             PasInformeDetailView.as_view()
         ),
         name="pas_informe_detalle",

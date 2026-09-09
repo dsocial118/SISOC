@@ -288,6 +288,54 @@ class ColaboradorEspacioForm(forms.ModelForm):
         return cleaned_data
 
 
+class ResponsableTarjetaComedorForm(forms.ModelForm):
+    class Meta:
+        model = Comedor
+        fields = [
+            "responsable_tarjeta_nombre",
+            "responsable_tarjeta_mail",
+            "responsable_tarjeta_dni",
+            "responsable_tarjeta_cuit",
+            "responsable_tarjeta_domicilio",
+            "responsable_tarjeta_provincia",
+            "responsable_tarjeta_localidad",
+            "responsable_tarjeta_telefono",
+        ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        provincia_id = (
+            self.data.get("responsable_tarjeta_provincia")
+            if self.is_bound
+            else getattr(self.instance, "responsable_tarjeta_provincia_id", None)
+        )
+        localidades = Localidad.objects.none()
+        if provincia_id:
+            localidades = Localidad.objects.filter(
+                municipio__provincia_id=provincia_id
+            ).select_related("municipio__provincia")
+        self.fields["responsable_tarjeta_localidad"].queryset = localidades.order_by(
+            "nombre"
+        )
+        self.fields["responsable_tarjeta_provincia"].widget.attrs[
+            "data-geografia-provincia"
+        ] = "id_responsable_tarjeta_localidad"
+        self.fields["responsable_tarjeta_localidad"].widget.attrs[
+            "data-geografia-localidad"
+        ] = "true"
+
+    def clean(self):
+        cleaned_data = super().clean()
+        localidad = cleaned_data.get("responsable_tarjeta_localidad")
+        provincia = cleaned_data.get("responsable_tarjeta_provincia")
+        if localidad and provincia and localidad.municipio.provincia_id != provincia.id:
+            self.add_error(
+                "responsable_tarjeta_localidad",
+                "La localidad no pertenece a la provincia seleccionada.",
+            )
+        return cleaned_data
+
+
 class ComedorForm(forms.ModelForm):
     estado_general = forms.ModelChoiceField(
         label="Estado general",

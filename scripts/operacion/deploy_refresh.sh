@@ -3,6 +3,7 @@ set -Eeuo pipefail
 
 SCRIPT_NAME="$(basename "$0")"
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+ROOT_DIR="${SISOC_ROOT_DIR:-$ROOT_DIR}"
 ENV_FILE="${ENV_FILE:-$ROOT_DIR/.env}"
 DRY_RUN=0
 ASSUME_YES=0
@@ -11,9 +12,10 @@ ALLOW_DIRTY=0
 ALLOW_BRANCH_MISMATCH=0
 SKIP_PULL=0
 WITH_MOBILE=0
+WITHOUT_MOBILE=0
 MOBILE_DIR=""
 MOBILE_SCRIPT=""
-MOBILE_HTTPS_REMOTE="https://github.com/dsocial118/SISOC-Mobile.git"
+MOBILE_HTTPS_REMOTE="https://github.com/dsocial118/Espacios-Comunitarios.git"
 EXPECTED_REVISION=""
 
 usage() {
@@ -37,11 +39,12 @@ Opciones:
   --expected-revision SHA   Exige que la revision a desplegar sea exactamente SHA.
                             Si origin o HEAD ya avanzaron, bloquea antes de bajar Docker.
   --with-mobile             Tambien despliega SISOC-Mobile.
+  --without-mobile          Solo backend; las PWA se coordinan por separado.
   --mobile-dir PATH         Ruta del checkout SISOC-Mobile.
                             Default: ../SISOC-Mobile desde la raiz de SISOC.
                             Ejecuta scripts/operacion/deploy_refresh.sh de ese repo.
                             SISOC-Mobile debe estar en branch main.
-                            Su origin conocido se normaliza a HTTPS publica.
+                            Requiere acceso autenticado al repositorio privado.
   -h, --help                Muestra esta ayuda.
 
 Mapeo por entorno:
@@ -134,6 +137,7 @@ parse_args() {
         EXPECTED_REVISION="$1"
         ;;
       --with-mobile) WITH_MOBILE=1 ;;
+      --without-mobile) WITHOUT_MOBILE=1 ;;
       --mobile-dir)
         shift
         [[ $# -gt 0 ]] || fail "--mobile-dir requiere una ruta."
@@ -188,12 +192,11 @@ normalize_mobile_origin() {
     || fail "SISOC-Mobile no tiene remote origin configurado."
 
   case "$current_remote" in
-    "$MOBILE_HTTPS_REMOTE")
+    "$MOBILE_HTTPS_REMOTE"|git@github.com:dsocial118/Espacios-Comunitarios.git|ssh://git@github.com/dsocial118/Espacios-Comunitarios.git)
       return 0
       ;;
-    https://github.com/dsocial118/SISOC-Mobile|git@github.com:dsocial118/SISOC-Mobile.git|ssh://git@github.com/dsocial118/SISOC-Mobile.git)
-      log "Normalizando origin de SISOC-Mobile a HTTPS publica."
-      run git -C "$MOBILE_DIR" remote set-url origin "$MOBILE_HTTPS_REMOTE"
+    https://github.com/dsocial118/SISOC-Mobile.git|https://github.com/dsocial118/SISOC-Mobile|git@github.com:dsocial118/SISOC-Mobile.git|ssh://git@github.com/dsocial118/SISOC-Mobile.git)
+      log "Origin anterior de Espacios Comunitarios: actualizar durante el aprovisionamiento."
       ;;
     *)
       fail "Origin inesperado para SISOC-Mobile; revisar origin sin copiar credenciales al log."
@@ -274,13 +277,21 @@ configure_mobile() {
   MOBILE_ARGS=()
   [[ "$DRY_RUN" -eq 1 ]] && MOBILE_ARGS+=(--dry-run)
   [[ "$ASSUME_YES" -eq 1 ]] && MOBILE_ARGS+=(--yes)
-  [[ "$INCLUDE_VOLUMES" -eq 1 ]] && MOBILE_ARGS+=(--volumes)
   [[ "$ALLOW_DIRTY" -eq 1 ]] && MOBILE_ARGS+=(--allow-dirty)
   [[ "$ALLOW_BRANCH_MISMATCH" -eq 1 ]] && MOBILE_ARGS+=(--allow-branch-mismatch)
-  [[ "$SKIP_PULL" -eq 1 ]] && MOBILE_ARGS+=(--skip-pull)
+  MOBILE_ARGS+=(--skip-pull)
 
   ensure_clean_branch "$MOBILE_DIR" "${MOBILE_BRANCH:-main}" MOBILE_BRANCH "SISOC-Mobile"
   normalize_mobile_origin
+  if [[ "$SKIP_PULL" -eq 0 ]]; then
+    # Fallar por autenticacion antes de interrumpir el backend.
+    run env GIT_TERMINAL_PROMPT=0 git -C "$MOBILE_DIR" fetch origin --no-tags main
+  fi
+  if [[ "$DRY_RUN" -eq 0 && "$SKIP_PULL" -eq 0 ]]; then
+    MOBILE_REVISION="$(git -C "$MOBILE_DIR" rev-parse 'FETCH_HEAD^{commit}')"
+    git -C "$MOBILE_DIR" merge-base --is-ancestor HEAD "$MOBILE_REVISION" \
+      || fail "Espacios Comunitarios no permite fast-forward."
+  fi
 }
 
 main() {
@@ -293,6 +304,7 @@ main() {
   ENVIRONMENT="$(printf '%s' "$ENVIRONMENT" | tr '[:upper:]' '[:lower:]')"
 
   compose_for_environment "$ENVIRONMENT"
+  [[ "$WITHOUT_MOBILE" -eq 1 ]] && WITH_MOBILE=0
   ensure_clean_branch "$ROOT_DIR" "$EXPECTED_BRANCH" CURRENT_BRANCH "SISOC"
   configure_mobile
 
@@ -340,6 +352,9 @@ main() {
   run "${COMPOSE_CMD[@]}" --project-directory "$ROOT_DIR" ps
 
   if [[ "$WITH_MOBILE" -eq 1 ]]; then
+    if [[ "$SKIP_PULL" -eq 0 ]]; then
+      run git -C "$MOBILE_DIR" merge --ff-only "${MOBILE_REVISION:-FETCH_HEAD}"
+    fi
     run bash "$MOBILE_SCRIPT" "${MOBILE_ARGS[@]}"
   fi
 

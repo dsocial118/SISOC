@@ -209,6 +209,7 @@ INSTALLED_APPS = [
     "ver_para_ser_libre",
     "pas",
     "dispositivos",
+    "datacalle",
     "insumos",
     "pwa",
     "ticketera",

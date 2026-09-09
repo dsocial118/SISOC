@@ -2,7 +2,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 
-from .validators import LISTADO_FILE_VALIDATORS
+from .validators import LISTADO_FILE_VALIDATORS, TIPOS_PREGUNTA_PONDERABLES
 
 
 class EstadoEncuesta(models.TextChoices):
@@ -175,6 +175,20 @@ class Pregunta(models.Model):
     valor_condicion = models.CharField(
         max_length=200, blank=True, default="", verbose_name="Valor esperado"
     )
+    pondera = models.BooleanField(
+        default=False,
+        verbose_name="¿Pondera para el puntaje?",
+        help_text=(
+            "Solo aplica a Sí/No, Opción única, Opción múltiple y Escala: son "
+            "los tipos con un conjunto fijo de valores posibles."
+        ),
+    )
+    puntaje_si = models.PositiveIntegerField(
+        null=True, blank=True, verbose_name="Puntaje si responde 'Sí'"
+    )
+    puntaje_no = models.PositiveIntegerField(
+        null=True, blank=True, verbose_name="Puntaje si responde 'No'"
+    )
 
     class Meta:
         verbose_name = "Pregunta"
@@ -204,6 +218,21 @@ class Pregunta(models.Model):
                 "La condición de visibilidad requiere pregunta, operador y valor "
                 "en conjunto."
             )
+        if self.pondera and self.tipo not in TIPOS_PREGUNTA_PONDERABLES:
+            raise ValidationError(
+                {
+                    "pondera": (
+                        "Solo las preguntas de Sí/No, opción única, opción "
+                        "múltiple o escala pueden ponderar para el puntaje."
+                    )
+                }
+            )
+        if self.tipo != TipoPregunta.SI_NO and (
+            self.puntaje_si is not None or self.puntaje_no is not None
+        ):
+            raise ValidationError(
+                "puntaje_si/puntaje_no solo aplican a preguntas de tipo Sí/No."
+            )
 
 
 class OpcionPregunta(models.Model):
@@ -216,6 +245,11 @@ class OpcionPregunta(models.Model):
     texto = models.CharField(max_length=200, verbose_name="Texto")
     valor = models.CharField(max_length=200, verbose_name="Valor")
     orden = models.PositiveIntegerField(default=0, verbose_name="Orden")
+    puntaje = models.PositiveIntegerField(
+        default=0,
+        verbose_name="Puntaje",
+        help_text="Solo se usa si la pregunta pondera para el puntaje total.",
+    )
 
     class Meta:
         verbose_name = "Opción de pregunta"

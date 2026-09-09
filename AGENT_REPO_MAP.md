@@ -4,6 +4,24 @@ Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrollador
 
 ## Como leer este documento
 
+- Sincronizacion DataCalle: los cambios de main de #2452/#2453 se incorporan a
+  development conservando coordinadores PWA y su checkbox maestro. La migracion
+  users/0051 une las hojas de configuracion mobile y DataCalle sin operaciones.
+  Evidencia/conflictos: docs/registro/cambios/2026-09-08-sincronizacion-datacalle-main.md.
+
+- PWA privadas: `scripts/operacion/pwas.json` declara Espacios Comunitarios,
+  DataCalle y Gestionar. `deploy_pwas.py` prepara snapshots/imagenes antes del
+  downtime y activa despues del health del backend. Las apps nuevas estan
+  habilitadas en el registro: requieren Compose en main, .env privado en la raiz
+  y la API de HML disponible antes de promover. `PWA_API_BASE_URL` fija la URL
+  HTTPS del entorno para Expo; Espacios conserva /api y /mobile/. Contrato y orden:
+  `docs/operacion/deploy_pwas.md`. `render_pwa_nginx.py` genera un include de servidor
+  y una vista previa que no debe instalarse. No mover `/sisoc/SISOC-Mobile` ni
+  asumir acceso publico de Git. Estado privado de releases: `SISOC/.deploy/pwa/`.
+  El helper de backend corre con umask 022 en un subshell; el estado PWA conserva
+  077. Verificar tambien estabilidad de workers tras desplegar: el healthcheck
+  HTTP no detecta errores de lectura de codigo en otros UID de contenedores.
+
 - `Hecho observado`: confirmado leyendo codigo, config, workflows o docs del repo.
 - `Inferencia`: deduccion razonable por nombres, estructura o convenciones, pero no validada en profundidad.
 - `No confirmado`: no encontre evidencia suficiente en esta exploracion acotada.
@@ -274,7 +292,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 | `users/` | autenticacion, perfiles, grupos, login/reset, import y credenciales masivas | `models.py`, `views.py`, `api_views.py`, `management/commands/`, `services_*` | Alto |
 | `core/` | utilidades transversales, helpers, soft delete, filtros/paginacion, comandos compartidos | `views.py`, `services/`, `management/commands/`, `utils.py` | Alto |
 | `dashboard/` | tableros internos | `urls.py`, `views.py`, templates | Medio |
-| `comedores/` | dominio fuerte: comedores, nomina, estados, sync GESTIONAR | `models.py`, `tasks.py`, `signals.py`, `api_views.py`, `services/`, `urls.py` | Alto |
+| `comedores/` | dominio fuerte: comedores, nomina, estados, sync GESTIONAR y API territorial PWA | `models.py`, `api_views.py`, `api_views_territorial.py`, `tasks.py`, `signals.py`, `services/`, `urls.py` | Alto |
 | `relevamientos/` | relevamientos y sync externo asociado | `models.py`, `tasks.py`, `views.py`, commands | Alto |
 | `ciudadanos/` | gestion de ciudadanos/beneficiarios | `models.py`, `views.py`, `api_views.py`, forms | Medio |
 | `centrodefamilia/` | beneficiarios/centros/familia + API | `models.py`, `views.py`, `api_views.py`, `services/` | Alto |
@@ -364,6 +382,12 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - `users/bootstrap/groups_seed.py`
 - `users/management/commands/create_groups.py`
 - templates en `users/templates/`
+- En el ABM de usuarios, `es_representante_pwa` es el interruptor general de
+  acceso mobile, incluido el coordinador PWA. `Profile.configuracion_mobile`
+  conserva las selecciones al suspender el acceso; no otorga permisos.
+  La migración es `users.0050` y la visibilidad vive en
+  `static/custom/js/user_mobile_access.js`. Validar con
+  `tests/test_users_pwa_forms.py` y `node tests/js/user_mobile_access.test.js`.
 - La autogestión vive en `MiCuentaForm`, `MiCuentaView` y la ruta `/mi-cuenta/`.
   La confirmación inicial usa `/mi-cuenta/confirmar/` y
   `ProfileConfirmationMiddleware`, registrado después del cambio de contraseña.
@@ -433,6 +457,9 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - `comedores/signals.py`
 - `comedores/services/`
 - `comedores/api_views.py`
+- `comedores/api_views_territorial.py` (scope provincial PWA, altas idempotentes y edición)
+- `comedores/api_serializers.py::TerritorialComedorWriteSerializer` (validacion de
+  altas/ediciones territoriales, catalogos y jerarquia geografica)
 - tests del root `tests/test_comedor*`, `tests/test_comedores*`
 - docs de flujo: `docs/flujos/comedor_sync.md`
 - certificaciones mensuales de prestaciones: regla de pendiente en
@@ -512,6 +539,11 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - `pwa/models.py`
 - `pwa/api_urls.py`
 - `pwa/api_views.py`
+- `users/services_pwa.py`: alcance PWA, accesos y coordinador de equipo técnico PWA.
+- `users/api_permissions.py`: permisos de lectura y veto transversal de escritura
+  para roles PWA de solo lectura.
+- Toda mutación PWA debe incluir `IsPWAWriteAllowed`, excepto las acciones
+  personales expresamente permitidas (contraseña y suscripciones push).
 - `pwa/services/`
 - alcance de nómina por admisión vigente o comedor directo:
   `pwa/services/nomina_queryset_service.py`
@@ -574,8 +606,30 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - `encuestas/context_processors.py`: expone la ronda pendiente al modal global (`templates/includes/base.html` + `encuestas/templates/encuestas/partials/responder_modal.html`); comparte cache de request con el middleware para no duplicar la consulta.
 - `encuestas/management/commands/process_encuestas_rondas.py` + servicio `encuestas_worker` en `docker-compose.yml`: abre/cierra rondas por fecha, sin Celery.
 - `users/bootstrap/groups_seed.py`: grupos `Gestor de Encuestas` y `Encuestas Resultados`.
-- Doc funcional completa (modelo, reglas de negocio, permisos, decisiones y desvios respecto del plan original): `docs/registro/analisis/2026-08-28-modulo-encuestas.md`.
+- Guía funcional canónica: `docs/implementaciones/encuestas.md`. El análisis histórico y sus decisiones de diseño quedan en `docs/registro/analisis/2026-08-28-modulo-encuestas.md`.
 - Limite conocido: la segmentacion por CUIT nunca matchea a un usuario individual (`users.Profile` no tiene CUIT propio, solo DNI/CUIL).
+### Si necesitas auditar o reparar mojibake en datos
+
+- Reparación conservadora compartida: `core/services/text_encoding.py`.
+- Prevención en RENAPER: `core/integrations/renaper.py`; el JSON se decodifica
+  desde bytes UTF-8 y el payload se normaliza antes de persistirse.
+- Auditoría read-only de campos explícitos: `python manage.py
+  audit_utf8_mojibake --field app.Model.campo`.
+- Reparación focalizada de nombres y apellidos: `python manage.py
+  repair_utf8_mojibake`; es dry-run por defecto y `--apply` requiere backup,
+  ventana y autorización operativa.
+- Diseño y runbook: `docs/plans/2026-09-01-reparacion-mojibake-datos-design.md`
+  y `docs/registro/cambios/2026-09-01-reparacion-mojibake-datos.md`.
+- La variante capitalizada (`ã` más una continuación que reconstruye una letra
+  mayúscula) usa el mismo comando y requiere un nuevo dry-run después de
+  desplegar el correctivo; ver
+  `docs/plans/2026-09-01-reparacion-mojibake-capitalizado-design.md` y
+  `docs/registro/cambios/2026-09-01-reparacion-mojibake-capitalizado.md`.
+- Las variantes restantes que reconstruyen minúsculas requieren además una
+  mayúscula artificial posterior y normalizan sólo el token afectado. El mismo
+  flujo corrige fronteras persistidas como `ÁNabelle`; ver
+  `docs/plans/2026-09-01-reparacion-mojibake-capitalizado-minusculas-design.md`
+  y `docs/registro/cambios/2026-09-01-reparacion-mojibake-capitalizado-minusculas.md`.
 
 ### Si necesitas cambiar OCR / procesamiento documental
 

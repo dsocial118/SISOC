@@ -1,9 +1,12 @@
+from concurrent.futures import ThreadPoolExecutor
 from io import BytesIO
+from threading import Barrier
 
 import pytest
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.db import connection, close_old_connections
 from django.test import override_settings
 from django.urls import reverse
 from openpyxl import load_workbook
@@ -65,6 +68,66 @@ def test_importacion_agrega_nuevos_omite_duplicados_y_crea_token(
     nueva = PasPersona.objects.get(dni=32123456)
     assert nueva.id_persona == 11
     assert nueva.invitacion_ddjj_vigente is not None
+
+
+@pytest.mark.django_db
+def test_importacion_bloquea_catalogo_pas_antes_de_reservar_identificadores(
+    catalogo_importacion, mocker
+):
+    provincia, municipio, estado = catalogo_importacion
+    bloqueo = mocker.patch(
+        "pas.services.titulares_import_service.bloquear_catalogo_pas_para_importacion",
+        return_value={"activo": estado},
+    )
+    archivo = archivo_csv(
+        "Apellidos;Nombres;DNI;CUIT;Provincia;Municipio\n"
+        "Nueva;Beatriz;32123456;27321234560;Buenos Aires;La Plata\n"
+    )
+
+    resultado = importar_titulares_csv(archivo)
+
+    assert resultado["creados"] == 1
+    bloqueo.assert_called_once_with()
+
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.mysql_compat
+def test_importaciones_simultaneas_no_reutilizan_id_persona(catalogo_importacion):
+    if connection.vendor != "mysql":
+        pytest.skip("La contención real se verifica contra MySQL.")
+
+    provincia, municipio, _estado = catalogo_importacion
+    inicio = Barrier(2)
+
+    def contenido_csv(desde):
+        filas = "".join(
+            f"Persona{numero};Prueba;{desde + numero};20{desde + numero}0;"
+            f"{provincia.nombre};{municipio.nombre}\n"
+            for numero in range(100)
+        )
+        return "Apellidos;Nombres;DNI;CUIT;Provincia;Municipio\n" + filas
+
+    def importar_concurrente(contenido):
+        close_old_connections()
+        try:
+            inicio.wait(timeout=10)
+            return importar_titulares_csv(archivo_csv(contenido))
+        finally:
+            close_old_connections()
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        resultados = list(
+            executor.map(
+                importar_concurrente,
+                (contenido_csv(33_000_000), contenido_csv(34_000_000)),
+                timeout=30,
+            )
+        )
+
+    assert [resultado["creados"] for resultado in resultados] == [100, 100]
+    assert not any(resultado["errores"] for resultado in resultados)
+    assert PasPersona.objects.count() == 200
+    assert PasPersona.objects.values("id_persona").distinct().count() == 200
 
 
 @pytest.mark.django_db

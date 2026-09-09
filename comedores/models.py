@@ -418,6 +418,30 @@ class Comedor(SoftDeleteModelMixin, models.Model):
     localidad = models.ForeignKey(
         to=Localidad, on_delete=models.SET_NULL, null=True, blank=True
     )
+    responsable_tarjeta_nombre = models.CharField(max_length=255, blank=True, null=True)
+    responsable_tarjeta_mail = models.EmailField(blank=True, null=True)
+    responsable_tarjeta_dni = models.CharField(max_length=20, blank=True, null=True)
+    responsable_tarjeta_cuit = models.CharField(max_length=20, blank=True, null=True)
+    responsable_tarjeta_domicilio = models.CharField(
+        max_length=255, blank=True, null=True
+    )
+    responsable_tarjeta_localidad = models.ForeignKey(
+        to=Localidad,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="comedores_responsable_tarjeta",
+    )
+    responsable_tarjeta_provincia = models.ForeignKey(
+        to=Provincia,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="comedores_responsable_tarjeta",
+    )
+    responsable_tarjeta_telefono = models.CharField(
+        max_length=50, blank=True, null=True
+    )
     partido = models.CharField(max_length=255, null=True, blank=True)
     barrio = models.CharField(max_length=255, null=True, blank=True)
     codigo_postal = models.IntegerField(
@@ -538,6 +562,45 @@ class Comedor(SoftDeleteModelMixin, models.Model):
         verbose_name = "comedor"
         verbose_name_plural = "comedores"
         ordering = ["nombre"]
+
+
+class ComedorPwaCreateOperation(models.Model):
+    """Resultado durable de un alta offline de comedor desde Gestionar.
+
+    La clave pertenece al usuario autenticado, no al comedor ni al dispositivo.
+    Se reserva antes de crear el comedor para que la restricción única de la base
+    sea la barrera de concurrencia entre reintentos o instancias de la API.
+    """
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="pwa_comedor_create_operations",
+    )
+    client_uuid = models.CharField(max_length=100)
+    payload_digest = models.CharField(max_length=64)
+    comedor = models.OneToOneField(
+        Comedor,
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="pwa_create_operation",
+    )
+    creado_en = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "client_uuid"],
+                name="uniq_comedor_pwa_create_operation",
+            ),
+        ]
+        indexes = [
+            models.Index(
+                fields=["user", "creado_en"],
+                name="comedores_c_user_id_4ce3c3_idx",
+            )
+        ]
 
 
 class AuditComedorPrograma(models.Model):
@@ -1294,6 +1357,18 @@ class ImagenComedor(models.Model):
         help_text=(
             "Relevamiento (visita) al que pertenece la foto. Opcional: si es null "
             "la foto es a nivel comedor (compatibilidad)."
+        ),
+    )
+    seguimiento = models.ForeignKey(
+        "relevamientos.PrimerSeguimiento",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+        help_text=(
+            "Seguimiento al que pertenece la foto. Opcional y excluyente con "
+            "`relevamiento`: el registro fotográfico del seguimiento cuelga de "
+            "acá."
         ),
     )
     imagen = models.ImageField(upload_to="comedor/")

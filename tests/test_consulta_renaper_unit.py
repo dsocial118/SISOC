@@ -1,5 +1,6 @@
 """Tests unitarios para la integración compartida RENAPER."""
 
+import json
 from types import SimpleNamespace
 
 import pytest
@@ -26,6 +27,14 @@ class _ResponseMock:
 class _HTTPErrorResponse(_ResponseMock):
     def raise_for_status(self):
         raise requests.HTTPError(response=self)
+
+
+def _real_response(payload, *, declared_charset="iso-8859-1"):
+    response = requests.Response()
+    response.status_code = 200
+    response.headers["Content-Type"] = f"application/json; charset={declared_charset}"
+    response._content = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+    return response
 
 
 def test_api_client_does_not_persist_tokens_between_queries(mocker):
@@ -133,6 +142,69 @@ def test_api_client_consulta_construye_request_y_retorna_resultado(mocker, setti
         params={"dni": "00000001", "sexo": "F"},
         timeout=settings.RENAPER_REQUEST_TIMEOUT_SECONDS,
     )
+
+
+def test_api_client_decodifica_json_utf8_aunque_header_declare_latin1(mocker):
+    session = mocker.Mock()
+    session.get.return_value = _real_response(
+        {
+            "isSuccess": True,
+            "result": {"nombres": "José", "apellido": "Muñoz"},
+        }
+    )
+    client = client_module.APIClient()
+    client.session = session
+    mocker.patch.object(client, "get_token", return_value="token")
+
+    out = client.consultar_ciudadano("00000001", "M")
+
+    assert out == {
+        "success": True,
+        "data": {"nombres": "José", "apellido": "Muñoz"},
+    }
+
+
+def test_api_client_repara_mojibake_reversible_en_payload_renaper(mocker):
+    session = mocker.Mock()
+    session.get.return_value = _real_response(
+        {
+            "isSuccess": True,
+            "result": {
+                "nombres": "Ángel Jos\u00c3\u00a9",
+                "apellido": "Dell \u00c3\u201clio",
+                "domicilio": {"calle": "Pe\u00c3\u00b1a"},
+            },
+        },
+        declared_charset="utf-8",
+    )
+    client = client_module.APIClient()
+    client.session = session
+    mocker.patch.object(client, "get_token", return_value="token")
+
+    out = client.consultar_ciudadano("00000001", "M")
+
+    assert out["data"] == {
+        "nombres": "Ángel José",
+        "apellido": "Dell Ólio",
+        "domicilio": {"calle": "Peña"},
+    }
+
+
+def test_api_client_rechaza_json_que_no_es_utf8(mocker):
+    response = requests.Response()
+    response.status_code = 200
+    response._content = b'{"isSuccess": true, "result": {"nombres": "Jos\xe9"}}'
+    response.headers["Content-Type"] = "application/json; charset=iso-8859-1"
+    session = mocker.Mock()
+    session.get.return_value = response
+    client = client_module.APIClient()
+    client.session = session
+    mocker.patch.object(client, "get_token", return_value="token")
+
+    out = client.consultar_ciudadano("00000001", "M")
+
+    assert out["success"] is False
+    assert out["error_type"] == "invalid_response"
 
 
 def test_api_client_clasifica_error_remoto_sin_exponer_datos_sensibles(mocker):

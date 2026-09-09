@@ -1,5 +1,5 @@
 {% extends "includes/main.html" %}
-{% load static %}
+{% load custom_filters static %}
 {% block title %}Informes PAS{% endblock %}
 {% block breadcrumb %}
     {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
@@ -14,9 +14,11 @@
                         <h2 class="search-title">Informes PAS</h2>
                         <p class="search-help">Buscar por numero de informe o usuario generador.</p>
                     </div>
-                    <a href="{% url 'pas_informe_generar' %}" class="btn btn-primary">
-                        <i class="fas fa-plus me-1"></i> Nuevo informe
-                    </a>
+                    {% if request.user|has_perm_code:"pas.view_paspersona" and request.user|has_perm_code:"pas.add_pasinforme" %}
+                        <a href="{% url 'pas_informe_generar' %}" class="btn btn-primary">
+                            <i class="fas fa-plus me-1"></i> Nuevo informe
+                        </a>
+                    {% endif %}
                 </div>
                 <div class="search-input-group">
                     <input type="text"
@@ -65,11 +67,13 @@
                                                        title="Ver informe">
                                                         <i class="fas fa-eye"></i> Ver
                                                     </a>
-                                                    <a href="{% url 'pas_informe_descargar' informe.id %}"
-                                                       class="btn btn-editar"
-                                                       title="Descargar CSV">
-                                                        <i class="fas fa-download"></i> Descargar
-                                                    </a>
+                                                    {% if request.user|has_perm_code:"pas.view_paspersona" and request.user|has_perm_code:"pas.view_pasinforme" and request.user|has_perm_code:"auth.role_exportar_a_csv" %}
+                                                        <a href="{% url 'pas_informe_descargar' informe.id %}"
+                                                           class="btn btn-editar"
+                                                           title="Descargar CSV">
+                                                            <i class="fas fa-download"></i> Descargar
+                                                        </a>
+                                                    {% endif %}
                                                 </div>
                                             </td>
                                         </tr>

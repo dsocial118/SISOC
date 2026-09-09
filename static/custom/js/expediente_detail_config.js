@@ -11,3 +11,11 @@ const validarMeta = document.querySelector('meta[name="validar-renaper-url-templ
 window.VALIDAR_RENAPER_URL_TEMPLATE = validarMeta?.content?.replace('/0/', '/{id}/');
 const editarLegajoMeta = document.querySelector('meta[name="editar-legajo-url-template"]');
 window.EDITAR_LEGAJO_URL_TEMPLATE = editarLegajoMeta?.content?.replace('/0/', '/{id}/');
+const motivoPreviewMeta = document.querySelector('meta[name="motivo-preview-url-template"]');
+window.MOTIVO_PREVIEW_URL_TEMPLATE = motivoPreviewMeta?.content?.replace('/0/', '/{id}/');
+
+// Catálogo de observaciones por tipo de documento, embebido por el template.
+const catalogoNode = document.getElementById('catalogo-comentarios-tecnicos');
+window.CATALOGO_COMENTARIOS_TECNICOS = catalogoNode
+  ? JSON.parse(catalogoNode.textContent)
+  : {};

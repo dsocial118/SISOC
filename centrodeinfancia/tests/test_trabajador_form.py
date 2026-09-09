@@ -2,7 +2,7 @@ from datetime import date
 
 import pytest
 
-from core.models import Provincia
+from core.models import Localidad, Municipio, Provincia
 from centrodeinfancia.forms import TrabajadorCDIForm
 from centrodeinfancia.models import (
     CentroDeInfancia,
@@ -32,6 +32,11 @@ def fixture_centro():
 def datos_validos(**overrides):
     """Payload completo que pasa todas las validaciones del legajo."""
 
+    provincia, _ = Provincia.objects.get_or_create(nombre="Buenos Aires")
+    municipio, _ = Municipio.objects.get_or_create(nombre="Moreno", provincia=provincia)
+    localidad, _ = Localidad.objects.get_or_create(
+        nombre="Paso del Rey", municipio=municipio
+    )
     datos = {
         "fecha_carga": "2026-07-01",
         "subcomponente": "cdi",
@@ -55,6 +60,10 @@ def datos_validos(**overrides):
         "email": "julia.mendez@example.com",
         "telefono": "4774-2015",
         "calle_contacto": "San Martín 1234",
+        "tipo_barrio": "urbano",
+        "provincia_contacto": str(provincia.pk),
+        "municipio_contacto": str(municipio.pk),
+        "localidad_contacto": str(localidad.pk),
         "grupo_pertenencia": ["ninguno"],
         "lenguajes": ["espanol_castellano"],
         "es_interprete": "no",
@@ -62,6 +71,19 @@ def datos_validos(**overrides):
     }
     datos.update(overrides)
     return datos
+
+
+def ubicacion_para_provincia(provincia, prefijo):
+    municipio = Municipio.objects.create(
+        nombre=f"{prefijo} Municipio", provincia=provincia
+    )
+    localidad = Localidad.objects.create(
+        nombre=f"{prefijo} Localidad", municipio=municipio
+    )
+    return {
+        "municipio_contacto": str(municipio.pk),
+        "localidad_contacto": str(localidad.pk),
+    }
 
 
 # --- Caso feliz --------------------------------------------------------------
@@ -90,10 +112,13 @@ def test_departamento_contacto_usa_catalogo_de_la_provincia(catalogos):
         provincia=provincia,
         nombre="Ushuaia",
     )
+    ubicacion = ubicacion_para_provincia(provincia, "Ushuaia")
 
     form = TrabajadorCDIForm(
         data=datos_validos(
-            provincia_contacto=str(provincia.pk), departamento_contacto="Ushuaia"
+            provincia_contacto=str(provincia.pk),
+            departamento_contacto="Ushuaia",
+            **ubicacion,
         )
     )
 
@@ -109,11 +134,13 @@ def test_departamento_contacto_normaliza_id_enviado_por_desplegable(catalogos):
         provincia=provincia,
         nombre="Comuna 1",
     )
+    ubicacion = ubicacion_para_provincia(provincia, "Comuna 1")
 
     form = TrabajadorCDIForm(
         data=datos_validos(
             provincia_contacto=str(provincia.pk),
             departamento_contacto=str(departamento.pk),
+            **ubicacion,
         )
     )
 
@@ -129,10 +156,13 @@ def test_departamento_contacto_rechaza_valor_fuera_del_catalogo(catalogos):
         provincia=provincia,
         nombre="Confluencia",
     )
+    ubicacion = ubicacion_para_provincia(provincia, "Confluencia")
 
     form = TrabajadorCDIForm(
         data=datos_validos(
-            provincia_contacto=str(provincia.pk), departamento_contacto="Inventado"
+            provincia_contacto=str(provincia.pk),
+            departamento_contacto="Inventado",
+            **ubicacion,
         )
     )
 
@@ -149,11 +179,13 @@ def test_departamento_contacto_rechaza_id_de_otra_provincia(catalogos):
         provincia=otra_provincia,
         nombre="Adolfo Alsina",
     )
+    ubicacion = ubicacion_para_provincia(provincia_elegida, "Neuquén")
 
     form = TrabajadorCDIForm(
         data=datos_validos(
             provincia_contacto=str(provincia_elegida.pk),
             departamento_contacto=str(departamento_ajeno.pk),
+            **ubicacion,
         )
     )
 
@@ -186,6 +218,10 @@ def test_departamento_contacto_rechaza_id_de_otra_provincia(catalogos):
         "email",
         "telefono",
         "calle_contacto",
+        "tipo_barrio",
+        "provincia_contacto",
+        "municipio_contacto",
+        "localidad_contacto",
         "grupo_pertenencia",
         "lenguajes",
         "es_interprete",
@@ -194,6 +230,36 @@ def test_departamento_contacto_rechaza_id_de_otra_provincia(catalogos):
 )
 def test_rechaza_campo_obligatorio_vacio(catalogos, campo):
     form = TrabajadorCDIForm(data=datos_validos(**{campo: ""}))
+
+    assert not form.is_valid()
+    assert campo in form.errors
+
+
+@pytest.mark.django_db
+def test_acepta_no_sabe_en_formacion_y_cultura_obligatorias(catalogos):
+    form = TrabajadorCDIForm(
+        data=datos_validos(
+            nivel_educativo="no_sabe",
+            anos_trabajo_primera_infancia="no_sabe",
+            grupo_pertenencia=["no_sabe"],
+            lenguajes=["no_sabe"],
+            es_interprete="no_sabe",
+        )
+    )
+
+    assert form.is_valid(), form.errors
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    ("campo", "valor"),
+    [
+        ("grupo_pertenencia", ["no_sabe", "indigena"]),
+        ("lenguajes", ["no_sabe", "espanol_castellano"]),
+    ],
+)
+def test_no_sabe_es_excluyente_en_multiselects_de_trabajador(catalogos, campo, valor):
+    form = TrabajadorCDIForm(data=datos_validos(**{campo: valor}))
 
     assert not form.is_valid()
     assert campo in form.errors

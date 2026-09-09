@@ -580,6 +580,29 @@ def test_user_list_is_scoped_by_actor_delegation_scope():
 
 
 @pytest.mark.django_db
+def test_user_list_paginas_de_25_registros(client):
+    actor = User.objects.create_superuser(
+        username="admin-listado-paginado",
+        email="admin-listado-paginado@example.com",
+        password="secret",
+    )
+    User.objects.bulk_create(
+        [User(username=f"usuario-paginado-{numero:02d}") for numero in range(30)]
+    )
+    client.force_login(actor)
+
+    primera_pagina = client.get(reverse("usuarios"))
+    segunda_pagina = client.get(reverse("usuarios"), {"page": "2"})
+
+    assert primera_pagina.status_code == 200
+    assert primera_pagina.context["is_paginated"] is True
+    assert len(primera_pagina.context["users"]) == 25
+    assert segunda_pagina.status_code == 200
+    assert len(segunda_pagina.context["users"]) == 6
+    assert b"page=2" in primera_pagina.content
+
+
+@pytest.mark.django_db
 @pytest.mark.parametrize(
     "grupo_nacional",
     [

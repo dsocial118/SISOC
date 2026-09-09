@@ -1,4 +1,5 @@
 from io import BytesIO
+from xml.sax.saxutils import escape
 
 from django.core.files.base import ContentFile
 from django.db import transaction
@@ -52,6 +53,10 @@ ETIQUETAS = {
     "no_accedio_mercado_cambios": "No accedió al Mercado de Cambios para ahorro",
     "firma_nombre_completo": "Firma con nombre completo",
 }
+
+
+def _texto_pdf(valor):
+    return escape(str(valor))
 
 
 def crear_invitacion(persona, usuario=None):
@@ -171,8 +176,10 @@ def _generar_pdf(declaracion):
         Paragraph("<u>DECLARACIÓN JURADA</u>", titulo),
         Paragraph(
             "El/la que suscribe, "
-            f"<b>{declaracion.persona.apellidos}, {declaracion.persona.nombres}</b>, "
-            f"DNI N° <b>{declaracion.persona.dni}</b>, beneficiario del Programa de "
+            f"<b>{_texto_pdf(declaracion.persona.apellidos)}, "
+            f"{_texto_pdf(declaracion.persona.nombres)}</b>, "
+            f"DNI N° <b>{_texto_pdf(declaracion.persona.dni)}</b>, beneficiario "
+            "del Programa de "
             "Acompañamiento Social (PAS), DECLARA BAJO JURAMENTO, en los términos "
             "de los artículos 109 y 110 del Reglamento de Procedimientos "
             "Administrativos, Decreto 1759/72 (T.O. 2017), que la información y "
@@ -188,13 +195,23 @@ def _generar_pdf(declaracion):
             "2. Los datos personales consignados para su actualización son los siguientes:",
             pregunta,
         ),
-        Paragraph(f"a. Provincia: <b>{declaracion.provincia}</b>", dato),
-        Paragraph(f"b. Municipio/Localidad: <b>{declaracion.municipio}</b>", dato),
-        Paragraph(f"c. Calle-Número/Piso/Dpto: <b>{declaracion.domicilio}</b>", dato),
+        Paragraph(f"a. Provincia: <b>{_texto_pdf(declaracion.provincia)}</b>", dato),
         Paragraph(
-            f"d. Correo electrónico: <b>{declaracion.correo_electronico}</b>", dato
+            f"b. Municipio/Localidad: <b>{_texto_pdf(declaracion.municipio)}</b>",
+            dato,
         ),
-        Paragraph(f"e. Teléfono celular: <b>{declaracion.telefono_celular}</b>", dato),
+        Paragraph(
+            f"c. Calle-Número/Piso/Dpto: <b>{_texto_pdf(declaracion.domicilio)}</b>",
+            dato,
+        ),
+        Paragraph(
+            f"d. Correo electrónico: <b>{_texto_pdf(declaracion.correo_electronico)}</b>",
+            dato,
+        ),
+        Paragraph(
+            f"e. Teléfono celular: <b>{_texto_pdf(declaracion.telefono_celular)}</b>",
+            dato,
+        ),
         fila_pregunta("3", "¿Estás embarazada?", declaracion.embarazada),
     ]
     if declaracion.embarazada:
