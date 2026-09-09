@@ -18,12 +18,14 @@ la imagen con ambos builds de Espacios; ver el orden de instalacion abajo.
 Estado verificado el 2026-09-09: las tres PWA ya estan sirviendo en HML y PRD.
 Los bundles activos usan el backend correspondiente a cada entorno. Las notas
 de aprovisionamiento del 2026-09-08 siguientes son historicas, no pendientes
-actuales. La nueva ruta de Espacios requiere instalar el cambio de esta entrega;
-la aceptacion funcional, de instalacion y offline queda al equipo de testers.
+actuales. La nueva ruta de Espacios quedo instalada en ambos hosts el 2026-09-09,
+con `/mobile/` operativa y permisos sudo temporales retirados. Evidencia y
+rollback: `docs/registro/cambios/2026-09-09-espacios-rutas-coexistentes.md`.
+La aceptacion funcional, de instalacion y offline queda al equipo de testers.
 
 | ID | Repositorio privado | Checkout hermano de SISOC | Proyecto / puerto | Estado |
 | --- | --- | --- | --- | --- |
-| espacios | dsocial118/Espacios-Comunitarios | SISOC-Mobile | sisoc-mobile / 8080 | habilitada, base /mobile/ |
+| espacios | dsocial118/Espacios-Comunitarios | SISOC-Mobile | sisoc-mobile / 8080 | habilitada en /mobile/ y /pwa/espacioscomunitarios/ |
 | datacalle | dsocial118/DataCalle | DataCalle | sisoc-pwa-datacalle / 8081 | habilitada, base /pwa/datacalle/ |
 | gestionar | dsocial118/Gestionar | Gestionar | sisoc-pwa-gestionar / 8082 | habilitada, base /pwa/gestionar/ |
 
