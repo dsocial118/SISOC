@@ -30,7 +30,8 @@
 
 - Empezar por `docs/registro/prs/PR-2481.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
-- Sin archivos detectados.
+- `docs/contexto/features/pr-2481-chore-sync-integrar-main-en-development.md`
+- `docs/registro/prs/PR-2481.md`
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
