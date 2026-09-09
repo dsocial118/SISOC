@@ -17,6 +17,7 @@
 - Hay cambios en vistas web y puede existir impacto en permisos o renderizado.
 - Se modifican templates, con posible impacto visual o de composición UI.
 - Existen cambios de persistencia o migraciones que requieren revisión de datos.
+- El alcance incluye automatización o tooling de CI/CD.
 
 ## Decisiones y supuestos detectados
 
@@ -35,6 +36,7 @@
 - Empezar por `docs/registro/prs/PR-2438.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
 - `.env.example`
+- `.github/workflows/pr-docs.yml`
 - `AGENT_REPO_MAP.md`
 - `config/celery.py`
 - `config/settings.py`
@@ -47,14 +49,13 @@
 - `docs/indice.md`
 - `docs/operacion/comandos_administracion.md`
 - `docs/registro/cambios/2026-09-07-pas-celery-mensual.md`
+- `docs/registro/cambios/2026-09-09-pr-2438-estabilizacion-ci.md`
 - `docs/registro/decisiones/2026-07-16-pas-formacion-vat.md`
 - `docs/registro/decisiones/2026-07-28-pas-circuito-cruces.md`
 - `docs/registro/decisiones/2026-07-29-pas-supervivencia-renaper.md`
 - `docs/registro/prs/PR-2438.md`
 - `pas/admin.py`
-- `pas/apps.py`
-- `pas/favorite_filters.py`
-- ... y 46 archivo(s) adicional(es) relacionados.
+- ... y 49 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/TESTING.md`
