@@ -11,6 +11,7 @@ from django.db.models import Exists, OuterRef, Q
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from pypdf import PdfReader, PdfWriter
+from pypdf.errors import PdfReadError, PdfStreamError
 
 from comunicados.models import (
     Comunicado,
@@ -639,6 +640,32 @@ class RendicionCuentaMensualService:  # pylint: disable=too-many-public-methods
         return generar_pdf_placeholder(nombre)
 
     @staticmethod
+    def _anexar_documento_pdf(writer, documento, rendicion_id):
+        extension = os.path.splitext(documento.archivo.name or "")[1].lower()
+        try:
+            reader = _crear_lector_pdf_documento(documento, extension)
+            for page in reader.pages:
+                writer.add_page(page)
+        except (PdfReadError, PdfStreamError) as exc:
+            logger.warning(
+                "No se pudo leer un PDF adjunto para la descarga consolidada.",
+                extra={
+                    "rendicion_id": rendicion_id,
+                    "documento_id": getattr(documento, "id", None),
+                },
+                exc_info=exc,
+            )
+            reader = PdfReader(
+                BytesIO(RendicionCuentaMensualService._generar_pdf_placeholder(
+                    documento.nombre
+                ))
+            )
+            for page in reader.pages:
+                writer.add_page(page)
+        finally:
+            cerrar_archivo_seguro(documento.archivo)
+
+    @staticmethod
     def generar_pdf_descarga_rendicion(rendicion):
         if not RendicionCuentaMensualService.rendicion_esta_completamente_validada(
             rendicion
@@ -661,13 +688,9 @@ class RendicionCuentaMensualService:  # pylint: disable=too-many-public-methods
             )
 
         for documento in documentos:
-            extension = os.path.splitext(documento.archivo.name or "")[1].lower()
-            try:
-                reader = _crear_lector_pdf_documento(documento, extension)
-                for page in reader.pages:
-                    writer.add_page(page)
-            finally:
-                cerrar_archivo_seguro(documento.archivo)
+            RendicionCuentaMensualService._anexar_documento_pdf(
+                writer, documento, rendicion.id
+            )
 
         output = BytesIO()
         writer.write(output)

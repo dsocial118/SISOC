@@ -7,9 +7,11 @@ from types import SimpleNamespace
 
 import pytest
 from django.contrib.auth.models import Group, Permission
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import RequestFactory
 from django.http import FileResponse
 from django.urls import reverse
+from pypdf import PdfWriter
 
 from rendicioncuentasmensual import views as module
 
@@ -20,6 +22,15 @@ class _Req(SimpleNamespace):
 
 def _user():
     return SimpleNamespace(is_authenticated=True)
+
+
+def _pdf_bytes():
+    writer = PdfWriter()
+    writer.add_blank_page(width=72, height=72)
+    buffer = BytesIO()
+    writer.write(buffer)
+    buffer.seek(0)
+    return buffer.getvalue()
 
 
 def test_global_list_view_get_queryset_delega_en_service(mocker):
@@ -593,6 +604,47 @@ def test_download_pdf_view_devuelve_archivo(mocker):
     assert isinstance(response, FileResponse)
     assert 'filename="rendicion-12.pdf"' in response.headers["Content-Disposition"]
     pdf_mock.assert_called_once_with(rendicion)
+
+
+@pytest.mark.django_db
+def test_download_pdf_view_no_falla_por_pdf_invalido(settings, tmp_path, client, superuser):
+    settings.MEDIA_ROOT = str(tmp_path)
+    rendicion = module.RendicionCuentaMensual.objects.create(
+        mes=6,
+        anio=2026,
+        estado=module.RendicionCuentaMensual.ESTADO_FINALIZADA,
+    )
+    module.DocumentacionAdjunta.objects.create(
+        nombre="documento-bueno.pdf",
+        categoria=module.DocumentacionAdjunta.CATEGORIA_COMPROBANTES,
+        estado=module.DocumentacionAdjunta.ESTADO_VALIDADO,
+        rendicion_cuenta_mensual=rendicion,
+        archivo=SimpleUploadedFile(
+            "documento-bueno.pdf",
+            _pdf_bytes(),
+            content_type="application/pdf",
+        ),
+    )
+    module.DocumentacionAdjunta.objects.create(
+        nombre="documento-invalido.pdf",
+        categoria=module.DocumentacionAdjunta.CATEGORIA_FORMULARIO_II,
+        estado=module.DocumentacionAdjunta.ESTADO_VALIDADO,
+        rendicion_cuenta_mensual=rendicion,
+        archivo=SimpleUploadedFile(
+            "documento-invalido.pdf",
+            b"%PDF-1.4 truncado",
+            content_type="application/pdf",
+        ),
+    )
+
+    client.force_login(superuser)
+    response = client.get(
+        reverse("rendicioncuentasmensual_download_pdf", kwargs={"pk": rendicion.pk})
+    )
+
+    assert response.status_code == 200
+    assert response["Content-Type"] == "application/pdf"
+    assert response.content[:4] == b"%PDF"
 
 
 def test_download_pdf_view_usa_nombre_solicitado_por_issue_2305():
