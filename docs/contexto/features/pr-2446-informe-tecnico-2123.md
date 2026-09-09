@@ -27,7 +27,7 @@
 ## Design system y UI
 
 - El PR toca piezas de UI y conviene revisar consistencia visual con el patrón existente.
-- Archivos visuales relevantes: admisiones/templates/admisiones/admisiones_tecnicos_form.html, admisiones/templates/admisiones/caratula_expediente_form.html, admisiones/templates/admisiones/informe_tecnico_form.html, admisiones/templates/admisiones/partials/informe_tecnico_campos.html, static/custom/css/informeTecnicoSecciones.css, static/custom/js/admisionesactualizarestado.js, static/custom/js/informeTecnicoSecciones.js
+- Archivos visuales relevantes: admisiones/templates/admisiones/admisiones_tecnicos_form.html, admisiones/templates/admisiones/caratula_expediente_form.html, admisiones/templates/admisiones/informe_tecnico_form.html, admisiones/templates/admisiones/partials/confirmar_salir_sin_guardar.html, admisiones/templates/admisiones/partials/informe_tecnico_campos.html, static/custom/css/informeTecnicoSecciones.css, static/custom/js/admisionesactualizarestado.js, static/custom/js/informeTecnicoCambiosSinGuardar.js
 
 ## Memoria operativa para agentes
 
@@ -39,6 +39,7 @@
 - `admisiones/templates/admisiones/admisiones_tecnicos_form.html`
 - `admisiones/templates/admisiones/caratula_expediente_form.html`
 - `admisiones/templates/admisiones/informe_tecnico_form.html`
+- `admisiones/templates/admisiones/partials/confirmar_salir_sin_guardar.html`
 - `admisiones/templates/admisiones/partials/informe_tecnico_campos.html`
 - `admisiones/utils.py`
 - `admisiones/views/web_views.py`
@@ -48,19 +49,16 @@
 - `docs/registro/prs/PR-2446.md`
 - `static/custom/css/informeTecnicoSecciones.css`
 - `static/custom/js/admisionesactualizarestado.js`
+- `static/custom/js/informeTecnicoCambiosSinGuardar.js`
 - `static/custom/js/informeTecnicoSecciones.js`
-- `tests/test_admisiones_forms_unit.py`
-- `tests/test_admisiones_gde_informe_sync_db.py`
-- `tests/test_admisiones_web_views_unit.py`
+- `tests/js/informeTecnicoCambiosSinGuardar.test.js`
+- `tests/test_admisiones_flujo_unico_boton_db.py`
+- ... y 3 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`
-- `docs/contexto/features/pr-2446-informe-tecnico-2123.md`
-- `docs/registro/cambios/2026-08-31-admisiones-informe-tecnico-y-caratula-en-formulario.md`
-- `docs/registro/cambios/2026-09-04-gde-documento-replica-en-informe-tecnico.md`
-- `docs/registro/prs/PR-2446.md`
 
 ## Trazabilidad
 
