@@ -34,36 +34,30 @@
 
 - Empezar por `docs/registro/prs/PR-2438.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
+- `.env.example`
 - `AGENT_REPO_MAP.md`
+- `config/celery.py`
+- `config/settings.py`
+- `core/integrations/renaper.py`
+- `core/services/renaper.py`
+- `docker-compose.celery.yml`
+- `docs/contexto/features/pr-2438-pas-cruces-formacion-faltantes.md`
+- `docs/ia/ARCHITECTURE.md`
+- `docs/implementaciones/pas_control_mensual_celery.md`
 - `docs/indice.md`
 - `docs/operacion/comandos_administracion.md`
+- `docs/registro/cambios/2026-09-07-pas-celery-mensual.md`
 - `docs/registro/decisiones/2026-07-16-pas-formacion-vat.md`
 - `docs/registro/decisiones/2026-07-28-pas-circuito-cruces.md`
 - `docs/registro/decisiones/2026-07-29-pas-supervivencia-renaper.md`
+- `docs/registro/prs/PR-2438.md`
 - `pas/admin.py`
 - `pas/apps.py`
 - `pas/favorite_filters.py`
-- `pas/forms.py`
-- `pas/management/__init__.py`
-- `pas/management/commands/__init__.py`
-- `pas/management/commands/sincronizar_supervivencia_pas.py`
-- `pas/migrations/0004_pascircuitomensual.py`
-- `pas/migrations/0005_pascontrolrenaper_pasincompatibilidad.py`
-- `pas/models.py`
-- `pas/services/cruces_service.py`
-- `pas/services/filter_config.py`
-- `pas/services/formacion_service.py`
-- `pas/services/persona_service.py`
-- ... y 25 archivo(s) adicional(es) relacionados.
+- ... y 46 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
-- `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
-- `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`
-- `docs/operacion/comandos_administracion.md`
-- `docs/registro/decisiones/2026-07-16-pas-formacion-vat.md`
-- `docs/registro/decisiones/2026-07-28-pas-circuito-cruces.md`
-- `docs/registro/decisiones/2026-07-29-pas-supervivencia-renaper.md`
 
 ## Trazabilidad
 
