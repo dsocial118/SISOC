@@ -1120,6 +1120,34 @@ class AdmisionService:
         return True, "Carga de documentación finalizada correctamente."
 
     @staticmethod
+    def finalizar_carga_documentacion_si_corresponde(admision):
+        """Avanza a ``documentacion_carga_finalizada`` cuando hace falta.
+
+        Es el paso previo obligatorio de la caratulación. Permite que un único
+        botón encadene finalizar carga, caratular e informe técnico sin saltear
+        ninguna validación: si la admisión ya pasó ese punto no hace nada, y si
+        todavía no está en condiciones devuelve el motivo.
+
+        Devuelve ``(ok, mensaje)``; ``mensaje`` es ``None`` cuando no había nada
+        que hacer.
+        """
+        if admision.estado_admision != "documentacion_aprobada":
+            return True, None
+
+        if not AdmisionService._todos_obligatorios_tienen_archivos(admision):
+            return (
+                False,
+                "No se puede finalizar la carga: faltan documentos obligatorios.",
+            )
+        if not AdmisionService._todos_obligatorios_aceptados(admision):
+            return (
+                False,
+                "No se puede finalizar la carga: hay documentos obligatorios sin validar.",
+            )
+
+        return AdmisionService._procesar_post_finalizar_carga_documentacion(admision)
+
+    @staticmethod
     def guardar_caratulacion(admision, data, prefix=None):
         """Valida y guarda la caratulación del expediente.
 

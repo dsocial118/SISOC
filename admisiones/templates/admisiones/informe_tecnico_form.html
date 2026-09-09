@@ -18,7 +18,10 @@
     <link rel="stylesheet"
           href="{% static 'custom/css/informeTecnicoSecciones.css' %}" />
     <div class="container-fluid">
-        <form method="post" enctype="multipart/form-data" data-localidades-url="{% url 'ajax_load_localidades' %}">
+        <form method="post"
+              enctype="multipart/form-data"
+              data-localidades-url="{% url 'ajax_load_localidades' %}"
+              data-avisar-cambios-sin-guardar="1">
             {% csrf_token %}
 
             {% for message in messages %}
@@ -69,12 +72,14 @@
                 </div>
             </div>
         </form>
+        {% include "admisiones/partials/confirmar_salir_sin_guardar.html" %}
     </div>
 {% endblock %}
 
 {% block customJS %}
     <script src="{% static 'custom/js/informeTecnicoSecciones.js' %}"></script>
     <script src="{% static 'custom/js/geografiaProvinciaLocalidad.js' %}"></script>
+    <script src="{% static 'custom/js/informeTecnicoCambiosSinGuardar.js' %}"></script>
 {% endblock %}
 
 {# NOTA: este bloque nunca se renderiza; la base declara `customJS`, no `extra_js`. #}

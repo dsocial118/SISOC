@@ -1176,14 +1176,57 @@ class AdmisionesTecnicosUpdateView(LoginRequiredMixin, UpdateView):
             self.get_context_data(informe_form_con_errores=True, **kwargs)
         )
 
+    @staticmethod
+    def _hay_datos_de_caratula(request):
+        """Indica si el usuario cargó algo en los campos de caratulación.
+
+        Se miran solo los campos sin valor inicial: ``expediente_organismo``
+        viene precargado con "MCH" y daría un falso positivo.
+        """
+        return any(
+            (request.POST.get(f"{CARATULA_FORM_PREFIX}-{campo}") or "").strip()
+            for campo in (
+                "expediente_anio",
+                "expediente_numero",
+                "expediente_reparticion",
+            )
+        )
+
+    def _debe_caratular(self, request, admision, action):
+        if admision.num_expediente:
+            return False
+        if action == "submit":
+            # Finalizar exige el expediente caratulado.
+            return True
+        # En borrador se caratula solo si el usuario cargó el expediente; si no,
+        # guardar el borrador no debe quedar bloqueado por un campo que todavía
+        # no completó.
+        return self._hay_datos_de_caratula(request)
+
     def _guardar_informe_y_caratula(self, request, admision, informe_form, action):
-        """Guarda caratulación e informe en una sola transacción.
+        """Encadena finalizar carga documental, caratulación e informe técnico.
+
+        Los tres pasos van en una sola transacción y en el orden que impone la
+        máquina de estados (``documentacion_aprobada`` ->
+        ``documentacion_carga_finalizada`` -> ``expediente_cargado`` ->
+        ``informe_tecnico_en_proceso``), así que un único botón dispara las
+        validaciones de cada uno sin saltear ninguna. Si algo falla no queda
+        nada a medio aplicar.
 
         Devuelve ``(error_caratula_form, error_message)``; ambos ``None`` si el
         guardado fue exitoso.
         """
         with transaction.atomic():
-            if not admision.num_expediente:
+            if self._debe_caratular(request, admision, action):
+                exito, mensaje = (
+                    AdmisionService.finalizar_carga_documentacion_si_corresponde(
+                        admision
+                    )
+                )
+                if not exito:
+                    transaction.set_rollback(True)
+                    return None, mensaje
+
                 exito, mensaje, caratular_form = AdmisionService.guardar_caratulacion(
                     admision, request.POST, prefix=CARATULA_FORM_PREFIX
                 )
