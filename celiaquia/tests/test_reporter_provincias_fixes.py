@@ -168,6 +168,20 @@ def test_metricas_support_dice_legajos_no_expedientes():
 
 
 @pytest.mark.django_db
+def test_filtro_activo_de_documento_persona_se_muestra_como_cuil():
+    """El chip visible debe usar la misma etiqueta CUIL que el filtro y la tabla."""
+    user = _user("fix-cuil-filter-label")
+
+    ctx = _contexto(user, {"documento_persona": "20123456783"})
+
+    assert {"label": "CUIL", "value": "20123456783"} in ctx["filtros_activos"]
+    assert not any(
+        filtro["label"] == "Documento" and filtro["value"] == "20123456783"
+        for filtro in ctx["filtros_activos"]
+    )
+
+
+@pytest.mark.django_db
 def test_paginacion_ordena_con_desempate_estable():
     """Fix #5: la paginación ordena por (-creado_en, -pk), no solo -creado_en."""
     user = _user("fix-pag")

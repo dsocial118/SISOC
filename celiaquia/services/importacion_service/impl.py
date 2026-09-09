@@ -49,9 +49,25 @@ def _estado_doc_pendiente_id():
         raise ValidationError("Falta el estado DOCUMENTO_PENDIENTE")
 
 
+CUIL_LONGITUD = 11
+
+
+def validar_cuil_importacion(valor, campo_nombre="CUIL"):
+    """Valida que el CUIL/CUIT tenga exactamente 11 digitos."""
+    doc_str = str(valor or "").strip()
+    if not doc_str or not doc_str.isdigit():
+        raise ValidationError(f"{campo_nombre} debe contener solo digitos")
+    if len(doc_str) != CUIL_LONGITUD:
+        raise ValidationError(
+            f"El CUIL ingresado es invalido: debe tener {CUIL_LONGITUD} digitos "
+            f"(se ingresaron {len(doc_str)})"
+        )
+    return doc_str
+
+
 def _get_tipo_documento(doc_str):
     """Retorna el tipo de documento basado en la longitud"""
-    if len(str(doc_str or "")) == 11:
+    if len(str(doc_str or "")) == CUIL_LONGITUD:
         return Ciudadano.DOCUMENTO_CUIT
     return Ciudadano.DOCUMENTO_DNI
 
@@ -782,8 +798,7 @@ def _aplicar_defaults_y_validar_payload_importacion(payload):
     doc = payload.get("documento")
     if not doc:
         raise ValidationError("Documento es obligatorio")
-    if not str(doc).isdigit():
-        raise ValidationError("Documento debe contener sólo dígitos")
+    validar_cuil_importacion(doc, "Documento")
 
 
 def _inferir_provincia_desde_municipio_importacion(
@@ -1048,6 +1063,10 @@ def _build_responsable_payload_importacion(
     validar_campos_obligatorios_importacion(
         payload=payload,
         required_fields=IMPORTACION_RESPONSABLE_REQUIRED_FIELDS,
+    )
+
+    validar_cuil_importacion(
+        payload.get("documento_responsable"), "CUIL del responsable"
     )
 
     return {
@@ -1976,25 +1995,17 @@ def _build_callbacks_importacion(warnings):
 
 
 def _validar_documento_importacion(doc_str, campo_nombre, _fila):
-    """Valida formato y longitud de documento."""
+    """Valida formato y longitud de documento (CUIL de 11 digitos)."""
     if not doc_str or not doc_str.isdigit():
-        raise ValidationError(f"{campo_nombre} debe contener solo dígitos")
+        raise ValidationError(f"{campo_nombre} debe contener solo digitos")
 
-    doc_len = len(doc_str)
-
-    if campo_nombre == "documento":
-        if doc_len in (10, 11):
-            return doc_str
-        raise ValidationError(f"{campo_nombre} debe tener entre 10 y 11 dígitos")
-
-    if (
+    es_campo_cuil = campo_nombre == "documento" or (
         "responsable" in campo_nombre
         and "telefono" not in campo_nombre
         and "contacto" not in campo_nombre
-    ):
-        if doc_len in (10, 11):
-            return doc_str
-        raise ValidationError(f"{campo_nombre} debe tener entre 10 y 11 dígitos")
+    )
+    if es_campo_cuil:
+        return validar_cuil_importacion(doc_str, campo_nombre)
 
     return doc_str
 
