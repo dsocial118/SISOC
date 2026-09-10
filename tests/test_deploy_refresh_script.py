@@ -29,7 +29,7 @@ def _mobile_checkout(tmp_path: Path, remote: str) -> Path:
     return checkout
 
 
-def _backend_checkout(tmp_path: Path) -> Path:
+def _backend_checkout(tmp_path: Path, *, include_celery: bool = True) -> Path:
     checkout = tmp_path / "SISOC"
     checkout.mkdir()
     (checkout / ".branch").write_text("development\n", encoding="utf-8")
@@ -37,9 +37,10 @@ def _backend_checkout(tmp_path: Path) -> Path:
     script = checkout / "scripts" / "operacion" / "deploy_refresh.sh"
     script.parent.mkdir(parents=True)
     script.write_bytes(DEPLOY_SCRIPT.read_bytes().replace(b"\r\n", b"\n"))
-    (checkout / "docker-compose.celery.yml").write_text(
-        "services: {}\n", encoding="utf-8"
-    )
+    if include_celery:
+        (checkout / "docker-compose.celery.yml").write_text(
+            "services: {}\n", encoding="utf-8"
+        )
     (checkout / "docker-compose.deploy.yml").write_text(
         "services: {}\n",
         encoding="utf-8",
@@ -69,7 +70,12 @@ case "$1 ${2:-} ${3:-}" in
   "merge --ff-only aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa") exit 0 ;;
   "rev-parse origin/development ") printf '%s\\n' "${FAKE_ORIGIN_SHA:-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}" ;;
   "rev-parse HEAD ") printf '%s\\n' "${FAKE_HEAD_SHA:-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}" ;;
-  "merge --ff-only origin/development") exit 0 ;;
+  "merge --ff-only origin/development")
+    if [[ "${FAKE_CREATE_CELERY_ON_MERGE:-0}" == "1" ]]; then
+      printf 'services: {}\n' > "$repo/docker-compose.celery.yml"
+    fi
+    exit 0
+    ;;
   *) printf 'git falso: comando inesperado: %s\\n' "$*" >&2; exit 2 ;;
 esac
 """,
@@ -86,8 +92,10 @@ def _run_deploy(
     expected_revision: str | None = None,
     origin_revision: str | None = None,
     backend_only: bool = False,
+    backend_has_celery: bool = True,
+    create_celery_on_merge: bool = False,
 ) -> subprocess.CompletedProcess[str]:
-    backend_checkout = _backend_checkout(tmp_path)
+    backend_checkout = _backend_checkout(tmp_path, include_celery=backend_has_celery)
     env_file = tmp_path / ".env"
     env_file.write_text("ENVIRONMENT=qa\n", encoding="utf-8")
     fake_bin = tmp_path / "bin"
@@ -105,6 +113,8 @@ def _run_deploy(
     ]
     if origin_revision:
         env["FAKE_ORIGIN_SHA"] = origin_revision
+    if create_celery_on_merge:
+        env["FAKE_CREATE_CELERY_ON_MERGE"] = "1"
     if dry_run:
         args.append("--dry-run")
     if backend_only:
@@ -211,3 +221,23 @@ def test_revision_esperada_valida_se_registra_en_el_deploy(tmp_path):
     assert result.returncode == 0, result.stderr
     assert f"revision_verificada={EXPECTED_REVISION}" in result.stdout
     assert f"deployed_revision={EXPECTED_REVISION}" in result.stdout
+
+
+def test_checkout_viejo_actualiza_antes_de_exigir_compose_celery(tmp_path):
+    """Permite incorporar un compose nuevo sin interrumpir el deploy de HML."""
+
+    checkout = _mobile_checkout(tmp_path, HTTPS_MOBILE_REMOTE)
+
+    result = _run_deploy(
+        tmp_path,
+        checkout,
+        dry_run=False,
+        backend_only=True,
+        backend_has_celery=False,
+        create_celery_on_merge=True,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.index("merge --ff-only origin/development") < result.stdout.index(
+        "docker compose -f"
+    )
