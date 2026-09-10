@@ -10,10 +10,10 @@ buscador por ciudadano la comparten para evitar que diverjan.
 
 from __future__ import annotations
 
-from django.db.models import F, Q, Value
+from django.db.models import F, OuterRef, Q, Subquery, Value
 from django.db.models.functions import Coalesce
 
-from VAT.models import Centro, Inscripcion
+from VAT.models import Centro, Inscripcion, TituloReferencia
 from VAT.services.access_scope import filter_centros_queryset_for_user
 
 
@@ -21,6 +21,24 @@ def base_inscripciones_queryset_for_user(user):
     centros_ids = filter_centros_queryset_for_user(Centro.objects.all(), user).values(
         "id"
     )
+    titulo_curso = TituloReferencia.objects.filter(
+        plan_estudio_id=OuterRef("comision_curso__curso__plan_estudio_id")
+    ).order_by("id")
+    titulo_oferta = TituloReferencia.objects.filter(
+        plan_estudio_id=OuterRef("comision__oferta__plan_curricular_id")
+    ).order_by("id")
+
+    ruta_curso_visible = Q(
+        comision_curso__deleted_at__isnull=True,
+        comision_curso__curso__deleted_at__isnull=True,
+        comision_curso__curso__centro_id__in=centros_ids,
+    )
+    ruta_oferta_visible = Q(
+        comision__deleted_at__isnull=True,
+        comision__oferta__deleted_at__isnull=True,
+        comision__oferta__centro_id__in=centros_ids,
+    )
+
     return (
         Inscripcion.objects.select_related(
             "comision",
@@ -39,10 +57,7 @@ def base_inscripciones_queryset_for_user(user):
             "comision_curso__curso__modalidad",
             "comision_curso__curso__plan_estudio",
         )
-        .filter(
-            Q(comision_curso__curso__centro_id__in=centros_ids)
-            | Q(comision__oferta__centro_id__in=centros_ids)
-        )
+        .filter(ruta_curso_visible | ruta_oferta_visible)
         .annotate(
             centro_id_ref=Coalesce(
                 F("comision_curso__curso__centro_id"),
@@ -87,6 +102,11 @@ def base_inscripciones_queryset_for_user(user):
                 F("comision__codigo_comision"),
                 Value("Sin comisión"),
             ),
+            comision_nombre_ref=Coalesce(
+                F("comision_curso__nombre"),
+                F("comision__nombre"),
+                Value("Sin nombre"),
+            ),
             programa_id_ref=Coalesce(
                 Value(None),
                 F("comision__oferta__programa_id"),
@@ -96,12 +116,12 @@ def base_inscripciones_queryset_for_user(user):
                 Value("Sin programa"),
             ),
             titulo_id_ref=Coalesce(
-                F("comision_curso__curso__plan_estudio__titulos__id"),
-                F("comision__oferta__plan_curricular__titulos__id"),
+                Subquery(titulo_curso.values("id")[:1]),
+                Subquery(titulo_oferta.values("id")[:1]),
             ),
             titulo_nombre_ref=Coalesce(
-                F("comision_curso__curso__plan_estudio__titulos__nombre"),
-                F("comision__oferta__plan_curricular__titulos__nombre"),
+                Subquery(titulo_curso.values("nombre")[:1]),
+                Subquery(titulo_oferta.values("nombre")[:1]),
                 Value("Sin título"),
             ),
             modalidad_id_ref=Coalesce(

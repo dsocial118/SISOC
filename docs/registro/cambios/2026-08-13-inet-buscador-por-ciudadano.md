@@ -14,7 +14,13 @@ permisos, alcance territorial y trazabilidad. Ver especificación completa en
   `VAT.view_centro`, igual criterio que el reporte existente.
 - Búsqueda por DNI (7-8 dígitos) o CUIT/CUIL (11 dígitos, con o sin
   puntos/guiones); si el número coincide con más de un `tipo_documento` se
-  ofrece desambiguar.
+  ofrece desambiguar. Búsqueda, selección y exportación usan `POST` con CSRF,
+  por lo que el documento no se incorpora a la URL ni al access log habitual;
+  las respuestas privadas se entregan con política `no-store`.
+- Los usuarios con `ciudadanos.view_ciudadano` pueden encontrar ciudadanos sin
+  inscripciones VAT. Los usuarios exclusivamente VAT solo encuentran personas
+  con inscripciones dentro de su alcance; no se diferencia entre inexistencia y
+  falta de acceso.
 - La pantalla muestra la ficha del ciudadano y su trayectoria de inscripciones
   INET: curso, comisión, centro (con CUE vigente), ubicación, período,
   **estado de inscripción** y **resultado final** en columnas separadas
@@ -24,7 +30,9 @@ permisos, alcance territorial y trazabilidad. Ver especificación completa en
   `comision`), respeta el alcance territorial del usuario
   (`filter_centros_queryset_for_user`) y excluye bajas lógicas.
 - Exportación CSV y XLSX de la trayectoria visible, respetando el mismo
-  alcance que la pantalla.
+  alcance que la pantalla y neutralizando fórmulas de planilla.
+- Los planes con varios títulos se resuelven de forma determinística sin
+  multiplicar inscripciones, métricas ni filas exportadas.
 - Es de solo lectura: no permite editar inscripciones desde esta vista.
 
 ## Refactor asociado
@@ -38,8 +46,8 @@ buscador. Ver
 
 ## Validación
 
-- `VAT/test_buscador_ciudadano.py` (normalización, ambas rutas, soft-delete,
-  CUE múltiple, alcance por referente/SSE, resumen, asistencia sin registros,
-  export, permisos).
-- `VAT/test_reporte_inscripciones_asistencia.py` sigue en verde tras el
-  refactor del queryset compartido.
+- `VAT/test_buscador_ciudadano.py` cubre normalización, ambas rutas,
+  soft-delete de inscripción y padres, CUE/títulos múltiples, aislamiento por
+  alcance, búsqueda y exportación POST, fórmula CSV/XLSX y conteo sin N+1.
+- `VAT/test_reporte_inscripciones_asistencia.py` cubre la regresión del
+  queryset compartido usada por el reporte existente.

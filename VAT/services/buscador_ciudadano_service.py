@@ -23,6 +23,7 @@ from openpyxl.styles import Font
 from VAT.models import Inscripcion, InstitucionIdentificadorHist
 from VAT.services.vat_inscripciones_base import base_inscripciones_queryset_for_user
 from ciudadanos.models import Ciudadano
+from core.services.csv_export import build_csv_response, neutralize_csv_formula
 
 DOCUMENTO_LENGTHS = (7, 8)
 CUIL_LENGTH = 11
@@ -56,35 +57,67 @@ def normalizar_identificador(q: str) -> str:
     return re.sub(r"\D", "", q or "")
 
 
-def buscar_ciudadanos(q: str):
-    """Busca por documento (7-8 dígitos) o por CUIT/CUIL (11 dígitos).
+def buscar_ciudadanos(user, q: str):
+    """Busca por documento o CUIT/CUIL dentro del alcance permitido.
 
     Con 11 dígitos se busca por el documento contenido en el CUIL (posiciones
     3 a 10) y por `cuil_cuit` normalizado, para no depender de que el campo
-    esté guardado con o sin guiones.
+    esté guardado con o sin guiones. Solo `ciudadanos.view_ciudadano` habilita
+    buscar personas sin inscripciones VAT visibles; para el resto, no encontrar
+    y estar fuera de alcance producen el mismo resultado.
     """
     digitos = normalizar_identificador(q)
+    ciudadanos = Ciudadano.objects.all()
+
+    if not user.has_perm("ciudadanos.view_ciudadano"):
+        ciudadanos_visibles = (
+            base_inscripciones_queryset_for_user(user).order_by().values("ciudadano_id")
+        )
+        ciudadanos = ciudadanos.filter(pk__in=Subquery(ciudadanos_visibles))
 
     if len(digitos) in DOCUMENTO_LENGTHS:
-        return Ciudadano.objects.filter(documento=int(digitos)).order_by(
-            "apellido", "nombre"
-        )
+        return ciudadanos.filter(documento=int(digitos)).order_by("apellido", "nombre")
 
     if len(digitos) == CUIL_LENGTH:
         documento_candidato = int(digitos[2:10])
         cuil_normalizado = Replace(
-            Replace(F("cuil_cuit"), Value("-"), Value("")),
-            Value("."),
+            Replace(
+                Replace(F("cuil_cuit"), Value("-"), Value("")),
+                Value("."),
+                Value(""),
+            ),
+            Value(" "),
             Value(""),
         )
         return (
-            Ciudadano.objects.annotate(cuil_cuit_normalizado=cuil_normalizado)
+            ciudadanos.annotate(cuil_cuit_normalizado=cuil_normalizado)
             .filter(Q(documento=documento_candidato) | Q(cuil_cuit_normalizado=digitos))
             .order_by("apellido", "nombre")
             .distinct()
         )
 
     return Ciudadano.objects.none()
+
+
+def contar_inscripciones_visibles(user, ciudadanos) -> dict[int, int]:
+    """Cuenta candidatos en una sola consulta, sin revelar filas fuera de scope."""
+    ciudadano_ids = [ciudadano.pk for ciudadano in ciudadanos]
+    if not ciudadano_ids:
+        return {}
+
+    inscripciones_visibles = (
+        base_inscripciones_queryset_for_user(user).order_by().values("pk")
+    )
+    filas = (
+        Inscripcion.objects.filter(
+            pk__in=Subquery(inscripciones_visibles),
+            ciudadano_id__in=ciudadano_ids,
+        )
+        .order_by()
+        .values("ciudadano_id")
+        .annotate(total=Count("id"))
+    )
+    return {fila["ciudadano_id"]: fila["total"] for fila in filas}
 
 
 def build_trayectoria_queryset(user, ciudadano):
@@ -195,14 +228,21 @@ def _periodo_texto(inscripcion) -> str:
 
 
 def _trayectoria_row_cells(inscripcion) -> list:
-    return [
+    comision = inscripcion.comision_codigo_ref or ""
+    if (
+        inscripcion.comision_nombre_ref
+        and inscripcion.comision_nombre_ref != "Sin nombre"
+    ):
+        comision = f"{comision} — {inscripcion.comision_nombre_ref}"
+
+    cells = [
         (
             inscripcion.fecha_inscripcion.strftime("%d/%m/%Y %H:%M")
             if inscripcion.fecha_inscripcion
             else ""
         ),
         inscripcion.unidad_formativa_nombre or "",
-        inscripcion.comision_codigo_ref or "",
+        comision,
         _periodo_texto(inscripcion),
         inscripcion.centro_nombre_ref or "",
         inscripcion.cue_ref or "",
@@ -216,6 +256,7 @@ def _trayectoria_row_cells(inscripcion) -> list:
         inscripcion.estado_comision_ref or "",
         ORIGEN_LABELS.get(inscripcion.origen_canal, inscripcion.origen_canal),
     ]
+    return [neutralize_csv_formula(value) for value in cells]
 
 
 def _export_filename(ciudadano, extension: str) -> str:
@@ -223,20 +264,18 @@ def _export_filename(ciudadano, extension: str) -> str:
     return f"vat_trayectoria_ciudadano_{identificador}.{extension}"
 
 
-def export_trayectoria_to_csv(user, ciudadano) -> HttpResponse:
-    response = HttpResponse(content_type="text/csv; charset=utf-8")
-    response["Content-Disposition"] = (
-        f"attachment; filename={_export_filename(ciudadano, 'csv')}"
-    )
-    response.write("﻿")  # BOM: Excel respeta los acentos en UTF-8
+def export_trayectoria_to_csv(user, ciudadano, *, inscripciones=None) -> HttpResponse:
+    response = build_csv_response(_export_filename(ciudadano, "csv"))
     writer = csv.writer(response)
     writer.writerow(TRAYECTORIA_HEADERS)
-    for inscripcion in build_trayectoria_queryset(user, ciudadano):
+    if inscripciones is None:
+        inscripciones = build_trayectoria_queryset(user, ciudadano)
+    for inscripcion in inscripciones:
         writer.writerow(_trayectoria_row_cells(inscripcion))
     return response
 
 
-def export_trayectoria_to_excel(user, ciudadano) -> HttpResponse:
+def export_trayectoria_to_excel(user, ciudadano, *, inscripciones=None) -> HttpResponse:
     workbook = Workbook()
     worksheet = workbook.active
     worksheet.title = "Trayectoria INET"
@@ -245,7 +284,9 @@ def export_trayectoria_to_excel(user, ciudadano) -> HttpResponse:
     for cell in worksheet[1]:
         cell.font = Font(bold=True)
 
-    for inscripcion in build_trayectoria_queryset(user, ciudadano):
+    if inscripciones is None:
+        inscripciones = build_trayectoria_queryset(user, ciudadano)
+    for inscripcion in inscripciones:
         worksheet.append(_trayectoria_row_cells(inscripcion))
 
     output = BytesIO()

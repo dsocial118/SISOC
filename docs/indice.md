@@ -54,6 +54,7 @@
 - `docs/implementaciones/comedores_nomina_ciudadanos.md`: alta de ciudadanos con DNI/Sin DNI desde nómina y transacción de datos sociales.
 - `docs/implementaciones/centrodefamilia_preinscriptos.md`: contrato del listado y exportación CSV de preinscriptos CDF, incluyendo columnas, ordenamiento y permisos.
 - `docs/vat/`: guías funcionales, API, operación de vouchers y desarrollo del módulo VAT.
+- `docs/vat/manual_usuario.md`: operación de INET/VAT, incluido el Buscador por Ciudadano y su alcance de acceso.
 
 ### 5. Flujos y sincronizaciones
 - `docs/flujos/comedor_sync.md`: cómo funciona la sincronización de comedores con servicios externos.

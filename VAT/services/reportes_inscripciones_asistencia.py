@@ -18,6 +18,7 @@ from VAT.services.tipo_alumno_service import (
     tiene_voucher_activo_subquery,
     tipo_alumno_label,
 )
+from VAT.services.vat_inscripciones_base import base_inscripciones_queryset_for_user
 from core.services.csv_export import build_csv_response
 
 

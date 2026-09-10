@@ -32,12 +32,22 @@ materializa instancias de `Inscripcion` directamente, así que el
 `select_related` inválido rompía con `FieldError`. Se eliminó esa entrada; no
 cambia el comportamiento visible de ninguna de las dos vistas.
 
+El queryset compartido mantiene además la invariante de **una fila por
+inscripción**. Como un plan admite varios `TituloReferencia`, el título singular
+se resuelve por subquery usando el primer título asociado por `id`, igual que la
+propiedad backward-compatible `PlanVersionCurricular.titulo_referencia`. Un join
+directo contra `titulos` multiplicaría inscripciones, totales y exportaciones.
+También se excluyen explícitamente comisiones, cursos y ofertas con baja lógica:
+el manager del modelo raíz no filtra automáticamente los modelos relacionados.
+
 ## Consecuencias
 
 - Una sola fuente de verdad para la resolución de ambas rutas de inscripción:
   reduce el riesgo de que reporte y buscador diverjan a futuro.
-- El reporte no cambia su comportamiento (mismos 5 tests en verde).
+- Reporte y buscador conservan una fila por inscripción aun cuando un plan tenga
+  varios títulos, y omiten padres dados de baja lógica.
 
 ## Validación
 
-- `pytest VAT/test_reporte_inscripciones_asistencia.py VAT/test_buscador_ciudadano.py -v`
+- Comando focalizado:
+  `pytest VAT/test_reporte_inscripciones_asistencia.py VAT/test_buscador_ciudadano.py -v`.

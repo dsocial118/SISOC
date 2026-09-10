@@ -433,12 +433,17 @@ técnico.
 3. Buscar. Si el número coincide con más de una persona (mismo número, distinto
    tipo de documento), el sistema pide elegir a cuál consultar.
 
+La búsqueda y las descargas se envían de forma segura: el documento no aparece
+en la dirección del navegador ni puede guardarse como enlace.
+
 **Qué muestra:**
 - Ficha del ciudadano (nombre, documento, CUIL/CUIT, email, teléfono) con
   enlace a su legajo si el usuario tiene permiso sobre Ciudadanos.
-- Contadores: total de inscripciones, en curso, completadas, abandonadas,
-  rechazadas y % de asistencia global.
-- Tabla con cada inscripción: curso, comisión, centro (con CUE vigente),
+- Contadores: total de inscripciones, en curso, pre-inscriptas, en espera,
+  completadas, abandonadas, rechazadas, aprobadas, desaprobadas, sin calificar
+  y % de asistencia global.
+- Tabla con cada inscripción: curso, comisión (código, nombre y enlace al
+  detalle cuando corresponde), centro (con CUE vigente),
   ubicación, período, **estado de la inscripción** y **resultado final** en
   columnas separadas, y asistencia.
 - Exportación CSV y XLSX de la trayectoria visible.
@@ -450,10 +455,13 @@ o `abandonada`/`rechazada`) indica si la persona cursó. El resultado final
 independiente del estado — una inscripción `completada` puede seguir "sin
 calificar" hasta que se cargue la nota.
 
-**Alcance de acceso:** la búsqueda respeta el mismo alcance que el resto de
-INET. Un referente de centro solo ve las inscripciones de sus centros; SSE y
-el perfil Admin Visualizador ven la trayectoria completa del país. Cuando el
-alcance está limitado, la pantalla muestra una leyenda fija: el listado
+**Alcance de acceso:** quienes poseen `ciudadanos.view_ciudadano` pueden
+encontrar cualquier ciudadano, aunque no tenga inscripciones VAT. Un usuario
+exclusivamente VAT solo puede encontrar personas con al menos una inscripción
+dentro de su alcance; el sistema no confirma si una persona fuera de alcance
+existe. Un referente solo ve inscripciones de sus centros; SSE y el perfil
+Admin Visualizador ven la trayectoria VAT del país. Cuando el alcance está
+limitado, la pantalla muestra una leyenda fija: el listado
 **no representa necesariamente** la trayectoria completa de la persona en
 INET, sino la parte visible para ese usuario.
 

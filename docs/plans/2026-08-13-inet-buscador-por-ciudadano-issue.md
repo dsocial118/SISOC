@@ -141,11 +141,14 @@ entradas hermanas.
 Un solo campo, `q`, que acepta DNI (`46272601`) o CUIL/CUIT (`20-46272601-5`, `20462726015`).
 Normalización: quitar puntos, guiones y espacios; si quedan 11 dígitos se busca por
 `cuil_cuit` **y** por el documento contenido; si quedan 7–8 dígitos, por `documento`.
-El submit es `GET` (URL compartible/marcable), sin datos personales más allá de `q`.
+El submit es `POST` con protección CSRF. El DNI/CUIL no se incluye en la URL,
+el historial del navegador ni el access log habitual del proxy.
 
 Casos a contemplar:
 - Sin resultados de ciudadano → estado vacío con el texto de "no se encontró un ciudadano con ese documento".
-- Ciudadano existente sin inscripciones INET → se muestra la ficha con la tabla vacía.
+- Ciudadano existente sin inscripciones INET → solo se muestra la ficha si el
+  usuario posee `ciudadanos.view_ciudadano`; para usuarios exclusivamente VAT
+  se responde igual que ante un ciudadano inexistente, evitando revelar su existencia.
 - Más de un ciudadano coincidente (mismo número, distinto `tipo_documento` — la unicidad es
   `documento_unico_key` = tipo+número, [ciudadanos/models.py:263](ciudadanos/models.py:263)) →
   listar candidatos para que el usuario elija.
@@ -220,16 +223,20 @@ centros visibles según `filter_centros_queryset_for_user`
 - **Provincial** → solo inscripciones en centros de su alcance territorial.
 - **Referente / revisor de centro** → solo inscripciones en sus centros.
 
-Un referente que busca a un ciudadano ve la ficha y **solo las inscripciones de sus centros**.
-No se revela el conteo de inscripciones fuera de alcance (evita inferencia de trayectoria por
-diferencia). Sí se muestra una leyenda fija indicando que el resultado está limitado al
-alcance del usuario, para que no se lea como "no hizo ningún otro curso".
+Un usuario con `ciudadanos.view_ciudadano` puede encontrar cualquier ciudadano,
+incluso si no tiene inscripciones VAT. Los usuarios que solo poseen permisos VAT
+pueden encontrarlo únicamente cuando existe al menos una inscripción dentro de su
+alcance; "inexistente" y "fuera de alcance" producen la misma respuesta. Una vez
+autorizado el ciudadano, la trayectoria sigue filtrada por los centros visibles y
+no se revela el conteo de inscripciones fuera de alcance. La pantalla muestra una
+leyenda fija cuando el alcance no es nacional.
 
 **Permisos de ruta**: `permissions_any_required(["VAT.view_inscripcion", "VAT.view_centro"])`,
 mismo criterio que la ruta del reporte — [VAT/urls.py:165](VAT/urls.py:165).
 
-**Datos personales**: el parámetro `q` viaja en querystring (es el criterio de búsqueda, no
-un dato derivado); nombre, email y teléfono nunca deben ir a la URL. Ver `docs/ia/SECURITY_AI.md`.
+**Datos personales**: búsqueda, selección de candidato y exportación usan `POST`
+con CSRF. DNI/CUIL, nombre, email y teléfono nunca deben ir en la URL. Ver
+`docs/ia/SECURITY_AI.md`.
 
 ## 9. Diseño técnico
 
@@ -246,8 +253,8 @@ templates/includes/sidebar/opciones.html     ← nueva entrada de menú
   `export_trayectoria_to_csv/_to_excel(user, ciudadano)`. Reusar los `Coalesce` de
   `_base_queryset_for_user` en vez de duplicarlos: si hace falta, extraer esa función a un
   helper compartido — es la única pieza con riesgo real de divergencia entre las dos vistas.
-- **View**: espeja `ReporteInscriptosAsistenciasView`
-  ([VAT/views/reporte.py:21](VAT/views/reporte.py:21)), incluido el manejo de `?export=`.
+- **View**: usa `POST` para búsqueda, selección y exportación; `GET` solo renderiza
+  el estado inicial.
 - **Template**: extiende `includes/main.html`, estética consistente con
   `vat/reportes/inscripciones_asistencia.html`.
 - **Export**: cabeceras y formato alineados con `VAT/services/nomina_export.py`.
@@ -262,9 +269,12 @@ templates/includes/sidebar/opciones.html     ← nueva entrada de menú
 - [ ] Estado de inscripción y resultado final se muestran en columnas separadas; `resultado_final` nulo se lee "Sin calificar".
 - [ ] Una inscripción sin registros de asistencia muestra "Sin registros", no `0%`.
 - [ ] Referente de centro A no ve la inscripción del mismo ciudadano en centro B; SSE ve ambas.
-- [ ] Ciudadano inexistente y ciudadano sin inscripciones muestran estados vacíos distintos y explícitos.
+- [ ] Con `ciudadanos.view_ciudadano`, ciudadano inexistente y ciudadano sin
+  inscripciones muestran estados distintos; para usuarios exclusivamente VAT,
+  inexistente y fuera de alcance son indistinguibles.
 - [ ] Documento presente con dos `tipo_documento` distintos ofrece elegir entre candidatos.
-- [ ] Export CSV y XLSX respetan el alcance y contienen las mismas filas que la pantalla.
+- [ ] Export CSV y XLSX usan POST, respetan el alcance, contienen las mismas
+  filas que la pantalla y neutralizan fórmulas de planilla.
 - [ ] La consulta completa se resuelve en un número acotado de queries (sin N+1 al recorrer filas en el template).
 
 ## 11. Tests

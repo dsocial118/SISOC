@@ -1,10 +1,12 @@
 from datetime import date, time
+from io import BytesIO
 
 import pytest
 from django.contrib.auth.models import Group, Permission, User
 from django.contrib.contenttypes.models import ContentType
 from django.test import Client
 from django.urls import reverse
+from openpyxl import load_workbook
 
 from VAT.models import (
     AsistenciaSesion,
@@ -21,12 +23,15 @@ from VAT.models import (
     PlanVersionCurricular,
     Sector,
     SesionComision,
+    TituloReferencia,
 )
 from VAT.services.buscador_ciudadano_service import (
     build_resumen,
     build_trayectoria_queryset,
     buscar_ciudadanos,
+    contar_inscripciones_visibles,
     export_trayectoria_to_csv,
+    export_trayectoria_to_excel,
 )
 from ciudadanos.models import Ciudadano
 from core.models import Dia, Localidad, Municipio, Programa, Provincia, Sexo
@@ -37,6 +42,14 @@ def _grant_referente_role(user):
         content_type=ContentType.objects.get_for_model(Group),
         codename="role_centroreferentevat",
         defaults={"name": "ReferenteCentroVAT legacy"},
+    )
+    user.user_permissions.add(permission)
+
+
+def _grant_model_permission(user, model, codename):
+    permission = Permission.objects.get(
+        content_type=ContentType.objects.get_for_model(model),
+        codename=codename,
     )
     user.user_permissions.add(permission)
 
@@ -177,17 +190,19 @@ def _ciudadano(**overrides):
 
 @pytest.mark.django_db
 def test_normaliza_cuil_y_dni():
+    admin = User.objects.create_superuser(username="buscar-normaliza")
     ciudadano = _ciudadano(documento=30123456, cuil_cuit="20-30123456-5")
 
     for query in ("30123456", "20-30123456-5", "20301234565", "30.123.456"):
-        resultado = list(buscar_ciudadanos(query))
+        resultado = list(buscar_ciudadanos(admin, query))
         assert resultado == [ciudadano], f"query={query!r} no encontró al ciudadano"
 
 
 @pytest.mark.django_db
 def test_ciudadano_inexistente_devuelve_estado_vacio():
-    assert list(buscar_ciudadanos("99999999")) == []
-    assert list(buscar_ciudadanos("abc")) == []
+    admin = User.objects.create_superuser(username="buscar-inexistente")
+    assert list(buscar_ciudadanos(admin, "99999999")) == []
+    assert list(buscar_ciudadanos(admin, "abc")) == []
 
 
 @pytest.mark.django_db
@@ -246,6 +261,21 @@ def test_excluye_soft_deleted():
         estado="inscripta",
     )
     de_baja.delete()
+
+    comision_de_baja = _build_comision_curso(
+        centro=centro,
+        localidad=localidad,
+        modalidad=modalidad,
+        suffix="COMBAJA",
+    )
+    inscripcion_con_padre_de_baja = Inscripcion.objects.create(
+        ciudadano=ciudadano,
+        comision_curso=comision_de_baja,
+        estado="inscripta",
+    )
+    comision_de_baja.delete(cascade=False)
+
+    assert Inscripcion.objects.filter(pk=inscripcion_con_padre_de_baja.pk).exists()
 
     filas = list(build_trayectoria_queryset(admin, ciudadano))
     assert [fila.id for fila in filas] == [activa.id]
@@ -473,6 +503,8 @@ def test_ruta_requiere_permiso():
 
     response = client.get(reverse("vat_buscador_ciudadano"))
     assert response.status_code == 403
+    response = client.post(reverse("vat_buscador_ciudadano"), {"q": "30123456"})
+    assert response.status_code == 403
 
 
 @pytest.mark.django_db
@@ -485,3 +517,249 @@ def test_ruta_accesible_con_permiso():
 
     response = client.get(reverse("vat_buscador_ciudadano"))
     assert response.status_code == 200
+
+
+@pytest.mark.django_db
+def test_permiso_ciudadanos_habilita_busqueda_sin_inscripciones():
+    user = User.objects.create_user(username="busqueda-global")
+    _grant_model_permission(user, Ciudadano, "view_ciudadano")
+    ciudadano = _ciudadano(documento=30200009)
+
+    assert list(buscar_ciudadanos(user, "30200009")) == [ciudadano]
+
+
+@pytest.mark.django_db
+def test_busqueda_vat_no_revela_ciudadano_fuera_de_scope():
+    provincia, municipio, localidad = _geo()
+    modalidad = ModalidadCursada.objects.create(nombre="Presencial Lookup", activo=True)
+    referente = User.objects.create_user(username="ref-lookup")
+    _grant_referente_role(referente)
+
+    centro_visible = _centro_basico(
+        "CFP Lookup Visible",
+        "CFP-LKV",
+        provincia,
+        municipio,
+        localidad,
+        referente,
+    )
+    centro_oculto = _centro_basico(
+        "CFP Lookup Oculto", "CFP-LKO", provincia, municipio, localidad
+    )
+    visible = _ciudadano(documento=30200010)
+    oculto = _ciudadano(documento=30200011, nombre="PersonaFueraDeScope")
+    Inscripcion.objects.create(
+        ciudadano=visible,
+        comision_curso=_build_comision_curso(
+            centro=centro_visible,
+            localidad=localidad,
+            modalidad=modalidad,
+            suffix="LKV",
+        ),
+        estado="inscripta",
+    )
+    Inscripcion.objects.create(
+        ciudadano=oculto,
+        comision_curso=_build_comision_curso(
+            centro=centro_oculto,
+            localidad=localidad,
+            modalidad=modalidad,
+            suffix="LKO",
+        ),
+        estado="inscripta",
+    )
+
+    assert list(buscar_ciudadanos(referente, "30200010")) == [visible]
+    assert list(buscar_ciudadanos(referente, "30200011")) == []
+
+
+@pytest.mark.django_db
+def test_multiples_titulos_no_duplican_inscripcion():
+    provincia, municipio, localidad = _geo()
+    modalidad = ModalidadCursada.objects.create(
+        nombre="Presencial Títulos", activo=True
+    )
+    sector = Sector.objects.create(nombre="Sector Títulos")
+    plan = PlanVersionCurricular.objects.create(
+        nombre="Plan Títulos",
+        provincia=provincia,
+        sector=sector,
+        modalidad_cursada=modalidad,
+    )
+    titulo_elegido = TituloReferencia.objects.create(
+        nombre="Título B", plan_estudio=plan
+    )
+    TituloReferencia.objects.create(nombre="Título A", plan_estudio=plan)
+    admin = User.objects.create_superuser(username="sse-titulos")
+    centro = _centro_basico("CFP Títulos", "CFP-TIT", provincia, municipio, localidad)
+    comision = _build_comision_curso(
+        centro=centro, localidad=localidad, modalidad=modalidad, suffix="TIT"
+    )
+    comision.curso.plan_estudio = plan
+    comision.curso.save(update_fields=["plan_estudio"])
+    ciudadano = _ciudadano(documento=30200012)
+    inscripcion = Inscripcion.objects.create(
+        ciudadano=ciudadano, comision_curso=comision, estado="inscripta"
+    )
+
+    filas = list(build_trayectoria_queryset(admin, ciudadano))
+
+    assert [fila.pk for fila in filas] == [inscripcion.pk]
+    assert filas[0].titulo_id_ref == titulo_elegido.pk
+
+
+@pytest.mark.django_db
+def test_conteo_de_candidatos_se_resuelve_en_una_query(django_assert_num_queries):
+    provincia, municipio, localidad = _geo()
+    modalidad = ModalidadCursada.objects.create(nombre="Presencial Conteo", activo=True)
+    admin = User.objects.create_superuser(username="sse-conteo")
+    centro = _centro_basico("CFP Conteo", "CFP-CNT", provincia, municipio, localidad)
+    ciudadanos = [
+        _ciudadano(documento=30200013),
+        _ciudadano(
+            documento=30200013,
+            tipo_documento=Ciudadano.DOCUMENTO_PASAPORTE,
+            nombre="Otro candidato",
+        ),
+    ]
+    for index, ciudadano in enumerate(ciudadanos):
+        Inscripcion.objects.create(
+            ciudadano=ciudadano,
+            comision_curso=_build_comision_curso(
+                centro=centro,
+                localidad=localidad,
+                modalidad=modalidad,
+                suffix=f"CNT{index}",
+            ),
+            estado="inscripta",
+        )
+
+    with django_assert_num_queries(1):
+        totales = contar_inscripciones_visibles(admin, ciudadanos)
+
+    assert totales == {ciudadano.pk: 1 for ciudadano in ciudadanos}
+
+    client = Client()
+    client.force_login(admin)
+    url = reverse("vat_buscador_ciudadano")
+    candidatos_response = client.post(url, {"q": 30200013})
+    assert candidatos_response.context["estado"] == "candidatos"
+
+    seleccionado_response = client.post(
+        url,
+        {"q": 30200013, "ciudadano_id": ciudadanos[1].pk},
+    )
+    assert seleccionado_response.context["estado"] == "resultado"
+    assert seleccionado_response.context["ciudadano"] == ciudadanos[1]
+
+
+@pytest.mark.django_db
+def test_exports_neutralizan_formulas_en_csv_y_xlsx():
+    provincia, municipio, localidad = _geo()
+    modalidad = ModalidadCursada.objects.create(
+        nombre="Presencial Export Seguro", activo=True
+    )
+    admin = User.objects.create_superuser(username="sse-export-seguro")
+    centro = _centro_basico("=2+2", "CFP-SEG", provincia, municipio, localidad)
+    ciudadano = _ciudadano(documento=30200014)
+    Inscripcion.objects.create(
+        ciudadano=ciudadano,
+        comision_curso=_build_comision_curso(
+            centro=centro,
+            localidad=localidad,
+            modalidad=modalidad,
+            suffix="SEG",
+        ),
+        estado="inscripta",
+    )
+
+    csv_response = export_trayectoria_to_csv(admin, ciudadano)
+    assert "'=2+2" in csv_response.content.decode("utf-8-sig")
+
+    xlsx_response = export_trayectoria_to_excel(admin, ciudadano)
+    workbook = load_workbook(BytesIO(xlsx_response.content), data_only=False)
+    centro_cell = workbook["Trayectoria INET"]["E2"]
+    assert centro_cell.value == "'=2+2"
+    assert centro_cell.data_type == "s"
+
+
+@pytest.mark.django_db
+def test_busqueda_y_export_se_procesan_solo_por_post():
+    provincia, municipio, localidad = _geo()
+    modalidad = ModalidadCursada.objects.create(nombre="Presencial POST", activo=True)
+    admin = User.objects.create_superuser(username="sse-post")
+    centro = _centro_basico("CFP POST", "CFP-PST", provincia, municipio, localidad)
+    ciudadano = _ciudadano(documento=30200015)
+    Inscripcion.objects.create(
+        ciudadano=ciudadano,
+        comision_curso=_build_comision_curso(
+            centro=centro,
+            localidad=localidad,
+            modalidad=modalidad,
+            suffix="PST",
+        ),
+        estado="inscripta",
+    )
+    client = Client()
+    client.force_login(admin)
+    url = reverse("vat_buscador_ciudadano")
+
+    get_response = client.get(url, {"q": ciudadano.documento})
+    assert get_response.context["estado"] == "inicial"
+
+    post_response = client.post(url, {"q": ciudadano.documento})
+    assert post_response.context["estado"] == "resultado"
+    assert post_response.context["ciudadano"] == ciudadano
+    assert post_response.request["QUERY_STRING"] == ""
+    assert post_response["Cache-Control"] == "no-store, private"
+
+    export_response = client.post(
+        url,
+        {
+            "q": ciudadano.documento,
+            "ciudadano_id": ciudadano.pk,
+            "export": "csv",
+        },
+    )
+    assert export_response.status_code == 200
+    assert export_response["Content-Type"].startswith("text/csv")
+    assert export_response.request["QUERY_STRING"] == ""
+    assert export_response["Cache-Control"] == "no-store, private"
+
+
+@pytest.mark.django_db
+def test_vista_no_expone_datos_de_ciudadano_fuera_de_scope():
+    provincia, municipio, localidad = _geo()
+    modalidad = ModalidadCursada.objects.create(nombre="Presencial PII", activo=True)
+    referente = User.objects.create_user(username="ref-pii")
+    _grant_referente_role(referente)
+    _grant_model_permission(referente, Inscripcion, "view_inscripcion")
+    centro_oculto = _centro_basico(
+        "CFP PII Oculto", "CFP-PII", provincia, municipio, localidad
+    )
+    ciudadano = _ciudadano(
+        documento=30200016,
+        nombre="NombrePrivadoFueraDeScope",
+        email="privado@example.test",
+    )
+    Inscripcion.objects.create(
+        ciudadano=ciudadano,
+        comision_curso=_build_comision_curso(
+            centro=centro_oculto,
+            localidad=localidad,
+            modalidad=modalidad,
+            suffix="PII",
+        ),
+        estado="inscripta",
+    )
+    client = Client()
+    client.force_login(referente)
+
+    response = client.post(
+        reverse("vat_buscador_ciudadano"), {"q": ciudadano.documento}
+    )
+    contenido = response.content.decode()
+
+    assert response.context["estado"] == "no_encontrado"
+    assert "NombrePrivadoFueraDeScope" not in contenido
+    assert "privado@example.test" not in contenido

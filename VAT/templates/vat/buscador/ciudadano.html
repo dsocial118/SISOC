@@ -106,6 +106,7 @@
         }
 
         .busc-card-head__right { margin-left: auto; display: flex; gap: 8px; }
+        .busc-inline-form { margin: 0; }
 
         .busc-card-body { padding: 22px 26px; }
 
@@ -331,12 +332,14 @@
                 <span>Buscar ciudadano</span>
             </div>
             <div class="busc-card-body">
-                <form method="get" class="busc-search-row">
+                <form method="post" class="busc-search-row" autocomplete="off">
+                    {% csrf_token %}
                     <label class="busc-field" for="id_q">
                         <span class="busc-field__label">DNI o CUIL / CUIT</span>
                         <input type="search"
                                id="id_q"
                                name="q"
+                               autocomplete="off"
                                value="{{ q }}"
                                placeholder="Ej.: 30123456 · 20-30123456-5" />
                     </label>
@@ -407,10 +410,17 @@
                                     · {{ item.total_inscripciones }} inscripción{{ item.total_inscripciones|pluralize:"es" }} INET
                                 </span>
                             </div>
-                            <a class="busc-btn busc-btn--primary busc-btn--sm"
-                               href="?q={{ q|urlencode }}&ciudadano_id={{ item.ciudadano.pk }}">
-                                <i class="bi bi-arrow-right"></i>Ver trayectoria
-                            </a>
+                            <form method="post" class="busc-inline-form">
+                                {% csrf_token %}
+                                <input type="hidden" name="q" value="{{ q }}" />
+                                <input type="hidden"
+                                       name="ciudadano_id"
+                                       value="{{ item.ciudadano.pk }}" />
+                                <button class="busc-btn busc-btn--primary busc-btn--sm"
+                                        type="submit">
+                                    <i class="bi bi-arrow-right"></i>Ver trayectoria
+                                </button>
+                            </form>
                         </div>
                     {% endfor %}
                 </div>
@@ -489,6 +499,26 @@
                     <div class="busc-kpi__n">{{ resumen.rechazadas }}</div>
                     <div class="busc-kpi__l">Rechazadas</div>
                 </div>
+                <div class="busc-kpi busc-kpi--grey">
+                    <div class="busc-kpi__n">{{ resumen.pre_inscriptas }}</div>
+                    <div class="busc-kpi__l">Pre-inscriptas</div>
+                </div>
+                <div class="busc-kpi busc-kpi--grey">
+                    <div class="busc-kpi__n">{{ resumen.en_espera }}</div>
+                    <div class="busc-kpi__l">En espera</div>
+                </div>
+                <div class="busc-kpi busc-kpi--green">
+                    <div class="busc-kpi__n">{{ resumen.aprobadas }}</div>
+                    <div class="busc-kpi__l">Aprobadas</div>
+                </div>
+                <div class="busc-kpi busc-kpi--red">
+                    <div class="busc-kpi__n">{{ resumen.desaprobadas }}</div>
+                    <div class="busc-kpi__l">Desaprobadas</div>
+                </div>
+                <div class="busc-kpi busc-kpi--grey">
+                    <div class="busc-kpi__n">{{ resumen.sin_calificar }}</div>
+                    <div class="busc-kpi__l">Sin calificar</div>
+                </div>
                 <div class="busc-kpi busc-kpi--teal">
                     <div class="busc-kpi__n">{{ resumen.porcentaje_asistencia }}%</div>
                     <div class="busc-kpi__l">Asistencia global</div>
@@ -501,14 +531,30 @@
                     <span>Trayectoria formativa</span>
                     {% if inscripciones %}
                         <div class="busc-card-head__right">
-                            <a href="?q={{ q|urlencode }}&ciudadano_id={{ ciudadano.pk }}&export=csv"
-                               class="busc-btn busc-btn--ghost busc-btn--sm">
-                                <i class="bi bi-filetype-csv"></i>CSV
-                            </a>
-                            <a href="?q={{ q|urlencode }}&ciudadano_id={{ ciudadano.pk }}&export=xlsx"
-                               class="busc-btn busc-btn--ghost busc-btn--sm">
-                                <i class="bi bi-file-earmark-excel"></i>XLSX
-                            </a>
+                            <form method="post" class="busc-inline-form">
+                                {% csrf_token %}
+                                <input type="hidden" name="q" value="{{ q }}" />
+                                <input type="hidden"
+                                       name="ciudadano_id"
+                                       value="{{ ciudadano.pk }}" />
+                                <input type="hidden" name="export" value="csv" />
+                                <button type="submit"
+                                        class="busc-btn busc-btn--ghost busc-btn--sm">
+                                    <i class="bi bi-filetype-csv"></i>CSV
+                                </button>
+                            </form>
+                            <form method="post" class="busc-inline-form">
+                                {% csrf_token %}
+                                <input type="hidden" name="q" value="{{ q }}" />
+                                <input type="hidden"
+                                       name="ciudadano_id"
+                                       value="{{ ciudadano.pk }}" />
+                                <input type="hidden" name="export" value="xlsx" />
+                                <button type="submit"
+                                        class="busc-btn busc-btn--ghost busc-btn--sm">
+                                    <i class="bi bi-file-earmark-excel"></i>XLSX
+                                </button>
+                            </form>
                         </div>
                     {% endif %}
                 </div>
@@ -537,7 +583,16 @@
                                             {{ inscripcion.unidad_formativa_nombre }}
                                             <span class="busc-sub">Curso: {{ inscripcion.estado_curso_ref|default:"—" }}</span>
                                         </td>
-                                        <td>{{ inscripcion.comision_codigo_ref }}</td>
+                                        <td>
+                                            {% if inscripcion.comision_curso_id and perms.VAT.view_comisioncurso %}
+                                                <a href="{% url 'vat_comision_curso_detail' inscripcion.comision_curso_id %}">{{ inscripcion.comision_codigo_ref }}</a>
+                                            {% elif inscripcion.comision_id and perms.VAT.view_comision %}
+                                                <a href="{% url 'vat_comision_detail' inscripcion.comision_id %}">{{ inscripcion.comision_codigo_ref }}</a>
+                                            {% else %}
+                                                {{ inscripcion.comision_codigo_ref }}
+                                            {% endif %}
+                                            <span class="busc-sub">{{ inscripcion.comision_nombre_ref }}</span>
+                                        </td>
                                         <td class="busc-nowrap">
                                             {% if inscripcion.periodo_inicio_ref %}
                                                 {{ inscripcion.periodo_inicio_ref|date:"d/m/Y" }}
