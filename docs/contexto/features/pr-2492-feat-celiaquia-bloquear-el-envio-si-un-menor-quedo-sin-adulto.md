@@ -39,7 +39,9 @@
 - `celiaquia/views/confirm_envio.py`
 - `celiaquia/views/expediente.py`
 - `celiaquia/views/legajo.py`
+- `docs/contexto/features/pr-2492-feat-celiaquia-bloquear-el-envio-si-un-menor-quedo-sin-adulto.md`
 - `docs/registro/cambios/2026-09-09-2430-menor-sin-adulto-responsable.md`
+- `docs/registro/prs/PR-2492.md`
 - `static/custom/js/expediente_detail.js`
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
