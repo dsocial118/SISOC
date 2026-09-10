@@ -1,0 +1,11 @@
+{% for persona in personas %}
+    <a href="?persona={{ persona.id }}&q={{ query|urlencode }}&estado_formacion={{ estado_formacion }}"
+       class="{% if persona_seleccionada_id == persona.id %}is-active{% endif %} pas-formation-person-link">
+        <strong>{{ persona.apellidos }}, {{ persona.nombres }}</strong>
+        <span class="pas-points-badge is-{{ persona.estado_formacion }}">{{ persona.puntos_formacion }} pts</span>
+    </a>
+{% empty %}
+    <div class="pas-empty-state pas-formation-empty">
+        <strong>Sin titulares para los filtros elegidos</strong>
+    </div>
+{% endfor %}

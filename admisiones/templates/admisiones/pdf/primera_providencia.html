@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8" />
+        <title>{{ titulo }}</title>
+        <style>
+@page {
+    size: A4;
+    margin: 3.5cm 2cm 2.5cm 2cm; /* top right bottom left */
+    @top-center { content: element(header); }
+    @bottom-center {
+      content: "Página " counter(page) " de " counter(pages);
+      font-size: 10pt;
+      color: #666;
+    }
+  }
+
+  html { hyphens: auto; }
+  body {
+    font-family: Arial, sans-serif;
+    font-size: 10pt;
+    margin: 0;
+    line-height: 1.35;
+  }
+
+  .watermark {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-30deg);
+    font-size: 120pt;
+    font-weight: 700;
+    color: #cccccc;
+    opacity: 0.25;
+    white-space: nowrap;
+    z-index: 0;
+  }
+      
+  #header {
+    position: running(header);
+    height: 3cm;
+    padding: 0.5cm 1cm;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    /* El body usa hyphens:auto para justificar; en el encabezado eso partia
+       palabras al medio ("PROGRA-MA", "Secreta-ria"). */
+    hyphens: none;
+  }
+
+  .header-left {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    padding-top: 15px;
+    padding-right: 30px;
+    font-size: 10pt;
+    text-align: center;
+  }
+
+  .header-right {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 9pt;
+    text-align: center;
+    line-height: 1.1;
+    padding-left: 30px;
+  }
+  .header-right img {
+    max-height: 40px;
+    height: auto;
+    width: auto;
+    margin-bottom: 0;
+    filter: grayscale(100%);
+  }
+
+  .header-left, .header-right {
+    hyphens: none;
+    flex: 0 0 auto;
+  }
+
+  main {
+    box-sizing: border-box;
+    position: relative;
+    z-index: 1;
+  }
+
+  h4 { text-align: center; margin: 0 0 10px 0; }
+
+  main p, main li { text-align: justify; text-justify: inter-word; hyphens: auto; }
+  main p { margin: 0 0 10px 0; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0 0 0;
+    border: 2px solid #000;
+  }
+  th, td { padding: 6px; border: 1px solid #ccc; vertical-align: top; }
+  th[colspan="2"] { text-align: center; background-color: #f0f0f0; }
+
+  .salto_pagina { page-break-before: always; }
+  .table-bordered { border: 1px solid #ccc; }
+  .text-center { text-align: center; }
+  .text-start { text-align: left; }
+  .align-middle { vertical-align: middle; }
+        </style>
+    </head>
+    <body>
+        {% if informe.estado != 'Validado' %}<div class="watermark" aria-hidden="true">BORRADOR</div>{% endif %}
+        <div id="header">
+            <div class="header-left">
+                <br />
+                PROGRAMA ALIMENTAR COMUNIDAD
+            </div>
+            <div class="header-right">
+                <img src="https://www.casarosada.gob.ar/images/escudo_nacional_argentino.png"
+                     style="filter: grayscale(100%);
+                            max-height:40px" />
+                <br />
+                Secretaría de Niñez, Adolescencia y Familia
+                <br />
+                Ministerio de Capital Humano
+            </div>
+        </div>
+        <main>
+            <h4>{{ titulo }}</h4>
+            <p>Sr. DIRECTOR NACIONAL DE PROGRAMAS ALIMENTARIOS:</p>
+            <p>
+                Por las presentes actuaciones tramitan las gestiones inherentes a la celebración de un Convenio de Gestión a suscribirse entre la SECRETARÍA NACIONAL DE NIÑEZ, ADOLESCENCIA Y FAMILIA DEL MINISTERIO DE CAPITAL HUMANO y la {{ informe.nombre_organizacion }} DE LA PROVINCIA DE {{ informe.provincia_organizacion }}, en el marco del Programa ALIMENTAR COMUNIDAD.
+            </p>
+            <p>
+                Es de señalar que mediante Resolución del entonces MINISTERIO DE DESARROLLO SOCIAL DE LA NACIÓN N.° RESOL-2023-230-APN-MDS del 17 de febrero de 2023 y sus normas modificatorias y complementarias, se creó el Programa “ALIMENTAR COMUNIDAD”, a los fines de otorgar una prestación económica para la asistencia a Comedores y Merenderos Comunitarios, conforme a los Lineamientos Técnicos y Operativos fijados en el Anexo - IF-2025-32668963-APN-SSPH#MCH.
+            </p>
+            <p>
+                En dicho contexto, la Entidad citada ha presentado una solicitud inherente al financiamiento del Comedor/Merendero “{{ informe.nombre_espacio }}” de la Ciudad de {{ informe.localidad_espacio }}, Partido de {{ informe.partido_espacio }}, Provincia de {{ informe.provincia_espacio }}, así como la documentación institucional correspondiente.
+            </p>
+            <p>
+                A dicho efecto, y habiéndose verificado la existencia y/o funcionamiento del espacio objeto de financiamiento, y cumplidos los requisitos técnicos y administrativos previstos, dicha solicitud cuenta con evaluación técnica favorable conforme surge del Informe Técnico N° {{ admision.numero_if_tecnico }}.
+            </p>
+            {% if providencia.tipo == "renovacion" %}
+                <p>
+                    La misma constituye la continuidad del financiamiento del servicio alimentario en el marco del Programa citado, conforme surge de los antecedentes incorporados en las presentes actuaciones.
+                </p>
+            {% endif %}
+            <p>
+                En consecuencia, se sugiere dar curso al trámite conducente a la aprobación de un CONVENIO DE GESTIÓN a suscribirse con la Entidad Requirente citada precedentemente, que regule los aspectos inherentes al objeto de financiamiento, forma y condiciones de pago y acreditación, y prestación y alcance del servicio.
+            </p>
+            <p>
+                En dicho Convenio, se prevee afectar fondos para el servicio alimentario correspondiente, así como un importe adicional equivalente al 6% del monto total de las prestaciones alimentarias aprobadas, el cual está destinado a financiar los Gastos Accesorios, tales como artículos de higiene y limpieza, insumos y/o gastos operativos de funcionamiento y/o conectividad. Este importe busca compensar los costos indirectos esenciales con la finalidad de garantizar la sostenibilidad operativa del efector y asegurar que la prestación se brinde en condiciones logísticas y sanitarias adecuadas, sin que estos afecten al normal y habitual funcionamiento del espacio en cuestión.
+            </p>
+            {% if variante == "judicializados" %}
+                <p>
+                    Finalmente, resulta pertinente señalar que el presente trámite se encuentra relacionado a la causa judicial caratulada como “{{ providencia.caratula_causa }}”, en trámite ante el {{ providencia.juzgado }}, teniéndose presente lo señalado en {{ providencia.memo }}, agregado a los presentes actuados; no resultando alcanzado, en consecuencia, por lo establecido en la Resolución N.° RESOL-2025-151-APN-MCH del 31 de marzo de 2025 en lo que respecta al límite de incorporaciones por cada entidad requirente.
+                </p>
+            {% elif variante == "cinco_comedores" %}
+                <p>
+                    Finalmente, resulta pertinente señalar, que con el propósito de garantizar la continuidad de la asistencia alimentaria, corresponde destacar que lo establecido en la Resolución N.° RESOL-2025-151-APN-MCH de fecha 31 de marzo de 2025, en lo relativo al límite de incorporaciones por Entidad Requirente, no resulta aplicable a aquellas organizaciones que, al momento del dictado de la mencionada norma, ya contaban con efectores incorporados al Programa o recibían asistencia en el marco de otros programas alimentarios de similar naturaleza financiados por el Gobierno Nacional.
+                </p>
+            {% endif %}
+            <p>
+                Se agrega a los presentes actuados el proyecto de Convenio, en calidad de archivo de trabajo, así como su correspondiente documento identificado como {{ proyecto_convenio_if }}, el cual cuenta con mi conformidad.
+            </p>
+            <p>
+                Por lo expuesto con carácter precedente, se remiten los presentes actuados para la intervención de su competencia.
+            </p>
+        </main>
+    </body>
+</html>

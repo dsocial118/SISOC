@@ -3,10 +3,13 @@ from django.contrib import messages
 
 from pas.models import (
     PasAviso,
+    PasCircuitoMensual,
+    PasControlRenaper,
     PasDeclaracionJurada,
     PasEstado,
     PasExportacionTokens,
     PasHistorialEstado,
+    PasIncompatibilidad,
     PasInforme,
     PasInvitacionDDJJ,
     PasPersona,
@@ -68,6 +71,50 @@ class PasInformeAdmin(admin.ModelAdmin):
         "usuario__last_name",
     )
     filter_horizontal = ("personas", "cambios")
+
+
+@admin.register(PasCircuitoMensual)
+class PasCircuitoMensualAdmin(admin.ModelAdmin):
+    list_display = (
+        "periodo",
+        "fecha_exportacion_sintys",
+        "fecha_importacion_sintys",
+        "fecha_cierre",
+    )
+    readonly_fields = (
+        "fecha_exportacion_sintys",
+        "exportado_por",
+        "fecha_importacion_sintys",
+        "importado_por",
+    )
+
+
+@admin.register(PasControlRenaper)
+class PasControlRenaperAdmin(admin.ModelAdmin):
+    list_display = ("persona", "fecha_consulta", "resultado", "consultado")
+    list_filter = ("fecha_consulta", "resultado")
+    search_fields = ("persona__dni", "persona__apellidos", "persona__nombres")
+    readonly_fields = (
+        "persona",
+        "fecha_consulta",
+        "resultado",
+        "sexo_consulta",
+        "error_tipo",
+        "consultado",
+    )
+
+
+@admin.register(PasIncompatibilidad)
+class PasIncompatibilidadAdmin(admin.ModelAdmin):
+    list_display = (
+        "persona",
+        "categoria",
+        "periodo_impacto",
+        "estado",
+        "fecha_deteccion",
+    )
+    list_filter = ("categoria", "periodo_impacto", "estado")
+    search_fields = ("persona__dni", "persona__apellidos", "persona__nombres")
 
 
 @admin.register(PasInvitacionDDJJ)
