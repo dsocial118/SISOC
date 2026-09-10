@@ -30,6 +30,8 @@
 
 - Empezar por `docs/registro/prs/PR-2490.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
+- `docs/contexto/features/pr-2490-test-ci-corregir-checks-bloqueados-en-development.md`
+- `docs/registro/prs/PR-2490.md`
 - `tests/test_importacion_codigo_postal_telefono.py`
 - `tests/test_importacion_service_helpers_unit.py`
 - `tests/test_legajo_editar_view_unit.py`
