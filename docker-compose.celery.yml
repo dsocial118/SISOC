@@ -1,0 +1,52 @@
+services:
+  redis:
+    image: redis:7.4.8-alpine
+    command: [redis-server, --appendonly, "yes", --maxmemory-policy, noeviction]
+    volumes:
+      - pas_redis:/data
+    restart: unless-stopped
+    healthcheck:
+      test: [CMD, redis-cli, ping]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  celery_pas_worker:
+    build:
+      context: .
+      dockerfile: docker/django/Dockerfile
+    env_file: [.env]
+    environment:
+      CELERY_BROKER_URL: redis://redis:6379/0
+    volumes: [".:/sisoc/"]
+    command: [celery, -A, config.celery:app, worker, -Q, pas, --concurrency=1, --loglevel=INFO, --hostname=pas@%h]
+    restart: unless-stopped
+    stop_grace_period: 6m
+    healthcheck:
+      test: [CMD-SHELL, 'celery -A config.celery:app inspect ping --destination "pas@$$HOSTNAME" --timeout 10']
+      interval: 60s
+      timeout: 20s
+      retries: 3
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  celery_beat:
+    build:
+      context: .
+      dockerfile: docker/django/Dockerfile
+    env_file: [.env]
+    environment:
+      CELERY_BROKER_URL: redis://redis:6379/0
+    volumes:
+      - .:/sisoc/
+      - pas_beat:/beat
+    command: [celery, -A, config.celery:app, beat, --loglevel=INFO, --schedule=/beat/schedule]
+    restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
+
+volumes:
+  pas_redis:
+  pas_beat:

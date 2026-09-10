@@ -1,0 +1,162 @@
+{% extends "includes/main.html" %}
+{% load static %}
+{% block title %}Buscador PAS{% endblock %}
+{% block breadcrumb %}{% endblock %}
+{% block head %}
+    <link rel="stylesheet" href="{% static 'custom/css/pas.css' %}" />
+{% endblock %}
+{% block app-header %}
+    <div class="pas-top-actions">
+        <a href="{% url 'inicio' %}" class="btn btn-light">
+            <i class="bi bi-arrow-left" aria-hidden="true"></i>
+            Volver
+        </a>
+        <a href="{% url 'pas_informe_listar' %}" class="btn btn-outline-light">
+            <i class="bi bi-file-earmark-bar-graph" aria-hidden="true"></i>
+            Informes
+        </a>
+    </div>
+{% endblock %}
+{% block content %}
+    <main class="pas-workspace">
+        <header class="pas-module-header">
+            <div>
+                <span class="pas-eyebrow">Programa de Acompañamiento Social</span>
+                <h1>Buscador PAS</h1>
+            </div>
+            <span class="pas-source-chip">
+                <i class="bi bi-database-check" aria-hidden="true"></i>
+                Padrón SISOC
+            </span>
+        </header>
+
+        <section class="pas-search-panel" aria-labelledby="pas-search-title">
+            <div class="pas-section-heading">
+                <div>
+                    <span class="pas-eyebrow">Panel de Control</span>
+                    <h2 id="pas-search-title">Buscador PAS</h2>
+                </div>
+                <div class="pas-panel-actions">
+                    {% if perms.pas.add_paspersona %}
+                        <a href="{% url 'pas_titulares_importar' %}"
+                           class="btn btn-primary"
+                           title="Importar titulares desde CSV">
+                            <i class="bi bi-file-earmark-arrow-up" aria-hidden="true"></i>
+                            Importar titulares
+                        </a>
+                    {% endif %}
+                    {% if perms.pas.export_ddjj_tokens %}
+                        <a href="{% url 'pas_tokens_exportar' %}"
+                           class="btn btn-outline-light"
+                           title="Descargar tokens vigentes de DDJJ">
+                            <i class="bi bi-file-earmark-excel" aria-hidden="true"></i>
+                            Exportar tokens
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <form method="get" class="pas-search-form" role="search">
+                <label class="visually-hidden" for="pas-query">Buscar titular</label>
+                <div class="pas-search-input">
+                    <i class="bi bi-search" aria-hidden="true"></i>
+                    <input id="pas-query"
+                           type="search"
+                           name="q"
+                           value="{{ query }}"
+                           placeholder="Buscar por nombre, CUIT, DNI o IdPersona"
+                           autocomplete="off" />
+                </div>
+                <label class="visually-hidden" for="pas-estado">Estado</label>
+                <select id="pas-estado" name="estado" class="form-select">
+                    <option value="">Todos los estados</option>
+                    {% for estado in estados_pas %}
+                        <option value="{{ estado.nombre }}"
+                                {% if estado_seleccionado == estado.nombre %}selected{% endif %}>
+                            {{ estado.nombre }}
+                        </option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="btn btn-primary" title="Buscar">
+                    <i class="bi bi-search" aria-hidden="true"></i>
+                    <span>Buscar</span>
+                </button>
+                {% if query or estado_seleccionado %}
+                    <a href="{% url 'pas_persona_listar' %}"
+                       class="btn btn-outline-light"
+                       title="Limpiar búsqueda">
+                        <i class="bi bi-x-lg" aria-hidden="true"></i>
+                    </a>
+                {% endif %}
+            </form>
+
+            <div class="pas-table-wrap">
+                <table class="pas-table">
+                    <thead>
+                        <tr>
+                            <th>Titular</th>
+                            <th>CUIT</th>
+                            <th>Ubicación</th>
+                            <th>Estado</th>
+                            <th>Avisos</th>
+                            <th class="pas-table-actions">
+                                <span class="visually-hidden">Acciones</span>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for persona in personas %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'pas_panel_control_persona' persona.id %}"
+                                       class="pas-person-link">
+                                        <strong>{{ persona.apellidos }}, {{ persona.nombres }}</strong>
+                                        <span>DNI {{ persona.dni }} · IdPersona {{ persona.id_persona }}</span>
+                                    </a>
+                                </td>
+                                <td>{{ persona.cuit|default:"-" }}</td>
+                                <td>
+                                    {{ persona.provincia.nombre|default:"-" }}
+                                    <span class="pas-cell-secondary">{{ persona.municipio.nombre|default:"" }}</span>
+                                </td>
+                                <td>
+                                    <span class="pas-status-pill {{ persona.estado.css_class }}">{{ persona.estado.nombre }}</span>
+                                </td>
+                                <td>
+                                    <div class="pas-aviso-stack">
+                                        {% for aviso in persona.avisos.all %}
+                                            <span class="pas-aviso-card">{{ aviso.codigo }}</span>
+                                        {% empty %}
+                                            <span class="pas-cell-secondary">Sin avisos</span>
+                                        {% endfor %}
+                                    </div>
+                                </td>
+                                <td class="pas-table-actions">
+                                    <a href="{% url 'pas_panel_control_persona' persona.id %}"
+                                       class="btn btn-sm btn-outline-light"
+                                       title="Abrir panel de control de {{ persona.nombres }} {{ persona.apellidos }}">
+                                        <i class="bi bi-chevron-right" aria-hidden="true"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="6">
+                                    <div class="pas-empty-state">
+                                        <i class="bi bi-person-x" aria-hidden="true"></i>
+                                        <strong>Sin titulares para los criterios seleccionados</strong>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <footer class="pas-list-footer">
+                <span>Padrón actual: {{ total_padron }} titular{{ total_padron|pluralize:"es" }}</span>
+                {% include "components/pagination.html" with query=query %}
+            </footer>
+        </section>
+    </main>
+{% endblock %}

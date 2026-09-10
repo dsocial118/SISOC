@@ -1,0 +1,15 @@
+<nav class="pas-workflow" aria-label="Circuito PAS">
+    {% for item in pas_areas %}
+        <a class="pas-workflow-card {% if item.active %}is-active{% endif %}"
+           href="{{ item.url }}">
+            <span class="pas-workflow-number">{{ item.number }}</span>
+            <strong>{{ item.title }}</strong>
+            <span>{{ item.subtitle }}</span>
+            {% if item.source_status == "pendiente" %}
+                <i class="bi bi-cloud-slash pas-workflow-source"
+                   title="Integración pendiente"
+                   aria-label="Integración pendiente"></i>
+            {% endif %}
+        </a>
+    {% endfor %}
+</nav>

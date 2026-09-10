@@ -797,3 +797,21 @@ OCR_COLOR_SAT_THRESHOLD = _safe_int_env("OCR_COLOR_SAT_THRESHOLD", 90)
 # psm 3, oem 3). El default de SISOC se elige por evidencia (ver docs/ocr.md).
 OCR_TESSERACT_PSM = _safe_int_env("OCR_TESSERACT_PSM", -1)
 OCR_TESSERACT_OEM = _safe_int_env("OCR_TESSERACT_OEM", -1)
+
+# Tareas mensuales PAS: resultados y puntos de control en MySQL;
+# el broker solo transporta identificadores.
+CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "redis://redis:6379/0")
+CELERY_TIMEZONE = "America/Argentina/Buenos_Aires"
+CELERY_TASK_DEFAULT_QUEUE = "pas"
+CELERY_TASK_IGNORE_RESULT = True
+CELERY_WORKER_PREFETCH_MULTIPLIER = 1
+CELERY_TASK_SOFT_TIME_LIMIT = 360
+CELERY_TASK_TIME_LIMIT = 420
+CELERY_BROKER_TRANSPORT_OPTIONS = {"visibility_timeout": 900}
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+PAS_MONTHLY_ENABLED = _safe_bool_env("PAS_MONTHLY_ENABLED", False)
+PAS_BATCH_SIZE = max(1, _safe_int_env("PAS_BATCH_SIZE", 2000))
+PAS_BATCH_SECONDS = max(1, min(240, _safe_int_env("PAS_BATCH_SECONDS", 240)))
+PAS_REQUESTS_PER_SECOND = max(0.1, float(os.getenv("PAS_REQUESTS_PER_SECOND", "16")))
+PAS_CONCURRENCY = max(1, _safe_int_env("PAS_CONCURRENCY", 2))
+PAS_CIRCUIT_BREAKER_TIMEOUTS = max(1, _safe_int_env("PAS_CIRCUIT_BREAKER_TIMEOUTS", 8))

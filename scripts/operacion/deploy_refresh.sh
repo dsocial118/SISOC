@@ -253,6 +253,7 @@ compose_for_environment() {
       ;;
   esac
 
+  COMPOSE_FILES+=("docker-compose.celery.yml")
   COMPOSE_CMD=(docker compose)
   for file in "${COMPOSE_FILES[@]}"; do
     require_file "$ROOT_DIR/$file"
