@@ -646,7 +646,7 @@ def test_download_pdf_view_no_falla_por_pdf_invalido(
 
     assert response.status_code == 200
     assert response["Content-Type"] == "application/pdf"
-    assert response.content[:4] == b"%PDF"
+    assert b"".join(response.streaming_content)[:4] == b"%PDF"
 
 
 def test_download_pdf_view_usa_nombre_solicitado_por_issue_2305():
