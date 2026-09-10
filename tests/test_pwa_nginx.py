@@ -3,7 +3,6 @@ from pathlib import Path
 
 import pytest
 
-
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = REPO_ROOT / "scripts/operacion"
 
@@ -19,7 +18,7 @@ def renderer(monkeypatch):
     return module
 
 
-def test_active_nginx_exposes_only_legacy_espacios(renderer):
+def test_active_nginx_exposes_both_espacios_routes(renderer):
     apps = renderer.configuration(SCRIPTS / "pwas.json")
     for app in apps[1:]:
         app["enabled"] = False
@@ -29,6 +28,13 @@ def test_active_nginx_exposes_only_legacy_espacios(renderer):
     assert "127.0.0.1:8081/" not in content
     assert "127.0.0.1:8082/" not in content
     assert "rewrite ^/mobile/" not in content
+    assert "location ^~ /pwa/espacioscomunitarios/" in content
+    assert "proxy_pass http://127.0.0.1:8080/pwa/espacioscomunitarios/;" in content
+    assert "rewrite ^/pwa/espacioscomunitarios/" not in content
+    assert (
+        "location = /pwa/espacioscomunitarios { return 302 "
+        "/pwa/espacioscomunitarios/$is_args$args; }"
+    ) in content
 
 
 def test_default_nginx_routes_both_new_apps_with_legacy_aliases(renderer):

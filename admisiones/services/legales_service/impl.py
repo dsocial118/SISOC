@@ -27,8 +27,8 @@ from core.security import safe_redirect
 logger = logging.getLogger("django")
 
 from admisiones.models.admisiones import (
-    FormularioProyectoDisposicion,
     FormularioProyectoDeConvenio,
+    Providencia,
     DocumentosExpediente,
     Admision,
     ArchivoAdmision,
@@ -47,14 +47,14 @@ from admisiones.services.legales_filter_config import (
 from admisiones.forms.admisiones_forms import (
     LegalesNumIFForm,
     LegalesRectificarForm,
-    ProyectoDisposicionForm,
     ProyectoConvenioForm,
     ConvenioNumIFFORM,
-    DisposicionNumIFFORM,
+    PrimeraProvidenciaForm,
+    SegundaProvidenciaForm,
+    ProvidenciaGDEPVForm,
     IntervencionJuridicosForm,
     InformeSGAForm,
     ConvenioForm,
-    DisposicionForm,
     ReinicioExpedienteForm,
     SolicitarInformeComplementarioForm,
     DocumentosExpedienteForm,
@@ -122,15 +122,27 @@ class LegalesService:
 
         if admision.dictamen_motivo == "observacion en proyecto de convenio":
             FormularioProyectoDeConvenio.objects.filter(admision=admision).delete()
-            FormularioProyectoDisposicion.objects.filter(admision=admision).delete()
+            Providencia.objects.filter(admision=admision).delete()
             reset_fields["estado_legales"] = "Expediente Agregado"
         elif admision.dictamen_motivo == "observacion en proyecto de disposicion":
-            FormularioProyectoDisposicion.objects.filter(admision=admision).delete()
+            Providencia.objects.filter(admision=admision).delete()
             reset_fields["estado_legales"] = "IF Convenio Asignado"
 
         for field, value in reset_fields.items():
             setattr(admision, field, value)
         admision.save()
+
+    @staticmethod
+    def _es_judicializado(admision):
+        """Sale del legajo del comedor, que puede no estar asociado."""
+        comedor = getattr(admision, "comedor", None)
+        return bool(getattr(comedor, "es_judicializado", False))
+
+    @staticmethod
+    def _providencias(admision):
+        """Devuelve la (primera, segunda) providencia de la admisión."""
+        por_orden = {p.orden: p for p in admision.providencias.all()}
+        return por_orden.get("primera"), por_orden.get("segunda")
 
     @staticmethod
     def get_botones_disponibles(admision):
@@ -140,7 +152,7 @@ class LegalesService:
         puede_rectificar = not admision.legales_num_if
 
         formulario_proyecto = admision.admisiones_proyecto_convenio.first()
-        formulario_reso = admision.admisiones_proyecto_disposicion.first()
+        primera, segunda = LegalesService._providencias(admision)
 
         if admision.enviado_legales and admision.estado_legales == "Enviado a Legales":
             if puede_rectificar:
@@ -154,10 +166,19 @@ class LegalesService:
         elif admision.estado_legales == "Formulario Convenio Creado":
             botones.append("if_convenio")
         elif admision.estado_legales == "IF Convenio Asignado":
-            botones.append("formulario_disposicion")
-        elif admision.estado_legales == "Formulario Disposición Creado":
-            botones.append("if_disposicion")
+            botones.append("primera_providencia")
+        elif admision.estado_legales == "Formulario Primera Providencia Creado":
+            botones.append("gde_pv_primera")
+        elif admision.estado_legales == "IF Primera Providencia Asignado":
+            botones.append("segunda_providencia")
+        elif admision.estado_legales == "Formulario Segunda Providencia Creado":
+            botones.append("gde_pv_segunda")
+        elif admision.estado_legales == "IF Segunda Providencia Asignado":
+            botones.append("intervencion_juridicos")
         elif admision.estado_legales == "IF Disposición Asignado":
+            # Estado del circuito viejo de Disposición. Ya no se generan, pero
+            # si quedó alguna admisión acá se la deja avanzar a Jurídicos en vez
+            # de dejarla sin ningún botón y trabada.
             botones.append("intervencion_juridicos")
         elif admision.estado_legales == "Juridicos: Rechazado":
             if admision.rechazo_juridicos_motivo == "providencia":
@@ -189,28 +210,27 @@ class LegalesService:
                 botones.append("formulario_convenio")
             elif formulario_proyecto and not formulario_proyecto.numero_if:
                 botones.append("if_convenio")
-            elif formulario_proyecto.numero_if and not formulario_reso:
-                botones.append("formulario_disposicion")
-            elif formulario_reso and not formulario_reso.numero_if:
-                botones.append("if_disposicion")
-            elif (
-                formulario_proyecto.numero_if
-                and formulario_reso.numero_if
-                and not admision.intervencion_juridicos
-            ):
+            elif not primera:
+                botones.append("primera_providencia")
+            elif not primera.numero_gde_pv:
+                botones.append("gde_pv_primera")
+            elif not segunda:
+                botones.append("segunda_providencia")
+            elif not segunda.numero_gde_pv:
+                botones.append("gde_pv_segunda")
+            elif not admision.intervencion_juridicos:
                 botones.append("intervencion_juridicos")
 
-            if puede_rectificar and not formulario_proyecto and not formulario_reso:
+            if puede_rectificar and not formulario_proyecto and not primera:
                 botones.append("rectificar")
 
-        if not admision.numero_disposicion and (
-            admision.estado_legales == "Juridicos: Validado"
+        # Antes el Convenio exigía tener cargada la Disposición. Eliminada la
+        # Disposición, se habilita directamente con la validación de Jurídicos.
+        # Se contempla también el estado viejo por si quedó alguna admisión ahí.
+        if not admision.numero_convenio and (
+            admision.estado_legales in ("Juridicos: Validado", "Disposición Firmada")
             or admision.informe_sga
-            or admision.numero_convenio
         ):
-            botones.append("disposicion")
-
-        if admision.numero_disposicion and not admision.numero_convenio:
             botones.append("convenio")
 
         if (
@@ -243,12 +263,14 @@ class LegalesService:
                 "agregar_expediente": "Expediente Agregado",
                 "formulario_convenio": "Formulario Convenio Creado",
                 "if_convenio": "IF Convenio Asignado",
-                "formulario_disposicion": "Formulario Disposición Creado",
-                "if_disposicion": "IF Disposición Asignado",
-                "disposicion_firmada": "Disposición Firmada",
+                "primera_providencia": "Formulario Primera Providencia Creado",
+                "gde_pv_primera": "IF Primera Providencia Asignado",
+                "segunda_providencia": "Formulario Segunda Providencia Creado",
+                "gde_pv_segunda": "IF Segunda Providencia Asignado",
                 "informe_sga": "Informe SGA Generado",
-                "convenio": "Convenio Firmado",
-                "disposicion": "Acompañamiento Pendiente",
+                # Sin Disposición, el Convenio pasa a ser el último paso del
+                # circuito y es el que deja la admisión lista para Acompañamiento.
+                "convenio": "Acompañamiento Pendiente",
                 "rectificar": "A Rectificar",
                 "reinicio_expediente": "Archivado",
                 "informe_complementario": "Informe Complementario Solicitado",
@@ -375,10 +397,7 @@ class LegalesService:
             form = ConvenioForm(request.POST, request.FILES, instance=admision)
             if form.is_valid():
                 form.save()
-                if admision.numero_disposicion:
-                    LegalesService.actualizar_estado_por_accion(admision, "disposicion")
-                else:
-                    LegalesService.actualizar_estado_por_accion(admision, "convenio")
+                LegalesService.actualizar_estado_por_accion(admision, "convenio")
                 messages.success(request, "Convenio guardado correctamente.")
             else:
                 logger.error("Errores en ConvenioForm: %s", form.errors)
@@ -389,30 +408,6 @@ class LegalesService:
                 "Error en guardar_convenio", extra={"admision_pk": admision.pk}
             )
             messages.error(request, "Error inesperado al guardar el Convenio.")
-            return redirect("admisiones_legales_ver", pk=admision.pk)
-
-    @staticmethod
-    def guardar_disposicion(request, admision):
-        try:
-            form = DisposicionForm(request.POST, request.FILES, instance=admision)
-            if form.is_valid():
-                form.save()
-                if admision.numero_convenio:
-                    LegalesService.actualizar_estado_por_accion(admision, "disposicion")
-                else:
-                    LegalesService.actualizar_estado_por_accion(
-                        admision, "disposicion_firmada"
-                    )
-                messages.success(request, "Disposición guardada correctamente.")
-            else:
-                logger.error("Errores en DisposicionForm: %s", form.errors)
-                messages.error(request, "Error al guardar Disposición.")
-            return redirect("admisiones_legales_ver", pk=admision.pk)
-        except Exception:
-            logger.exception(
-                "Error en guardar_disposicion", extra={"admision_pk": admision.pk}
-            )
-            messages.error(request, "Error inesperado al guardar Disposición.")
             return redirect("admisiones_legales_ver", pk=admision.pk)
 
     @staticmethod
@@ -588,7 +583,7 @@ class LegalesService:
         try:
 
             FormularioProyectoDeConvenio.objects.filter(admision=admision).delete()
-            FormularioProyectoDisposicion.objects.filter(admision=admision).delete()
+            Providencia.objects.filter(admision=admision).delete()
 
             admision.intervencion_juridicos = None
             admision.rechazo_juridicos_motivo = None
@@ -630,48 +625,321 @@ class LegalesService:
             )
             return LegalesService._safe_redirect(request, admision)
 
+    VARIANTE_BASE = "base"
+    VARIANTE_CINCO_COMEDORES = "cinco_comedores"
+    VARIANTE_JUDICIALIZADOS = "judicializados"
+
     @staticmethod
-    def guardar_dispo_num_if(request, admision):
+    def _bloquear_fuera_de_secuencia(request, admision, boton, etiqueta):
+        """Corta la acción si el botón no corresponde al estado actual.
+
+        La UI ya oculta el botón, pero sin esta validación un POST directo con
+        una sesión válida podía reemitir una providencia o pisar un número de
+        GDE ya asignado, dejando documento, identificador externo y estado en
+        contradicción. Se usa `get_botones_disponibles` como única fuente de
+        verdad de la secuencia.
+
+        Devuelve una respuesta de redirección si hay que cortar, o None si la
+        acción es válida.
+        """
+        if boton in LegalesService.get_botones_disponibles(admision):
+            return None
+
+        logger.warning(
+            "Acción de providencia fuera de secuencia",
+            extra={
+                "admision_pk": admision.pk,
+                "accion": boton,
+                "estado_legales": admision.estado_legales,
+            },
+        )
+        messages.error(
+            request,
+            f"No se puede {etiqueta}: el expediente está en estado "
+            f"'{admision.estado_legales or 'sin estado'}'.",
+        )
+        return LegalesService._safe_redirect(request, admision)
+
+    @staticmethod
+    def _variante_providencia(providencia):
+        """Elige la variante de template de la Primera Providencia.
+
+        Judicializado tiene precedencia sobre la cantidad de espacios: son dos
+        justificaciones distintas de la misma excepción y el documento sólo
+        admite una. Legales no definió qué hacer si se dan las dos, así que se
+        deja registro cuando ocurre.
+        """
+        if providencia.es_judicializado:
+            if providencia.cantidad_espacios == "mas_de_5":
+                logger.warning(
+                    "Providencia judicializada y con más de 5 espacios; "
+                    "se emite la variante judicializados",
+                    extra={"providencia_pk": providencia.pk},
+                )
+            return LegalesService.VARIANTE_JUDICIALIZADOS
+        if providencia.cantidad_espacios == "mas_de_5":
+            return LegalesService.VARIANTE_CINCO_COMEDORES
+        return LegalesService.VARIANTE_BASE
+
+    @staticmethod
+    def _contexto_providencia(admision, providencia, variante):
+        """Contexto compartido por el DOCX y el PDF de una providencia."""
+        informe = (
+            InformeTecnico.objects.filter(admision=admision).order_by("-id").first()
+        )
+        proyecto_convenio = admision.admisiones_proyecto_convenio.first()
+        return {
+            "admision": admision,
+            "comedor": admision.comedor,
+            "providencia": providencia,
+            "informe": informe,
+            "variante": variante,
+            "proyecto_convenio_if": (
+                proyecto_convenio.numero_if if proyecto_convenio else ""
+            ),
+            "titulo": providencia.get_orden_display(),
+        }
+
+    @staticmethod
+    def _generar_archivos_providencia(admision, providencia):
+        """Genera y guarda el PDF y el DOCX de la providencia."""
+        from weasyprint import HTML
+
+        if providencia.orden == "primera":
+            variante = LegalesService._variante_providencia(providencia)
+            tipo_admision = admision.tipo or "incorporacion"
+            docx_template = f"{tipo_admision}_docx_primera_providencia_{variante}.docx"
+            pdf_template = "admisiones/pdf/primera_providencia.html"
+            prefijo = "primera-providencia"
+        else:
+            variante = None
+            docx_template = "segunda_providencia.docx"
+            pdf_template = "admisiones/pdf/segunda_providencia.html"
+            prefijo = "segunda-providencia"
+
+        context = LegalesService._contexto_providencia(admision, providencia, variante)
+
+        html_pdf = render_to_string(pdf_template, context)
+        if not html_pdf.strip():
+            raise ValueError(f"El template {pdf_template} devolvió contenido vacío.")
+
+        base_url = str(
+            getattr(settings, "STATIC_ROOT", "")
+            or getattr(settings, "BASE_DIR", "")
+            or "."
+        )
+        pdf_bytes = HTML(string=html_pdf, base_url=base_url).write_pdf()
+        if not pdf_bytes:
+            raise ValueError("WeasyPrint no devolvió contenido para el PDF generado.")
+
+        docx_content = DocumentTemplateService.generar_docx(
+            template_name=docx_template,
+            context=context,
+            app_name="admisiones",
+        )
+        if not docx_content:
+            raise ValueError("El servicio de generación de DOCX devolvió None.")
+
+        nombre_comedor = getattr(admision.comedor, "nombre", None) or "sin-nombre"
+        fecha_actual = date.today().strftime("%Y-%m-%d")
+        base_filename = (
+            slugify(f"{prefijo}-{nombre_comedor}-{fecha_actual}")
+            or f"{prefijo}-{fecha_actual}"
+        )
+
+        if providencia.archivo:
+            providencia.archivo.delete(save=False)
+        providencia.archivo.save(
+            f"{base_filename}.pdf", ContentFile(pdf_bytes), save=False
+        )
+
+        if providencia.archivo_docx:
+            providencia.archivo_docx.delete(save=False)
+        providencia.archivo_docx.save(f"{base_filename}.docx", docx_content, save=False)
+
+        providencia.save(update_fields=["archivo", "archivo_docx"])
+
+    @staticmethod
+    def guardar_primera_providencia(request, admision):
+        """Genera la Primera Providencia y sus documentos descargables."""
+        bloqueo = LegalesService._bloquear_fuera_de_secuencia(
+            request, admision, "primera_providencia", "generar la Primera Providencia"
+        )
+        if bloqueo is not None:
+            return bloqueo
+
         try:
-            formulario = (
-                admision.admisiones_proyecto_disposicion.first()
-                or FormularioProyectoDisposicion(admision=admision)
+            with transaction.atomic():
+                existente = Providencia.objects.filter(
+                    admision=admision, orden="primera"
+                ).first()
+                es_judicializado = LegalesService._es_judicializado(admision)
+                form = PrimeraProvidenciaForm(
+                    request.POST,
+                    instance=existente,
+                    es_judicializado=es_judicializado,
+                )
+                if not form.is_valid():
+                    logger.error("Errores en PrimeraProvidenciaForm: %s", form.errors)
+                    messages.error(request, "Error al generar la Primera Providencia.")
+                    return redirect("admisiones_legales_ver", pk=admision.pk)
+
+                providencia = form.save(commit=False)
+                providencia.admision = admision
+                providencia.orden = "primera"
+                providencia.tipo = admision.tipo
+                providencia.es_judicializado = es_judicializado
+                if request.user.is_authenticated:
+                    providencia.creado_por = request.user
+                providencia.save()
+
+                LegalesService._generar_archivos_providencia(admision, providencia)
+                LegalesService.actualizar_estado_por_accion(
+                    admision, "primera_providencia"
+                )
+                messages.success(request, "Primera Providencia generada correctamente.")
+                return redirect("admisiones_legales_ver", pk=admision.pk)
+        except Exception as e:
+            logger.exception(
+                "Error en guardar_primera_providencia",
+                extra={"admision_pk": admision.pk, "error": str(e)},
             )
-            form = DisposicionNumIFFORM(request.POST, instance=formulario)
+            messages.error(
+                request,
+                f"Error inesperado al generar la Primera Providencia: {str(e)}",
+            )
+            return redirect("admisiones_legales_ver", pk=admision.pk)
+
+    @staticmethod
+    def guardar_segunda_providencia(request, admision):
+        """Genera la Segunda Providencia y sus documentos descargables."""
+        bloqueo = LegalesService._bloquear_fuera_de_secuencia(
+            request, admision, "segunda_providencia", "generar la Segunda Providencia"
+        )
+        if bloqueo is not None:
+            return bloqueo
+
+        try:
+            with transaction.atomic():
+                primera = Providencia.objects.filter(
+                    admision=admision, orden="primera"
+                ).first()
+                if not primera or not primera.numero_gde_pv:
+                    messages.error(
+                        request,
+                        "Primero debe generarse la Primera Providencia y cargarse "
+                        "su número de GDE PV.",
+                    )
+                    return redirect("admisiones_legales_ver", pk=admision.pk)
+
+                existente = Providencia.objects.filter(
+                    admision=admision, orden="segunda"
+                ).first()
+                form = SegundaProvidenciaForm(request.POST, instance=existente)
+                if not form.is_valid():
+                    logger.error("Errores en SegundaProvidenciaForm: %s", form.errors)
+                    messages.error(request, "Error al generar la Segunda Providencia.")
+                    return redirect("admisiones_legales_ver", pk=admision.pk)
+
+                providencia = form.save(commit=False)
+                providencia.admision = admision
+                providencia.orden = "segunda"
+                providencia.tipo = admision.tipo
+                providencia.es_judicializado = primera.es_judicializado
+                if request.user.is_authenticated:
+                    providencia.creado_por = request.user
+                providencia.save()
+
+                LegalesService._generar_archivos_providencia(admision, providencia)
+                LegalesService.actualizar_estado_por_accion(
+                    admision, "segunda_providencia"
+                )
+                messages.success(request, "Segunda Providencia generada correctamente.")
+                return redirect("admisiones_legales_ver", pk=admision.pk)
+        except Exception as e:
+            logger.exception(
+                "Error en guardar_segunda_providencia",
+                extra={"admision_pk": admision.pk, "error": str(e)},
+            )
+            messages.error(
+                request,
+                f"Error inesperado al generar la Segunda Providencia: {str(e)}",
+            )
+            return redirect("admisiones_legales_ver", pk=admision.pk)
+
+    @staticmethod
+    def _guardar_gde_pv(request, admision, orden, accion, etiqueta):
+        """Guarda el número de GDE PV de una providencia ya generada."""
+        bloqueo = LegalesService._bloquear_fuera_de_secuencia(
+            request, admision, accion, f"cargar el número de GDE PV de la {etiqueta}"
+        )
+        if bloqueo is not None:
+            return bloqueo
+
+        try:
+            providencia = Providencia.objects.filter(
+                admision=admision, orden=orden
+            ).first()
+            if not providencia:
+                messages.error(request, f"Todavía no se generó la {etiqueta}.")
+                return LegalesService._safe_redirect(request, admision)
+
+            form = ProvidenciaGDEPVForm(request.POST, instance=providencia)
             if form.is_valid():
-                LegalesService._save_formulario_with_user(form, admision, request)
-                LegalesService.actualizar_estado_por_accion(admision, "if_disposicion")
+                form.save()
+                LegalesService.actualizar_estado_por_accion(admision, accion)
                 messages.success(
                     request,
-                    "Número IF de Proyecto de Disposición guardado correctamente.",
+                    f"Número de GDE PV de la {etiqueta} guardado correctamente.",
                 )
             else:
+                logger.error("Errores en ProvidenciaGDEPVForm: %s", form.errors)
                 messages.error(
-                    request, "Error al guardar el número IF de Proyecto de Disposición."
+                    request,
+                    f"Error al guardar el número de GDE PV de la {etiqueta}.",
                 )
             return LegalesService._safe_redirect(request, admision)
         except Exception:
             logger.exception(
-                "Error en guardar_dispo_num_if", extra={"admision_pk": admision.pk}
+                "Error en _guardar_gde_pv",
+                extra={"admision_pk": admision.pk, "orden": orden},
             )
             messages.error(
                 request,
-                "Error inesperado al guardar el número IF de Proyecto de Disposición.",
+                f"Error inesperado al guardar el número de GDE PV de la {etiqueta}.",
             )
             return LegalesService._safe_redirect(request, admision)
 
     @staticmethod
+    def guardar_gde_pv_primera(request, admision):
+        return LegalesService._guardar_gde_pv(
+            request, admision, "primera", "gde_pv_primera", "Primera Providencia"
+        )
+
+    @staticmethod
+    def guardar_gde_pv_segunda(request, admision):
+        return LegalesService._guardar_gde_pv(
+            request, admision, "segunda", "gde_pv_segunda", "Segunda Providencia"
+        )
+
+    @staticmethod
     def validar_juridicos(request, admision):
         try:
-            reso_completo = FormularioProyectoDisposicion.objects.filter(
-                admision=admision
-            ).exists()
+            # Antes se exigía el Formulario de Proyecto de Disposición.
+            # Ahora la condición equivalente es tener cerrada la Segunda
+            # Providencia, es decir con su número de GDE PV cargado.
+            providencias_completas = (
+                Providencia.objects.filter(admision=admision, orden="segunda")
+                .exclude(numero_gde_pv__isnull=True)
+                .exclude(numero_gde_pv="")
+                .exists()
+            )
             proyecto_completo = FormularioProyectoDeConvenio.objects.filter(
                 admision=admision
             ).exists()
 
             condiciones_validas = (
-                reso_completo
+                providencias_completas
                 and proyecto_completo
                 and not (admision.observaciones and admision.observaciones.strip())
                 and admision.estado_legales != "A Rectificar"
@@ -687,7 +955,8 @@ class LegalesService:
             else:
                 messages.error(
                     request,
-                    "No se puede validar: asegúrese de completar ambos formularios y agregar el Número IF.",
+                    "No se puede validar: asegúrese de completar el Proyecto de "
+                    "Convenio y las Providencias, y agregar el Número IF.",
                 )
 
             return LegalesService._safe_redirect(request, admision)
@@ -697,131 +966,6 @@ class LegalesService:
             )
             messages.error(request, "Error inesperado al validar jurídicos.")
             return LegalesService._safe_redirect(request, admision)
-
-    @staticmethod
-    def guardar_formulario_reso(request, admision):
-        # Guardar el formulario de proyecto de disposición y generar documentos PDF y DOCX
-        from weasyprint import HTML
-
-        try:
-            with transaction.atomic():
-                formulario_existente = FormularioProyectoDisposicion.objects.filter(
-                    admision=admision
-                ).first()
-                form = ProyectoDisposicionForm(
-                    request.POST, instance=formulario_existente
-                )
-
-                if not form.is_valid():
-                    messages.error(
-                        request, "Error al guardar el Formulario Proyecto Disposición."
-                    )
-                    return redirect("admisiones_legales_ver", pk=admision.pk)
-
-                nuevo_formulario = form.save(commit=False)
-                nuevo_formulario.admision = admision
-                nuevo_formulario.tipo = admision.tipo
-                if request.user.is_authenticated:
-                    nuevo_formulario.creado_por = request.user
-                nuevo_formulario.save()
-
-                informe = (
-                    InformeTecnico.objects.filter(admision=admision)
-                    .order_by("-id")
-                    .first()
-                )
-
-                proyecto_convenio = admision.admisiones_proyecto_convenio.first()
-                proyecto_disposicion_if = FormularioProyectoDeConvenio.objects.filter(
-                    admision=admision
-                ).first()
-
-                context = {
-                    "admision": admision,
-                    "formulario": nuevo_formulario,
-                    "informe": informe,
-                    "proyecto_convenio": proyecto_convenio,
-                    "proyecto_disposicion_if": proyecto_disposicion_if.numero_if,
-                }
-
-                tipo_admision = admision.tipo or "incorporacion"
-
-                pdf_template_name = (
-                    f"admisiones/pdf/{tipo_admision}_pdf_proyecto_disposicion.html"
-                )
-                docx_template_name = f"{tipo_admision}_docx_proyecto_disposicion.docx"
-
-                html_pdf = render_to_string(pdf_template_name, context)
-                if not html_pdf.strip():
-                    raise ValueError(
-                        f"El template {pdf_template_name} devolvió contenido vacío."
-                    )
-
-                base_url = str(
-                    getattr(settings, "STATIC_ROOT", "")
-                    or getattr(settings, "BASE_DIR", "")
-                    or "."
-                )
-                pdf_bytes = HTML(string=html_pdf, base_url=base_url).write_pdf()
-                if not pdf_bytes:
-                    raise ValueError(
-                        "WeasyPrint no devolvió contenido para el PDF generado."
-                    )
-                pdf_content = ContentFile(pdf_bytes)
-
-                docx_content = DocumentTemplateService.generar_docx(
-                    template_name=docx_template_name,
-                    context=context,
-                    app_name="admisiones",
-                )
-
-                if not docx_content:
-                    raise ValueError("El servicio de generación de DOCX devolvió None.")
-
-                nombre_comedor = (
-                    admision.comedor.nombre
-                    if getattr(admision.comedor, "nombre", None)
-                    else "sin-nombre"
-                )
-                fecha_actual = date.today().strftime("%Y-%m-%d")
-                base_filename = (
-                    slugify(f"disposicion-{nombre_comedor}-{fecha_actual}")
-                    or f"disposicion-{fecha_actual}"
-                )
-
-                if nuevo_formulario.archivo:
-                    nuevo_formulario.archivo.delete(save=False)
-                nuevo_formulario.archivo.save(
-                    f"{base_filename}.pdf", pdf_content, save=False
-                )
-
-                if nuevo_formulario.archivo_docx:
-                    nuevo_formulario.archivo_docx.delete(save=False)
-                nuevo_formulario.archivo_docx.save(
-                    f"{base_filename}.docx", docx_content, save=False
-                )
-
-                nuevo_formulario.save(update_fields=["archivo", "archivo_docx"])
-
-                LegalesService.actualizar_estado_por_accion(
-                    admision, "formulario_disposicion"
-                )
-
-                messages.success(
-                    request, "Formulario guardado y documentos generados correctamente."
-                )
-                return redirect("admisiones_legales_ver", pk=admision.pk)
-
-        except Exception as e:
-            logger.exception(
-                "Error en guardar_formulario_reso",
-                extra={"admision_pk": admision.pk, "error": str(e)},
-            )
-            messages.error(
-                request,
-                f"❌ Error inesperado al guardar el Formulario Proyecto Disposición: {str(e)}",
-            )
-            return redirect("admisiones_legales_ver", pk=admision.pk)
 
     @staticmethod
     def guardar_formulario_proyecto_convenio(request, admision):
@@ -1149,14 +1293,14 @@ class LegalesService:
             if "btnConvenio" in request.POST:
                 return LegalesService.guardar_convenio(request, admision)
 
-            if "btnDisposicion" in request.POST:
-                return LegalesService.guardar_disposicion(request, admision)
-
             if "btnConvenioNumIF" in request.POST:
                 return LegalesService.guardar_convenio_num_if(request, admision)
 
-            if "btnDispoNumIF" in request.POST:
-                return LegalesService.guardar_dispo_num_if(request, admision)
+            if "btnGDEPVPrimera" in request.POST:
+                return LegalesService.guardar_gde_pv_primera(request, admision)
+
+            if "btnGDEPVSegunda" in request.POST:
+                return LegalesService.guardar_gde_pv_segunda(request, admision)
 
             if "btnReinicioExpediente" in request.POST:
                 return LegalesService.guardar_reinicio_expediente(request, admision)
@@ -1177,8 +1321,11 @@ class LegalesService:
             if "ValidacionJuridicos" in request.POST:
                 return LegalesService.validar_juridicos(request, admision)
 
-            if "btnRESO" in request.POST:
-                return LegalesService.guardar_formulario_reso(request, admision)
+            if "btnPrimeraProvidencia" in request.POST:
+                return LegalesService.guardar_primera_providencia(request, admision)
+
+            if "btnSegundaProvidencia" in request.POST:
+                return LegalesService.guardar_segunda_providencia(request, admision)
 
             if "btnProyectoConvenio" in request.POST:
                 return LegalesService.guardar_formulario_proyecto_convenio(
@@ -1353,15 +1500,26 @@ class LegalesService:
 
             documentos_info.extend(documentos_personalizados)
 
-            reso_formulario = admision.admisiones_proyecto_disposicion.first()
+            primera_providencia, segunda_providencia = LegalesService._providencias(
+                admision
+            )
             proyecto_formulario = admision.admisiones_proyecto_convenio.first()
 
-            if reso_formulario:
-                reso_form = ProyectoDisposicionForm(instance=reso_formulario)
-                dispo_num_if_form = DisposicionNumIFFORM(instance=reso_formulario)
-            else:
-                reso_form = ProyectoDisposicionForm()
-                dispo_num_if_form = DisposicionNumIFFORM()
+            es_judicializado = LegalesService._es_judicializado(admision)
+            primera_providencia_form = PrimeraProvidenciaForm(
+                instance=primera_providencia,
+                es_judicializado=es_judicializado,
+            )
+            # La Segunda Providencia arranca con el GDE PV de la Primera
+            # precargado, pero el usuario puede editarlo.
+            segunda_providencia_form = SegundaProvidenciaForm(
+                instance=segunda_providencia,
+                numero_pv_inicial=(
+                    primera_providencia.numero_gde_pv if primera_providencia else ""
+                ),
+            )
+            gde_pv_primera_form = ProvidenciaGDEPVForm(instance=primera_providencia)
+            gde_pv_segunda_form = ProvidenciaGDEPVForm(instance=segunda_providencia)
 
             if proyecto_formulario:
                 proyecto_form = ProyectoConvenioForm(instance=proyecto_formulario)
@@ -1376,7 +1534,7 @@ class LegalesService:
                 admision=admision
             )
 
-            tipos = ["Informe SGA", "Disposición", "Firma Convenio", "Numero CONV"]
+            tipos = ["Informe SGA", "Firma Convenio", "Numero CONV"]
 
             ultimos_valores = {}
             for tipo in tipos:
@@ -1404,29 +1562,29 @@ class LegalesService:
                     and getattr(admision.informe_pdf, "archivo", None)
                     else None
                 ),
-                "formulario_reso": reso_formulario,
-                "formulario_reso_completo": bool(reso_formulario),
+                "primera_providencia": primera_providencia,
+                "segunda_providencia": segunda_providencia,
                 "formulario_proyecto": proyecto_formulario,
                 "formulario_proyecto_completo": bool(proyecto_formulario),
-                "reso_form": reso_form,
+                "es_judicializado": es_judicializado,
+                "primera_providencia_form": primera_providencia_form,
+                "segunda_providencia_form": segunda_providencia_form,
+                "gde_pv_primera_form": gde_pv_primera_form,
+                "gde_pv_segunda_form": gde_pv_segunda_form,
                 "proyecto_form": proyecto_form,
                 "form_legales_num_if": legales_num_if_form,
                 "documentos_form": DocumentosExpedienteForm(),
                 "convenio_num_if": convenio_num_if_form,
-                "dispo_num_if": dispo_num_if_form,
-                "documentos_form": DocumentosExpedienteForm(),
                 "form_intervencion_juridicos": IntervencionJuridicosForm(
                     instance=admision
                 ),
                 "form_informe_sga": InformeSGAForm(instance=admision),
                 "form_convenio": ConvenioForm(instance=admision),
-                "form_disposicion": DisposicionForm(instance=admision),
                 "form_reinicio_expediente": ReinicioExpedienteForm(instance=admision),
                 "form_solicitar_informe_complementario": SolicitarInformeComplementarioForm(
                     instance=admision
                 ),
                 "value_informe_sga": ultimos_valores["Informe SGA"],
-                "value_disposicion": ultimos_valores["Disposición"],
                 "value_firma_convenio": ultimos_valores["Firma Convenio"],
                 "value_numero_conv": ultimos_valores["Numero CONV"],
                 "informes_complementarios": informes_complementarios,
@@ -1469,29 +1627,6 @@ class LegalesService:
         except Exception:
             logger.exception(
                 "Error en generar_documento_convenio",
-                extra={"admision_id": admision.id, "template": template_name},
-            )
-            return None
-
-    @staticmethod
-    def generar_documento_disposicion(
-        admision, template_name="proyecto_disposicion.docx"
-    ):
-        """Genera documento DOCX de proyecto de disposición usando template"""
-        try:
-            context = TextFormatterService.preparar_contexto_proyecto_disposicion(
-                admision
-            )
-            docx_buffer = DocumentTemplateService.generar_docx(template_name, context)
-
-            if docx_buffer:
-                filename = f"proyecto_disposicion_{admision.id}.docx"
-                return ContentFile(docx_buffer.getvalue(), name=filename)
-
-            return None
-        except Exception:
-            logger.exception(
-                "Error en generar_documento_disposicion",
                 extra={"admision_id": admision.id, "template": template_name},
             )
             return None

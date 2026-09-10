@@ -1,0 +1,493 @@
+{% extends "includes/main.html" %}
+{% load static crispy_forms_tags %}
+{% block title %}Panel de Control · PAS{% endblock %}
+{% block breadcrumb %}{% endblock %}
+{% block head %}
+    <link rel="stylesheet" href="{% static 'custom/css/pas.css' %}" />
+{% endblock %}
+{% block app-header %}
+    <div class="pas-top-actions">
+        <a href="{% url 'pas_persona_listar' %}" class="btn btn-light">
+            <i class="bi bi-arrow-left" aria-hidden="true"></i>
+            Buscador PAS
+        </a>
+        {% if persona and perms.pas.change_paspersona %}
+            <div class="d-flex gap-2">
+                <button type="button"
+                        class="btn btn-warning"
+                        data-bs-toggle="modal"
+                        data-bs-target="#cambiarEstadoModal">
+                    <i class="bi bi-arrow-left-right" aria-hidden="true"></i>
+                    Cambiar estado
+                </button>
+                <a href="{% url 'pas_persona_editar' persona.id %}"
+                   class="btn btn-outline-light"
+                   title="Editar datos personales"
+                   aria-label="Editar datos personales">
+                    <i class="bi bi-pencil" aria-hidden="true"></i>
+                </a>
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}
+{% block content %}
+    <main class="pas-workspace">
+        <header class="pas-module-header">
+            <div>
+                <span class="pas-eyebrow">Programa de Acompañamiento Social</span>
+                <h1>Panel de Control</h1>
+                {% if persona %}
+                    <p>{{ persona.apellidos }}, {{ persona.nombres }} · DNI {{ persona.dni }}</p>
+                {% else %}
+                    <p>Consulta integral de titulares PAS</p>
+                {% endif %}
+            </div>
+            {% if persona %}
+                <span class="pas-status-pill {{ persona.estado.css_class }}">{{ persona.estado.nombre }}</span>
+            {% endif %}
+        </header>
+
+        {% include "pas/includes/workflow_nav.html" %}
+
+        {% if persona %}
+            <div class="pas-control-layout">
+                <aside class="pas-people-panel" aria-label="Titulares PAS">
+                    <div class="pas-people-header">
+                        <div>
+                            <span class="pas-eyebrow">Padrón PAS</span>
+                            <h2>Titulares</h2>
+                        </div>
+                        <a href="{% url 'pas_persona_listar' %}"
+                           class="btn btn-sm btn-outline-light"
+                           title="Abrir buscador PAS"
+                           aria-label="Abrir buscador PAS">
+                            <i class="bi bi-search" aria-hidden="true"></i>
+                        </a>
+                    </div>
+                    <form method="get" class="pas-formation-search pas-panel-search">
+                        <label class="visually-hidden" for="pas-panel-query">Buscar titular</label>
+                        <div class="pas-search-input-wrap">
+                            <i class="bi bi-search" aria-hidden="true"></i>
+                            <input id="pas-panel-query"
+                                   name="q"
+                                   type="search"
+                                   value="{{ query }}"
+                                   placeholder="Buscar por nombre, apellido o CUIT" />
+                        </div>
+                        <div class="pas-formation-filters" aria-label="Estado actual">
+                            <button type="submit"
+                                    name="estado_actual"
+                                    value="todos"
+                                    class="{% if estado_actual == 'todos' %}is-active{% endif %}">Todos</button>
+                            {% for estado in estados_panel %}
+                                <button type="submit"
+                                        name="estado_actual"
+                                        value="{{ estado.id }}"
+                                        class="{% if estado_actual == estado.id|stringformat:'s' %}is-active{% endif %}">
+                                    {{ estado.nombre }}
+                                </button>
+                            {% endfor %}
+                        </div>
+                    </form>
+                    <div class="pas-people-list">
+                        {% for item in personas_panel %}
+                            <a href="{% url 'pas_panel_control_persona' item.id %}?q={{ query|urlencode }}&estado_actual={{ estado_actual }}"
+                               class="pas-person-mini {% if item.id == persona.id %}is-active{% endif %}">
+                                <div class="pas-person-mini-top">
+                                    <span class="pas-person-mini-identity">
+                                        <strong>{{ item.apellidos }}, {{ item.nombres }}</strong>
+                                        <span class="pas-person-mini-document">
+                                            {% if item.cuit %}
+                                                {{ item.cuit }}
+                                            {% else %}
+                                                DNI {{ item.dni }}
+                                            {% endif %}
+                                        </span>
+                                    </span>
+                                    <span class="pas-status-pill {{ item.estado.css_class }}">{{ item.estado.nombre }}</span>
+                                </div>
+                                <span class="pas-person-mini-bottom">
+                                    <span class="pas-person-mini-location">{{ item.provincia.nombre|default:"Sin provincia" }}</span>
+                                    <span class="pas-person-mini-conditions">
+                                        {% if item.mostrar_tag_ddjj %}
+                                            <span class="pas-mini-condition is-ddjj"
+                                                  title="Declaración jurada pendiente">DDJJ</span>
+                                        {% endif %}
+                                        {% if item.mostrar_tag_fch %}
+                                            <span class="pas-mini-condition is-fch"
+                                                  title="Puntaje FCH insuficiente en el período activo">FCH</span>
+                                        {% endif %}
+                                    </span>
+                                </span>
+                            </a>
+                        {% empty %}
+                            <div class="pas-empty-state pas-panel-people-empty">
+                                <i class="bi bi-person-x" aria-hidden="true"></i>
+                                <strong>Sin titulares para estos filtros</strong>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </aside>
+
+                <section class="pas-panel pas-person-panel">
+                    <div class="pas-person-summary">
+                        <div>
+                            <span class="pas-eyebrow">Titular PAS</span>
+                            <h2>{{ persona.apellidos }}, {{ persona.nombres }}</h2>
+                            <span>{{ persona.cuit|default:"CUIT no informado" }}</span>
+                        </div>
+                        <div class="pas-aviso-stack">
+                            {% for aviso in persona.avisos.all %}
+                                <span class="pas-aviso-card {{ persona.estado.css_class }}">{{ aviso.codigo }} · {{ aviso.descripcion }}</span>
+                            {% empty %}
+                                <span class="pas-cell-secondary">Sin avisos vigentes</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <ul class="nav pas-tabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active"
+                                    id="datos-tab"
+                                    data-bs-toggle="tab"
+                                    data-bs-target="#datos-panel"
+                                    type="button"
+                                    role="tab"
+                                    aria-controls="datos-panel"
+                                    aria-selected="true">Datos personales</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link"
+                                    id="ddjj-tab"
+                                    data-bs-toggle="tab"
+                                    data-bs-target="#ddjj-panel"
+                                    type="button"
+                                    role="tab"
+                                    aria-controls="ddjj-panel"
+                                    aria-selected="false">Declaración Jurada</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link"
+                                    id="capacitacion-tab"
+                                    data-bs-toggle="tab"
+                                    data-bs-target="#capacitacion-panel"
+                                    type="button"
+                                    role="tab"
+                                    aria-controls="capacitacion-panel"
+                                    aria-selected="false">Capacitación FCH</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link"
+                                    id="historial-tab"
+                                    data-bs-toggle="tab"
+                                    data-bs-target="#historial-panel"
+                                    type="button"
+                                    role="tab"
+                                    aria-controls="historial-panel"
+                                    aria-selected="false">Historial de estados</button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content">
+                        <div class="tab-pane fade show active"
+                             id="datos-panel"
+                             role="tabpanel"
+                             aria-labelledby="datos-tab"
+                             tabindex="0">
+                            <section class="pas-personal-data" aria-labelledby="datos-titular-title">
+                                <h3 id="datos-titular-title" class="pas-detail-section-title">Datos del titular</h3>
+                                <dl class="pas-personal-data-grid">
+                                    <div>
+                                        <dt>DNI</dt>
+                                        <dd class="pas-monospace">
+                                            {{ persona.dni }}
+                                        </dd>
+                                    </div>
+                                    <div>
+                                        <dt>IdPersona</dt>
+                                        <dd class="pas-monospace">
+                                            {{ persona.id_persona }}
+                                        </dd>
+                                    </div>
+                                    <div>
+                                        <dt>CUIT</dt>
+                                        <dd class="pas-monospace">
+                                            {{ persona.cuit|default:"Sin dato" }}
+                                        </dd>
+                                    </div>
+                                    <div>
+                                        <dt>Estado actual</dt>
+                                        <dd>
+                                            <span class="pas-status-pill {{ persona.estado.css_class }}">{{ persona.estado.nombre }}</span>
+                                        </dd>
+                                    </div>
+                                    <div>
+                                        <dt>Provincia</dt>
+                                        <dd>
+                                            {{ persona.provincia.nombre }}
+                                        </dd>
+                                    </div>
+                                    <div>
+                                        <dt>Municipio / Localidad</dt>
+                                        <dd>
+                                            {{ persona.municipio.nombre }}
+                                        </dd>
+                                    </div>
+                                    <div>
+                                        <dt>Domicilio</dt>
+                                        <dd>
+                                            {{ persona.domicilio|default:"Sin dato" }}
+                                        </dd>
+                                    </div>
+                                    <div>
+                                        <dt>Correo electrónico</dt>
+                                        <dd>
+                                            {{ persona.correo_electronico|default:"Sin dato" }}
+                                        </dd>
+                                    </div>
+                                    <div>
+                                        <dt>Teléfono celular</dt>
+                                        <dd>
+                                            {{ persona.telefono_celular|default:"Sin dato" }}
+                                        </dd>
+                                    </div>
+                                    <div>
+                                        <dt>Declaración Jurada</dt>
+                                        <dd>
+                                            {% if persona.declaracion_jurada_vigente %}
+                                                Sí ·
+                                                <a href="{% url 'pas_ddjj_descargar' persona.declaracion_jurada_vigente.id %}">Descargar última</a>
+                                            {% else %}
+                                                No
+                                            {% endif %}
+                                        </dd>
+                                    </div>
+                                    <div>
+                                        <dt>Alta del registro</dt>
+                                        <dd>
+                                            {{ persona.fecha_creacion|date:"d/m/Y H:i" }}
+                                        </dd>
+                                    </div>
+                                    <div>
+                                        <dt>Última actualización</dt>
+                                        <dd>
+                                            {{ persona.fecha_actualizacion|date:"d/m/Y H:i" }}
+                                        </dd>
+                                    </div>
+                                </dl>
+                            </section>
+
+                            <section class="pas-financial-card"
+                                     aria-labelledby="informacion-financiera-title">
+                                <h3 id="informacion-financiera-title" class="pas-detail-section-title">Información financiera</h3>
+                                <div class="pas-financial-grid">
+                                    <div>
+                                        <span>Asignación mensual</span>
+                                        <strong>Sin dato</strong>
+                                    </div>
+                                    <div>
+                                        <span>CBU / Cuenta BNA</span>
+                                        <strong class="pas-monospace">Sin dato</strong>
+                                    </div>
+                                    <div>
+                                        <span>Estado de cuenta</span>
+                                        <strong class="pas-integration-status">
+                                            <i class="bi bi-circle-fill" aria-hidden="true"></i>
+                                            Integración pendiente
+                                        </strong>
+                                    </div>
+                                </div>
+                            </section>
+                        </div>
+
+                        <div class="tab-pane fade"
+                             id="ddjj-panel"
+                             role="tabpanel"
+                             aria-labelledby="ddjj-tab"
+                             tabindex="0">
+                            <section class="pas-personal-data">
+                                <h3 class="pas-detail-section-title">Historial de Declaraciones Juradas</h3>
+                                {% if declaracion_seleccionada %}
+                                    <div class="pas-ddjj-panel-toolbar">
+                                        <label for="pas-ddjj-version">Presentación consultada</label>
+                                        <select id="pas-ddjj-version" class="form-select">
+                                            {% for declaracion in declaraciones_juradas %}
+                                                <option value="?ddjj={{ declaracion.id }}#ddjj-panel"
+                                                        {% if declaracion.id == declaracion_seleccionada.id %}selected{% endif %}>
+                                                    Versión {{ declaracion.version }} · {{ declaracion.presentada|date:"d/m/Y H:i" }}
+                                                    {% if forloop.first %}· Última{% endif %}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <article class="pas-ddjj-detail-card">
+                                        <div>
+                                            <span class="pas-eyebrow">Declaración Jurada</span>
+                                            <h4>Versión {{ declaracion_seleccionada.version }}</h4>
+                                            <span>{{ declaracion_seleccionada.presentada|date:"d/m/Y H:i" }}</span>
+                                        </div>
+                                        <a class="btn btn-sm btn-outline-light"
+                                           href="{% url 'pas_ddjj_descargar' declaracion_seleccionada.id %}">
+                                            <i class="bi bi-file-earmark-pdf"></i> Descargar PDF
+                                        </a>
+                                    </article>
+                                    <dl class="pas-ddjj-response-grid">
+                                        {% for clave, respuesta in declaracion_seleccionada.respuestas.items %}
+                                            <div>
+                                                <dt>{{ respuesta.etiqueta }}</dt>
+                                                <dd>
+                                                    {{ respuesta.respuesta }}
+                                                </dd>
+                                            </div>
+                                        {% endfor %}
+                                    </dl>
+                                {% else %}
+                                    <div class="pas-empty-state">
+                                        <strong>Sin Declaraciones Juradas presentadas</strong>
+                                    </div>
+                                {% endif %}
+                            </section>
+                        </div>
+
+                        <div class="tab-pane fade"
+                             id="capacitacion-panel"
+                             role="tabpanel"
+                             aria-labelledby="capacitacion-tab"
+                             tabindex="0">
+                            <div class="pas-table-wrap">
+                                <table class="pas-table pas-formation-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Curso</th>
+                                            <th>Inicio</th>
+                                            <th>Fin</th>
+                                            <th>Progreso</th>
+                                            <th>Puntos</th>
+                                            <th>Estado</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for formacion in formaciones_pas %}
+                                            <tr>
+                                                <td>
+                                                    <strong>{{ formacion.curso }}</strong>
+                                                    <span class="pas-cell-secondary">{{ formacion.fuente }}</span>
+                                                </td>
+                                                <td>{{ formacion.inicio|date:"d/m/Y"|default:"-" }}</td>
+                                                <td>{{ formacion.fin|date:"d/m/Y"|default:"-" }}</td>
+                                                <td>Sin dato</td>
+                                                <td>Sin dato</td>
+                                                <td>
+                                                    <span class="pas-training-status">{{ formacion.estado }}</span>
+                                                </td>
+                                            </tr>
+                                        {% empty %}
+                                            <tr>
+                                                <td colspan="6">
+                                                    <div class="pas-empty-state">
+                                                        <i class="bi bi-mortarboard" aria-hidden="true"></i>
+                                                        <strong>Sin formación registrada en SISOC</strong>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="tab-pane fade"
+                             id="historial-panel"
+                             role="tabpanel"
+                             aria-labelledby="historial-tab"
+                             tabindex="0">
+                            <ol class="pas-timeline">
+                                {% for evento in eventos_historial %}
+                                    <li>
+                                        <time datetime="{{ evento.fecha|date:'c' }}">{{ evento.fecha|date:"d/m/Y H:i" }}</time>
+                                        {% if evento.tipo == "ddjj" %}
+                                            <strong>Declaración Jurada · Versión {{ evento.objeto.version }}</strong>
+                                            <div class="pas-aviso-stack">
+                                                <span class="pas-aviso-card">DDJJ presentada</span>
+                                            </div>
+                                            <a class="pas-cell-secondary"
+                                               href="?ddjj={{ evento.objeto.id }}#ddjj-panel">Ver presentación</a>
+                                        {% else %}
+                                            <strong>{{ evento.objeto.estado_nuevo.nombre }}</strong>
+                                            <div class="pas-aviso-stack">
+                                                {% for aviso in evento.objeto.avisos_nuevos.all %}
+                                                    <span class="pas-aviso-card">{{ aviso.codigo }} · {{ aviso.descripcion }}</span>
+                                                {% empty %}
+                                                    <span class="pas-cell-secondary">Sin avisos</span>
+                                                {% endfor %}
+                                            </div>
+                                            <span class="pas-cell-secondary">
+                                                {% if evento.objeto.usuario %}
+                                                    {{ evento.objeto.usuario.get_full_name|default:evento.objeto.usuario.username }}
+                                                {% else %}
+                                                    Sistema
+                                                {% endif %}
+                                            </span>
+                                        {% endif %}
+                                    </li>
+                                {% empty %}
+                                    <li>
+                                        <strong>Sin cambios registrados</strong>
+                                    </li>
+                                {% endfor %}
+                            </ol>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        {% else %}
+            <section class="pas-panel pas-empty-state pas-empty-state-large">
+                <i class="bi bi-people" aria-hidden="true"></i>
+                <strong>No hay titulares PAS registrados</strong>
+                <span>El panel estará disponible cuando exista al menos un titular en el padrón.</span>
+            </section>
+        {% endif %}
+    </main>
+
+    {% if persona %}
+        <div class="modal fade"
+             id="cambiarEstadoModal"
+             tabindex="-1"
+             aria-labelledby="cambiarEstadoModalLabel"
+             aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+                <div class="modal-content">
+                    <form method="post"
+                          action="{% url 'pas_persona_cambiar_estado' persona.id %}">
+                        {% csrf_token %}
+                        <div class="modal-header">
+                            <h2 class="modal-title fs-5" id="cambiarEstadoModalLabel">Cambiar estado PAS</h2>
+                            <button type="button"
+                                    class="btn-close"
+                                    data-bs-dismiss="modal"
+                                    aria-label="Cerrar"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p>
+                                Estado actual: <strong>{{ persona.estado.nombre }}</strong>
+                            </p>
+                            <div class="row">
+                                <div class="col-md-4">{{ cambio_estado_form.estado|as_crispy_field }}</div>
+                                <div class="col-md-8">{{ cambio_estado_form.avisos|as_crispy_field }}</div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">Guardar cambio</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {{ avisos_por_estado|json_script:"pas-avisos-por-estado" }}
+    {% endif %}
+{% endblock %}
+{% block customJS %}
+    <script src="{% static 'custom/js/pas.js' %}"></script>
+    <script src="{% static 'custom/js/pas_ddjj_panel.js' %}"></script>
+{% endblock %}

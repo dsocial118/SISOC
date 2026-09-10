@@ -116,7 +116,7 @@ class ExpedienteConfirmView(LoginRequiredMixin, View):
         if faltantes:
             ejemplos = [
                 (
-                    f"{item['apellido']}, {item['nombre']} (DNI {item['documento']})"
+                    f"{item['apellido']}, {item['nombre']} (CUIL {item['documento']})"
                     f" - faltan: {', '.join(item['faltan_nombres'])}"
                 )
                 for item in faltantes

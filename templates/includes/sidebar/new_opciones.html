@@ -168,7 +168,7 @@
             </ul>
         </li>
     {% endif %}
-    <li class="nav-item {% if 'comedores/' in pagina_actual or 'admisiones' in pagina_actual or 'acompanamiento' in pagina_actual or 'ver-para-ser-libre' in pagina_actual %}menu-open{% endif %}"
+    <li class="nav-item {% if 'comedores/' in pagina_actual or 'admisiones' in pagina_actual or 'acompanamiento' in pagina_actual or 'ver-para-ser-libre' in pagina_actual or 'pas/' in pagina_actual %}menu-open{% endif %}"
         style="order: 3">
         <a href="#" class="nav-link">
             <i class="nav-icon fa fa-address-card"></i>
@@ -251,6 +251,36 @@
                         <i class="nav-icon bi bi-geo-alt-fill"></i>
                         <p>Sedes VPSL</p>
                     </a>
+                </li>
+            {% endif %}
+            {% if not vat_sidebar_only and request.user|has_perm_code:"pas.view_paspersona" %}
+                <li class="nav-item {% if 'pas/' in pagina_actual %}menu-open{% endif %}">
+                    <a href="#"
+                       class="nav-link {% if 'pas/' in pagina_actual %}active{% endif %}">
+                        <i class="nav-icon bi bi-person-badge-fill"></i>
+                        <p>PAS</p>
+                        <i class="nav-arrow bi bi-chevron-right"></i>
+                    </a>
+                    <ul class="nav nav-treeview">
+                        <li class="nav-item">
+                            <a href="{% url 'pas_persona_listar' %}"
+                               class="nav-link nav-dot ms-2 {% if 'pas/listar' in pagina_actual %}active{% endif %}">
+                                <p>Buscador PAS</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{% url 'pas_panel_control' %}"
+                               class="nav-link nav-dot ms-2 {% if 'pas/panel-control' in pagina_actual %}active{% endif %}">
+                                <p>Panel de Control</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{% url 'pas_informe_listar' %}"
+                               class="nav-link nav-dot ms-2 {% if 'pas/informes' in pagina_actual %}active{% endif %}">
+                                <p>Informes</p>
+                            </a>
+                        </li>
+                    </ul>
                 </li>
             {% endif %}
             {% if not vat_sidebar_only and request.user|has_perm_code:"ciudadanos.view_ciudadano" %}

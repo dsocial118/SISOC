@@ -1,8 +1,11 @@
 """Tests for test rendicioncuentasmensual services unit."""
 
+from io import BytesIO
 from types import SimpleNamespace
 
 import pytest
+from pypdf import PdfReader, PdfWriter
+from pypdf.errors import PdfReadError, PdfStreamError
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 
@@ -15,6 +18,16 @@ from rendicioncuentasmensual.services import (
     RendicionCuentaMensualService,
     RendicionProcesoService,
 )
+from rendicioncuentasmensual import services as rendicion_services
+
+
+def _pdf_bytes():
+    writer = PdfWriter()
+    writer.add_blank_page(width=72, height=72)
+    buffer = BytesIO()
+    writer.write(buffer)
+    buffer.seek(0)
+    return buffer.getvalue()
 
 
 def test_crear_rendicion_cuenta_mensual_success(mocker):
@@ -414,6 +427,91 @@ def test_obtener_documentos_para_descarga_pdf_solo_incluye_vigentes_validados(
         formulario.id,
         subsanacion.id,
     ]
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("pdf_error", [PdfReadError, PdfStreamError])
+def test_generar_pdf_descarga_rendicion_usa_placeholder_por_pdf_invalidos(
+    settings, tmp_path, mocker
+):
+    settings.MEDIA_ROOT = str(tmp_path)
+    rendicion = RendicionCuentaMensual.objects.create(
+        mes=6,
+        anio=2026,
+        estado=RendicionCuentaMensual.ESTADO_FINALIZADA,
+    )
+    _documento_vigente = DocumentacionAdjunta.objects.create(
+        nombre="documento-bueno.pdf",
+        categoria=DocumentacionAdjunta.CATEGORIA_COMPROBANTES,
+        estado=DocumentacionAdjunta.ESTADO_VALIDADO,
+        rendicion_cuenta_mensual=rendicion,
+        archivo=SimpleUploadedFile(
+            "documento-bueno.pdf",
+            _pdf_bytes(),
+            content_type="application/pdf",
+        ),
+    )
+    documento_danado = DocumentacionAdjunta.objects.create(
+        nombre="documento-danado.pdf",
+        categoria=DocumentacionAdjunta.CATEGORIA_FORMULARIO_III_ALIMENTARIO,
+        estado=DocumentacionAdjunta.ESTADO_VALIDADO,
+        rendicion_cuenta_mensual=rendicion,
+        archivo=SimpleUploadedFile(
+            "documento-danado.pdf",
+            b"%PDF-1.4 trun",
+            content_type="application/pdf",
+        ),
+    )
+
+    original_lector = rendicion_services._crear_lector_pdf_documento
+
+    def _lector(documento, _extension):
+        if documento.id == documento_danado.id:
+            raise pdf_error("Stream has ended unexpectedly")
+        return original_lector(documento, _extension)
+
+    mocker.patch.object(
+        rendicion_services,
+        "_crear_lector_pdf_documento",
+        side_effect=_lector,
+    )
+    logger_mock = mocker.patch("rendicioncuentasmensual.services.logger.warning")
+    pdf_buffer = RendicionCuentaMensualService.generar_pdf_descarga_rendicion(rendicion)
+    pdf = PdfReader(pdf_buffer)
+
+    assert len(pdf.pages) == 2
+    logger_mock.assert_called_once()
+    _, kwargs = logger_mock.call_args
+    assert kwargs["extra"]["rendicion_id"] == rendicion.id
+    assert kwargs["extra"]["documento_id"] == documento_danado.id
+
+
+@pytest.mark.django_db
+def test_generar_pdf_descarga_rendicion_requiere_finalizada():
+    rendicion = RendicionCuentaMensual.objects.create(
+        mes=6,
+        anio=2026,
+        estado=RendicionCuentaMensual.ESTADO_REVISION,
+    )
+
+    with pytest.raises(ValidationError) as exc_info:
+        RendicionCuentaMensualService.generar_pdf_descarga_rendicion(rendicion)
+
+    assert "La descarga consolidada solo está disponible" in str(exc_info.value)
+
+
+@pytest.mark.django_db
+def test_generar_pdf_descarga_rendicion_requiere_docs():
+    rendicion = RendicionCuentaMensual.objects.create(
+        mes=6,
+        anio=2026,
+        estado=RendicionCuentaMensual.ESTADO_FINALIZADA,
+    )
+
+    with pytest.raises(ValidationError) as exc_info:
+        RendicionCuentaMensualService.generar_pdf_descarga_rendicion(rendicion)
+
+    assert "no tiene documentación" in str(exc_info.value)
 
 
 def test_obtener_rendiciones_cuentas_mensuales_success(mocker):

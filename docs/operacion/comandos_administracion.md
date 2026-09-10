@@ -59,5 +59,9 @@
 ## Auditoria
 - `purge_auditlog`: borra registros de auditlog mas antiguos que N dias (soporta `--dry-run`). Evidencia: `audittrail/management/commands/purge_auditlog.py`.
 
+## PAS
+
+- `sincronizar_supervivencia_pas`: solicita una corrida mensual en Celery; admite `--fecha` y `--reanudar ID`. Ver `docs/implementaciones/pas_control_mensual_celery.md`.
+
 ## Nota
 - Los comandos `test_*` presentes en algunas apps se consideran utilitarios de desarrollo/regresion y no forman parte del inventario operativo principal.
