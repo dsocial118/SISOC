@@ -1,12 +1,14 @@
 <!DOCTYPE html>
 <html lang="es" data-bs-theme="dark">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SISOC — Mockup INET · Buscador por Ciudadano</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.min.css">
-<link href="https://fonts.googleapis.com/css2?family=Lora:wght@600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>SISOC — Mockup INET · Buscador por Ciudadano</title>
+        <link rel="stylesheet"
+              href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.min.css" />
+        <link href="https://fonts.googleapis.com/css2?family=Lora:wght@600;700&family=Montserrat:wght@400;500;600;700&display=swap"
+              rel="stylesheet" />
+        <style>
 /* ============================================================
    INET · Buscador por Ciudadano — mockup
    Tokens SISOC / VAT: navy #232D4F, teal #3B8681, gold #E7BA61
@@ -145,408 +147,617 @@ td .sub{display:block;font-size:11px;color:#9aa4c2;margin-top:3px}
 /* ---- Leyenda ---- */
 .legend{display:flex;gap:22px;flex-wrap:wrap;padding:14px 26px;border-top:1px solid rgba(255,255,255,.08);font-size:11.5px;color:#9aa4c2}
 .legend div{display:flex;align-items:center;gap:7px}
-</style>
-</head>
-<body>
+        </style>
+    </head>
+    <body>
 
-<header class="app-header">
-  <div class="brand"><div class="logo">Si</div><b>SISOC</b></div>
-  <div class="header-right"><span><i class="bi bi-person-circle"></i> ldiaz · INET/SSE</span><i class="bi bi-box-arrow-right"></i></div>
-</header>
+        <header class="app-header">
+            <div class="brand">
+                <div class="logo">Si</div>
+                <b>SISOC</b>
+            </div>
+            <div class="header-right"><span><i class="bi bi-person-circle"></i> ldiaz · INET/SSE</span><i class="bi bi-box-arrow-right"></i></div>
+        </header>
 
-<aside class="app-sidebar">
-  <ul class="smenu">
-    <li><a href="#"><i class="bi bi-dot"></i> Centro de Familia <i class="bi bi-chevron-right" style="margin-left:auto;font-size:10px"></i></a></li>
-    <div class="inet-box">
-      <li><a href="#" class="grp"><i class="bi bi-dot"></i> INET <i class="bi bi-chevron-down" style="margin-left:auto;font-size:10px"></i></a>
-        <ul class="sub">
-          <li><a href="#"><i class="bi bi-arrow-return-right"></i> Centros de Formación Pro…</a></li>
-          <li><a href="#"><i class="bi bi-arrow-return-right"></i> Reporte Inscriptos y Asist…</a></li>
-          <li><a href="#" class="active"><i class="bi bi-arrow-return-right"></i> Buscador por Ciudadano <span class="new-chip">NUEVO</span></a></li>
-          <li><a href="#"><i class="bi bi-arrow-return-right"></i> Catálogos</a></li>
-        </ul>
-      </li>
-    </div>
-    <div class="sep"></div>
-    <li><a href="#"><i class="bi bi-dot"></i> Celiaquía <i class="bi bi-chevron-right" style="margin-left:auto;font-size:10px"></i></a></li>
-    <li><a href="#"><i class="bi bi-pie-chart"></i> Tableros</a></li>
-    <li><a href="#"><i class="bi bi-people"></i> Administración del sistema</a></li>
-    <li><a href="#"><i class="bi bi-card-list"></i> Configuración de Comedores</a></li>
-    <li><a href="#"><i class="bi bi-file-earmark-text"></i> OCR</a></li>
-    <li><a href="#"><i class="bi bi-megaphone"></i> Comunicados</a></li>
-  </ul>
-</aside>
+        <aside class="app-sidebar">
+            <ul class="smenu">
+                <li><a href="#"><i class="bi bi-dot"></i> Centro de Familia <i class="bi bi-chevron-right" style="margin-left:auto;font-size:10px"></i></a></li>
+                <div class="inet-box">
+                    <li>
+                        <a href="#" class="grp"><i class="bi bi-dot"></i> INET <i class="bi bi-chevron-down" style="margin-left:auto;font-size:10px"></i></a>
+                        <ul class="sub">
+                            <li><a href="#"><i class="bi bi-arrow-return-right"></i> Centros de Formación Pro…</a></li>
+                            <li><a href="#"><i class="bi bi-arrow-return-right"></i> Reporte Inscriptos y Asist…</a></li>
+                            <li><a href="#" class="active"><i class="bi bi-arrow-return-right"></i> Buscador por Ciudadano <span class="new-chip">NUEVO</span></a></li>
+                            <li><a href="#"><i class="bi bi-arrow-return-right"></i> Catálogos</a></li>
+                        </ul>
+                    </li>
+                </div>
+                <div class="sep"></div>
+                <li><a href="#"><i class="bi bi-dot"></i> Celiaquía <i class="bi bi-chevron-right" style="margin-left:auto;font-size:10px"></i></a></li>
+                <li><a href="#"><i class="bi bi-pie-chart"></i> Tableros</a></li>
+                <li><a href="#"><i class="bi bi-people"></i> Administración del sistema</a></li>
+                <li><a href="#"><i class="bi bi-card-list"></i> Configuración de Comedores</a></li>
+                <li><a href="#"><i class="bi bi-file-earmark-text"></i> OCR</a></li>
+                <li><a href="#"><i class="bi bi-megaphone"></i> Comunicados</a></li>
+            </ul>
+        </aside>
 
-<main class="app-main">
+        <main class="app-main">
 
-<!-- ═══════════ 1 · ESTADO INICIAL ═══════════ -->
-<section class="screen on" id="s1">
-  <div class="crumb">INET / Buscador por Ciudadano</div>
-  <div class="hero">
-    <div>
-      <h1>BUSCADOR POR CIUDADANO</h1>
-      <p>Trayectoria formativa completa de una persona en INET: a qué cursos se anotó, en qué comisión y centro, en qué estado quedó cada inscripción y cuál fue su resultado final.</p>
-    </div>
-    <span class="pill">Solo lectura</span>
-  </div>
+            <!-- ═══════════ 1 · ESTADO INICIAL ═══════════ -->
+            <section class="screen on" id="s1">
+                <div class="crumb">INET / Buscador por Ciudadano</div>
+                <div class="hero">
+                    <div>
+                        <h1>BUSCADOR POR CIUDADANO</h1>
+                        <p>Trayectoria formativa completa de una persona en INET: a qué cursos se anotó, en qué comisión y centro, en qué estado quedó cada inscripción y cuál fue su resultado final.</p>
+                    </div>
+                    <span class="pill">Solo lectura</span>
+                </div>
 
-  <div class="card">
-    <div class="card-head"><i class="bi bi-search"></i> Buscar ciudadano</div>
-    <div class="card-body">
-      <div class="search-row">
-        <div class="f">
-          <label for="q">DNI o CUIL / CUIT</label>
-          <input type="search" id="q" placeholder="Ej.: 30123456  ·  20-30123456-5">
+                <div class="card">
+                    <div class="card-head"><i class="bi bi-search"></i> Buscar ciudadano</div>
+                    <div class="card-body">
+                        <div class="search-row">
+                            <div class="f">
+                                <label for="q">DNI o CUIL / CUIT</label>
+                                <input type="search" id="q" placeholder="Ej.: 30123456  ·  20-30123456-5" />
+                            </div>
+                            <button class="btn btn-green"><i class="bi bi-search"></i> Buscar</button>
+                            <button class="btn btn-ghost"><i class="bi bi-x-lg"></i> Limpiar</button>
+                        </div>
+                        <p class="hint"><i class="bi bi-info-circle"></i> Se admite documento (<code>30123456</code>) o CUIL/CUIT con o sin guiones (<code>20-30123456-5</code>, <code>20301234565</code>). Los puntos, guiones y espacios se ignoran.</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-body">
+                        <div class="empty">
+                            <i class="bi bi-person-vcard"></i>
+                            <h4>Ingresá un documento para comenzar</h4>
+                            <p>El resultado muestra únicamente inscripciones de centros dentro de tu alcance de acceso.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ═══════════ 2 · RESULTADO (SSE / alcance nacional) ═══════════ -->
+            <section class="screen" id="s2">
+                <div class="crumb">INET / Buscador por Ciudadano / Resultado</div>
+                <div class="hero">
+                    <div>
+                        <h1>BUSCADOR POR CIUDADANO</h1>
+                        <p>Resultado para el documento <b>30.123.456</b> — 5 inscripciones encontradas.</p>
+                    </div>
+                    <span class="pill">Solo lectura</span>
+                </div>
+
+                <div class="card">
+                    <div class="card-head"><i class="bi bi-search"></i> Buscar ciudadano</div>
+                    <div class="card-body">
+                        <div class="search-row">
+                            <div class="f">
+                                <label for="q2">DNI o CUIL / CUIT</label>
+                                <input type="search" id="q2" value="20-30123456-5" />
+                            </div>
+                            <button class="btn btn-green"><i class="bi bi-search"></i> Buscar</button>
+                            <button class="btn btn-ghost"><i class="bi bi-x-lg"></i> Limpiar</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-head">
+                        <i class="bi bi-person-vcard"></i> Ciudadano
+                        <div class="right"><a href="#" class="btn btn-ghost btn-sm"><i class="bi bi-box-arrow-up-right"></i> Ver legajo</a></div>
+                    </div>
+                    <div class="card-body">
+                        <div class="ficha">
+                            <div class="avatar">MP</div>
+                            <dl class="dgrid">
+                                <div>
+                                    <dt>Apellido y nombre</dt>
+                                    <dd>
+                                        PÉREZ, María Laura
+                                    </dd>
+                                </div>
+                                <div>
+                                    <dt>Documento</dt>
+                                    <dd>
+                                        DNI 30.123.456
+                                    </dd>
+                                </div>
+                                <div>
+                                    <dt>CUIL / CUIT</dt>
+                                    <dd>
+                                        27-30123456-4
+                                    </dd>
+                                </div>
+                                <div>
+                                    <dt>Email</dt>
+                                    <dd>
+                                        m.perez@example.com
+                                    </dd>
+                                </div>
+                                <div>
+                                    <dt>Teléfono</dt>
+                                    <dd>
+                                        +54 388 461-2526
+                                    </dd>
+                                </div>
+                                <div>
+                                    <dt>Primera inscripción INET</dt>
+                                    <dd>
+                                        14/03/2024
+                                    </dd>
+                                </div>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="kpis">
+                    <div class="kpi">
+                        <div class="n">5</div>
+                        <div class="l">Inscripciones</div>
+                    </div>
+                    <div class="kpi blue">
+                        <div class="n">1</div>
+                        <div class="l">En curso</div>
+                    </div>
+                    <div class="kpi green">
+                        <div class="n">2</div>
+                        <div class="l">Completadas</div>
+                    </div>
+                    <div class="kpi red">
+                        <div class="n">1</div>
+                        <div class="l">Abandonadas</div>
+                    </div>
+                    <div class="kpi grey">
+                        <div class="n">1</div>
+                        <div class="l">Rechazadas</div>
+                    </div>
+                    <div class="kpi teal">
+                        <div class="n">78%</div>
+                        <div class="l">Asistencia global</div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-head">
+                        <i class="bi bi-mortarboard"></i> Trayectoria formativa
+                        <div class="right">
+                            <button class="btn btn-ghost btn-sm"><i class="bi bi-filetype-csv"></i> CSV</button>
+                            <button class="btn btn-ghost btn-sm"><i class="bi bi-file-earmark-excel"></i> XLSX</button>
+                        </div>
+                    </div>
+                    <div class="tbl-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Fecha insc.</th>
+                                    <th>Curso</th>
+                                    <th>Comisión</th>
+                                    <th>Período</th>
+                                    <th>Centro / CUE</th>
+                                    <th>Ubicación</th>
+                                    <th>Estado</th>
+                                    <th>Resultado</th>
+                                    <th>Asistencia</th>
+                                    <th>Origen</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="nowrap">02/08/2026</td>
+                                    <td>Instalaciones Sanitarias<span class="sub">Curso: Activo</span></td>
+                                    <td>C-2026-114<span class="sub">Instalaciones Sanitarias — Turno tarde</span></td>
+                                    <td class="nowrap">01/08/2026<span class="sub">→ 20/12/2026</span></td>
+                                    <td>C.F.P. N° 33 — Aula Taller Móvil N° 33<span class="sub">CUE 6600123-00</span></td>
+                                    <td>San Juan / Capital<span class="sub">Avda. España s/n</span></td>
+                                    <td><span class="badge b-blue"><i class="bi bi-play-circle"></i> Inscripta</span><span class="sub">Comisión: Activa</span></td>
+                                    <td><span class="badge b-grey">Sin calificar</span></td>
+                                    <td>
+                                        <div class="att">
+                                            <div class="t">86%</div>
+                                            <div class="n">12 de 14 sesiones</div>
+                                            <div class="bar">
+                                                <i style="width:86%"></i>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td><span class="badge b-grey">Backoffice</span></td>
+                                    <td class="nowrap">
+                                        <a href="#" class="btn btn-ghost btn-sm"><i class="bi bi-box-arrow-up-right"></i></a>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="nowrap">11/03/2026</td>
+                                    <td>Textil e Indumentaria<span class="sub">Curso: Finalizado</span></td>
+                                    <td>C-2026-041<span class="sub">Textil e Indumentaria N° 27</span></td>
+                                    <td class="nowrap">15/03/2026<span class="sub">→ 28/06/2026</span></td>
+                                    <td>C.F.P. N° 27 — Aula Taller Móvil N° 27<span class="sub">CUE 6600098-00</span></td>
+                                    <td>San Juan / Rawson<span class="sub">Avda. España s/n</span></td>
+                                    <td><span class="badge b-green"><i class="bi bi-check-circle"></i> Completada</span><span class="sub">Comisión: Cerrada</span></td>
+                                    <td><span class="badge b-green">Aprobado</span><span class="sub">Acta N° 2026-118</span></td>
+                                    <td>
+                                        <div class="att">
+                                            <div class="t">93%</div>
+                                            <div class="n">28 de 30 sesiones</div>
+                                            <div class="bar">
+                                                <i style="width:93%"></i>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td><span class="badge b-grey">Front público</span></td>
+                                    <td class="nowrap">
+                                        <a href="#" class="btn btn-ghost btn-sm"><i class="bi bi-box-arrow-up-right"></i></a>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="nowrap">05/09/2025</td>
+                                    <td>Informática — Operador PC<span class="sub">Curso: Finalizado</span></td>
+                                    <td>C-2025-207<span class="sub">Informática Aula Taller Móvil N° 51</span></td>
+                                    <td class="nowrap">10/09/2025<span class="sub">→ 19/12/2025</span></td>
+                                    <td>C.F.P. Aula Taller Móvil N° 51<span class="sub">CUE 6600151-00</span></td>
+                                    <td>San Juan / Chimbas<span class="sub">Avda. España s/n</span></td>
+                                    <td><span class="badge b-green"><i class="bi bi-check-circle"></i> Completada</span><span class="sub">Comisión: Cerrada</span></td>
+                                    <td><span class="badge b-red">Desaprobado</span><span class="sub">Acta N° 2025-402</span></td>
+                                    <td>
+                                        <div class="att">
+                                            <div class="t">61%</div>
+                                            <div class="n">17 de 28 sesiones</div>
+                                            <div class="bar">
+                                                <i class="low" style="width:61%"></i>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td><span class="badge b-grey">Backoffice</span></td>
+                                    <td class="nowrap">
+                                        <a href="#" class="btn btn-ghost btn-sm"><i class="bi bi-box-arrow-up-right"></i></a>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="nowrap">18/04/2025</td>
+                                    <td>Soldadura — Nivel I<span class="sub">Curso: Finalizado</span></td>
+                                    <td>C-2025-088<span class="sub">Soldadura Turno mañana</span></td>
+                                    <td class="nowrap">02/05/2025<span class="sub">→ 29/08/2025</span></td>
+                                    <td>C.F.P. N° 1 — Aula Taller Móvil (Sede)<span class="sub">CUE 3800001-00</span></td>
+                                    <td>Jujuy / San Salvador<span class="sub">Av. Gavazzini esq. Av. Tte. Farías</span></td>
+                                    <td><span class="badge b-red"><i class="bi bi-x-circle"></i> Abandonada</span><span class="sub">Comisión: Cerrada</span></td>
+                                    <td><span class="badge b-grey">Sin calificar</span></td>
+                                    <td>
+                                        <div class="att">
+                                            <div class="t">24%</div>
+                                            <div class="n">5 de 21 sesiones</div>
+                                            <div class="bar">
+                                                <i class="low" style="width:24%"></i>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td><span class="badge b-grey">Front público</span></td>
+                                    <td class="nowrap">
+                                        <a href="#" class="btn btn-ghost btn-sm"><i class="bi bi-box-arrow-up-right"></i></a>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="nowrap">14/03/2024</td>
+                                    <td>Gastronomía — Panadería<span class="sub">Curso: Finalizado</span></td>
+                                    <td>C-2024-016<span class="sub">Panadería Turno noche</span></td>
+                                    <td class="nowrap">01/04/2024<span class="sub">→ 12/07/2024</span></td>
+                                    <td>C.F.P. N° 1 — Aula Taller Móvil (Sede)<span class="sub">CUE 3800001-00</span></td>
+                                    <td>Jujuy / San Salvador<span class="sub">Av. Gavazzini esq. Av. Tte. Farías</span></td>
+                                    <td><span class="badge b-grey"><i class="bi bi-slash-circle"></i> Rechazada</span><span class="sub">Sin cupo disponible</span></td>
+                                    <td><span class="badge b-grey">Sin calificar</span></td>
+                                    <td>
+                                        <div class="att empty">
+                                            <div class="t">Sin registros</div>
+                                        </div>
+                                    </td>
+                                    <td><span class="badge b-grey">Importación</span></td>
+                                    <td class="nowrap">
+                                        <a href="#" class="btn btn-ghost btn-sm"><i class="bi bi-box-arrow-up-right"></i></a>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="legend">
+                        <div><span class="badge b-blue">Inscripta</span> cursando</div>
+                        <div><span class="badge b-green">Completada</span> cumplió el cursado</div>
+                        <div><span class="badge b-red">Abandonada</span> abandonó</div>
+                        <div><span class="badge b-grey">Sin calificar</span> resultado pendiente de carga</div>
+                        <div><i class="bi bi-info-circle"></i> Estado del cursado y resultado final son ejes independientes.</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ═══════════ 3 · ALCANCE LIMITADO (referente de centro) ═══════════ -->
+            <section class="screen" id="s3">
+                <div class="crumb">INET / Buscador por Ciudadano / Resultado</div>
+                <div class="hero">
+                    <div>
+                        <h1>BUSCADOR POR CIUDADANO</h1>
+                        <p>Misma búsqueda, vista por un <b>referente de centro</b>: solo se listan las inscripciones de sus centros.</p>
+                    </div>
+                    <span class="pill" style="background:var(--cgold);color:var(--cnav)">Alcance: 1 centro</span>
+                </div>
+
+                <div class="note gold">
+                    <i class="bi bi-shield-lock"></i>
+                    <div>Estás viendo únicamente las inscripciones correspondientes a los centros dentro de tu alcance de acceso. Este listado <b>no representa la trayectoria completa</b> del ciudadano en INET.</div>
+                </div>
+
+                <div class="card">
+                    <div class="card-head"><i class="bi bi-person-vcard"></i> Ciudadano</div>
+                    <div class="card-body">
+                        <div class="ficha">
+                            <div class="avatar">MP</div>
+                            <dl class="dgrid">
+                                <div>
+                                    <dt>Apellido y nombre</dt>
+                                    <dd>
+                                        PÉREZ, María Laura
+                                    </dd>
+                                </div>
+                                <div>
+                                    <dt>Documento</dt>
+                                    <dd>
+                                        DNI 30.123.456
+                                    </dd>
+                                </div>
+                                <div>
+                                    <dt>CUIL / CUIT</dt>
+                                    <dd>
+                                        27-30123456-4
+                                    </dd>
+                                </div>
+                                <div>
+                                    <dt>Email</dt>
+                                    <dd>
+                                        m.perez@example.com
+                                    </dd>
+                                </div>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="kpis">
+                    <div class="kpi">
+                        <div class="n">2</div>
+                        <div class="l">Inscripciones</div>
+                    </div>
+                    <div class="kpi blue">
+                        <div class="n">0</div>
+                        <div class="l">En curso</div>
+                    </div>
+                    <div class="kpi green">
+                        <div class="n">0</div>
+                        <div class="l">Completadas</div>
+                    </div>
+                    <div class="kpi red">
+                        <div class="n">1</div>
+                        <div class="l">Abandonadas</div>
+                    </div>
+                    <div class="kpi grey">
+                        <div class="n">1</div>
+                        <div class="l">Rechazadas</div>
+                    </div>
+                    <div class="kpi teal">
+                        <div class="n">24%</div>
+                        <div class="l">Asistencia</div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-head">
+                        <i class="bi bi-mortarboard"></i> Trayectoria formativa (alcance limitado)
+                        <div class="right">
+                            <button class="btn btn-ghost btn-sm"><i class="bi bi-filetype-csv"></i> CSV</button>
+                            <button class="btn btn-ghost btn-sm"><i class="bi bi-file-earmark-excel"></i> XLSX</button>
+                        </div>
+                    </div>
+                    <div class="tbl-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Fecha insc.</th>
+                                    <th>Curso</th>
+                                    <th>Comisión</th>
+                                    <th>Período</th>
+                                    <th>Centro / CUE</th>
+                                    <th>Ubicación</th>
+                                    <th>Estado</th>
+                                    <th>Resultado</th>
+                                    <th>Asistencia</th>
+                                    <th>Origen</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="nowrap">18/04/2025</td>
+                                    <td>Soldadura — Nivel I<span class="sub">Curso: Finalizado</span></td>
+                                    <td>C-2025-088<span class="sub">Soldadura Turno mañana</span></td>
+                                    <td class="nowrap">02/05/2025<span class="sub">→ 29/08/2025</span></td>
+                                    <td>C.F.P. N° 1 — Aula Taller Móvil (Sede)<span class="sub">CUE 3800001-00</span></td>
+                                    <td>Jujuy / San Salvador<span class="sub">Av. Gavazzini esq. Av. Tte. Farías</span></td>
+                                    <td><span class="badge b-red"><i class="bi bi-x-circle"></i> Abandonada</span></td>
+                                    <td><span class="badge b-grey">Sin calificar</span></td>
+                                    <td>
+                                        <div class="att">
+                                            <div class="t">24%</div>
+                                            <div class="n">5 de 21 sesiones</div>
+                                            <div class="bar">
+                                                <i class="low" style="width:24%"></i>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td><span class="badge b-grey">Front público</span></td>
+                                    <td class="nowrap">
+                                        <a href="#" class="btn btn-ghost btn-sm"><i class="bi bi-box-arrow-up-right"></i></a>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="nowrap">14/03/2024</td>
+                                    <td>Gastronomía — Panadería<span class="sub">Curso: Finalizado</span></td>
+                                    <td>C-2024-016<span class="sub">Panadería Turno noche</span></td>
+                                    <td class="nowrap">01/04/2024<span class="sub">→ 12/07/2024</span></td>
+                                    <td>C.F.P. N° 1 — Aula Taller Móvil (Sede)<span class="sub">CUE 3800001-00</span></td>
+                                    <td>Jujuy / San Salvador<span class="sub">Av. Gavazzini esq. Av. Tte. Farías</span></td>
+                                    <td><span class="badge b-grey"><i class="bi bi-slash-circle"></i> Rechazada</span></td>
+                                    <td><span class="badge b-grey">Sin calificar</span></td>
+                                    <td>
+                                        <div class="att empty">
+                                            <div class="t">Sin registros</div>
+                                        </div>
+                                    </td>
+                                    <td><span class="badge b-grey">Importación</span></td>
+                                    <td class="nowrap">
+                                        <a href="#" class="btn btn-ghost btn-sm"><i class="bi bi-box-arrow-up-right"></i></a>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ═══════════ 4 · SIN RESULTADOS / SIN INSCRIPCIONES ═══════════ -->
+            <section class="screen" id="s4">
+                <div class="crumb">INET / Buscador por Ciudadano / Resultado</div>
+                <div class="hero">
+                    <div>
+                        <h1>BUSCADOR POR CIUDADANO</h1>
+                        <p>Dos estados vacíos distintos: el ciudadano no existe, o existe pero no tiene inscripciones INET.</p>
+                    </div>
+                    <span class="pill">Solo lectura</span>
+                </div>
+
+                <div class="card">
+                    <div class="card-head"><i class="bi bi-search"></i> Buscar ciudadano</div>
+                    <div class="card-body">
+                        <div class="search-row">
+                            <div class="f">
+                                <label for="q4">DNI o CUIL / CUIT</label>
+                                <input type="search" id="q4" value="99999999" />
+                            </div>
+                            <button class="btn btn-green"><i class="bi bi-search"></i> Buscar</button>
+                            <button class="btn btn-ghost"><i class="bi bi-x-lg"></i> Limpiar</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-body">
+                        <div class="empty">
+                            <i class="bi bi-person-x"></i>
+                            <h4>No se encontró un ciudadano con ese documento</h4>
+                            <p>Verificá el número ingresado. Si la persona no está registrada en SISOC, primero debe darse de alta desde el módulo de Ciudadanos.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-head"><i class="bi bi-person-vcard"></i> Ciudadano</div>
+                    <div class="card-body">
+                        <div class="ficha">
+                            <div class="avatar">JG</div>
+                            <dl class="dgrid">
+                                <div>
+                                    <dt>Apellido y nombre</dt>
+                                    <dd>
+                                        GÓMEZ, Juan Ignacio
+                                    </dd>
+                                </div>
+                                <div>
+                                    <dt>Documento</dt>
+                                    <dd>
+                                        DNI 28.987.654
+                                    </dd>
+                                </div>
+                                <div>
+                                    <dt>CUIL / CUIT</dt>
+                                    <dd>
+                                        20-28987654-1
+                                    </dd>
+                                </div>
+                                <div>
+                                    <dt>Email</dt>
+                                    <dd>
+                                        —
+                                    </dd>
+                                </div>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-head"><i class="bi bi-mortarboard"></i> Trayectoria formativa</div>
+                    <div class="card-body">
+                        <div class="empty">
+                            <i class="bi bi-clipboard-x"></i>
+                            <h4>El ciudadano no registra inscripciones en INET</h4>
+                            <p>Existe en SISOC pero no tiene inscripciones a cursos o comisiones dentro de tu alcance de acceso.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ═══════════ 5 · DESAMBIGUACIÓN ═══════════ -->
+            <section class="screen" id="s5">
+                <div class="crumb">INET / Buscador por Ciudadano / Resultado</div>
+                <div class="hero">
+                    <div>
+                        <h1>BUSCADOR POR CIUDADANO</h1>
+                        <p>El número coincide con más de un ciudadano: la unicidad en SISOC es tipo de documento + número, no el número solo.</p>
+                    </div>
+                    <span class="pill">Solo lectura</span>
+                </div>
+
+                <div class="note">
+                    <i class="bi bi-people"></i>
+                    <div>Se encontraron <b>2 ciudadanos</b> con el número <b>30.123.456</b> en distintos tipos de documento. Elegí cuál querés consultar.</div>
+                </div>
+
+                <div class="card">
+                    <div class="card-head"><i class="bi bi-list-check"></i> Coincidencias</div>
+                    <div class="card-body">
+                        <div class="cand">
+                            <div class="avatar" style="width:46px;height:46px;font-size:16px">MP</div>
+                            <div class="who"><b>PÉREZ, María Laura</b><span>DNI 30.123.456 · CUIL 27-30123456-4 · 5 inscripciones INET</span></div>
+                            <button class="btn btn-gold btn-sm"><i class="bi bi-arrow-right"></i> Ver trayectoria</button>
+                        </div>
+                        <div class="cand">
+                            <div class="avatar" style="width:46px;height:46px;font-size:16px">RS</div>
+                            <div class="who"><b>SILVA, Ramón</b><span>LC 30.123.456 · sin CUIL registrado · 1 inscripción INET</span></div>
+                            <button class="btn btn-gold btn-sm"><i class="bi bi-arrow-right"></i> Ver trayectoria</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+        <footer class="app-footer">
+            <span>SISOC — Ministerio de Capital Humano · Mockup no funcional</span>
+            <span>INET · Buscador por Ciudadano</span>
+        </footer>
+
+        <div class="mock-switch">
+            <span>Pantallas del mockup</span>
+            <button class="on" data-s="s1">1 · Inicial</button>
+            <button data-s="s2">2 · Resultado</button>
+            <button data-s="s3">3 · Alcance limitado</button>
+            <button data-s="s4">4 · Vacíos</button>
+            <button data-s="s5">5 · Desambiguación</button>
         </div>
-        <button class="btn btn-green"><i class="bi bi-search"></i> Buscar</button>
-        <button class="btn btn-ghost"><i class="bi bi-x-lg"></i> Limpiar</button>
-      </div>
-      <p class="hint"><i class="bi bi-info-circle"></i> Se admite documento (<code>30123456</code>) o CUIL/CUIT con o sin guiones (<code>20-30123456-5</code>, <code>20301234565</code>). Los puntos, guiones y espacios se ignoran.</p>
-    </div>
-  </div>
 
-  <div class="card">
-    <div class="card-body">
-      <div class="empty">
-        <i class="bi bi-person-vcard"></i>
-        <h4>Ingresá un documento para comenzar</h4>
-        <p>El resultado muestra únicamente inscripciones de centros dentro de tu alcance de acceso.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ═══════════ 2 · RESULTADO (SSE / alcance nacional) ═══════════ -->
-<section class="screen" id="s2">
-  <div class="crumb">INET / Buscador por Ciudadano / Resultado</div>
-  <div class="hero">
-    <div>
-      <h1>BUSCADOR POR CIUDADANO</h1>
-      <p>Resultado para el documento <b>30.123.456</b> — 5 inscripciones encontradas.</p>
-    </div>
-    <span class="pill">Solo lectura</span>
-  </div>
-
-  <div class="card">
-    <div class="card-head"><i class="bi bi-search"></i> Buscar ciudadano</div>
-    <div class="card-body">
-      <div class="search-row">
-        <div class="f"><label for="q2">DNI o CUIL / CUIT</label><input type="search" id="q2" value="20-30123456-5"></div>
-        <button class="btn btn-green"><i class="bi bi-search"></i> Buscar</button>
-        <button class="btn btn-ghost"><i class="bi bi-x-lg"></i> Limpiar</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card-head"><i class="bi bi-person-vcard"></i> Ciudadano
-      <div class="right"><a href="#" class="btn btn-ghost btn-sm"><i class="bi bi-box-arrow-up-right"></i> Ver legajo</a></div>
-    </div>
-    <div class="card-body">
-      <div class="ficha">
-        <div class="avatar">MP</div>
-        <dl class="dgrid">
-          <div><dt>Apellido y nombre</dt><dd>PÉREZ, María Laura</dd></div>
-          <div><dt>Documento</dt><dd>DNI 30.123.456</dd></div>
-          <div><dt>CUIL / CUIT</dt><dd>27-30123456-4</dd></div>
-          <div><dt>Email</dt><dd>m.perez@example.com</dd></div>
-          <div><dt>Teléfono</dt><dd>+54 388 461-2526</dd></div>
-          <div><dt>Primera inscripción INET</dt><dd>14/03/2024</dd></div>
-        </dl>
-      </div>
-    </div>
-  </div>
-
-  <div class="kpis">
-    <div class="kpi"><div class="n">5</div><div class="l">Inscripciones</div></div>
-    <div class="kpi blue"><div class="n">1</div><div class="l">En curso</div></div>
-    <div class="kpi green"><div class="n">2</div><div class="l">Completadas</div></div>
-    <div class="kpi red"><div class="n">1</div><div class="l">Abandonadas</div></div>
-    <div class="kpi grey"><div class="n">1</div><div class="l">Rechazadas</div></div>
-    <div class="kpi teal"><div class="n">78%</div><div class="l">Asistencia global</div></div>
-  </div>
-
-  <div class="card">
-    <div class="card-head"><i class="bi bi-mortarboard"></i> Trayectoria formativa
-      <div class="right">
-        <button class="btn btn-ghost btn-sm"><i class="bi bi-filetype-csv"></i> CSV</button>
-        <button class="btn btn-ghost btn-sm"><i class="bi bi-file-earmark-excel"></i> XLSX</button>
-      </div>
-    </div>
-    <div class="tbl-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Fecha insc.</th><th>Curso</th><th>Comisión</th><th>Período</th>
-            <th>Centro / CUE</th><th>Ubicación</th><th>Estado</th><th>Resultado</th>
-            <th>Asistencia</th><th>Origen</th><th></th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td class="nowrap">02/08/2026</td>
-            <td>Instalaciones Sanitarias<span class="sub">Curso: Activo</span></td>
-            <td>C-2026-114<span class="sub">Instalaciones Sanitarias — Turno tarde</span></td>
-            <td class="nowrap">01/08/2026<span class="sub">→ 20/12/2026</span></td>
-            <td>C.F.P. N° 33 — Aula Taller Móvil N° 33<span class="sub">CUE 6600123-00</span></td>
-            <td>San Juan / Capital<span class="sub">Avda. España s/n</span></td>
-            <td><span class="badge b-blue"><i class="bi bi-play-circle"></i> Inscripta</span><span class="sub">Comisión: Activa</span></td>
-            <td><span class="badge b-grey">Sin calificar</span></td>
-            <td><div class="att"><div class="t">86%</div><div class="n">12 de 14 sesiones</div><div class="bar"><i style="width:86%"></i></div></div></td>
-            <td><span class="badge b-grey">Backoffice</span></td>
-            <td class="nowrap"><a href="#" class="btn btn-ghost btn-sm"><i class="bi bi-box-arrow-up-right"></i></a></td>
-          </tr>
-          <tr>
-            <td class="nowrap">11/03/2026</td>
-            <td>Textil e Indumentaria<span class="sub">Curso: Finalizado</span></td>
-            <td>C-2026-041<span class="sub">Textil e Indumentaria N° 27</span></td>
-            <td class="nowrap">15/03/2026<span class="sub">→ 28/06/2026</span></td>
-            <td>C.F.P. N° 27 — Aula Taller Móvil N° 27<span class="sub">CUE 6600098-00</span></td>
-            <td>San Juan / Rawson<span class="sub">Avda. España s/n</span></td>
-            <td><span class="badge b-green"><i class="bi bi-check-circle"></i> Completada</span><span class="sub">Comisión: Cerrada</span></td>
-            <td><span class="badge b-green">Aprobado</span><span class="sub">Acta N° 2026-118</span></td>
-            <td><div class="att"><div class="t">93%</div><div class="n">28 de 30 sesiones</div><div class="bar"><i style="width:93%"></i></div></div></td>
-            <td><span class="badge b-grey">Front público</span></td>
-            <td class="nowrap"><a href="#" class="btn btn-ghost btn-sm"><i class="bi bi-box-arrow-up-right"></i></a></td>
-          </tr>
-          <tr>
-            <td class="nowrap">05/09/2025</td>
-            <td>Informática — Operador PC<span class="sub">Curso: Finalizado</span></td>
-            <td>C-2025-207<span class="sub">Informática Aula Taller Móvil N° 51</span></td>
-            <td class="nowrap">10/09/2025<span class="sub">→ 19/12/2025</span></td>
-            <td>C.F.P. Aula Taller Móvil N° 51<span class="sub">CUE 6600151-00</span></td>
-            <td>San Juan / Chimbas<span class="sub">Avda. España s/n</span></td>
-            <td><span class="badge b-green"><i class="bi bi-check-circle"></i> Completada</span><span class="sub">Comisión: Cerrada</span></td>
-            <td><span class="badge b-red">Desaprobado</span><span class="sub">Acta N° 2025-402</span></td>
-            <td><div class="att"><div class="t">61%</div><div class="n">17 de 28 sesiones</div><div class="bar"><i class="low" style="width:61%"></i></div></div></td>
-            <td><span class="badge b-grey">Backoffice</span></td>
-            <td class="nowrap"><a href="#" class="btn btn-ghost btn-sm"><i class="bi bi-box-arrow-up-right"></i></a></td>
-          </tr>
-          <tr>
-            <td class="nowrap">18/04/2025</td>
-            <td>Soldadura — Nivel I<span class="sub">Curso: Finalizado</span></td>
-            <td>C-2025-088<span class="sub">Soldadura Turno mañana</span></td>
-            <td class="nowrap">02/05/2025<span class="sub">→ 29/08/2025</span></td>
-            <td>C.F.P. N° 1 — Aula Taller Móvil (Sede)<span class="sub">CUE 3800001-00</span></td>
-            <td>Jujuy / San Salvador<span class="sub">Av. Gavazzini esq. Av. Tte. Farías</span></td>
-            <td><span class="badge b-red"><i class="bi bi-x-circle"></i> Abandonada</span><span class="sub">Comisión: Cerrada</span></td>
-            <td><span class="badge b-grey">Sin calificar</span></td>
-            <td><div class="att"><div class="t">24%</div><div class="n">5 de 21 sesiones</div><div class="bar"><i class="low" style="width:24%"></i></div></div></td>
-            <td><span class="badge b-grey">Front público</span></td>
-            <td class="nowrap"><a href="#" class="btn btn-ghost btn-sm"><i class="bi bi-box-arrow-up-right"></i></a></td>
-          </tr>
-          <tr>
-            <td class="nowrap">14/03/2024</td>
-            <td>Gastronomía — Panadería<span class="sub">Curso: Finalizado</span></td>
-            <td>C-2024-016<span class="sub">Panadería Turno noche</span></td>
-            <td class="nowrap">01/04/2024<span class="sub">→ 12/07/2024</span></td>
-            <td>C.F.P. N° 1 — Aula Taller Móvil (Sede)<span class="sub">CUE 3800001-00</span></td>
-            <td>Jujuy / San Salvador<span class="sub">Av. Gavazzini esq. Av. Tte. Farías</span></td>
-            <td><span class="badge b-grey"><i class="bi bi-slash-circle"></i> Rechazada</span><span class="sub">Sin cupo disponible</span></td>
-            <td><span class="badge b-grey">Sin calificar</span></td>
-            <td><div class="att empty"><div class="t">Sin registros</div></div></td>
-            <td><span class="badge b-grey">Importación</span></td>
-            <td class="nowrap"><a href="#" class="btn btn-ghost btn-sm"><i class="bi bi-box-arrow-up-right"></i></a></td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    <div class="legend">
-      <div><span class="badge b-blue">Inscripta</span> cursando</div>
-      <div><span class="badge b-green">Completada</span> cumplió el cursado</div>
-      <div><span class="badge b-red">Abandonada</span> abandonó</div>
-      <div><span class="badge b-grey">Sin calificar</span> resultado pendiente de carga</div>
-      <div><i class="bi bi-info-circle"></i> Estado del cursado y resultado final son ejes independientes.</div>
-    </div>
-  </div>
-</section>
-
-<!-- ═══════════ 3 · ALCANCE LIMITADO (referente de centro) ═══════════ -->
-<section class="screen" id="s3">
-  <div class="crumb">INET / Buscador por Ciudadano / Resultado</div>
-  <div class="hero">
-    <div>
-      <h1>BUSCADOR POR CIUDADANO</h1>
-      <p>Misma búsqueda, vista por un <b>referente de centro</b>: solo se listan las inscripciones de sus centros.</p>
-    </div>
-    <span class="pill" style="background:var(--cgold);color:var(--cnav)">Alcance: 1 centro</span>
-  </div>
-
-  <div class="note gold"><i class="bi bi-shield-lock"></i>
-    <div>Estás viendo únicamente las inscripciones correspondientes a los centros dentro de tu alcance de acceso. Este listado <b>no representa la trayectoria completa</b> del ciudadano en INET.</div>
-  </div>
-
-  <div class="card">
-    <div class="card-head"><i class="bi bi-person-vcard"></i> Ciudadano</div>
-    <div class="card-body">
-      <div class="ficha">
-        <div class="avatar">MP</div>
-        <dl class="dgrid">
-          <div><dt>Apellido y nombre</dt><dd>PÉREZ, María Laura</dd></div>
-          <div><dt>Documento</dt><dd>DNI 30.123.456</dd></div>
-          <div><dt>CUIL / CUIT</dt><dd>27-30123456-4</dd></div>
-          <div><dt>Email</dt><dd>m.perez@example.com</dd></div>
-        </dl>
-      </div>
-    </div>
-  </div>
-
-  <div class="kpis">
-    <div class="kpi"><div class="n">2</div><div class="l">Inscripciones</div></div>
-    <div class="kpi blue"><div class="n">0</div><div class="l">En curso</div></div>
-    <div class="kpi green"><div class="n">0</div><div class="l">Completadas</div></div>
-    <div class="kpi red"><div class="n">1</div><div class="l">Abandonadas</div></div>
-    <div class="kpi grey"><div class="n">1</div><div class="l">Rechazadas</div></div>
-    <div class="kpi teal"><div class="n">24%</div><div class="l">Asistencia</div></div>
-  </div>
-
-  <div class="card">
-    <div class="card-head"><i class="bi bi-mortarboard"></i> Trayectoria formativa (alcance limitado)
-      <div class="right">
-        <button class="btn btn-ghost btn-sm"><i class="bi bi-filetype-csv"></i> CSV</button>
-        <button class="btn btn-ghost btn-sm"><i class="bi bi-file-earmark-excel"></i> XLSX</button>
-      </div>
-    </div>
-    <div class="tbl-wrap">
-      <table>
-        <thead>
-          <tr><th>Fecha insc.</th><th>Curso</th><th>Comisión</th><th>Período</th><th>Centro / CUE</th><th>Ubicación</th><th>Estado</th><th>Resultado</th><th>Asistencia</th><th>Origen</th><th></th></tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td class="nowrap">18/04/2025</td>
-            <td>Soldadura — Nivel I<span class="sub">Curso: Finalizado</span></td>
-            <td>C-2025-088<span class="sub">Soldadura Turno mañana</span></td>
-            <td class="nowrap">02/05/2025<span class="sub">→ 29/08/2025</span></td>
-            <td>C.F.P. N° 1 — Aula Taller Móvil (Sede)<span class="sub">CUE 3800001-00</span></td>
-            <td>Jujuy / San Salvador<span class="sub">Av. Gavazzini esq. Av. Tte. Farías</span></td>
-            <td><span class="badge b-red"><i class="bi bi-x-circle"></i> Abandonada</span></td>
-            <td><span class="badge b-grey">Sin calificar</span></td>
-            <td><div class="att"><div class="t">24%</div><div class="n">5 de 21 sesiones</div><div class="bar"><i class="low" style="width:24%"></i></div></div></td>
-            <td><span class="badge b-grey">Front público</span></td>
-            <td class="nowrap"><a href="#" class="btn btn-ghost btn-sm"><i class="bi bi-box-arrow-up-right"></i></a></td>
-          </tr>
-          <tr>
-            <td class="nowrap">14/03/2024</td>
-            <td>Gastronomía — Panadería<span class="sub">Curso: Finalizado</span></td>
-            <td>C-2024-016<span class="sub">Panadería Turno noche</span></td>
-            <td class="nowrap">01/04/2024<span class="sub">→ 12/07/2024</span></td>
-            <td>C.F.P. N° 1 — Aula Taller Móvil (Sede)<span class="sub">CUE 3800001-00</span></td>
-            <td>Jujuy / San Salvador<span class="sub">Av. Gavazzini esq. Av. Tte. Farías</span></td>
-            <td><span class="badge b-grey"><i class="bi bi-slash-circle"></i> Rechazada</span></td>
-            <td><span class="badge b-grey">Sin calificar</span></td>
-            <td><div class="att empty"><div class="t">Sin registros</div></div></td>
-            <td><span class="badge b-grey">Importación</span></td>
-            <td class="nowrap"><a href="#" class="btn btn-ghost btn-sm"><i class="bi bi-box-arrow-up-right"></i></a></td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-</section>
-
-<!-- ═══════════ 4 · SIN RESULTADOS / SIN INSCRIPCIONES ═══════════ -->
-<section class="screen" id="s4">
-  <div class="crumb">INET / Buscador por Ciudadano / Resultado</div>
-  <div class="hero">
-    <div><h1>BUSCADOR POR CIUDADANO</h1><p>Dos estados vacíos distintos: el ciudadano no existe, o existe pero no tiene inscripciones INET.</p></div>
-    <span class="pill">Solo lectura</span>
-  </div>
-
-  <div class="card">
-    <div class="card-head"><i class="bi bi-search"></i> Buscar ciudadano</div>
-    <div class="card-body">
-      <div class="search-row">
-        <div class="f"><label for="q4">DNI o CUIL / CUIT</label><input type="search" id="q4" value="99999999"></div>
-        <button class="btn btn-green"><i class="bi bi-search"></i> Buscar</button>
-        <button class="btn btn-ghost"><i class="bi bi-x-lg"></i> Limpiar</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card-body">
-      <div class="empty">
-        <i class="bi bi-person-x"></i>
-        <h4>No se encontró un ciudadano con ese documento</h4>
-        <p>Verificá el número ingresado. Si la persona no está registrada en SISOC, primero debe darse de alta desde el módulo de Ciudadanos.</p>
-      </div>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card-head"><i class="bi bi-person-vcard"></i> Ciudadano</div>
-    <div class="card-body">
-      <div class="ficha">
-        <div class="avatar">JG</div>
-        <dl class="dgrid">
-          <div><dt>Apellido y nombre</dt><dd>GÓMEZ, Juan Ignacio</dd></div>
-          <div><dt>Documento</dt><dd>DNI 28.987.654</dd></div>
-          <div><dt>CUIL / CUIT</dt><dd>20-28987654-1</dd></div>
-          <div><dt>Email</dt><dd>—</dd></div>
-        </dl>
-      </div>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card-head"><i class="bi bi-mortarboard"></i> Trayectoria formativa</div>
-    <div class="card-body">
-      <div class="empty">
-        <i class="bi bi-clipboard-x"></i>
-        <h4>El ciudadano no registra inscripciones en INET</h4>
-        <p>Existe en SISOC pero no tiene inscripciones a cursos o comisiones dentro de tu alcance de acceso.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ═══════════ 5 · DESAMBIGUACIÓN ═══════════ -->
-<section class="screen" id="s5">
-  <div class="crumb">INET / Buscador por Ciudadano / Resultado</div>
-  <div class="hero">
-    <div><h1>BUSCADOR POR CIUDADANO</h1><p>El número coincide con más de un ciudadano: la unicidad en SISOC es tipo de documento + número, no el número solo.</p></div>
-    <span class="pill">Solo lectura</span>
-  </div>
-
-  <div class="note"><i class="bi bi-people"></i>
-    <div>Se encontraron <b>2 ciudadanos</b> con el número <b>30.123.456</b> en distintos tipos de documento. Elegí cuál querés consultar.</div>
-  </div>
-
-  <div class="card">
-    <div class="card-head"><i class="bi bi-list-check"></i> Coincidencias</div>
-    <div class="card-body">
-      <div class="cand">
-        <div class="avatar" style="width:46px;height:46px;font-size:16px">MP</div>
-        <div class="who"><b>PÉREZ, María Laura</b><span>DNI 30.123.456 · CUIL 27-30123456-4 · 5 inscripciones INET</span></div>
-        <button class="btn btn-gold btn-sm"><i class="bi bi-arrow-right"></i> Ver trayectoria</button>
-      </div>
-      <div class="cand">
-        <div class="avatar" style="width:46px;height:46px;font-size:16px">RS</div>
-        <div class="who"><b>SILVA, Ramón</b><span>LC 30.123.456 · sin CUIL registrado · 1 inscripción INET</span></div>
-        <button class="btn btn-gold btn-sm"><i class="bi bi-arrow-right"></i> Ver trayectoria</button>
-      </div>
-    </div>
-  </div>
-</section>
-
-</main>
-
-<footer class="app-footer">
-  <span>SISOC — Ministerio de Capital Humano · Mockup no funcional</span>
-  <span>INET · Buscador por Ciudadano</span>
-</footer>
-
-<div class="mock-switch">
-  <span>Pantallas del mockup</span>
-  <button class="on" data-s="s1">1 · Inicial</button>
-  <button data-s="s2">2 · Resultado</button>
-  <button data-s="s3">3 · Alcance limitado</button>
-  <button data-s="s4">4 · Vacíos</button>
-  <button data-s="s5">5 · Desambiguación</button>
-</div>
-
-<script>
+        <script>
 function mostrar(id) {
   document.querySelectorAll('.mock-switch button').forEach(function (x) {
     x.classList.toggle('on', x.dataset.s === id);
@@ -570,6 +781,6 @@ if (params.get('s') && document.getElementById(params.get('s'))) {
 if (params.get('shot')) {
   document.querySelector('.mock-switch').style.display = 'none';
 }
-</script>
-</body>
+        </script>
+    </body>
 </html>
