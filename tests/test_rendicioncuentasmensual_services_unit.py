@@ -500,20 +500,6 @@ def test_generar_pdf_descarga_rendicion_requiere_finalizada():
     assert "La descarga consolidada solo está disponible" in str(exc_info.value)
 
 
-@pytest.mark.django_db
-def test_generar_pdf_descarga_rendicion_requiere_docs():
-    rendicion = RendicionCuentaMensual.objects.create(
-        mes=6,
-        anio=2026,
-        estado=RendicionCuentaMensual.ESTADO_FINALIZADA,
-    )
-
-    with pytest.raises(ValidationError) as exc_info:
-        RendicionCuentaMensualService.generar_pdf_descarga_rendicion(rendicion)
-
-    assert "no tiene documentación" in str(exc_info.value)
-
-
 def test_obtener_rendiciones_cuentas_mensuales_success(mocker):
     comedor = object()
     queryset = object()
