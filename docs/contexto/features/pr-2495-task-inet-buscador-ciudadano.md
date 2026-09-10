@@ -32,6 +32,7 @@
 
 - Empezar por `docs/registro/prs/PR-2495.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
+- `AGENT_REPO_MAP.md`
 - `VAT/services/buscador_ciudadano_service.py`
 - `VAT/services/reportes_inscripciones_asistencia.py`
 - `VAT/services/vat_inscripciones_base.py`
@@ -39,11 +40,14 @@
 - `VAT/test_buscador_ciudadano.py`
 - `VAT/urls.py`
 - `VAT/views/buscador_ciudadano.py`
+- `docs/contexto/features/pr-2495-task-inet-buscador-ciudadano.md`
+- `docs/indice.md`
 - `docs/plans/2026-08-13-inet-buscador-por-ciudadano-issue.md`
 - `docs/plans/2026-08-13-inet-buscador-por-ciudadano-mockup.html`
 - `docs/plans/inet-buscador-ciudadano/mockup-inet-buscador-por-ciudadano.pptx`
 - `docs/registro/cambios/2026-08-13-inet-buscador-por-ciudadano.md`
 - `docs/registro/decisiones/2026-08-13-inet-buscador-base-inscripciones-compartida.md`
+- `docs/registro/prs/PR-2495.md`
 - `docs/vat/manual_usuario.md`
 - `templates/includes/sidebar/opciones.html`
 - Documentación sugerida para ampliar contexto:
@@ -51,11 +55,13 @@
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`
+- `docs/contexto/features/pr-2495-task-inet-buscador-ciudadano.md`
 - `docs/plans/2026-08-13-inet-buscador-por-ciudadano-issue.md`
 - `docs/plans/2026-08-13-inet-buscador-por-ciudadano-mockup.html`
 - `docs/plans/inet-buscador-ciudadano/mockup-inet-buscador-por-ciudadano.pptx`
 - `docs/registro/cambios/2026-08-13-inet-buscador-por-ciudadano.md`
 - `docs/registro/decisiones/2026-08-13-inet-buscador-base-inscripciones-compartida.md`
+- `docs/registro/prs/PR-2495.md`
 - `docs/vat/manual_usuario.md`
 
 ## Trazabilidad
