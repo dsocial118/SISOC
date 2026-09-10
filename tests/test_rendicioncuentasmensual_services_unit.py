@@ -432,7 +432,7 @@ def test_obtener_documentos_para_descarga_pdf_solo_incluye_vigentes_validados(
 @pytest.mark.django_db
 @pytest.mark.parametrize("pdf_error", [PdfReadError, PdfStreamError])
 def test_generar_pdf_descarga_rendicion_usa_placeholder_por_pdf_invalidos(
-    settings, tmp_path, mocker
+    settings, tmp_path, mocker, pdf_error
 ):
     settings.MEDIA_ROOT = str(tmp_path)
     rendicion = RendicionCuentaMensual.objects.create(
