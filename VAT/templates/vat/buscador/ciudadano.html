@@ -413,11 +413,8 @@
                             <form method="post" class="busc-inline-form">
                                 {% csrf_token %}
                                 <input type="hidden" name="q" value="{{ q }}" />
-                                <input type="hidden"
-                                       name="ciudadano_id"
-                                       value="{{ item.ciudadano.pk }}" />
-                                <button class="busc-btn busc-btn--primary busc-btn--sm"
-                                        type="submit">
+                                <input type="hidden" name="ciudadano_id" value="{{ item.ciudadano.pk }}" />
+                                <button class="busc-btn busc-btn--primary busc-btn--sm" type="submit">
                                     <i class="bi bi-arrow-right"></i>Ver trayectoria
                                 </button>
                             </form>
@@ -534,24 +531,18 @@
                             <form method="post" class="busc-inline-form">
                                 {% csrf_token %}
                                 <input type="hidden" name="q" value="{{ q }}" />
-                                <input type="hidden"
-                                       name="ciudadano_id"
-                                       value="{{ ciudadano.pk }}" />
+                                <input type="hidden" name="ciudadano_id" value="{{ ciudadano.pk }}" />
                                 <input type="hidden" name="export" value="csv" />
-                                <button type="submit"
-                                        class="busc-btn busc-btn--ghost busc-btn--sm">
+                                <button type="submit" class="busc-btn busc-btn--ghost busc-btn--sm">
                                     <i class="bi bi-filetype-csv"></i>CSV
                                 </button>
                             </form>
                             <form method="post" class="busc-inline-form">
                                 {% csrf_token %}
                                 <input type="hidden" name="q" value="{{ q }}" />
-                                <input type="hidden"
-                                       name="ciudadano_id"
-                                       value="{{ ciudadano.pk }}" />
+                                <input type="hidden" name="ciudadano_id" value="{{ ciudadano.pk }}" />
                                 <input type="hidden" name="export" value="xlsx" />
-                                <button type="submit"
-                                        class="busc-btn busc-btn--ghost busc-btn--sm">
+                                <button type="submit" class="busc-btn busc-btn--ghost busc-btn--sm">
                                     <i class="bi bi-file-earmark-excel"></i>XLSX
                                 </button>
                             </form>

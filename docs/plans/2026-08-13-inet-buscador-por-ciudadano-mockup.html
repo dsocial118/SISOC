@@ -757,7 +757,7 @@ td .sub{display:block;font-size:11px;color:#9aa4c2;margin-top:3px}
             <button data-s="s5">5 · Desambiguación</button>
         </div>
 
-        <script>
+        <script nonce="{{ request.csp_nonce }}">
 function mostrar(id) {
   document.querySelectorAll('.mock-switch button').forEach(function (x) {
     x.classList.toggle('on', x.dataset.s === id);
