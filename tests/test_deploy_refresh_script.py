@@ -238,6 +238,6 @@ def test_checkout_viejo_actualiza_antes_de_exigir_compose_celery(tmp_path):
     )
 
     assert result.returncode == 0, result.stderr
-    assert result.stdout.index("merge --ff-only origin/development") < result.stdout.index(
-        "docker compose -f"
-    )
+    assert result.stdout.index(
+        "merge --ff-only origin/development"
+    ) < result.stdout.index("docker compose -f")
