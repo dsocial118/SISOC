@@ -1176,59 +1176,28 @@ class AdmisionesTecnicosUpdateView(LoginRequiredMixin, UpdateView):
             self.get_context_data(informe_form_con_errores=True, **kwargs)
         )
 
-    @staticmethod
-    def _hay_datos_de_caratula(request):
-        """Indica si el usuario cargó algo en los campos de caratulación.
-
-        Se miran solo los campos sin valor inicial: ``expediente_organismo``
-        viene precargado con "MCH" y daría un falso positivo.
-        """
-        return any(
-            (request.POST.get(f"{CARATULA_FORM_PREFIX}-{campo}") or "").strip()
-            for campo in (
-                "expediente_anio",
-                "expediente_numero",
-                "expediente_reparticion",
-            )
-        )
-
-    def _debe_caratular(self, request, admision, action):
-        if admision.num_expediente:
-            return False
-        if action == "submit":
-            # Finalizar exige el expediente caratulado.
-            return True
-        # En borrador se caratula solo si el usuario cargó el expediente; si no,
-        # guardar el borrador no debe quedar bloqueado por un campo que todavía
-        # no completó.
-        return self._hay_datos_de_caratula(request)
-
     def _guardar_informe_y_caratula(self, request, admision, informe_form, action):
-        """Encadena finalizar carga documental, caratulación e informe técnico.
+        """Guarda la caratulación del expediente y el informe técnico juntos.
 
-        Los tres pasos van en una sola transacción y en el orden que impone la
-        máquina de estados (``documentacion_aprobada`` ->
-        ``documentacion_carga_finalizada`` -> ``expediente_cargado`` ->
-        ``informe_tecnico_en_proceso``), así que un único botón dispara las
-        validaciones de cada uno sin saltear ninguna. Si algo falla no queda
-        nada a medio aplicar.
+        Los dos pasos van en una sola transacción, así que si algo falla no
+        queda nada a medio aplicar. La carga documental no participa: la
+        documentación se puede seguir sumando en cualquier momento y no
+        condiciona ni la caratulación ni el informe.
+
+        La carátula sigue la misma lógica que el informe: en borrador se guarda
+        el avance sin exigir los campos completos, y al finalizar se compila el
+        número definitivo. Una admisión ya caratulada no se vuelve a tocar.
 
         Devuelve ``(error_caratula_form, error_message)``; ambos ``None`` si el
         guardado fue exitoso.
         """
         with transaction.atomic():
-            if self._debe_caratular(request, admision, action):
-                exito, mensaje = (
-                    AdmisionService.finalizar_carga_documentacion_si_corresponde(
-                        admision
-                    )
-                )
-                if not exito:
-                    transaction.set_rollback(True)
-                    return None, mensaje
-
+            if not admision.num_expediente:
                 exito, mensaje, caratular_form = AdmisionService.guardar_caratulacion(
-                    admision, request.POST, prefix=CARATULA_FORM_PREFIX
+                    admision,
+                    request.POST,
+                    prefix=CARATULA_FORM_PREFIX,
+                    borrador=action != "submit",
                 )
                 if not exito:
                     transaction.set_rollback(True)

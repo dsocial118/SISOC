@@ -25,8 +25,17 @@ El bloque es colapsable y lo maneja static/custom/js/informeTecnicoSecciones.js.
             </p>
             <small class="text-muted">Para modificarlo usá la edición del número de expediente en la ficha de la admisión.</small>
         {% elif caratular_form %}
+            {% if admision.num_expediente_borrador %}
+                <p class="mb-2">
+                    <span class="badge bg-secondary">Borrador</span>
+                    <small class="text-muted ms-1">Guardado sin caratular todavía.</small>
+                </p>
+            {% endif %}
             {% include "admisiones/partials/numero_expediente_estructurado.html" with numero_expediente_form=caratular_form %}
-            <small class="text-muted d-block mt-2">Se guarda junto con el informe técnico al confirmar este formulario.</small>
+            <small class="text-muted d-block mt-2">
+                Se guarda junto con el informe técnico: <strong>Guardar Borrador</strong> conserva el avance
+                aunque esté incompleto, y <strong>Finalizar</strong> valida y caratula el expediente.
+            </small>
         {% else %}
             <p class="text-muted mb-0">La caratulación no está disponible en el estado actual de la admisión.</p>
         {% endif %}

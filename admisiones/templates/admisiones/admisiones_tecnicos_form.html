@@ -37,13 +37,11 @@
                class="btn btn-secondary mr-1">Volver</a>
         </div>
         <div class="col-auto">
-            {# Finalizar carga, caratular y crear/editar el informe se resuelven
-               en la sección inline con un solo botón, que encadena los tres
-               pasos con sus validaciones. #}
+            {# Caratular y crear/editar el informe se resuelven en la sección
+               inline con un solo botón. Finalizar la carga documental queda
+               aparte: la documentación se puede sumar en cualquier momento. #}
             {% for boton in botones_disponibles %}
-                {% if informe_form and boton == "finalizar_carga_documentacion" %}
-                    <a href="#informe-tecnico-seccion" class="btn btn-primary mr-1">Finalizar carga documentación</a>
-                {% elif informe_form and boton == "caratular_expediente" %}
+                {% if informe_form and boton == "caratular_expediente" %}
                     <a href="#informe-tecnico-seccion" class="btn btn-primary mr-1">Caratular expediente</a>
                 {% elif informe_form and boton == "crear_informe_tecnico" %}
                     <a href="#informe-tecnico-seccion" class="btn btn-primary mr-1">Crear Informe Técnico</a>
@@ -772,10 +770,10 @@
                 <div class="card-body pb-0">
                     <p class="text-muted mb-0">
                         <i class="fas fa-info-circle me-1" aria-hidden="true"></i>
-                        <strong>Finalizar</strong> resuelve en un solo paso la finalización de la carga
-                        documental, la caratulación del expediente y el informe técnico, aplicando las
-                        validaciones de cada uno. <strong>Guardar Borrador</strong> guarda el avance sin
-                        exigir los campos obligatorios.
+                        <strong>Finalizar</strong> resuelve en un solo paso la caratulación del
+                        expediente y el informe técnico, aplicando las validaciones de cada uno.
+                        <strong>Guardar Borrador</strong> guarda el avance de ambos sin exigir los campos
+                        obligatorios, incluida una carátula a medio cargar.
                     </p>
                 </div>
                 <div class="card-body">

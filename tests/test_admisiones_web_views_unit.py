@@ -1412,7 +1412,7 @@ def test_informe_tecnico_inline_form_invalido_reenderiza_con_errores(mocker):
 
 
 @pytest.mark.django_db
-def test_informe_tecnico_inline_borrador_sin_caratula_solo_guarda_informe(mocker):
+def test_informe_tecnico_inline_borrador_guarda_caratula_como_borrador(mocker):
     admision = SimpleNamespace(pk=1, tipo_informe="base", num_expediente=None)
     view = _view_informe_tecnico(mocker, admision)
     valid_form = mocker.Mock(
@@ -1444,16 +1444,19 @@ def test_informe_tecnico_inline_borrador_sin_caratula_solo_guarda_informe(mocker
     )
 
     assert view.post(request) == "redir"
-    # Un borrador sin datos de carátula guarda el informe y no intenta caratular.
-    guardar_caratulacion.assert_not_called()
+    # El borrador guarda la carátula en modo borrador, sin exigir los campos.
+    assert guardar_caratulacion.call_args.kwargs["borrador"] is True
+    assert (
+        guardar_caratulacion.call_args.kwargs["prefix"] == module.CARATULA_FORM_PREFIX
+    )
     assert guardar_informe.call_args.kwargs["action"] == "draft"
     assert guardar_informe.call_args.kwargs["es_creacion"] is True
     assert valid_form.instance.tipo == "base"
 
 
 @pytest.mark.django_db
-def test_informe_tecnico_inline_finalizar_encadena_los_tres_pasos(mocker):
-    """Un solo botón: finalizar carga documental, caratular y guardar informe."""
+def test_informe_tecnico_inline_finalizar_caratula_en_definitivo(mocker):
+    """Al finalizar, la carátula se guarda validada, no como borrador."""
     admision = SimpleNamespace(pk=1, tipo_informe="base", num_expediente=None)
     view = _view_informe_tecnico(mocker, admision)
     valid_form = mocker.Mock(
@@ -1466,10 +1469,6 @@ def test_informe_tecnico_inline_finalizar_encadena_los_tres_pasos(mocker):
     )
     mocker.patch(
         "admisiones.views.web_views._get_informe_tecnico_vigente", return_value=None
-    )
-    finalizar = mocker.patch(
-        "admisiones.views.web_views.AdmisionService.finalizar_carga_documentacion_si_corresponde",
-        return_value=(True, "Carga de documentación finalizada correctamente."),
     )
     caratular = mocker.patch(
         "admisiones.views.web_views.AdmisionService.guardar_caratulacion",
@@ -1489,47 +1488,8 @@ def test_informe_tecnico_inline_finalizar_encadena_los_tres_pasos(mocker):
     )
 
     assert view.post(request) == "redir"
-    finalizar.assert_called_once_with(admision)
-    assert caratular.call_args.kwargs["prefix"] == module.CARATULA_FORM_PREFIX
+    assert caratular.call_args.kwargs["borrador"] is False
     assert guardar_informe.call_args.kwargs["action"] == "submit"
-
-
-@pytest.mark.django_db
-def test_informe_tecnico_inline_no_guarda_informe_si_falla_finalizar_carga(mocker):
-    admision = SimpleNamespace(pk=1, tipo_informe="base", num_expediente=None)
-    view = _view_informe_tecnico(mocker, admision)
-    valid_form = mocker.Mock(
-        is_valid=mocker.Mock(return_value=True),
-        instance=SimpleNamespace(pk=None, tipo=None),
-    )
-    mocker.patch(
-        "admisiones.views.web_views.InformeService.get_form_class_por_tipo",
-        return_value=mocker.Mock(return_value=valid_form),
-    )
-    mocker.patch(
-        "admisiones.views.web_views._get_informe_tecnico_vigente", return_value=None
-    )
-    mocker.patch(
-        "admisiones.views.web_views.AdmisionService.finalizar_carga_documentacion_si_corresponde",
-        return_value=(False, "hay documentos obligatorios sin validar."),
-    )
-    caratular = mocker.patch(
-        "admisiones.views.web_views.AdmisionService.guardar_caratulacion"
-    )
-    guardar_informe = mocker.patch(
-        "admisiones.views.web_views.InformeService.guardar_informe"
-    )
-    mocker.patch("admisiones.views.web_views.messages.error")
-    request = _Req(
-        POST={"btnInformeTecnicoCaratula": "1", "action": "submit"},
-        FILES={},
-        user=_user(),
-        get_full_path=lambda: "/admisiones/1",
-    )
-
-    assert view.post(request) == "rendered"
-    caratular.assert_not_called()
-    guardar_informe.assert_not_called()
 
 
 @pytest.mark.django_db
@@ -1547,10 +1507,6 @@ def test_informe_tecnico_inline_caratula_invalida_reenderiza_con_errores(mocker)
     )
     mocker.patch(
         "admisiones.views.web_views._get_informe_tecnico_vigente", return_value=None
-    )
-    mocker.patch(
-        "admisiones.views.web_views.AdmisionService.finalizar_carga_documentacion_si_corresponde",
-        return_value=(True, None),
     )
     mocker.patch(
         "admisiones.views.web_views.AdmisionService.guardar_caratulacion",

@@ -1120,53 +1120,28 @@ class AdmisionService:
         return True, "Carga de documentación finalizada correctamente."
 
     @staticmethod
-    def finalizar_carga_documentacion_si_corresponde(admision):
-        """Avanza a ``documentacion_carga_finalizada`` cuando hace falta.
-
-        Es el paso previo obligatorio de la caratulación. Permite que un único
-        botón encadene finalizar carga, caratular e informe técnico sin saltear
-        ninguna validación: si la admisión ya pasó ese punto no hace nada, y si
-        todavía no está en condiciones devuelve el motivo.
-
-        Devuelve ``(ok, mensaje)``; ``mensaje`` es ``None`` cuando no había nada
-        que hacer.
-        """
-        if admision.estado_admision != "documentacion_aprobada":
-            return True, None
-
-        if not AdmisionService._todos_obligatorios_tienen_archivos(admision):
-            return (
-                False,
-                "No se puede finalizar la carga: faltan documentos obligatorios.",
-            )
-        if not AdmisionService._todos_obligatorios_aceptados(admision):
-            return (
-                False,
-                "No se puede finalizar la carga: hay documentos obligatorios sin validar.",
-            )
-
-        return AdmisionService._procesar_post_finalizar_carga_documentacion(admision)
-
-    @staticmethod
-    def guardar_caratulacion(admision, data, prefix=None):
+    def guardar_caratulacion(admision, data, prefix=None, borrador=False):
         """Valida y guarda la caratulación del expediente.
 
-        Devuelve ``(success, mensaje, form)``. El ``form`` se devuelve para que
-        quien llame pueda volver a renderizarlo con sus errores; es ``None``
-        cuando la caratulación se rechaza antes de construirlo.
-        """
-        if admision.estado_admision != "documentacion_carga_finalizada":
-            return (
-                False,
-                "Debe finalizar la carga de documentación antes de caratular.",
-                None,
-            )
+        No exige que la carga documental esté finalizada: la documentación se
+        puede seguir sumando en cualquier momento del proceso, así que ese
+        estado no condiciona la caratulación.
 
-        form = CaratularForm(data, instance=admision, prefix=prefix)
+        Con ``borrador=True`` guarda el avance sin exigir los campos completos
+        ni validar duplicados, y sin mover el estado de la admisión. Al
+        finalizar se compila el número definitivo y se limpia el borrador.
+
+        Devuelve ``(success, mensaje, form)``. El ``form`` se devuelve para que
+        quien llame pueda volver a renderizarlo con sus errores.
+        """
+        form = CaratularForm(data, instance=admision, prefix=prefix, borrador=borrador)
         if not form.is_valid():
             return False, "Error al guardar la caratulación.", form
 
         form.save()
+        if borrador:
+            return True, "Borrador de la carátula guardado.", form
+
         AdmisionService.actualizar_estado_admision(admision, "cargar_expediente")
         admision.refresh_from_db()
         return True, "Caratulación del expediente guardado correctamente.", form

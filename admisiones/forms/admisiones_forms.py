@@ -2,6 +2,7 @@ import re
 import unicodedata
 
 from django import forms
+from django.core.validators import MinLengthValidator
 from django.core.exceptions import ValidationError
 from django.db.models import Q
 
@@ -1002,24 +1003,34 @@ class NumeroExpedienteMixin:
             ),
         }
 
+    EXPEDIENTE_CAMPOS = (
+        "expediente_anio",
+        "expediente_numero",
+        "expediente_reparticion",
+        "expediente_organismo",
+    )
+    EXPEDIENTE_REGEX = r"EX-(\d{4})-(\d{9})- -APN-([A-Z0-9]+)#([A-Z0-9]+)"
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields.update(self._campos_numero_expediente())
+        self._precargar_partes_expediente()
+
+    def _precargar_partes_expediente(self):
+        """Descompone el número guardado en los cuatro campos del formulario.
+
+        Se prueba primero el formato final y después el de borrador, que admite
+        partes vacías; así una carátula a medio cargar vuelve a la pantalla tal
+        como la dejó el usuario.
+        """
+        valor = self._numero_actual() or ""
         match = re.fullmatch(
-            r"EX-(\d{4})-(\d{9})- -APN-([A-Z0-9]+)#([A-Z0-9]+)",
-            self._numero_actual() or "",
-            re.IGNORECASE,
-        )
-        if match:
-            for campo, dato in zip(
-                (
-                    "expediente_anio",
-                    "expediente_numero",
-                    "expediente_reparticion",
-                    "expediente_organismo",
-                ),
-                match.groups(),
-            ):
+            self.EXPEDIENTE_REGEX, valor, re.IGNORECASE
+        ) or re.fullmatch(self.BORRADOR_REGEX, valor, re.IGNORECASE)
+        if not match:
+            return
+        for campo, dato in zip(self.EXPEDIENTE_CAMPOS, match.groups()):
+            if dato:
                 self.initial[campo] = dato
 
     def _numero_actual(self):
@@ -1027,6 +1038,8 @@ class NumeroExpedienteMixin:
 
     def clean(self):
         cleaned_data = super().clean()
+        if getattr(self, "es_borrador", False):
+            return self._clean_borrador(cleaned_data)
         anio = cleaned_data.get("expediente_anio", "").strip()
         numero = cleaned_data.get("expediente_numero", "").strip()
         reparticion = cleaned_data.get("expediente_reparticion", "").strip().upper()
@@ -1061,14 +1074,90 @@ class NumeroExpedienteMixin:
         cleaned_data["numero_expediente_compilado"] = valor
         return cleaned_data
 
+    # --- Borrador ---------------------------------------------------------
+    #
+    # Mientras se está cargando, la carátula puede quedar incompleta. Se guarda
+    # con la misma forma que el número final pero con los huecos vacíos
+    # (``EX-2026-- -APN-#MCH``), así el ida y vuelta usa un solo campo y se
+    # vuelve a leer con la misma estructura. No se valida el formato ni se
+    # busca duplicado: eso recién corresponde al finalizar.
+
+    BORRADOR_REGEX = r"EX-([0-9]{0,4})-([0-9]{0,9})- -APN-([A-Z0-9]*)#([A-Z0-9]*)"
+
+    @staticmethod
+    def compilar_borrador(anio, numero, reparticion, organismo):
+        return f"EX-{anio}-{numero}- -APN-{reparticion}#{organismo}"
+
+    def _partes_borrador(self, cleaned_data):
+        return (
+            (cleaned_data.get("expediente_anio") or "").strip(),
+            (cleaned_data.get("expediente_numero") or "").strip(),
+            (cleaned_data.get("expediente_reparticion") or "").strip().upper(),
+            (cleaned_data.get("expediente_organismo") or "").strip().upper(),
+        )
+
+    def _clean_borrador(self, cleaned_data):
+        anio, numero, reparticion, organismo = self._partes_borrador(cleaned_data)
+        # ``organismo`` viene precargado con "MCH": si es lo único cargado, el
+        # usuario todavía no escribió nada y no hay borrador que guardar.
+        if not any((anio, numero, reparticion)):
+            cleaned_data["numero_expediente_borrador"] = None
+            return cleaned_data
+        cleaned_data["numero_expediente_borrador"] = self.compilar_borrador(
+            anio, numero, reparticion, organismo
+        )
+        return cleaned_data
+
 
 class CaratularForm(NumeroExpedienteMixin, forms.ModelForm):
+    """Caratulación del expediente, con guardado en borrador.
+
+    Con ``borrador=True`` ningún campo es obligatorio y lo cargado se guarda en
+    ``num_expediente_borrador``, sin validar formato ni duplicados. Al finalizar
+    (``borrador=False``) se aplican todas las validaciones, el número se compila
+    en ``num_expediente`` y el borrador se limpia.
+    """
+
     class Meta:
         model = Admision
         fields = []
 
+    def __init__(self, *args, borrador=False, **kwargs):
+        self.es_borrador = borrador
+        super().__init__(*args, **kwargs)
+        if borrador:
+            for nombre in (
+                "expediente_anio",
+                "expediente_numero",
+                "expediente_reparticion",
+                "expediente_organismo",
+            ):
+                campo = self.fields[nombre]
+                campo.required = False
+                # Un borrador puede estar a medio escribir.
+                campo.min_length = None
+                campo.validators = [
+                    validador
+                    for validador in campo.validators
+                    if not isinstance(validador, MinLengthValidator)
+                ]
+
+    def _numero_actual(self):
+        if not self.instance:
+            return ""
+        return self.instance.num_expediente or self.instance.num_expediente_borrador
+
     def save(self, commit=True):
-        self.instance.num_expediente = self.cleaned_data["numero_expediente_compilado"]
+        if self.es_borrador:
+            self.instance.num_expediente_borrador = self.cleaned_data[
+                "numero_expediente_borrador"
+            ]
+        else:
+            self.instance.num_expediente = self.cleaned_data[
+                "numero_expediente_compilado"
+            ]
+            # Ya está caratulado: el borrador dejó de tener sentido.
+            self.instance.num_expediente_borrador = None
         return super().save(commit=commit)
 
 
