@@ -1,0 +1,13 @@
+/* Secciones colapsables del formulario de Informe Técnico. */
+
+.card-header > [data-bs-toggle="collapse"] {
+    box-shadow: none;
+}
+
+.informe-seccion-chevron {
+    transition: transform 0.2s ease;
+}
+
+[data-bs-toggle="collapse"].collapsed .informe-seccion-chevron {
+    transform: rotate(-90deg);
+}

@@ -432,15 +432,19 @@ def test_post_update_router_cubre_ramas_restantes(mocker):
     )
     assert (ok_carat_bad, msg_carat_bad) == (False, "Error al guardar la caratulación.")
 
-    # caratulación bloqueada si no finalizó la carga documental
+    # La carga documental ya no condiciona la caratulación: se puede seguir
+    # sumando documentación en cualquier momento del proceso.
     adm.estado_admision = "documentacion_aprobada"
-    req_carat_bloq = SimpleNamespace(POST={"btnCaratulacion": "1"}, user=user)
-    ok_carat_bloq, msg_carat_bloq = module.AdmisionService.procesar_post_update(
-        req_carat_bloq, adm
+    req_carat_libre = SimpleNamespace(POST={"btnCaratulacion": "1"}, user=user)
+    mocker.patch(
+        "admisiones.services.admisiones_service.CaratularForm", return_value=form_ok
     )
-    assert (ok_carat_bloq, msg_carat_bloq) == (
-        False,
-        "Debe finalizar la carga de documentación antes de caratular.",
+    ok_carat_libre, msg_carat_libre = module.AdmisionService.procesar_post_update(
+        req_carat_libre, adm
+    )
+    assert (ok_carat_libre, msg_carat_libre) == (
+        True,
+        "Caratulación del expediente guardado correctamente.",
     )
 
     # tipo convenio precargado

@@ -197,6 +197,16 @@ class Admision(models.Model):
         verbose_name="¿Se realizó Informe Complementario para modificar prestaciones?",
     )
     num_expediente = models.CharField(max_length=255, blank=True, null=True)
+    num_expediente_borrador = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name="Carátula en borrador",
+        help_text=(
+            "Carátula a medio cargar. Guarda el avance sin validar ni ocupar el "
+            "número real; al finalizar se compila en num_expediente y se limpia."
+        ),
+    )
     num_if = models.CharField(max_length=100, blank=True, null=True)
     legales_num_if = models.CharField(max_length=255, blank=True, null=True)
     creado = models.DateField(auto_now_add=True, null=True, blank=True)
