@@ -33,16 +33,23 @@
 - Empezar por `docs/registro/prs/PR-2492.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
 - `celiaquia/services/expediente_service/impl.py`
+- `celiaquia/services/importacion_service/impl.py`
 - `celiaquia/services/validacion_edad_service/impl.py`
 - `celiaquia/templates/celiaquia/expediente_detail.html`
+- `celiaquia/tests/test_legajo_eliminar_provincia.py`
 - `celiaquia/tests/test_menor_sin_responsable.py`
+- `celiaquia/tests/test_validacion_cuil.py`
+- `celiaquia/tests/test_validacion_edad.py`
 - `celiaquia/views/confirm_envio.py`
 - `celiaquia/views/expediente.py`
 - `celiaquia/views/legajo.py`
 - `docs/contexto/features/pr-2492-feat-celiaquia-bloquear-el-envio-si-un-menor-quedo-sin-adulto.md`
+- `docs/plans/2026-09-10-pr-2492-hallazgos-review-design.md`
 - `docs/registro/cambios/2026-09-09-2430-menor-sin-adulto-responsable.md`
 - `docs/registro/prs/PR-2492.md`
 - `static/custom/js/expediente_detail.js`
+- `tests/test_expediente_service_unit.py`
+- `tests/test_importacion_service_helpers_unit.py`
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
