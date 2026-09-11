@@ -37,7 +37,10 @@ from relevamientos.models import BLOQUES_SEGUIMIENTO, ClasificacionComedor, Rele
 from relevamientos.service import RelevamientoService
 from rendicioncuentasmensual.models import DocumentacionAdjunta
 from rendicioncuentasmensual.models import RendicionCuentaMensual
-from rendicioncuentasmensual.services import RendicionCuentaMensualService
+from rendicioncuentasmensual.services import (
+    RendicionCuentaMensualService,
+    periodo_fin_maximo,
+)
 from users.models import AccesoComedorPWA
 from users.services_pwa import get_territorial_comedor_provincia_ids
 
@@ -1566,13 +1569,65 @@ class RendicionMensualDetailSerializer(RendicionMensualListSerializer):
     )
     documentacion = serializers.SerializerMethodField()
     modelos = serializers.SerializerMethodField()
+    reglas_datos_generales = serializers.SerializerMethodField()
 
     class Meta(RendicionMensualListSerializer.Meta):
         fields = RendicionMensualListSerializer.Meta.fields + (
             "comprobantes",
             "documentacion",
             "modelos",
+            "reglas_datos_generales",
         )
+
+    def get_reglas_datos_generales(self, obj):
+        convenios = list(RendicionCuentaMensualService.CONVENIOS_VALIDOS)
+        # Se delega en el servicio para que el número sugerido salga del mismo
+        # scope que después valida el servidor. Reconstruir el queryset acá
+        # haría que la PWA pudiera sugerir un número que el alta rechaza.
+        # Son tres agregados fijos, uno por convenio: no crece con los datos.
+        proximos = {
+            convenio: RendicionCuentaMensualService.siguiente_numero_rendicion(
+                comedor=obj.comedor,
+                convenio=convenio,
+                proyecto=obj.proyecto,
+                excluir_pk=obj.pk,
+            )
+            for convenio in convenios
+        }
+
+        periodo_referencia = date(2000, 1, 1)
+        periodo_fin = periodo_fin_maximo(
+            periodo_referencia,
+            obj.linea_programatica,
+        )
+        meses_periodo = (
+            (periodo_fin.year - periodo_referencia.year) * 12
+            + periodo_fin.month
+            - periodo_referencia.month
+            + 1
+        )
+        return {
+            "edicion_habilitada": (
+                obj.estado == RendicionCuentaMensual.ESTADO_ELABORACION
+            ),
+            "campos_editables": [
+                "convenio",
+                "numero_rendicion",
+                "periodo_inicio",
+                "periodo_fin",
+                "nombre",
+                "observaciones",
+            ],
+            "convenios": convenios,
+            "numero_rendicion_minimo": (
+                RendicionCuentaMensualService.NUMERO_RENDICION_MIN
+            ),
+            "numero_rendicion_maximo": (
+                RendicionCuentaMensualService.NUMERO_RENDICION_MAX
+            ),
+            "proximo_numero_por_convenio": proximos,
+            "meses_periodo": meses_periodo,
+        }
 
     def _build_modelo_payload(self, obj, modelo):
         request = self.context.get("request")
@@ -1605,7 +1660,14 @@ class RendicionMensualDetailSerializer(RendicionMensualListSerializer):
         }
         serializer_context = {"request": self.context.get("request")}
         payload = []
-        for categoria in DocumentacionAdjunta.categorias_mobile(obj.linea_programatica):
+        documentos = [
+            documento
+            for documentos_categoria in grouped.values()
+            for documento in documentos_categoria
+        ]
+        for categoria in RendicionCuentaMensualService.obtener_categorias_visibles(
+            obj, documentos=documentos
+        ):
             modelo = categoria.get("modelo")
             payload.append(
                 {
@@ -1665,6 +1727,26 @@ class RendicionMensualCreateSerializer(NoSaveSerializer):
                 {"convenio": "Este campo es obligatorio."}
             )
         return attrs
+
+
+class RendicionMensualUpdateSerializer(NoSaveSerializer):
+    convenio = serializers.CharField(required=False, allow_blank=True)
+    numero_rendicion = serializers.IntegerField(required=False)
+    periodo_inicio = serializers.DateField(required=False)
+    periodo_fin = serializers.DateField(required=False)
+    nombre = serializers.CharField(
+        max_length=255,
+        required=False,
+        allow_blank=True,
+    )
+    observaciones = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        allow_null=True,
+    )
+
+    def validate_convenio(self, value):
+        return value.strip()
 
 
 class TerritorialComedorWriteSerializer(serializers.Serializer):

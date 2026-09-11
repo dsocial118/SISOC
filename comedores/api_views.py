@@ -9,6 +9,7 @@ from django.conf import settings
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.files.base import ContentFile
 from django.core.paginator import Paginator
+from django.db import transaction
 from django.db.models import Prefetch, Q
 from django.db.models.fields.files import FieldFile
 from django.http import FileResponse, Http404
@@ -38,6 +39,7 @@ from comedores.api_serializers import (
     RendicionMensualCreateSerializer,
     RendicionMensualDetailSerializer,
     RendicionMensualListSerializer,
+    RendicionMensualUpdateSerializer,
 )
 from comedores.forms.comedor_form import CiudadanoFormParaNomina, NominaExtraForm
 from comedores.models import (
@@ -1419,16 +1421,19 @@ class ComedorDetailViewSet(
         )
 
     @extend_schema(
+        request=RendicionMensualUpdateSerializer,
         responses=RendicionMensualDetailSerializer,
         tags=["Rendiciones"],
     )
     @action(
         detail=True,
-        methods=["get"],
+        methods=["get", "patch"],
         url_path=r"rendiciones/(?P<rendicion_id>[^/.]+)",
         permission_classes=[IsPWAUserForComedor, CanViewPwaRendicionesPermission],
     )
-    def rendicion_detalle(self, request, pk=None, rendicion_id=None):
+    def rendicion_detalle(  # pylint: disable=too-many-return-statements
+        self, request, pk=None, rendicion_id=None
+    ):
         comedor = self.get_object()
         try:
             rendicion_id = int(rendicion_id)
@@ -1438,14 +1443,110 @@ class ComedorDetailViewSet(
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        rendicion = (
-            self._get_rendiciones_detail_queryset(comedor)
-            .filter(id=rendicion_id)
-            .first()
-        )
-        if not rendicion:
-            raise Http404("Rendición no encontrada.")
+        if request.method.lower() == "get":
+            rendicion = (
+                self._get_rendiciones_detail_queryset(comedor)
+                .filter(id=rendicion_id)
+                .first()
+            )
+            if not rendicion:
+                raise Http404("Rendición no encontrada.")
 
+            serializer = RendicionMensualDetailSerializer(
+                rendicion,
+                context={"request": request},
+            )
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        if is_coordinador_equipo_tecnico_pwa(request.user):
+            return Response(
+                {"detail": "El coordinador PWA tiene acceso de solo lectura."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        if not (
+            is_representante(request.user, comedor.id)
+            and request.user.has_perm("rendicioncuentasmensual.manage_mobile_rendicion")
+        ):
+            return Response(
+                {
+                    "detail": "No tiene permiso para gestionar rendiciones en SISOC Mobile."
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        with transaction.atomic():
+            rendicion = (
+                self._get_rendiciones_detail_queryset(comedor)
+                .select_for_update()
+                .filter(id=rendicion_id)
+                .first()
+            )
+            if not rendicion:
+                raise Http404("Rendición no encontrada.")
+            if rendicion.estado != RendicionCuentaMensual.ESTADO_ELABORACION:
+                return Response(
+                    {
+                        "detail": (
+                            "La rendición ya no admite edición en su estado actual."
+                        ),
+                        "estado": rendicion.estado,
+                    },
+                    status=status.HTTP_409_CONFLICT,
+                )
+
+            numero_actual = rendicion.numero_rendicion
+            serializer = RendicionMensualUpdateSerializer(
+                rendicion,
+                data=request.data,
+                partial=True,
+            )
+            serializer.is_valid(raise_exception=True)
+            datos_efectivos = {
+                campo: serializer.validated_data.get(
+                    campo,
+                    getattr(rendicion, campo),
+                )
+                for campo in (
+                    "convenio",
+                    "numero_rendicion",
+                    "periodo_inicio",
+                    "periodo_fin",
+                )
+            }
+            try:
+                RendicionCuentaMensualService.validar_datos_generales(
+                    comedor=comedor,
+                    convenio=datos_efectivos["convenio"],
+                    numero_rendicion=datos_efectivos["numero_rendicion"],
+                    periodo=(
+                        datos_efectivos["periodo_inicio"],
+                        datos_efectivos["periodo_fin"],
+                    ),
+                    proyecto=rendicion.proyecto,
+                    linea_programatica=rendicion.linea_programatica,
+                    excluir_pk=rendicion.pk,
+                    numero_actual=numero_actual,
+                )
+            except ValidationError as exc:
+                return Response(
+                    {"detail": self._format_validation_error(exc)},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            periodo_inicio_anterior = rendicion.periodo_inicio
+            for campo, valor in serializer.validated_data.items():
+                setattr(rendicion, campo, valor)
+
+            update_fields = set(serializer.validated_data)
+            if rendicion.periodo_inicio != periodo_inicio_anterior:
+                rendicion.mes = rendicion.periodo_inicio.month
+                rendicion.anio = rendicion.periodo_inicio.year
+                update_fields.update(("mes", "anio"))
+            rendicion.usuario_ultima_modificacion = request.user
+            update_fields.update(("usuario_ultima_modificacion", "ultima_modificacion"))
+            rendicion.save(update_fields=update_fields)
+
+        rendicion = self._get_rendiciones_detail_queryset(comedor).get(id=rendicion_id)
         serializer = RendicionMensualDetailSerializer(
             rendicion,
             context={"request": request},

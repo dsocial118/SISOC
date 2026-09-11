@@ -31,7 +31,7 @@ coordinada cuando cambie este contrato.
 ## Etapas, permisos y estados visibles
 
 El flujo tiene cinco etapas: `Carga de documentación`, `Revisión Territorial`,
-`Revisión de Auditoría`, `Auditoría` y `Regularización`. Las acciones se
+`Revisión para Carga`, `Auditoría` y `Regularización`. Las acciones se
 autorizan con permisos Django configurables por grupo:
 
 - `manage_territorial_stage`
@@ -42,6 +42,13 @@ autorizan con permisos Django configurables por grupo:
 El permiso de etapa habilita listado, detalle, descarga y acciones de esa
 etapa, pero no concede por sí solo edición de datos generales, creación o
 eliminación. La interfaz y los POST aplican la misma comprobación de permisos.
+
+`Revisión para Carga` es solamente la denominación visible de la etapa cuyo
+valor persistido sigue siendo `revision_auditoria` (issue #2377). La constante
+`ETAPA_REVISION_AUDITORIA`, los nombres de permisos y los `value` de los filtros
+no cambiaron. No debe confundirse con la etapa independiente `Auditoría`
+(`auditoria`). Cualquier consumidor —la PWA incluida— tiene que distinguir el
+estado por `etapa_proceso` + `subestado_proceso`, nunca por la etiqueta.
 
 El filtro `Estado` combina `etapa_proceso` y `subestado_proceso`, y refleja el
 texto visible de la columna. `Estado general` mantiene el filtro histórico.
@@ -58,11 +65,35 @@ Las observaciones quedan visibles debajo de la categoría solicitada.
 
 - Convenios admitidos: `P01`, `P02`, `P03`.
 - Números de rendición admitidos: `1` a `6`.
-- Inicio y fin deben pertenecer al mismo mes y no se admiten períodos anteriores
-  al último ya gestionado para el mismo convenio y proyecto.
+- El número debe ser además **el siguiente de la secuencia** dentro del mismo
+  proyecto y convenio: si el último es 2, el único valor aceptado es 3. La regla
+  vive en `RendicionCuentaMensualService` y la aplican por igual el alta y la
+  edición, en web y en API; no se delega en la PWA. Participan los borradores y
+  quedan afuera las bajas lógicas, así que dar de baja una rendición libera su
+  número. Editar sin cambiar el número no revalida la secuencia.
+- La asignación del número se serializa con `select_for_update()` sobre la fila
+  ancla del scope (proyecto, o comedor en el camino legado) dentro de la misma
+  transacción que escribe, para que dos altas concurrentes no tomen el mismo.
+- No se admiten períodos anteriores al último ya gestionado para el mismo
+  convenio y proyecto, ni solapamientos.
+- Inicio y fin deben pertenecer al mismo mes, **salvo en
+  `Abordaje Comunitario - Línea Secos`**, donde el fin puede llegar hasta el
+  último día del tercer mes calendario contado desde el mes de inicio
+  (03/09 → 30/11). El cálculo usa el calendario real, no una cantidad fija de
+  días. El error se devuelve en el campo `periodo_fin`.
+- Las validaciones acumulan todos los errores y se devuelven identificados por
+  campo (`convenio`, `numero_rendicion`, `periodo_inicio`, `periodo_fin`,
+  `periodo`), para que la PWA los pueda mostrar junto al campo correspondiente.
 - Formulario I, ambos Formulario V, Formulario VI y Extracto Bancario admiten
   múltiples archivos. Los comprobantes se separan entre Prestación Alimentaria
-  y SIPH.
+  y SIPH, y se muestran como `Facturas y Tickets Prestación Alimentaria` y
+  `Facturas y Tickets SIPH` (cambio de etiqueta; los códigos
+  `comprobantes_alimentario` y `comprobantes_siph` no cambian).
+- El catálogo documental depende de la línea programática:
+  `Planilla de Seguros` no se pide en `Línea Secos` y sí en `Línea Tradicional`.
+  Web y API lo resuelven con `RendicionCuentaMensualService.obtener_categorias_visibles`,
+  que además sigue mostrando las categorías desactivadas para la línea cuando la
+  rendición ya tiene documentos históricos cargados en ellas.
 
 ## Despliegue y validación
 

@@ -64,13 +64,13 @@ ESTADO_PROCESO_CHOICES = [
         "Revisión Territorial pendiente de correcciones",
     ),
     ("revision_documentacion:subsanado", "Revisión Territorial subsanado"),
-    ("revision_auditoria:pendiente", "Revisión de Auditoría pendiente"),
-    ("revision_auditoria:en_curso", "Revisión de Auditoría en curso"),
+    ("revision_auditoria:pendiente", "Revisión para Carga pendiente"),
+    ("revision_auditoria:en_curso", "Revisión para Carga en curso"),
     (
         "revision_auditoria:pendiente_correcciones",
-        "Revisión de Auditoría pendiente de correcciones",
+        "Revisión para Carga pendiente de correcciones",
     ),
-    ("revision_auditoria:subsanado", "Revisión de Auditoría subsanado"),
+    ("revision_auditoria:subsanado", "Revisión para Carga subsanado"),
     ("auditoria:pendiente", "Auditoría pendiente"),
     ("auditoria:en_curso", "Auditoría en curso"),
     ("auditoria:finalizada", "Auditoría finalizada sin observaciones"),
@@ -135,7 +135,7 @@ FILTER_FIELDS = [
 ]
 
 DEFAULT_FIELD = "codigo_proyecto"
-FILTERS_UI_CONFIG_CACHE_KEY = "rendiciones:filters_ui_config:v3"
+FILTERS_UI_CONFIG_CACHE_KEY = "rendiciones:filters_ui_config:v4"
 FILTERS_UI_CONFIG_CACHE_TTL = 60 * 15
 
 
@@ -145,6 +145,10 @@ def get_filters_ui_config() -> Dict[str, Any]:
         return deepcopy(cached_config)
 
     config = {
+        # El listado abre con Proyecto ya elegido en el selector de campo. Antes
+        # la fila arrancaba en el placeholder "Buscar por" y al enviar caia igual
+        # en el primer campo, asi que esto solo hace visible esa eleccion.
+        "defaultField": DEFAULT_FIELD,
         "fields": [dict(field) for field in FILTER_FIELDS],
         "operators": {
             "text": list(TEXT_OPS),

@@ -1,11 +1,14 @@
 # pylint: disable=too-many-lines
 
+import logging
+
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.paginator import Paginator
 from django.db.models import Count, Prefetch, Q
 from django.db import connection
+from django.db.utils import Error as DatabaseAccessError
 from django.db.utils import OperationalError, ProgrammingError
 from django.http import Http404
 from drf_spectacular.utils import extend_schema
@@ -98,6 +101,8 @@ from comedores.services.comedor_service.impl import ComedorService
 from comedores.utils import is_pnud_comedor
 from ciudadanos.models import Ciudadano
 
+logger = logging.getLogger("django")
+
 
 def _get_pnud_scoped_comedor_or_404(comedor_id, user):
     comedor = ComedorService.get_scoped_comedor_or_404(comedor_id, user)
@@ -107,12 +112,28 @@ def _get_pnud_scoped_comedor_or_404(comedor_id, user):
 
 
 class PwaHealthViewSet(viewsets.ViewSet):
-    """Healthcheck básico para endpoints API de la app PWA."""
+    """Healthcheck que la PWA consulta antes de habilitar el envío de documentación.
+
+    Verifica el proceso Django y la conectividad con la base de datos. No
+    verifica el storage de archivos ni integraciones externas, así que un 200
+    no garantiza que una carga con adjunto vaya a completarse; el contrato y
+    esa limitación están documentados en `docs/implementaciones/pwa_backend.md`.
+    """
 
     permission_classes = [AllowAny]
 
     def list(self, request):
-        return Response({"status": "ok"})
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT 1")
+                cursor.fetchone()
+        except DatabaseAccessError:
+            logger.exception("Healthcheck PWA: la base de datos no respondió")
+            return Response(
+                {"status": "unavailable", "database": "unavailable"},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+        return Response({"status": "ok", "database": "ok"})
 
 
 @extend_schema(tags=["PWA Mensajes"])

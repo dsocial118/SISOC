@@ -192,9 +192,101 @@ Se exponen campos de aprobadas del informe técnico (`aprobadas_*`), tomando inf
 - `GET /api/comedores/{id}/rendiciones/`
   - filtros: `anio`, `mes`, `desde`, `hasta`, `page`
 - `GET /api/comedores/{id}/rendiciones/{rendicion_id}/`
+- `PATCH /api/comedores/{id}/rendiciones/{rendicion_id}/` (issue #2377, ver abajo)
 - `POST /api/comedores/{id}/rendiciones/{rendicion_id}/comprobantes/`
   - multipart con `archivo` y opcional `nombre`
 - `POST /api/comedores/{id}/rendiciones/{rendicion_id}/presentar/`
+
+#### Reglas de alta y edición de datos generales
+
+Las reglas viven en SISOC (`RendicionCuentaMensualService.validar_datos_generales`)
+y son las mismas para el alta y para la edición. La PWA no las reimplementa: las
+usa para anticipar el error y las respeta cuando el servidor las devuelve.
+
+- Convenios: `P01`, `P02`, `P03`.
+- `numero_rendicion` entre 1 y 6, y además **el siguiente de la secuencia** del
+  proyecto + convenio. Si el último es 2, el único aceptado es 3.
+- `periodo_fin` debe caer dentro de la ventana del período: el mismo mes que
+  `periodo_inicio`, salvo en `Abordaje Comunitario - Línea Secos`, donde llega
+  hasta el último día del tercer mes calendario (03/09 → 30/11).
+- Sin períodos anteriores al último ya gestionado, y sin solapamientos.
+
+Los errores llegan **acumulados y por campo**, bajo `detail`:
+
+```json
+{
+  "detail": {
+    "numero_rendicion": ["El número de rendición debe ser 3: debe continuar la secuencia del convenio dentro del proyecto."],
+    "periodo_fin": ["Las fechas deben pertenecer al mismo período mensual."]
+  }
+}
+```
+
+Claves posibles: `convenio`, `numero_rendicion`, `periodo_inicio`, `periodo_fin`
+y `periodo` (esta última no corresponde a un campo único del formulario).
+
+#### `PATCH /api/comedores/{id}/rendiciones/{rendicion_id}/`
+
+Edición de los datos generales desde la PWA.
+
+- Autenticación: `Authorization: Token <token>`.
+- Permisos: los mismos del alta. Representante del espacio con
+  `rendicioncuentasmensual.manage_mobile_rendicion`. El coordinador de equipo
+  técnico PWA es de solo lectura.
+- **Solo con `estado == "elaboracion"`.**
+- Actualización parcial: lo que no se manda conserva su valor.
+
+Campos editables: `convenio`, `numero_rendicion`, `periodo_inicio`,
+`periodo_fin`, `nombre`, `observaciones`.
+
+Campos que el servidor ignora si llegan y deja intactos: `estado`,
+`etapa_proceso`, `subestado_proceso`, `linea_programatica`, `proyecto`,
+`comedor`, `monto_rendido`, `acta_auditoria`, fechas del proceso y usuarios.
+`linea_programatica` y `proyecto` no son editables a propósito: definen el
+catálogo documental y el scope de numeración, y cambiarlos con documentos ya
+cargados dejaría archivos huérfanos.
+
+Payload de ejemplo:
+
+```json
+{ "numero_rendicion": 3, "periodo_fin": "2026-11-30" }
+```
+
+Respuestas:
+
+| Situación | HTTP | Cuerpo |
+| --- | --- | --- |
+| Éxito | `200` | El mismo objeto que devuelve el `GET` de detalle |
+| Validación de dominio | `400` | `{"detail": {"<campo>": ["<mensaje>"]}}` |
+| Payload mal formado | `400` | errores por campo del serializer |
+| Estado ya no editable | `409` | `{"detail": "La rendición ya no admite edición en su estado actual.", "estado": "<estado actual>"}` |
+| Sin permiso o fuera de alcance | `403` | `{"detail": "..."}` |
+
+La edición corre bajo transacción con bloqueo de la rendición: si la etapa cambia
+mientras llega el PATCH, responde `409` y no escribe nada.
+
+#### Precarga del formulario: `reglas_datos_generales`
+
+El `GET` de detalle suma un bloque **aditivo** (el resto del contrato de lectura
+no cambia) para que la PWA arme el formulario y sus alertas sin duplicar reglas:
+
+```json
+"reglas_datos_generales": {
+  "edicion_habilitada": true,
+  "campos_editables": ["convenio", "numero_rendicion", "periodo_inicio", "periodo_fin", "nombre", "observaciones"],
+  "convenios": ["P01", "P02", "P03"],
+  "numero_rendicion_minimo": 1,
+  "numero_rendicion_maximo": 6,
+  "proximo_numero_por_convenio": {"P01": 3, "P02": 3, "P03": 1},
+  "meses_periodo": 3
+}
+```
+
+- `proximo_numero_por_convenio` sale del mismo scope que valida el servidor y
+  excluye la propia rendición: es el valor que el alta o la edición van a exigir.
+- `meses_periodo` es 3 en Línea Secos y 1 en el resto: sirve para calcular el
+  `periodo_fin` máximo en el cliente.
+- `edicion_habilitada` refleja si el estado permite editar en este momento.
 
 ### 7) Gestión PWA de usuarios por comedor (representante)
 
@@ -242,6 +334,86 @@ Lectura y auditoria:
 - el estado de lectura se persiste en `pwa.LecturaMensajePWA`
 - se registra `visto` y `fecha_visto` por `user + comedor + comunicado`
 - cada primer marcado como visto genera auditoria en `pwa.AuditoriaOperacionPWA` con entidad `mensaje_lectura`
+
+### 10) Health-check de disponibilidad (issue #2377)
+
+Contrato que la PWA consulta para bloquear el envío de documentación cuando
+SISOC no responde y para rehabilitarlo solo cuando vuelve a responder.
+
+- `GET /api/pwa/health/`
+- Método: `GET`. Sin autenticación (`AllowAny`), sin token ni cookies.
+- Sin caché ni rate limiting propio: es una consulta `SELECT 1`.
+
+Respuestas:
+
+| Situación | HTTP | Cuerpo |
+| --- | --- | --- |
+| SISOC disponible | `200` | `{"status": "ok", "database": "ok"}` |
+| Base de datos caída | `503` | `{"status": "unavailable", "database": "unavailable"}` |
+| Proceso/red caídos | sin respuesta (timeout, 5xx de NGINX) | — |
+
+Qué verifica realmente:
+
+- proceso HTTP y enrutamiento Django;
+- conectividad y respuesta de la base de datos (`SELECT 1`).
+
+Qué **no** verifica, y por lo tanto un `200` no garantiza:
+
+- el storage de archivos (`MEDIA_ROOT`), que sí interviene en el alta de
+  documentación con adjunto;
+- integraciones externas (RENAPER queda explícitamente fuera de esta entrega).
+
+Guía para el cliente PWA:
+
+- tratar cualquier cosa distinta de `200` —incluido timeout o error de red—
+  como "SISOC no disponible" y bloquear el envío;
+- volver a habilitar el envío en cuanto una consulta devuelva `200`, sin pedir
+  refresco manual;
+- intervalo sugerido: no consultar mientras no haya intención de enviar;
+  al detectar indisponibilidad, reintentar cada 15–30 s con backoff. No hay
+  evidencia en el repo para fijar un valor más preciso;
+- usar un timeout de cliente corto (2–5 s): un SISOC lento debe leerse como
+  no disponible.
+
+`GET /health/` sigue existiendo como sonda de infraestructura: devuelve el
+texto plano `OK` y **no** verifica la base de datos. No usarlo desde la PWA.
+
+### 11) Estados internos de rendición que debe usar la PWA (issue #2377)
+
+La PWA **no debe leer las etiquetas** (`estado_label`, `estado_proceso_label`)
+para decidir comportamiento: son texto visible de SISOC y ya cambiaron una vez.
+El estado se determina con el par `etapa_proceso` + `subestado_proceso`, que son
+los valores persistidos y no cambian.
+
+`etapa_proceso`:
+
+| valor | etiqueta en SISOC |
+| --- | --- |
+| `carga_documentacion` | Carga de documentación |
+| `revision_documentacion` | Revisión Territorial |
+| `revision_auditoria` | **Revisión para Carga** (antes «Revisión de Auditoría») |
+| `auditoria` | Auditoría |
+| `regularizacion` | Regularización |
+
+`subestado_proceso`: `pendiente`, `en_curso`, `pendiente_correcciones`,
+`subsanado`, `finalizada`, `finalizada_con_observaciones`.
+
+`estado` (estado general de la presentación): `elaboracion`, `revision`,
+`subsanar`, `finalizada`.
+
+Distinción de subsanaciones según origen (punto 8 del issue), que la PWA resuelve
+con el par:
+
+| `etapa_proceso` | `subestado_proceso` | Texto que debe mostrar la PWA |
+| --- | --- | --- |
+| `revision_documentacion` | `pendiente_correcciones` | Subsanación solicitada por equipo Territorial |
+| `revision_auditoria` | `pendiente_correcciones` | Subsanación solicitada por equipo de Auditoría |
+
+`revision_auditoria` sigue siendo el valor interno aunque SISOC lo muestre como
+«Revisión para Carga». La etapa `auditoria` es otra cosa y no debe confundirse.
+
+Edición habilitada: solo con `estado == "elaboracion"`
+(«Presentación en elaboración»).
 
 ## Reglas de permisos y alcance
 

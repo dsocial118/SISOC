@@ -872,7 +872,7 @@ def test_crear_rendicion_mobile_rechaza_numero_repetido_y_periodo_solapado(comed
         f"/api/comedores/{comedor_1.id}/rendiciones/",
         {
             "convenio": "P03",
-            "numero_rendicion": 3,
+            "numero_rendicion": 1,
             "periodo_inicio": "2026-01-01",
             "periodo_fin": "2026-01-31",
         },
