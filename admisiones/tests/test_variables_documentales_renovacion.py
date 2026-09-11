@@ -273,7 +273,9 @@ def test_informe_tecnico_no_muestra_acreditaciones_del_ultimo_convenio(comedor):
 
 
 @pytest.mark.django_db
-@pytest.mark.parametrize("form_class", [InformeTecnicoBaseForm, InformeTecnicoJuridicoForm])
+@pytest.mark.parametrize(
+    "form_class", [InformeTecnicoBaseForm, InformeTecnicoJuridicoForm]
+)
 @pytest.mark.parametrize("financiamiento", ["vigente", "finalizado"])
 @pytest.mark.parametrize("require_full", [False, True])
 def test_informe_tecnico_no_pide_montos_conveniados(
@@ -292,7 +294,9 @@ def test_informe_tecnico_no_pide_montos_conveniados(
 
 
 @pytest.mark.django_db
-@pytest.mark.parametrize("form_class", [InformeTecnicoBaseForm, InformeTecnicoJuridicoForm])
+@pytest.mark.parametrize(
+    "form_class", [InformeTecnicoBaseForm, InformeTecnicoJuridicoForm]
+)
 @pytest.mark.parametrize("financiamiento", ["vigente", "finalizado"])
 def test_editar_informe_conserva_montos_conveniados_historicos(
     comedor, form_class, financiamiento
