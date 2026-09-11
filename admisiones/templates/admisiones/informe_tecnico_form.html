@@ -593,20 +593,6 @@
                         </div>
                     </div>
                 {% endif %}
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h5>Monto total conveniado</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            {% if form.monto_total_conveniado_informe %}
-                                <div class="col-md-6 mb-3">{{ form.monto_total_conveniado_informe|as_crispy_field }}</div>
-                            {% else %}
-                                <div class="col-md-6 mb-3">{{ form.monto_total_conveniado|as_crispy_field }}</div>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
             {% endif %}
 
             <!-- Botones -->
