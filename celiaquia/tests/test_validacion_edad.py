@@ -12,6 +12,15 @@ from django.core.exceptions import ValidationError
 from celiaquia.services.validacion_edad_service import ValidacionEdadService
 
 
+def _fijar_hoy(mocker, hoy):
+    class FechaFija(date):
+        @classmethod
+        def today(cls):
+            return cls(hoy.year, hoy.month, hoy.day)
+
+    mocker.patch("celiaquia.services.validacion_edad_service.impl.date", FechaFija)
+
+
 class TestValidacionEdadService:
     """Tests para el servicio de validación de edad."""
 
@@ -33,6 +42,30 @@ class TestValidacionEdadService:
         """Retorna None si la fecha es None."""
         edad = ValidacionEdadService.calcular_edad(None)
         assert edad is None
+
+    @pytest.mark.parametrize(
+        ("nacimiento", "esperada"),
+        [
+            (date(2008, 9, 11), 17),
+            (date(2008, 9, 10), 18),
+            (date(2008, 9, 9), 18),
+        ],
+    )
+    def test_calcular_edad_respeta_el_dia_del_cumpleanos(
+        self, mocker, nacimiento, esperada
+    ):
+        _fijar_hoy(mocker, date(2026, 9, 10))
+        assert ValidacionEdadService.calcular_edad(nacimiento) == esperada
+
+    @pytest.mark.parametrize(
+        ("hoy", "esperada"),
+        [(date(2026, 2, 28), 17), (date(2026, 3, 1), 18)],
+    )
+    def test_calcular_edad_para_nacimiento_el_29_de_febrero(
+        self, mocker, hoy, esperada
+    ):
+        _fijar_hoy(mocker, hoy)
+        assert ValidacionEdadService.calcular_edad(date(2008, 2, 29)) == esperada
 
     # REQUERIMIENTO 1: Responsable menor de 18 años
     def test_validar_responsable_mayor_edad_ok(self):

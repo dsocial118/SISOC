@@ -57,6 +57,7 @@
 - `docs/implementaciones/encuestas.md`: ciclo funcional de encuestas, permisos, privacidad y operación de rondas.
 - `docs/implementaciones/celiaquia_comentarios_tecnicos.md`: comentarios técnicos, publicación a Provincia y vínculo con Subsanar/Rechazar.
 - `docs/vat/`: guías funcionales, API, operación de vouchers y desarrollo del módulo VAT.
+- `docs/vat/manual_usuario.md`: operación de INET/VAT, incluido el Buscador por Ciudadano y su alcance de acceso.
 
 ### 5. Flujos y sincronizaciones
 - `docs/flujos/comedor_sync.md`: cómo funciona la sincronización de comedores con servicios externos.

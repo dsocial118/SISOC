@@ -1641,6 +1641,7 @@ def test_importar_legajos_registra_error_si_falla_responsable_tras_beneficiario(
 
     def _procesar_beneficiario_ok(**kwargs):
         kwargs["legajos_crear"].append(SimpleNamespace(pk=501))
+        kwargs["excluidos"].append({"fila": 2, "motivo": "Existente"})
         kwargs["existentes_ids"].add(501)
         kwargs["abiertos"][501] = {"expediente_id": 88}
         return {"documento": "111"}, {"documento": "222"}, False, "ok", 501
@@ -1700,6 +1701,7 @@ def test_importar_legajos_registra_error_si_falla_responsable_tras_beneficiario(
 
     assert result["validos"] == 0
     assert result["errores"] == 1
+    assert result["excluidos_count"] == 0
     assert result["relaciones_familiares_creadas"] == 0
     assert result["detalles_errores"] == [
         {"fila": 2, "error": "['Responsable inválido']", "datos": {"documento": "111"}}

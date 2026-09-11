@@ -78,6 +78,7 @@ from celiaquia.services.expediente_filter_config import (  # pylint: disable=no-
 from celiaquia.services.padron_final_service import (  # pylint: disable=no-name-in-module
     PadronFinalService,
 )
+from celiaquia.services.validacion_edad_service import ValidacionEdadService
 from django.utils import timezone
 from django.db import transaction
 from core.models import Nacionalidad, Provincia, Localidad
@@ -1420,6 +1421,15 @@ class ExpedienteDetailView(DetailView):
             for hijo in info.get("hijos", []):
                 hijo.legajo_relacionado = legajos_por_ciudadano.get(hijo.id)
 
+        # Menores sin adulto responsable vivo en el expediente: se marcan en la
+        # fila para que la provincia los ubique antes de intentar el envio, que
+        # es donde la validacion bloquea.
+        menores_sin_responsable_ids = {
+            leg.pk for leg in ValidacionEdadService.menores_sin_responsable(expediente)
+        }
+        for legajo in legajos_enriquecidos:
+            legajo.sin_responsable_alerta = legajo.pk in menores_sin_responsable_ids
+
         ctx["legajos_enriquecidos"] = legajos_enriquecidos
         ctx["estructura_familiar"] = estructura_familiar
 
@@ -2189,7 +2199,7 @@ class RevisarLegajoView(View):
             }
         )
 
-    def _eliminar_legajo(self, request, user, leg):
+    def _eliminar_legajo(self, request, user, leg, *, revalidar_baja_provincial=False):
         """Elimina un legajo (baja lógica en cascada) liberando el cupo si estaba
         ocupado. Soporta el modo `preview` para confirmar antes de eliminar y
         registra la acción. Devuelve siempre una JsonResponse."""
@@ -2204,18 +2214,33 @@ class RevisarLegajoView(View):
                 "true",
                 "True",
             } and is_soft_deletable_instance(leg):
-                return JsonResponse(
-                    {
-                        "success": True,
-                        "preview": build_delete_preview(leg),
-                    }
-                )
-
-            estado_expediente = getattr(
-                getattr(leg.expediente, "estado", None), "nombre", ""
-            )
+                payload = {
+                    "success": True,
+                    "preview": build_delete_preview(leg),
+                }
+                advertencia = ValidacionEdadService.advertencia_por_eliminacion(leg)
+                if advertencia:
+                    payload["menores_sin_responsable"] = advertencia
+                return JsonResponse(payload)
 
             with transaction.atomic():
+                if revalidar_baja_provincial:
+                    expediente_bloqueado = (
+                        Expediente.objects.select_for_update()
+                        .select_related("estado")
+                        .get(pk=leg.expediente_id)
+                    )
+                    leg = (
+                        ExpedienteCiudadano.objects.select_for_update()
+                        .select_related("ciudadano")
+                        .get(pk=leg.pk, expediente=expediente_bloqueado)
+                    )
+                    can_delete_legajo(user, expediente_bloqueado, leg)
+
+                estado_expediente = getattr(
+                    getattr(leg.expediente, "estado", None), "nombre", ""
+                )
+
                 # Liberar cupo si estaba ocupado
                 if leg.estado_cupo == "DENTRO":
                     try:
@@ -2247,6 +2272,8 @@ class RevisarLegajoView(View):
             return JsonResponse(
                 {"success": True, "message": "Legajo eliminado correctamente."}
             )
+        except PermissionDenied as exc:
+            return JsonResponse({"success": False, "error": str(exc)}, status=403)
         except Exception as e:
             logger.error("Error al eliminar legajo %s: %s", leg.pk, e, exc_info=True)
             return JsonResponse(
@@ -2284,7 +2311,9 @@ class RevisarLegajoView(View):
                 can_delete_legajo(user, expediente, leg)
             except PermissionDenied as exc:
                 return JsonResponse({"success": False, "error": str(exc)}, status=403)
-            return self._eliminar_legajo(request, user, leg)
+            return self._eliminar_legajo(
+                request, user, leg, revalidar_baja_provincial=True
+            )
 
         # Permisos: admin, técnico o coordinador
         if not (es_admin or es_tecnico or es_coord):
