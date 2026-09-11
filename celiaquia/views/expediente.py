@@ -2199,7 +2199,7 @@ class RevisarLegajoView(View):
             }
         )
 
-    def _eliminar_legajo(self, request, user, leg):
+    def _eliminar_legajo(self, request, user, leg, *, revalidar_baja_provincial=False):
         """Elimina un legajo (baja lógica en cascada) liberando el cupo si estaba
         ocupado. Soporta el modo `preview` para confirmar antes de eliminar y
         registra la acción. Devuelve siempre una JsonResponse."""
@@ -2223,11 +2223,24 @@ class RevisarLegajoView(View):
                     payload["menores_sin_responsable"] = advertencia
                 return JsonResponse(payload)
 
-            estado_expediente = getattr(
-                getattr(leg.expediente, "estado", None), "nombre", ""
-            )
-
             with transaction.atomic():
+                if revalidar_baja_provincial:
+                    expediente_bloqueado = (
+                        Expediente.objects.select_for_update()
+                        .select_related("estado")
+                        .get(pk=leg.expediente_id)
+                    )
+                    leg = (
+                        ExpedienteCiudadano.objects.select_for_update()
+                        .select_related("ciudadano")
+                        .get(pk=leg.pk, expediente=expediente_bloqueado)
+                    )
+                    can_delete_legajo(user, expediente_bloqueado, leg)
+
+                estado_expediente = getattr(
+                    getattr(leg.expediente, "estado", None), "nombre", ""
+                )
+
                 # Liberar cupo si estaba ocupado
                 if leg.estado_cupo == "DENTRO":
                     try:
@@ -2259,6 +2272,8 @@ class RevisarLegajoView(View):
             return JsonResponse(
                 {"success": True, "message": "Legajo eliminado correctamente."}
             )
+        except PermissionDenied as exc:
+            return JsonResponse({"success": False, "error": str(exc)}, status=403)
         except Exception as e:
             logger.error("Error al eliminar legajo %s: %s", leg.pk, e, exc_info=True)
             return JsonResponse(
@@ -2296,7 +2311,9 @@ class RevisarLegajoView(View):
                 can_delete_legajo(user, expediente, leg)
             except PermissionDenied as exc:
                 return JsonResponse({"success": False, "error": str(exc)}, status=403)
-            return self._eliminar_legajo(request, user, leg)
+            return self._eliminar_legajo(
+                request, user, leg, revalidar_baja_provincial=True
+            )
 
         # Permisos: admin, técnico o coordinador
         if not (es_admin or es_tecnico or es_coord):

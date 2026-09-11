@@ -5,9 +5,12 @@ Implementa los requerimientos:
 - Beneficiario menor sin responsable: BLOQUEO
 """
 
-from datetime import date
-from django.core.exceptions import ValidationError
 import logging
+from datetime import date
+
+from django.core.exceptions import ValidationError
+
+from celiaquia.models import ExpedienteCiudadano
 
 logger = logging.getLogger("django")
 
@@ -189,7 +192,7 @@ class ValidacionEdadService:
         if not menores:
             return []
 
-        ciudadanos_vivos = {leg.ciudadano_id for leg in legajos}
+        legajos_por_ciudadano = {leg.ciudadano_id: leg for leg in legajos}
         responsables_por_hijo = FamiliaService.obtener_responsables_por_hijo(
             [leg.ciudadano_id for leg in menores]
         )
@@ -198,12 +201,40 @@ class ValidacionEdadService:
         for leg in menores:
             responsables = responsables_por_hijo.get(leg.ciudadano_id, [])
             tiene_responsable = any(
-                resp.id in ciudadanos_vivos and resp.id != leg.ciudadano_id
+                ValidacionEdadService._es_responsable_valido_en_expediente(
+                    responsable=resp,
+                    legajo=legajos_por_ciudadano.get(resp.id),
+                    beneficiario_id=leg.ciudadano_id,
+                )
                 for resp in responsables
             )
             if not tiene_responsable:
                 huerfanos.append(leg)
         return huerfanos
+
+    @staticmethod
+    def _es_responsable_valido_en_expediente(*, responsable, legajo, beneficiario_id):
+        """Valida el contrato comun de adulto responsable del expediente.
+
+        La fecha faltante conserva la tolerancia historica: solo se rechaza una
+        edad conocida menor a 18. El rol, en cambio, debe declarar que el legajo
+        actua como responsable para mantener alineadas la validacion familiar y
+        la documentacion obligatoria.
+        """
+        if legajo is None or responsable.id == beneficiario_id:
+            return False
+
+        roles_validos = {
+            ExpedienteCiudadano.ROLE_RESPONSABLE,
+            ExpedienteCiudadano.ROLE_BENEFICIARIO_Y_RESPONSABLE,
+        }
+        rol = (getattr(legajo, "rol", "") or "").strip().lower()
+        if rol not in roles_validos:
+            return False
+
+        return not ValidacionEdadService.es_menor_de_edad(
+            getattr(responsable, "fecha_nacimiento", None)
+        )
 
     @staticmethod
     def menores_que_quedarian_sin_responsable(legajo):

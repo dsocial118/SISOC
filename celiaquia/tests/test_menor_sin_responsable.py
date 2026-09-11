@@ -107,6 +107,65 @@ def test_menor_con_responsable_no_es_huerfano(grupo_familiar):
 
 
 @pytest.mark.django_db
+def test_cuidador_con_rol_beneficiario_no_es_responsable_valido(grupo_familiar):
+    adulto = grupo_familiar["legajo_adulto"]
+    adulto.rol = ExpedienteCiudadano.ROLE_BENEFICIARIO
+    adulto.save(update_fields=["rol"])
+    huerfanos = ValidacionEdadService.menores_sin_responsable(
+        grupo_familiar["expediente"]
+    )
+    assert [leg.pk for leg in huerfanos] == [grupo_familiar["legajo_menor"].pk]
+
+
+@pytest.mark.django_db
+def test_cuidador_menor_no_es_adulto_responsable_aunque_tenga_cuidador(
+    grupo_familiar,
+):
+    responsable_menor = grupo_familiar["legajo_adulto"]
+    responsable_menor.ciudadano.fecha_nacimiento = _hace_anios(17)
+    responsable_menor.ciudadano.save(update_fields=["fecha_nacimiento"])
+    adulto = _ciudadano("20333333335", 50, nombre="Abuelo")
+    _legajo(
+        grupo_familiar["expediente"],
+        adulto,
+        ExpedienteCiudadano.ROLE_RESPONSABLE,
+    )
+    GrupoFamiliar.objects.create(
+        ciudadano_1=adulto,
+        ciudadano_2=responsable_menor.ciudadano,
+        vinculo=GrupoFamiliar.RELACION_PADRE,
+        conviven=True,
+        cuidador_principal=True,
+    )
+    huerfanos = ValidacionEdadService.menores_sin_responsable(
+        grupo_familiar["expediente"]
+    )
+    assert [leg.pk for leg in huerfanos] == [grupo_familiar["legajo_menor"].pk]
+
+
+@pytest.mark.django_db
+def test_responsable_sin_fecha_conserva_tolerancia_actual(grupo_familiar):
+    adulto = grupo_familiar["legajo_adulto"].ciudadano
+    adulto.fecha_nacimiento = None
+    adulto.save(update_fields=["fecha_nacimiento"])
+    assert (
+        ValidacionEdadService.menores_sin_responsable(grupo_familiar["expediente"])
+        == []
+    )
+
+
+@pytest.mark.django_db
+def test_adulto_con_doble_rol_es_responsable_valido(grupo_familiar):
+    adulto = grupo_familiar["legajo_adulto"]
+    adulto.rol = ExpedienteCiudadano.ROLE_BENEFICIARIO_Y_RESPONSABLE
+    adulto.save(update_fields=["rol"])
+    assert (
+        ValidacionEdadService.menores_sin_responsable(grupo_familiar["expediente"])
+        == []
+    )
+
+
+@pytest.mark.django_db
 def test_menor_queda_huerfano_al_eliminar_al_responsable(grupo_familiar):
     grupo_familiar["legajo_adulto"].delete()
 

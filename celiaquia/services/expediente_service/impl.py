@@ -220,6 +220,14 @@ class ExpedienteService:
     @staticmethod
     @transaction.atomic
     def confirmar_envio(expediente: Expediente, usuario):
+        expediente_recibido = expediente
+        if isinstance(expediente, Expediente) and expediente.pk:
+            expediente = (
+                Expediente.objects.select_for_update()
+                .select_related("estado")
+                .get(pk=expediente.pk)
+            )
+
         if expediente.estado.nombre != "EN_ESPERA":
             raise ValidationError(
                 f"El expediente no está en estado EN_ESPERA. Estado actual: {expediente.estado.nombre}"
@@ -254,6 +262,9 @@ class ExpedienteService:
             )
 
         _set_estado(expediente, "CONFIRMACION_DE_ENVIO", usuario)
+        if expediente is not expediente_recibido:
+            # La vista usa la instancia recibida para construir la respuesta.
+            expediente_recibido.estado_id = expediente.estado_id
         total = expediente.expediente_ciudadanos.count()
         logger.info(
             "Expediente %s confirmado (ENVÍO). Legajos=%s", expediente.pk, total

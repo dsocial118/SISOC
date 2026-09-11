@@ -60,9 +60,11 @@ en el envío.
 `validar_beneficiario_menor_con_responsable` y con el cálculo de archivos
 requeridos de `LegajoService`. Un dato faltante no debe bloquear un expediente.
 
-**Cuenta como responsable válido cualquier ciudadano vinculado como cuidador
-principal con legajo vivo en el expediente**, sin exigir un rol determinado. La
-validación bloquea el envío, y un falso positivo frenaría un expediente legítimo.
+**Cuenta como responsable válido un ciudadano vinculado como cuidador principal,
+con legajo vivo en el expediente, rol `responsable` o
+`beneficiario_y_responsable`, y que no sea menor de 18 años.** Si falta la fecha
+de nacimiento del responsable se conserva la tolerancia histórica y no se
+bloquea el envío.
 
 **El endpoint `legajo_eliminar` también quedó cubierto.** `LegajoEliminarView`
 está montada en `urls.py` pero ningún template ni JS la usa: el borrado real de
@@ -116,3 +118,20 @@ representativo de producción.
 El caso inverso quedó fuera: si se da de baja al menor, el responsable puro queda
 solo en el expediente sin ocupar cupo ni entrar al padrón, es decir un legajo
 inútil. No estaba en el ticket. Hay que definir si también merece aviso.
+
+## Correcciones posteriores a la revisión del PR 2492
+
+- Una recarga de la misma fila continúa procesando el bloque de responsable
+  aunque el beneficiario ya exista. Si el legajo del responsable estaba dado de
+  baja en ese expediente, se restaura en la misma transacción, conservando su
+  `pk`, su auditoría y la restauración en cascada. La reactivación se informa como
+  warning y no se contabiliza como alta nueva.
+- El control previo al envío ahora exige que el cuidador tenga un rol de
+  responsable y una edad compatible. Esto evita que un beneficiario o un menor
+  vinculado satisfaga accidentalmente la regla.
+- La confirmación de envío y la baja provincial bloquean la misma fila de
+  `Expediente`. La baja vuelve a leer el estado y revalidar permisos dentro de la
+  transacción, por lo que no puede completarse después de que el expediente haya
+  pasado a `CONFIRMACION_DE_ENVIO`.
+- No se agregaron migraciones ni dependencias. El rollback consiste en revertir
+  el commit de corrección.
