@@ -14,6 +14,7 @@ from celiaquia.models import (
 )
 from celiaquia.services.legajo_service import LegajoService
 from celiaquia.services.cupo_service import CupoService, CupoNoConfigurado
+from celiaquia.services.validacion_edad_service import ValidacionEdadService
 from celiaquia.permissions import can_edit_legajo_files, can_review_legajo
 from core.soft_delete.preview import build_delete_preview
 from core.soft_delete.view_helpers import is_soft_deletable_instance
@@ -478,12 +479,14 @@ class LegajoEliminarView(View):
             if preview_enabled in {"1", "true", "True"} and is_soft_deletable_instance(
                 legajo
             ):
-                return JsonResponse(
-                    {
-                        "success": True,
-                        "preview": build_delete_preview(legajo),
-                    }
-                )
+                payload = {
+                    "success": True,
+                    "preview": build_delete_preview(legajo),
+                }
+                advertencia = ValidacionEdadService.advertencia_por_eliminacion(legajo)
+                if advertencia:
+                    payload["menores_sin_responsable"] = advertencia
+                return JsonResponse(payload)
 
             with transaction.atomic():
                 # Liberar cupo ocupado antes de eliminar el legajo
