@@ -13,6 +13,13 @@ modifican prestaciones. Esa condición se persiste en Admisiones y se expone
 como variable documental para la plantilla; no debe resolverse solo en el
 template ni inferirse después de guardar.
 
+Los formularios base y jurídico, tanto de creación como de edición, ya no
+solicitan ni validan los campos `monto_total_conveniado_informe` y
+`monto_total_conveniado`. Se retiró la sección "Monto total conveniado".
+Los valores históricos y las variables documentales se conservan; este cambio
+no modifica las plantillas publicadas ni requiere una migración.
+Ver `docs/registro/cambios/2026-09-11-informes-tecnicos-sin-monto-conveniado.md`.
+
 ## Templates dinámicos
 
 Las combinaciones de condiciones se resuelven mediante versiones publicadas de

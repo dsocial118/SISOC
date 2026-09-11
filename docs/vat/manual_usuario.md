@@ -419,6 +419,60 @@ Calificación de cada inscripto en cada evaluación.
 
 ---
 
+## 10. Buscador por Ciudadano
+
+Pantalla de solo lectura para consultar la trayectoria formativa completa de
+una persona en INET, sin necesidad de acceder a Personas ni a cada comisión
+por separado. Reemplaza las consultas manuales que antes requerían soporte
+técnico.
+
+**Cómo buscar:**
+1. Ir a **INET → Buscador por Ciudadano**.
+2. Ingresar DNI (`30123456`) o CUIT/CUIL, con o sin guiones/puntos
+   (`20-30123456-5`, `20301234565`).
+3. Buscar. Si el número coincide con más de una persona (mismo número, distinto
+   tipo de documento), el sistema pide elegir a cuál consultar.
+
+La búsqueda y las descargas se envían de forma segura: el documento no aparece
+en la dirección del navegador ni puede guardarse como enlace.
+
+**Qué muestra:**
+- Ficha del ciudadano (nombre, documento, CUIL/CUIT, email, teléfono) con
+  enlace a su legajo si el usuario tiene permiso sobre Ciudadanos.
+- Contadores: total de inscripciones, en curso, pre-inscriptas, en espera,
+  completadas, abandonadas, rechazadas, aprobadas, desaprobadas, sin calificar
+  y % de asistencia global.
+- Tabla con cada inscripción: curso, comisión (código, nombre y enlace al
+  detalle cuando corresponde), centro (con CUE vigente),
+  ubicación, período, **estado de la inscripción** y **resultado final** en
+  columnas separadas, y asistencia.
+- Exportación CSV y XLSX de la trayectoria visible.
+
+**Estado de inscripción vs. resultado final:** son dos datos independientes.
+El estado (`pre_inscripta` → `inscripta`/`validada_presencial` → `completada`
+o `abandonada`/`rechazada`) indica si la persona cursó. El resultado final
+(`aprobado`/`desaprobado`/**sin calificar**) indica si aprobó, y es
+independiente del estado — una inscripción `completada` puede seguir "sin
+calificar" hasta que se cargue la nota.
+
+**Alcance de acceso:** quienes poseen `ciudadanos.view_ciudadano` pueden
+encontrar cualquier ciudadano, aunque no tenga inscripciones VAT. Un usuario
+exclusivamente VAT solo puede encontrar personas con al menos una inscripción
+dentro de su alcance; el sistema no confirma si una persona fuera de alcance
+existe. Un referente solo ve inscripciones de sus centros; SSE y el perfil
+Admin Visualizador ven la trayectoria VAT del país. Cuando el alcance está
+limitado, la pantalla muestra una leyenda fija: el listado
+**no representa necesariamente** la trayectoria completa de la persona en
+INET, sino la parte visible para ese usuario.
+
+> **Ejemplo:** Mesa de ayuda recibe un reclamo de un ciudadano que dice haber
+> completado un curso pero no le figura el certificado. Un referente busca su
+> DNI en el Buscador por Ciudadano y ve que la inscripción sigue en estado
+> `inscripta` con resultado "Sin calificar": el curso no fue cerrado
+> administrativamente, no es un problema de certificado.
+
+---
+
 ## Flujos de uso frecuente
 
 ### Alta de un nuevo centro

@@ -671,6 +671,17 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - Request manual: `postman/SISOC APIs.postman_collection.json`, carpeta VAT /
   Centros e institución.
 
+### Si necesitas cambiar el Buscador por Ciudadano de INET
+
+- Entrada y flujo POST: `VAT/views/buscador_ciudadano.py`, `VAT/urls.py` y
+  `VAT/templates/vat/buscador/ciudadano.html`.
+- Scope, trayectoria y exportaciones: `VAT/services/buscador_ciudadano_service.py`
+  sobre el queryset compartido `VAT/services/vat_inscripciones_base.py`.
+- La búsqueda global requiere `ciudadanos.view_ciudadano`; un usuario solo VAT
+  no debe poder inferir ciudadanos ni inscripciones fuera de su alcance.
+- Tests de seguridad, duplicación, exports y queries:
+  `VAT/test_buscador_ciudadano.py`.
+
 ### Si necesitas cambiar CI o reglas de calidad
 
 - `.github/workflows/tests.yml`
