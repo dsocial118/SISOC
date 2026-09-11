@@ -1651,6 +1651,9 @@ class AdmisionesLegalesDetailView(LoginRequiredMixin, FormMixin, DetailView):
         context.update(
             LegalesService.get_legales_context(self.get_object(), self.request)
         )
+        # Los kwargs explícitos ganan sobre los formularios limpios que arma el
+        # service: son los que traen los errores del intento anterior.
+        context.update(kwargs)
         context.setdefault("form", self.get_form())
         context.setdefault(
             "form_legales_num_if", LegalesNumIFForm(instance=self.get_object())
@@ -1665,9 +1668,19 @@ class AdmisionesLegalesDetailView(LoginRequiredMixin, FormMixin, DetailView):
                 return self.render_to_response(
                     self.get_context_data(
                         form_legales_num_if=legales_num_if_form,
-                        abrir_modal_legales_num_if=True,
+                        abrir_modal="modalLegalesNumIF",
                     )
                 )
+
+        modal_invalido = LegalesService.form_modal_invalido(request, admision)
+        if modal_invalido is not None:
+            clave_form, id_modal, form_con_errores = modal_invalido
+            return self.render_to_response(
+                self.get_context_data(
+                    **{clave_form: form_con_errores, "abrir_modal": id_modal}
+                )
+            )
+
         return LegalesService.procesar_post_legales(request, admision)
 
 

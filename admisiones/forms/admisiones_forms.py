@@ -1233,6 +1233,8 @@ class NumeroPVMixin:
                         **attrs_base,
                         "inputmode": "numeric",
                         "placeholder": "2025",
+                        "pattern": r"\d{4}",
+                        "title": "Cuatro dígitos, por ejemplo 2025.",
                     }
                 ),
             ),
@@ -1245,6 +1247,8 @@ class NumeroPVMixin:
                         **attrs_base,
                         "inputmode": "numeric",
                         "placeholder": "103008562",
+                        "pattern": r"\d{1,9}",
+                        "title": "Hasta nueve dígitos, sin puntos ni espacios.",
                     }
                 ),
             ),
@@ -1256,6 +1260,8 @@ class NumeroPVMixin:
                         **attrs_base,
                         "class": "form-control text-uppercase",
                         "placeholder": "DPS",
+                        "pattern": "[A-Za-z0-9]+",
+                        "title": "Sólo letras y números, sin espacios.",
                     }
                 ),
             ),
@@ -1268,6 +1274,8 @@ class NumeroPVMixin:
                         **attrs_base,
                         "class": "form-control text-uppercase",
                         "placeholder": "MCH",
+                        "pattern": "[A-Za-z0-9]+",
+                        "title": "Sólo letras y números, sin espacios.",
                     }
                 ),
             ),
