@@ -270,7 +270,75 @@ def test_informe_tecnico_no_muestra_acreditaciones_del_ultimo_convenio(comedor):
 
     for form in formularios:
         assert "acreditaciones_ultimo_convenio" not in form.fields
-        assert "monto_total_conveniado_informe" in form.fields
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("form_class", [InformeTecnicoBaseForm, InformeTecnicoJuridicoForm])
+@pytest.mark.parametrize("financiamiento", ["vigente", "finalizado"])
+@pytest.mark.parametrize("require_full", [False, True])
+def test_informe_tecnico_no_pide_montos_conveniados(
+    comedor, form_class, financiamiento, require_full
+):
+    admision = Admision.objects.create(
+        comedor=comedor,
+        tipo="renovacion",
+        estado_financiamiento=financiamiento,
+    )
+    form = form_class(data={}, admision=admision, require_full=require_full)
+
+    for nombre in ("monto_total_conveniado_informe", "monto_total_conveniado"):
+        assert nombre not in form.fields
+        assert nombre not in form.errors
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("form_class", [InformeTecnicoBaseForm, InformeTecnicoJuridicoForm])
+@pytest.mark.parametrize("financiamiento", ["vigente", "finalizado"])
+def test_editar_informe_conserva_montos_conveniados_historicos(
+    comedor, form_class, financiamiento
+):
+    provincia = Provincia.objects.create(nombre="Provincia catálogo")
+    municipio = Municipio.objects.create(
+        nombre="Municipio catálogo", provincia=provincia
+    )
+    localidad = Localidad.objects.create(
+        nombre="Localidad catálogo", municipio=municipio
+    )
+    admision = Admision.objects.create(
+        comedor=comedor,
+        tipo="renovacion",
+        estado_financiamiento=financiamiento,
+    )
+    informe = crear_informe(
+        admision,
+        tipo="base" if form_class is InformeTecnicoBaseForm else "juridico",
+        estado_formulario="borrador",
+        monto_total_conveniado_informe=Decimal("123.45"),
+        monto_total_conveniado=Decimal("678.90"),
+        provincia_organizacion=provincia.nombre,
+        localidad_organizacion=localidad.nombre,
+        provincia_espacio=provincia.nombre,
+        localidad_espacio=localidad.nombre,
+        responsable_tarjeta_provincia=provincia.nombre,
+        responsable_tarjeta_localidad=localidad.nombre,
+        provincia_poblacion_destinataria=provincia.nombre,
+    )
+    inicial = form_class(instance=informe, admision=admision)
+    datos = {field.name: field.value() for field in inicial}
+    datos.update(
+        nombre_espacio="Nombre actualizado",
+        monto_total_conveniado_informe="0",
+        monto_total_conveniado="0",
+    )
+    form = form_class(data=datos, instance=informe, admision=admision)
+
+    assert form.is_valid(), form.errors
+    form.save()
+    informe.refresh_from_db()
+
+    assert informe.nombre_espacio == "Nombre actualizado"
+    assert informe.monto_total_conveniado_informe == Decimal("123.45")
+    assert informe.monto_total_conveniado == Decimal("678.90")
 
 
 @pytest.mark.django_db
