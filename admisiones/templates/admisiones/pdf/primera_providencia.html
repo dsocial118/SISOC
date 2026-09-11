@@ -15,7 +15,9 @@
     }
   }
 
-  html { hyphens: auto; }
+  /* Sin division silabica: parte nombres propios al medio y el DOCX,
+     que es el documento que va a GDE, tampoco hifena. */
+  html { hyphens: none; }
   body {
     font-family: Arial, sans-serif;
     font-size: 10pt;
@@ -43,8 +45,6 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    /* El body usa hyphens:auto para justificar; en el encabezado eso partia
-       palabras al medio ("PROGRA-MA", "Secreta-ria"). */
     hyphens: none;
   }
 
@@ -91,7 +91,7 @@
 
   h4 { text-align: center; margin: 0 0 10px 0; }
 
-  main p, main li { text-align: justify; text-justify: inter-word; hyphens: auto; }
+  main p, main li { text-align: justify; text-justify: inter-word; hyphens: none; }
   main p { margin: 0 0 10px 0; }
 
   table {
