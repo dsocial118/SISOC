@@ -1,4 +1,5 @@
 import json
+import os
 import re
 
 from django.contrib import messages
@@ -6,9 +7,10 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import get_object_or_404
 from django.views.decorators.http import require_POST
-from django.http import FileResponse, JsonResponse
+from django.http import FileResponse, Http404, JsonResponse
 from django.urls import reverse, reverse_lazy
 from django.core.exceptions import PermissionDenied, ValidationError
+from django.db import transaction
 from django.db.models import Q
 from django.http import HttpResponseRedirect
 from django.views.generic import (
@@ -18,6 +20,7 @@ from django.views.generic import (
     UpdateView,
     DeleteView,
 )
+from django.views import View
 from comedores.models import Comedor
 from core.services.advanced_filters import AdvancedFilterEngine
 from core.services.favorite_filters import SeccionesFiltrosFavoritos
@@ -362,7 +365,11 @@ class RendicionCuentaMensualDetailView(LoginRequiredMixin, DetailView):
         if accion_proceso:
             if not self._user_can_run_action(request.user, accion_proceso):
                 raise PermissionDenied
-            form = RendicionProcesoForm(request.POST, request.FILES)
+            form = RendicionProcesoForm(
+                request.POST,
+                request.FILES,
+                rendicion=rendicion,
+            )
             if form.is_valid():
                 try:
                     RendicionProcesoService.ejecutar(
@@ -523,7 +530,7 @@ class RendicionCuentaMensualDetailView(LoginRequiredMixin, DetailView):
         context["puede_editar_datos"] = user_has_permission_code(
             self.request.user, "rendicioncuentasmensual.edit_rendicion_data"
         )
-        context["proceso_form"] = RendicionProcesoForm()
+        context["proceso_form"] = RendicionProcesoForm(rendicion=rendicion)
         return context
 
 
@@ -599,6 +606,33 @@ class RendicionCuentaMensualDownloadPdfView(LoginRequiredMixin, DetailView):
         )
 
 
+class RendicionDocumentoVerView(LoginRequiredMixin, View):
+    def get(self, request, *args, **kwargs):
+        documento = get_object_or_404(
+            DocumentacionAdjunta.objects.select_related(
+                "rendicion_cuenta_mensual"
+            ).filter(deleted_at__isnull=True),
+            pk=self.kwargs["pk"],
+        )
+        if not documento.rendicion_cuenta_mensual:
+            raise Http404
+
+        try:
+            archivo = documento.archivo.open("rb")
+        except (FileNotFoundError, OSError, ValueError) as exc:
+            raise Http404("El archivo del documento no está disponible.") from exc
+
+        RendicionCuentaMensualService.registrar_visualizacion_documento(
+            documento=documento,
+            actor=request.user,
+        )
+        return FileResponse(
+            archivo,
+            as_attachment=False,
+            filename=os.path.basename(documento.archivo.name),
+        )
+
+
 class RendicionCuentaMensualCreateView(LoginRequiredMixin, CreateView):
     model = RendicionCuentaMensual
     template_name = "rendicioncuentasmensual_form.html"
@@ -652,6 +686,12 @@ class RendicionCuentaMensualUpdateView(LoginRequiredMixin, UpdateView):
             raise PermissionDenied
         return super().dispatch(request, *args, **kwargs)
 
+    @transaction.atomic
+    def post(self, request, *args, **kwargs):
+        # La validación de datos generales toma el bloqueo de numeración, así que
+        # validar y guardar tienen que compartir transacción para que proteja algo.
+        return super().post(request, *args, **kwargs)
+
     def form_valid(self, form):
         rendicion = self.get_object()
         form.instance.comedor = rendicion.comedor
@@ -660,8 +700,12 @@ class RendicionCuentaMensualUpdateView(LoginRequiredMixin, UpdateView):
             form.instance.usuario_ultima_modificacion = self.request.user
         form.instance.ultima_modificacion = rendicion.ultima_modificacion
         form.instance.fecha_creacion = rendicion.fecha_creacion
-        form.instance.mes = form.cleaned_data["periodo_inicio"].month
-        form.instance.anio = form.cleaned_data["periodo_inicio"].year
+        # El período puede quedar nulo en rendiciones históricas: solo se
+        # recalculan mes y año cuando efectivamente hay fecha de inicio.
+        periodo_inicio = form.cleaned_data.get("periodo_inicio")
+        if periodo_inicio:
+            form.instance.mes = periodo_inicio.month
+            form.instance.anio = periodo_inicio.year
         return super().form_valid(form)
 
     def get_success_url(self):

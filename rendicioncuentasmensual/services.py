@@ -1,13 +1,15 @@
 # pylint: disable=too-many-lines
 
+import calendar
 import logging
 import os
 import subprocess
+from datetime import date
 from io import BytesIO
 
 from django.core.exceptions import ValidationError
 from django.db import transaction
-from django.db.models import Exists, OuterRef, Q
+from django.db.models import Exists, Max, OuterRef, Q
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from pypdf import PdfReader, PdfWriter
@@ -20,6 +22,7 @@ from comunicados.models import (
     TipoComunicado,
 )
 from comedores.models import Comedor
+from iam.services import user_has_permission_code
 from organizaciones.models import ProyectoOrganizacion
 from pwa.services.mensajes_service import MOBILE_RENDICION_PERMISSION_CODE
 from pwa.services.push_service import notify_rendicion_revision_push
@@ -75,7 +78,20 @@ def inferir_linea_programatica(comedor):
     return DocumentacionAdjunta.LINEA_TRADICIONAL
 
 
+def periodo_fin_maximo(periodo_inicio, linea_programatica):
+    linea = DocumentacionAdjunta.normalizar_linea_programatica(linea_programatica)
+    meses_extra = 2 if linea == DocumentacionAdjunta.LINEA_SECOS else 0
+    indice_mes = periodo_inicio.month - 1 + meses_extra
+    anio = periodo_inicio.year + indice_mes // 12
+    mes = indice_mes % 12 + 1
+    ultimo_dia = calendar.monthrange(anio, mes)[1]
+    return periodo_inicio.replace(year=anio, month=mes, day=ultimo_dia)
+
+
 class RendicionCuentaMensualService:  # pylint: disable=too-many-public-methods
+    CONVENIOS_VALIDOS = ("P01", "P02", "P03")
+    NUMERO_RENDICION_MIN = 1
+    NUMERO_RENDICION_MAX = 6
     MOBILE_MESSAGE_ACTION_PREFIX = "[SISOC_ACCION]"
     MOBILE_MESSAGE_ACTION_SUFFIX = "[/SISOC_ACCION]"
     CATEGORIAS_CON_HISTORIAL_SUBSANACION = {
@@ -84,6 +100,76 @@ class RendicionCuentaMensualService:  # pylint: disable=too-many-public-methods
         DocumentacionAdjunta.CATEGORIA_COMPROBANTES_SIPH,
         DocumentacionAdjunta.CATEGORIA_OTROS,
     }
+    PERMISOS_POR_ETAPA = {
+        RendicionCuentaMensual.ETAPA_REVISION_DOCUMENTACION: (
+            "rendicioncuentasmensual.manage_territorial_stage"
+        ),
+        RendicionCuentaMensual.ETAPA_REVISION_AUDITORIA: (
+            "rendicioncuentasmensual.manage_auditoria_review_stage"
+        ),
+        RendicionCuentaMensual.ETAPA_AUDITORIA: (
+            "rendicioncuentasmensual.manage_auditoria_stage"
+        ),
+        RendicionCuentaMensual.ETAPA_REGULARIZACION: (
+            "rendicioncuentasmensual.manage_regularizacion_stage"
+        ),
+    }
+
+    @staticmethod
+    def permiso_de_etapa(etapa_proceso) -> str | None:
+        return RendicionCuentaMensualService.PERMISOS_POR_ETAPA.get(etapa_proceso)
+
+    @staticmethod
+    def usuario_gestiona_etapa_vigente(user, rendicion) -> bool:
+        permiso = RendicionCuentaMensualService.permiso_de_etapa(
+            rendicion.etapa_proceso
+        )
+        return bool(permiso and user_has_permission_code(user, permiso))
+
+    @staticmethod
+    def registrar_visualizacion_documento(*, documento, actor) -> bool:
+        rendicion = documento.rendicion_cuenta_mensual
+        if not rendicion or not (
+            RendicionCuentaMensualService.usuario_gestiona_etapa_vigente(
+                actor, rendicion
+            )
+        ):
+            return False
+
+        documento.visualizacion_etapa = rendicion.etapa_proceso
+        documento.visualizacion_usuario = actor
+        documento.visualizacion_fecha = timezone.now()
+        documento.save(
+            update_fields=[
+                "visualizacion_etapa",
+                "visualizacion_usuario",
+                "visualizacion_fecha",
+            ]
+        )
+        return True
+
+    @staticmethod
+    def resetear_visualizacion_documento(documento) -> None:
+        documento.visualizacion_etapa = None
+        documento.visualizacion_usuario = None
+        documento.visualizacion_fecha = None
+        documento.save(
+            update_fields=[
+                "visualizacion_etapa",
+                "visualizacion_usuario",
+                "visualizacion_fecha",
+            ]
+        )
+
+    @staticmethod
+    def resetear_visualizaciones_rendicion(rendicion) -> None:
+        DocumentacionAdjunta.all_objects.filter(
+            rendicion_cuenta_mensual=rendicion
+        ).update(
+            visualizacion_etapa=None,
+            visualizacion_usuario=None,
+            visualizacion_fecha=None,
+        )
 
     @staticmethod
     def _obtener_comedores_destino_notificacion(rendicion):
@@ -174,7 +260,7 @@ class RendicionCuentaMensualService:  # pylint: disable=too-many-public-methods
         convenio_label = convenio or "Sin convenio"
         titulo = (
             f"Proyecto {proyecto_label} | Convenio {convenio_label} | "
-            f"Rendici?n {numero_rendicion}: documento {estado_legible.lower()}"
+            f"Rendición {numero_rendicion}: documento {estado_legible.lower()}"
         )
 
         cuerpo_lineas = [
@@ -262,9 +348,50 @@ class RendicionCuentaMensualService:  # pylint: disable=too-many-public-methods
         return queryset.filter(comedor=comedor)
 
     @staticmethod
+    def rendiciones_elegibles_para_acta(rendicion):
+        return (
+            RendicionCuentaMensualService._get_project_queryset(
+                rendicion.comedor, rendicion.proyecto
+            )
+            .filter(
+                linea_programatica=RendicionCuentaMensual.LINEA_TRADICIONAL,
+                genera_acta_auditoria=False,
+            )
+            .exclude(pk=rendicion.pk)
+            .select_related("proyecto")
+            .order_by("periodo_inicio", "convenio", "numero_rendicion", "pk")
+        )
+
+    @staticmethod
+    def siguiente_numero_rendicion(
+        *, comedor, convenio, proyecto=None, excluir_pk=None
+    ):
+        queryset = RendicionCuentaMensualService._get_project_queryset(
+            comedor, proyecto
+        ).filter(convenio=convenio)
+        if excluir_pk is not None:
+            queryset = queryset.exclude(pk=excluir_pk)
+        ultimo_numero = queryset.aggregate(maximo=Max("numero_rendicion"))["maximo"]
+        return (ultimo_numero or 0) + 1
+
+    @staticmethod
+    def _bloquear_scope_numeracion(comedor, proyecto=None):
+        if proyecto is not None:
+            return (
+                ProyectoOrganizacion.objects.select_for_update()
+                .filter(pk=proyecto.pk)
+                .first()
+            )
+        if getattr(comedor, "pk", None):
+            return Comedor.objects.select_for_update().filter(pk=comedor.pk).first()
+        return None
+
+    @staticmethod
     def _documentos_activos_queryset(rendicion):
-        return rendicion.archivos_adjuntos.filter(deleted_at__isnull=True).order_by(
-            "categoria", "fecha_creacion", "id"
+        return (
+            rendicion.archivos_adjuntos.filter(deleted_at__isnull=True)
+            .select_related("visualizacion_usuario")
+            .order_by("categoria", "fecha_creacion", "id")
         )
 
     @staticmethod
@@ -330,69 +457,164 @@ class RendicionCuentaMensualService:  # pylint: disable=too-many-public-methods
         return rendicion
 
     @staticmethod
-    def _validar_numero_y_periodo(
+    def validar_datos_generales(  # pylint: disable=too-many-arguments
         *,
         comedor,
         convenio,
         numero_rendicion,
         periodo,
         proyecto=None,
+        linea_programatica=None,
+        excluir_pk=None,
+        numero_actual=None,
+    ):
+        """Regla única de datos generales para formularios, serializers y views.
+
+        Levanta ``ValidationError`` con los errores agrupados por campo. Cuando
+        el número de rendición cambia toma un bloqueo de numeración, así que hay
+        que llamarla dentro de una transacción.
+        """
+        return RendicionCuentaMensualService._validar_numero_y_periodo(
+            comedor=comedor,
+            convenio=convenio,
+            numero_rendicion=numero_rendicion,
+            periodo=periodo,
+            proyecto=proyecto,
+            linea_programatica=linea_programatica,
+            excluir_pk=excluir_pk,
+            numero_actual=numero_actual,
+        )
+
+    @staticmethod
+    def _validar_numero_y_periodo(  # pylint: disable=too-many-arguments,too-many-locals,too-many-branches
+        *,
+        comedor,
+        convenio,
+        numero_rendicion,
+        periodo,
+        proyecto=None,
+        linea_programatica=None,
+        excluir_pk=None,
+        numero_actual=None,
     ):
         periodo_inicio, periodo_fin = periodo
-        if convenio not in {"P01", "P02", "P03"}:
-            raise ValidationError({"convenio": "El convenio debe ser P01, P02 o P03."})
-        if numero_rendicion not in {1, 2, 3, 4, 5, 6}:
-            raise ValidationError(
-                {"numero_rendicion": "El número de rendición debe estar entre 1 y 6."}
+        errores = {}
+
+        def agregar_error(campo, mensaje):
+            errores.setdefault(campo, []).append(mensaje)
+
+        if convenio not in RendicionCuentaMensualService.CONVENIOS_VALIDOS:
+            agregar_error("convenio", "El convenio debe ser P01, P02 o P03.")
+
+        numero_valido = (
+            isinstance(numero_rendicion, int)
+            and not isinstance(numero_rendicion, bool)
+            and RendicionCuentaMensualService.NUMERO_RENDICION_MIN
+            <= numero_rendicion
+            <= RendicionCuentaMensualService.NUMERO_RENDICION_MAX
+        )
+        if not numero_valido:
+            agregar_error(
+                "numero_rendicion",
+                "El número de rendición debe estar entre 1 y 6.",
             )
-        if (
-            periodo_inicio > periodo_fin
-            or periodo_inicio.year != periodo_fin.year
-            or periodo_inicio.month != periodo_fin.month
-        ):
-            raise ValidationError(
-                {"periodo": "Las fechas deben pertenecer al mismo período mensual."}
+
+        periodos_validos = isinstance(periodo_inicio, date) and isinstance(
+            periodo_fin, date
+        )
+        if periodos_validos and periodo_inicio > periodo_fin:
+            agregar_error(
+                "periodo_fin",
+                "La fecha de fin debe ser posterior o igual a la fecha de inicio.",
             )
+
+        if periodos_validos:
+            fin_maximo = periodo_fin_maximo(periodo_inicio, linea_programatica)
+            if periodo_fin > fin_maximo:
+                linea = DocumentacionAdjunta.normalizar_linea_programatica(
+                    linea_programatica
+                )
+                if linea == DocumentacionAdjunta.LINEA_SECOS:
+                    mensaje = (
+                        "Para Abordaje Comunitario - Línea Secos el período puede "
+                        "abarcar hasta tres meses: la fecha de fin no puede superar el "
+                        f"{fin_maximo.strftime('%d/%m/%Y')}."
+                    )
+                else:
+                    mensaje = "Las fechas deben pertenecer al mismo período mensual."
+                agregar_error("periodo_fin", mensaje)
+
+        validar_secuencia = numero_valido and (
+            numero_actual is None or numero_rendicion != numero_actual
+        )
+        if validar_secuencia:
+            RendicionCuentaMensualService._bloquear_scope_numeracion(comedor, proyecto)
+
         queryset = RendicionCuentaMensualService._get_project_queryset(
             comedor, proyecto
         )
-        ultimo_periodo = (
-            queryset.filter(
-                periodo_inicio__isnull=False,
+        if excluir_pk is not None:
+            queryset = queryset.exclude(pk=excluir_pk)
+
+        if periodos_validos:
+            ultimo_periodo = (
+                queryset.filter(
+                    periodo_inicio__isnull=False,
+                )
+                .order_by("-periodo_inicio")
+                .values_list("periodo_inicio", flat=True)
+                .first()
             )
-            .order_by("-periodo_inicio")
-            .values_list("periodo_inicio", flat=True)
-            .first()
-        )
-        if ultimo_periodo and periodo_inicio < ultimo_periodo:
-            raise ValidationError(
-                {
-                    "periodo": "No se pueden cargar períodos anteriores a los ya gestionados."
-                }
-            )
-        if queryset.filter(
-            convenio=convenio,
-            numero_rendicion=numero_rendicion,
-        ).exists():
-            raise ValidationError(
-                {
-                    "numero_rendicion": (
-                        "Ya existe una rendición con ese número dentro del mismo convenio."
+            if ultimo_periodo and periodo_inicio < ultimo_periodo:
+                agregar_error(
+                    "periodo",
+                    "No se pueden cargar períodos anteriores a los ya gestionados.",
+                )
+
+        if numero_valido:
+            if queryset.filter(
+                convenio=convenio,
+                numero_rendicion=numero_rendicion,
+            ).exists():
+                agregar_error(
+                    "numero_rendicion",
+                    "Ya existe una rendición con ese número dentro del mismo convenio.",
+                )
+
+            # Una edición histórica sin renumerar no debe validar la secuencia actual.
+            if validar_secuencia:
+                esperado = RendicionCuentaMensualService.siguiente_numero_rendicion(
+                    comedor=comedor,
+                    convenio=convenio,
+                    proyecto=proyecto,
+                    excluir_pk=excluir_pk,
+                )
+                if esperado > RendicionCuentaMensualService.NUMERO_RENDICION_MAX:
+                    agregar_error(
+                        "numero_rendicion",
+                        "Ya se registraron las 6 rendiciones posibles para este convenio.",
                     )
-                }
+                elif numero_rendicion != esperado:
+                    agregar_error(
+                        "numero_rendicion",
+                        f"El número de rendición debe ser {esperado}: debe continuar "
+                        "la secuencia del convenio dentro del proyecto.",
+                    )
+
+        if (
+            periodos_validos
+            and queryset.filter(
+                periodo_inicio__lte=periodo_fin,
+                periodo_fin__gte=periodo_inicio,
+            ).exists()
+        ):
+            agregar_error(
+                "periodo",
+                "El período no puede repetirse ni solaparse dentro del mismo convenio.",
             )
 
-        if queryset.filter(
-            periodo_inicio__lte=periodo_fin,
-            periodo_fin__gte=periodo_inicio,
-        ).exists():
-            raise ValidationError(
-                {
-                    "periodo": (
-                        "El período no puede repetirse ni solaparse dentro del mismo convenio."
-                    )
-                }
-            )
+        if errores:
+            raise ValidationError(errores)
 
     @staticmethod
     def _validar_categoria_documental(rendicion, categoria):
@@ -556,8 +778,8 @@ class RendicionCuentaMensualService:  # pylint: disable=too-many-public-methods
         )
         grouped = {
             item["codigo"]: []
-            for item in DocumentacionAdjunta.categorias_mobile(
-                getattr(rendicion, "linea_programatica", None)
+            for item in RendicionCuentaMensualService.obtener_categorias_visibles(
+                rendicion, documentos=documentos
             )
         }
         for documento in documentos:
@@ -568,22 +790,41 @@ class RendicionCuentaMensualService:  # pylint: disable=too-many-public-methods
         return grouped
 
     @staticmethod
-    def _construir_documentacion_para_detalle(rendicion):
-        documentos = list(
-            RendicionCuentaMensualService._documentos_activos_queryset(rendicion)
+    def obtener_categorias_visibles(rendicion, documentos=None):
+        if documentos is None:
+            documentos = list(
+                RendicionCuentaMensualService._documentos_activos_queryset(rendicion)
+            )
+        return DocumentacionAdjunta.categorias_mobile(
+            getattr(rendicion, "linea_programatica", None),
+            incluir_codigos={documento.categoria for documento in documentos},
         )
+
+    @staticmethod
+    def _construir_documentacion_para_detalle(rendicion, documentos=None):
+        if documentos is None:
+            documentos = list(
+                RendicionCuentaMensualService._documentos_activos_queryset(rendicion)
+            )
         return construir_documentacion_para_detalle(
             documentos,
-            DocumentacionAdjunta.categorias_mobile(
-                getattr(rendicion, "linea_programatica", None)
+            RendicionCuentaMensualService.obtener_categorias_visibles(
+                rendicion, documentos=documentos
             ),
             RendicionCuentaMensualService.CATEGORIAS_CON_HISTORIAL_SUBSANACION,
         )
 
     @staticmethod
     def obtener_documentacion_para_detalle(rendicion):
+        documentos = list(
+            RendicionCuentaMensualService._documentos_activos_queryset(rendicion)
+        )
+        for archivo in documentos:
+            archivo.visualizacion_confirmada = archivo.visualizacion_confirmada_en(
+                rendicion.etapa_proceso
+            )
         grouped = RendicionCuentaMensualService._construir_documentacion_para_detalle(
-            rendicion
+            rendicion, documentos=documentos
         )
         solicitudes_faltantes = {
             solicitud.categoria: solicitud
@@ -592,8 +833,8 @@ class RendicionCuentaMensualService:  # pylint: disable=too-many-public-methods
             )
         }
         categorias = []
-        for categoria in DocumentacionAdjunta.categorias_mobile(
-            getattr(rendicion, "linea_programatica", None)
+        for categoria in RendicionCuentaMensualService.obtener_categorias_visibles(
+            rendicion, documentos=documentos
         ):
             categorias.append(
                 {
@@ -802,6 +1043,7 @@ class RendicionCuentaMensualService:  # pylint: disable=too-many-public-methods
             numero_rendicion=numero_rendicion,
             periodo=(periodo_inicio, periodo_fin),
             proyecto=proyecto,
+            linea_programatica=linea_programatica,
         )
 
         return RendicionCuentaMensual.objects.create(
@@ -844,6 +1086,11 @@ class RendicionCuentaMensualService:  # pylint: disable=too-many-public-methods
             documento_subsanado_id=documento_subsanado_id,
         )
         documento_subsanado = validacion["documento_subsanado"]
+
+        if documento_subsanado:
+            RendicionCuentaMensualService.resetear_visualizacion_documento(
+                documento_subsanado
+            )
 
         if (
             documento_subsanado
@@ -1265,7 +1512,9 @@ class RendicionProcesoService:
     @transaction.atomic
     def ejecutar(
         *, rendicion, accion, datos, actor=None
-    ):  # pylint: disable=too-many-statements,too-many-branches
+    ):  # pylint: disable=too-many-statements,too-many-branches,too-many-locals
+        etapa_previa = rendicion.etapa_proceso
+        rendiciones_para_asociar = None
         ahora = timezone.now()
         pendiente = RendicionCuentaMensual.SUBESTADO_PENDIENTE
         en_curso = RendicionCuentaMensual.SUBESTADO_EN_CURSO
@@ -1364,8 +1613,68 @@ class RendicionProcesoService:
                 RendicionCuentaMensual.ETAPA_AUDITORIA,
                 {en_curso},
             )
+            rendiciones_seleccionadas = list(datos.get("rendiciones_incluidas") or [])
+            es_linea_tradicional = (
+                rendicion.linea_programatica == RendicionCuentaMensual.LINEA_TRADICIONAL
+            )
+            if not es_linea_tradicional and rendiciones_seleccionadas:
+                raise ValidationError(
+                    {
+                        "rendiciones_incluidas": (
+                            "Abordaje Comunitario - Línea Secos no admite "
+                            "rendiciones incluidas en el acta."
+                        )
+                    }
+                )
+
+            genera_acta = datos.get("genera_acta_auditoria")
+            if es_linea_tradicional:
+                if not isinstance(genera_acta, bool):
+                    raise ValidationError(
+                        {
+                            "genera_acta_auditoria": (
+                                "Indicá si se genera acta de auditoría."
+                            )
+                        }
+                    )
+                if not genera_acta and rendiciones_seleccionadas:
+                    raise ValidationError(
+                        {
+                            "rendiciones_incluidas": (
+                                "No se pueden seleccionar rendiciones si no se "
+                                "genera acta de auditoría."
+                            )
+                        }
+                    )
+                if genera_acta:
+                    seleccionadas_ids = {
+                        seleccionada.pk for seleccionada in rendiciones_seleccionadas
+                    }
+                    elegibles_ids = set(
+                        RendicionCuentaMensualService.rendiciones_elegibles_para_acta(
+                            rendicion
+                        )
+                        .filter(pk__in=seleccionadas_ids)
+                        .values_list("pk", flat=True)
+                    )
+                    if seleccionadas_ids != elegibles_ids:
+                        raise ValidationError(
+                            {
+                                "rendiciones_incluidas": (
+                                    "La selección contiene rendiciones que no son "
+                                    "elegibles para el acta."
+                                )
+                            }
+                        )
+                    rendiciones_para_asociar = rendiciones_seleccionadas
+
             rendicion.monto_rendido = datos["monto_rendido"]
-            rendicion.acta_auditoria = datos["acta_auditoria"]
+            rendicion.monto_observado = datos.get("monto_observado")
+            if es_linea_tradicional:
+                rendicion.genera_acta_auditoria = genera_acta
+            acta_auditoria = datos.get("acta_auditoria")
+            if acta_auditoria:
+                rendicion.acta_auditoria = acta_auditoria
             rendicion.observaciones = datos.get("observaciones") or None
             rendicion.fecha_auditada = ahora
             rendicion.subestado_proceso = (
@@ -1396,5 +1705,11 @@ class RendicionProcesoService:
         RendicionCuentaMensualService._aplicar_usuario_ultima_modificacion(  # pylint: disable=protected-access
             rendicion, actor
         )
+        if rendicion.etapa_proceso != etapa_previa:
+            RendicionCuentaMensualService.resetear_visualizaciones_rendicion(rendicion)
         rendicion.save()
+        # `_validar_estado` solo permite finalizar desde `en_curso`: la asociación
+        # se define una única vez y no revalida ni borra vínculos históricos.
+        if rendiciones_para_asociar is not None:
+            rendicion.rendiciones_incluidas.set(rendiciones_para_asociar)
         return rendicion
