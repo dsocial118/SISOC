@@ -688,29 +688,4 @@ observacion y las claves de _get_template_informe_context.
             </div>
         </div>
     {% endif %}
-    <div class="card mb-4">
-        <div class="card-header p-0">
-            <button class="btn btn-link w-100 d-flex justify-content-between align-items-center text-decoration-none text-reset px-3 py-2 collapsed"
-                    type="button"
-                    data-bs-toggle="collapse"
-                    data-bs-target="#informeSeccionMontoConveniado"
-                    aria-expanded="false"
-                    aria-controls="informeSeccionMontoConveniado">
-                <span class="h5 mb-0 text-start">Monto total conveniado</span>
-                <i class="fas fa-chevron-down informe-seccion-chevron"
-                   aria-hidden="true"></i>
-            </button>
-        </div>
-        <div class="card-body collapse"
-             id="informeSeccionMontoConveniado"
-             data-informe-seccion="1">
-            <div class="row">
-                {% if form.monto_total_conveniado_informe %}
-                    <div class="col-md-6 mb-3">{{ form.monto_total_conveniado_informe|as_crispy_field }}</div>
-                {% else %}
-                    <div class="col-md-6 mb-3">{{ form.monto_total_conveniado|as_crispy_field }}</div>
-                {% endif %}
-            </div>
-        </div>
-    </div>
 {% endif %}

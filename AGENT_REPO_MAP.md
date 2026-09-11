@@ -120,7 +120,7 @@ Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrollador
 - `scripts/ai/codex_task.ps1 <slug>`: crea branch `codex/<slug>`, worktree en `../worktrees/<slug>` y bootstrap.
 - `scripts/ai/codex_run.ps1 up`: bootstrap + levantar entorno.
 - `scripts/ai/codex_run.ps1 validate`: corre `black`, `djlint`, smoke tests y `makemigrations --check`.
-- `scripts/operacion/deploy_refresh.sh`: refresh operativo de deploy; acepta un SHA esperado para bloquear una revisión obsoleta antes del downtime.
+- `scripts/operacion/deploy_refresh.sh`: refresh operativo de deploy; acepta un SHA esperado, hace fast-forward antes de validar los Compose y bloquea una revisión obsoleta antes del downtime. Así un checkout anterior puede incorporar un Compose nuevo de forma segura.
 
 ## Estructura general del proyecto
 
@@ -670,6 +670,17 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
   `test_api_vat_centros_cue_`.
 - Request manual: `postman/SISOC APIs.postman_collection.json`, carpeta VAT /
   Centros e institución.
+
+### Si necesitas cambiar el Buscador por Ciudadano de INET
+
+- Entrada y flujo POST: `VAT/views/buscador_ciudadano.py`, `VAT/urls.py` y
+  `VAT/templates/vat/buscador/ciudadano.html`.
+- Scope, trayectoria y exportaciones: `VAT/services/buscador_ciudadano_service.py`
+  sobre el queryset compartido `VAT/services/vat_inscripciones_base.py`.
+- La búsqueda global requiere `ciudadanos.view_ciudadano`; un usuario solo VAT
+  no debe poder inferir ciudadanos ni inscripciones fuera de su alcance.
+- Tests de seguridad, duplicación, exports y queries:
+  `VAT/test_buscador_ciudadano.py`.
 
 ### Si necesitas cambiar CI o reglas de calidad
 

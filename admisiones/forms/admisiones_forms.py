@@ -177,7 +177,12 @@ from admisiones.utils import (
 def _configurar_campos_informe_2233(form, admision, tipo_informe):
     form._antecedentes_renovaciones_nombres = []
     form.fields.pop("antecedentes_renovaciones", None)
-    for nombre in ["conclusiones", "acreditaciones_ultimo_convenio"] + [
+    for nombre in [
+        "conclusiones",
+        "acreditaciones_ultimo_convenio",
+        "monto_total_conveniado_informe",
+        "monto_total_conveniado",
+    ] + [
         item
         for numero in range(1, 7)
         for item in (f"resolucion_de_pago_{numero}", f"monto_{numero}")
@@ -196,11 +201,8 @@ def _configurar_campos_informe_2233(form, admision, tipo_informe):
         and admision.es_ex_pnud == "si"
         and admision.estado_convenio_pnud == "vigente"
     )
-    financiamiento = getattr(admision, "estado_financiamiento", None)
     condiciones = {
         "finalizacion_convenio_pnud_vigente": es_pnud_vigente,
-        "monto_total_conveniado_informe": es_renovacion and financiamiento == "vigente",
-        "monto_total_conveniado": es_renovacion and financiamiento == "finalizado",
         "expediente_incorporacion": es_renovacion,
         "convenio_incorporacion": es_renovacion,
         "presentacion_avales": es_renovacion and tipo_informe == "base",
