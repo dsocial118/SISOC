@@ -574,13 +574,19 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 ### Si necesitas cambiar rendiciones mensuales u Organizaciones
 
 - estados, etapas, subsanaciones y alcance por proyecto: `rendicioncuentasmensual/services.py`
-- solicitudes de documentos faltantes y categorías documentales: `rendicioncuentasmensual/models.py`; el contrato PWA se serializa en `comedores/api_serializers.py`
+- regla única de datos generales (convenio, número secuencial, período): `RendicionCuentaMensualService.validar_datos_generales`; la usan el formulario web, el alta y la edición de la PWA. No duplicarla
+- el número de rendición es secuencial por proyecto + convenio y se serializa con `select_for_update()`: cualquier camino de escritura nuevo tiene que correr dentro de `transaction.atomic` o el bloqueo no protege nada
+- la ventana del período depende de la línea programática: 3 meses en `secos`, 1 mes en el resto (`periodo_fin_maximo`)
+- solicitudes de documentos faltantes y categorías documentales: `rendicioncuentasmensual/models.py`; el catálogo depende de la línea (`CATEGORIAS_CONFIG["lineas"]`) y web y API lo resuelven con `RendicionCuentaMensualService.obtener_categorias_visibles`; el contrato PWA se serializa en `comedores/api_serializers.py`
+- confirmación de lectura de documentos: campos `visualizacion_*` en `DocumentacionAdjunta` y vista `RendicionDocumentoVerView`; los documentos se sirven por Django, no por la URL de media
+- etiquetas visibles ≠ valores persistidos: la etapa `revision_auditoria` se muestra como «Revisión para Carga». No cambiar valores internos para acomodar un label
 - asociación actual: `RendicionCuentaMensual.proyecto`; conservar fallback por `comedor.codigo_de_proyecto` para datos legados
 - listado y detalle del legajo: `organizaciones/views.py` y templates `organizacion_*`
 - proyectos editables: `OrganizacionForm.codigos_proyecto` mantiene el contrato CSV mediante un campo oculto
-- tests: `tests/test_rendicioncuentasmensual_services_unit.py` y `organizaciones/tests.py`
+- tests: `tests/test_rendicioncuentasmensual_services_unit.py`, `tests/test_rendicioncuentasmensual_domain_rules.py`, `tests/test_rendicioncuentasmensual_visualizacion.py`, `tests/test_rendicioncuentasmensual_acta_auditoria.py` y `organizaciones/tests.py`
 - escenarios QA de permisos por etapa: `python manage.py seed_rendicion_stage_examples --comedor-id <id>` (solicita la contraseña de forma interactiva)
 - documentación canónica: `docs/flujos/rendiciones_mensuales_proyectos.md`
+- contratos que consume la PWA (estados internos, health-check, edición de datos generales): `docs/implementaciones/pwa_backend.md`
 
 ### Si necesitas cambiar altas de ciudadanos en nómina
 
