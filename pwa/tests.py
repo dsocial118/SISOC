@@ -7,12 +7,18 @@ from unittest.mock import patch
 from pwa.services import nomina_service
 
 
+@pytest.mark.django_db
 def test_pwa_health_endpoint_returns_ok():
+    """El health-check verifica la base de datos, por eso necesita `django_db`.
+
+    El contrato completo (503, recuperación, no filtrar detalle del error) se
+    cubre en `tests/test_pwa_healthcheck_api.py`.
+    """
     client = Client()
     response = client.get("/api/pwa/health/")
 
     assert response.status_code == 200
-    assert response.json() == {"status": "ok"}
+    assert response.json() == {"status": "ok", "database": "ok"}
 
 
 def test_build_nomina_link_fields_uses_direct_comedor_for_programs_without_admision(
