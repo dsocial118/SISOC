@@ -37,12 +37,15 @@
 - `AGENT_REPO_MAP.md`
 - `comedores/api_serializers.py`
 - `comedores/api_views.py`
+- `docs/contexto/features/pr-2499-feat-rendiciones-requerimientos-pwa-sisoc-de-abordaje-comunitario-2377.md`
 - `docs/flujos/rendiciones_mensuales_proyectos.md`
 - `docs/implementaciones/pwa_backend.md`
 - `docs/registro/cambios/2026-09-11-2377-rendiciones-abordaje-comunitario.md`
 - `docs/registro/decisiones/2026-09-11-2377-rendiciones-secuencia-acta-visualizacion.md`
+- `docs/registro/prs/PR-2499.md`
 - `organizaciones/templates/organizacion_detail.html`
 - `pwa/api_views.py`
+- `pwa/tests.py`
 - `rendicioncuentasmensual/filter_config.py`
 - `rendicioncuentasmensual/forms.py`
 - `rendicioncuentasmensual/migrations/0020_issue_2377_etiquetas_catalogo.py`
@@ -51,10 +54,7 @@
 - `rendicioncuentasmensual/models.py`
 - `rendicioncuentasmensual/services.py`
 - `rendicioncuentasmensual/templates/rendicioncuentasmensual_datos_form.html`
-- `rendicioncuentasmensual/templates/rendicioncuentasmensual_detail.html`
-- `rendicioncuentasmensual/urls.py`
-- `rendicioncuentasmensual/views.py`
-- ... y 8 archivo(s) adicional(es) relacionados.
+- ... y 11 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
