@@ -37,7 +37,8 @@ def datos_formulario(provincia, municipio, **cambios):
         "datos_mi_argentina_confirmados": "si",
         "provincia": str(provincia.pk),
         "municipio": str(municipio.pk),
-        "domicilio": "Calle 123",
+        "calle": "Calle",
+        "altura": "123",
         "correo_electronico": "persona@example.test",
         "telefono_celular": "1100000000",
         "embarazada": "no",
@@ -48,8 +49,12 @@ def datos_formulario(provincia, municipio, **cambios):
         "gastos_bajo_limite_smvm": "si",
         "no_accedio_mercado_cambios": "si",
         "acepto_declaracion": "on",
-        "firma_nombre_completo": "Persona Ejemplo",
     }
+    if "domicilio" in cambios:
+        domicilio = cambios.pop("domicilio")
+        partes = domicilio.rsplit(maxsplit=1)
+        datos["calle"] = partes[0] if len(partes) == 2 else domicilio
+        datos["altura"] = partes[1] if len(partes) == 2 else ""
     datos.update(cambios)
     return datos
 
@@ -84,7 +89,10 @@ def test_presentacion_crea_pdf_inmutable_e_impacta_datos_actuales(
     assert invitacion.utilizada
     assert persona_ddjj.provincia == nueva_provincia
     assert persona_ddjj.municipio == nuevo_municipio
+    assert persona_ddjj.calle == "Calle"
+    assert persona_ddjj.altura == "123"
     assert persona_ddjj.domicilio == "Calle 123"
+    assert "firma_nombre_completo" not in declaracion.respuestas
     declaracion.domicilio = "No debe cambiar"
     with pytest.raises(ValidationError):
         declaracion.save()
@@ -244,7 +252,8 @@ def test_rechazar_datos_exige_todos_los_campos_editables(persona_ddjj):
     )
 
     assert not form.is_valid()
-    assert "domicilio" in form.errors
+    assert "calle" in form.errors
+    assert "altura" in form.errors
     assert "correo_electronico" in form.errors
 
 
@@ -271,6 +280,8 @@ def test_respuestas_dependientes_ocultas_se_descartan(persona_ddjj):
 
 @pytest.mark.django_db
 def test_formulario_muestra_foto_de_datos_pas(client, persona_ddjj):
+    persona_ddjj.calle = "Domicilio visible"
+    persona_ddjj.altura = "123"
     persona_ddjj.domicilio = "Domicilio visible 123"
     persona_ddjj.correo_electronico = "visible@example.test"
     persona_ddjj.telefono_celular = "11 4444 5555"
@@ -280,10 +291,24 @@ def test_formulario_muestra_foto_de_datos_pas(client, persona_ddjj):
     respuesta = client.get(reverse("pas_ddjj_formulario", args=[invitacion.token]))
 
     assert respuesta.status_code == 200
-    assert b"Domicilio visible 123" in respuesta.content
+    assert b"Domicilio visible" in respuesta.content
+    assert b'value="123"' in respuesta.content
     assert b"visible@example.test" in respuesta.content
     assert b"11 4444 5555" in respuesta.content
     assert b"data-data-step" in respuesta.content
+
+
+@pytest.mark.django_db
+def test_formulario_separa_domicilio_historico_sin_campos_nuevos(client, persona_ddjj):
+    persona_ddjj.domicilio = "Avenida Siempre Viva 742"
+    persona_ddjj.save(update_fields=["domicilio"])
+    invitacion = crear_invitacion(persona_ddjj)
+
+    respuesta = client.get(reverse("pas_ddjj_formulario", args=[invitacion.token]))
+
+    assert respuesta.status_code == 200
+    assert b"Avenida Siempre Viva" in respuesta.content
+    assert b'value="742"' in respuesta.content
 
 
 @pytest.mark.django_db
@@ -345,8 +370,21 @@ def test_formulario_versiona_javascript_del_resumen(client, persona_ddjj):
     respuesta = client.get(reverse("pas_ddjj_formulario", args=[invitacion.token]))
 
     assert respuesta.status_code == 200
-    assert b"pas_ddjj.js?v=20260831" in respuesta.content
-    assert b"pas_ddjj.css?v=20260831" in respuesta.content
+    assert b"pas_ddjj.js?v=20260911" in respuesta.content
+    assert b"pas_ddjj.css?v=20260911b" in respuesta.content
+
+
+def test_mobile_fija_banners_y_desplaza_solo_el_contenido():
+    css = (Path(settings.BASE_DIR) / "static/custom/css/pas_ddjj.css").read_text(
+        encoding="utf-8"
+    )
+    reglas_mobile = css.split("@media (max-width: 640px) {", 1)[1]
+
+    assert "height: 100dvh" in reglas_mobile
+    assert "overflow: hidden" in reglas_mobile
+    assert "flex: 0 0 60px" in reglas_mobile
+    assert "overflow-y: auto" in reglas_mobile
+    assert "flex: 0 0 46px" in reglas_mobile
 
 
 def test_resumen_final_no_tiene_altura_fija():

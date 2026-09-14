@@ -13,8 +13,11 @@ from django.test import override_settings
 from core.integrations.renaper import APIClient
 from core.models import Municipio, Provincia
 from pas.models import (
+    PasAviso,
     PasControlRenaper,
     PasEstado,
+    PasHistorialEstado,
+    PasIncompatibilidad,
     PasPersona,
     PasSupervivenciaRun,
     PasSupervivenciaBatch,
@@ -92,6 +95,43 @@ def test_pedido_manual_y_programado_comparten_periodo():
     second = jobs.request_run(cutoff=date(2026, 9, 30), origin="scheduled")
     assert first.pk == second.pk
     assert PasSupervivenciaRun.objects.count() == 1
+
+
+@pytest.mark.django_db
+@override_settings(PAS_BATCH_SIZE=2000)
+def test_inicio_ciclo_aplica_baja_fallecida_pendiente(personas_supervivencia):
+    persona = personas_supervivencia[0]
+    baja = PasEstado.objects.create(nombre="Baja")
+    fallecido = PasAviso.objects.create(codigo=40, descripcion="FALLECIDO")
+    fallecido.estados.add(baja)
+    incompatibilidad = PasIncompatibilidad.objects.create(
+        persona=persona,
+        categoria=PasIncompatibilidad.Categoria.SUPERVIVENCIA,
+        periodo_impacto=date(2026, 9, 1),
+        detalle="Impacta en el período siguiente.",
+    )
+    incompatibilidad_repetida = PasIncompatibilidad.objects.create(
+        persona=persona,
+        categoria=PasIncompatibilidad.Categoria.SUPERVIVENCIA,
+        periodo_impacto=date(2026, 8, 1),
+        detalle="Detección histórica repetida.",
+    )
+    run = jobs.request_run(cutoff=date(2026, 9, 30))
+
+    jobs._prepare(run)
+
+    persona.refresh_from_db()
+    incompatibilidad.refresh_from_db()
+    incompatibilidad_repetida.refresh_from_db()
+    assert persona.estado == baja
+    assert list(persona.avisos.all()) == [fallecido]
+    assert incompatibilidad.estado == PasIncompatibilidad.Estado.GESTIONADA
+    assert incompatibilidad_repetida.estado == PasIncompatibilidad.Estado.GESTIONADA
+    historial = PasHistorialEstado.objects.get(persona=persona)
+    assert historial.estado_anterior.nombre == "Activo jobs RENAPER"
+    assert historial.estado_nuevo == baja
+    assert list(historial.avisos_nuevos.all()) == [fallecido]
+    assert PasHistorialEstado.objects.filter(persona=persona).count() == 1
 
 
 def test_cliente_autentica_una_vez_para_varias_personas():
