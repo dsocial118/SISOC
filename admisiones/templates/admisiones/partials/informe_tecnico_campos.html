@@ -650,6 +650,9 @@ observacion y las claves de _get_template_informe_context.
                 {% if form.informe_tecnico_complementario_modificacion_prestaciones %}
                     <div class="col-12 mb-3">{{ form.informe_tecnico_complementario_modificacion_prestaciones|as_crispy_field }}</div>
                 {% endif %}
+                {% if form.if_it_complementario %}
+                    <div class="col-12 mb-3">{{ form.if_it_complementario|as_crispy_field }}</div>
+                {% endif %}
             </div>
         </div>
     </div>
