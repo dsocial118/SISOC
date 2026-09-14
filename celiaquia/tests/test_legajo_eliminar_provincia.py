@@ -14,6 +14,7 @@ from datetime import date
 import pytest
 from django.contrib.auth.models import Permission, User
 from django.contrib.contenttypes.models import ContentType
+from django.test import RequestFactory
 from django.urls import reverse
 
 from ciudadanos.models import Ciudadano
@@ -25,6 +26,7 @@ from celiaquia.models import (
     Expediente,
     ExpedienteCiudadano,
 )
+from celiaquia.views.expediente import RevisarLegajoView
 
 
 def _grant(user, app_label, codename, model=User, name=None):
@@ -117,6 +119,28 @@ def test_provincia_no_puede_eliminar_legajo_luego_del_envio(client):
     assert response.status_code == 403
     assert response.json().get("success") is False
     # El legajo sigue existiendo.
+    assert ExpedienteCiudadano.objects.filter(pk=legajo.pk).exists()
+
+
+@pytest.mark.django_db
+def test_baja_provincial_revalida_estado_dentro_de_la_transaccion():
+    provincia, municipio, localidad = _territorio("BsAs Carrera")
+    user = _provincial_user("prov-del-carrera", provincia)
+    estado_espera = EstadoExpediente.objects.create(nombre="EN_ESPERA")
+    expediente, legajo = _expediente_con_legajo(
+        user, estado_espera, provincia, municipio, localidad, doc=7004
+    )
+    estado_enviado = EstadoExpediente.objects.create(nombre="CONFIRMACION_DE_ENVIO")
+    Expediente.objects.filter(pk=expediente.pk).update(estado=estado_enviado)
+    request = RequestFactory().post("/", data={"accion": "ELIMINAR"})
+    request.user = user
+    response = RevisarLegajoView()._eliminar_legajo(
+        request,
+        user,
+        legajo,
+        revalidar_baja_provincial=True,
+    )
+    assert response.status_code == 403
     assert ExpedienteCiudadano.objects.filter(pk=legajo.pk).exists()
 
 

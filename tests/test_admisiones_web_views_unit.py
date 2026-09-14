@@ -1222,8 +1222,51 @@ def test_admisiones_legales_detail_renders_invalid_num_if_form(mocker):
     assert view.post(request, pk=99) == "rendered"
     view.get_context_data.assert_called_once_with(
         form_legales_num_if=invalid_form,
-        abrir_modal_legales_num_if=True,
+        abrir_modal="modalLegalesNumIF",
     )
+
+
+def test_admisiones_legales_detail_reabre_modal_de_providencia_con_errores(mocker):
+    """Un PV inválido no debe cerrar el popup ni perder lo cargado."""
+    view = module.AdmisionesLegalesDetailView()
+    admision = SimpleNamespace(pk=101)
+    form_con_errores = mocker.Mock()
+    request = _Req(POST={"btnGDEPVPrimera": "1"}, user=_user())
+    view.get_object = lambda: admision
+    view.get_context_data = mocker.Mock(return_value={"base": "context"})
+    view.render_to_response = mocker.Mock(return_value="rendered")
+    procesar = mocker.patch.object(
+        module.LegalesService, "procesar_post_legales", return_value="redirect"
+    )
+    mocker.patch.object(
+        module.LegalesService,
+        "form_modal_invalido",
+        return_value=("gde_pv_primera_form", "modalGDEPVPrimera", form_con_errores),
+    )
+
+    assert view.post(request, pk=101) == "rendered"
+    view.get_context_data.assert_called_once_with(
+        gde_pv_primera_form=form_con_errores,
+        abrir_modal="modalGDEPVPrimera",
+    )
+    # No debe llegar a procesar el POST: nada se guarda.
+    assert not procesar.called
+
+
+def test_admisiones_legales_detail_procesa_cuando_el_modal_es_valido(mocker):
+    """Si el formulario del modal es válido, sigue el flujo normal."""
+    view = module.AdmisionesLegalesDetailView()
+    admision = SimpleNamespace(pk=102)
+    request = _Req(POST={"btnGDEPVPrimera": "1"}, user=_user())
+    view.get_object = lambda: admision
+    view.render_to_response = mocker.Mock(return_value="rendered")
+    mocker.patch.object(module.LegalesService, "form_modal_invalido", return_value=None)
+    procesar = mocker.patch.object(
+        module.LegalesService, "procesar_post_legales", return_value="redirect"
+    )
+
+    assert view.post(request, pk=102) == "redirect"
+    assert procesar.called
 
 
 def test_informe_complementario_review_contexto_con_y_sin_informe(mocker):

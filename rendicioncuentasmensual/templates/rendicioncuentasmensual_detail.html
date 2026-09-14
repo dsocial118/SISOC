@@ -204,8 +204,18 @@
                                    id="accion-auditoria"
                                    value="finalizar_sin_observaciones" />
                             <div class="row">
-                                <div class="col-lg-6">{{ proceso_form.monto_rendido|as_crispy_field }}</div>
-                                <div class="col-lg-6">{{ proceso_form.acta_auditoria|as_crispy_field }}</div>
+                                {% if rendicion.linea_programatica == 'tradicional' %}
+                                    <div class="col-lg-6">{{ proceso_form.monto_rendido|as_crispy_field }}</div>
+                                    <div class="col-lg-6">{{ proceso_form.monto_observado|as_crispy_field }}</div>
+                                    <div class="col-12">{{ proceso_form.genera_acta_auditoria|as_crispy_field }}</div>
+                                    <div class="col-12 d-none" id="rendiciones-incluidas-container">
+                                        {{ proceso_form.rendiciones_incluidas|as_crispy_field }}
+                                    </div>
+                                    <div class="col-12">{{ proceso_form.acta_auditoria|as_crispy_field }}</div>
+                                {% else %}
+                                    <div class="col-lg-6">{{ proceso_form.monto_rendido|as_crispy_field }}</div>
+                                    <div class="col-lg-6">{{ proceso_form.acta_auditoria|as_crispy_field }}</div>
+                                {% endif %}
                                 <div class="col-12 mb-3">
                                     <label for="resultado-auditoria" class="form-label">Resultado de la Auditoría</label>
                                     <select id="resultado-auditoria" class="form-select" required>
@@ -368,13 +378,19 @@
                                             <td>{{ archivo.fecha_creacion|date:"d/m/Y H:i" }}</td>
                                             <td>
                                                 <div class="comedor-actions">
-                                                    <a href="{{ archivo.archivo.url }}"
+                                                    <a href="{% url 'rendicioncuentasmensual_documento_ver' archivo.id %}"
                                                        class="btn btn-ver"
                                                        target="_blank"
                                                        title="Ver archivo">
                                                         <i class="fas fa-eye"></i>
                                                         Ver
                                                     </a>
+                                                    {% if archivo.visualizacion_confirmada %}
+                                                        <span class="badge bg-success"
+                                                              title="Por {{ archivo.visualizacion_usuario }} el {{ archivo.visualizacion_fecha|date:'d/m/Y H:i' }}">Visualizado</span>
+                                                    {% else %}
+                                                        <span class="badge bg-secondary">Sin visualizar</span>
+                                                    {% endif %}
                                                 </div>
                                             </td>
                                         </tr>
@@ -444,13 +460,19 @@
                                                         <td>{{ subsanacion.fecha_creacion|date:"d/m/Y H:i" }}</td>
                                                         <td>
                                                             <div class="comedor-actions">
-                                                                <a href="{{ subsanacion.archivo.url }}"
+                                                                <a href="{% url 'rendicioncuentasmensual_documento_ver' subsanacion.id %}"
                                                                    class="btn btn-ver"
                                                                    target="_blank"
                                                                    title="Ver archivo">
                                                                     <i class="fas fa-eye"></i>
                                                                     Ver
                                                                 </a>
+                                                                {% if subsanacion.visualizacion_confirmada %}
+                                                                    <span class="badge bg-success"
+                                                                          title="Por {{ subsanacion.visualizacion_usuario }} el {{ subsanacion.visualizacion_fecha|date:'d/m/Y H:i' }}">Visualizado</span>
+                                                                {% else %}
+                                                                    <span class="badge bg-secondary">Sin visualizar</span>
+                                                                {% endif %}
                                                             </div>
                                                         </td>
                                                     </tr>
@@ -512,13 +534,19 @@
                                                         <td>{{ subsanacion.fecha_creacion|date:"d/m/Y H:i" }}</td>
                                                         <td>
                                                             <div class="comedor-actions">
-                                                                <a href="{{ subsanacion.archivo.url }}"
+                                                                <a href="{% url 'rendicioncuentasmensual_documento_ver' subsanacion.id %}"
                                                                    class="btn btn-ver"
                                                                    target="_blank"
                                                                    title="Ver archivo">
                                                                     <i class="fas fa-eye"></i>
                                                                     Ver
                                                                 </a>
+                                                                {% if subsanacion.visualizacion_confirmada %}
+                                                                    <span class="badge bg-success"
+                                                                          title="Por {{ subsanacion.visualizacion_usuario }} el {{ subsanacion.visualizacion_fecha|date:'d/m/Y H:i' }}">Visualizado</span>
+                                                                {% else %}
+                                                                    <span class="badge bg-secondary">Sin visualizar</span>
+                                                                {% endif %}
                                                             </div>
                                                         </td>
                                                     </tr>
@@ -581,6 +609,21 @@
             var accion = document.getElementById("accion-auditoria");
             var observacionesContainer = document.getElementById("observaciones-auditoria-container");
             var observaciones = document.getElementById("id_observaciones");
+            var generaActaInputs = document.querySelectorAll('input[name="genera_acta_auditoria"]');
+            var rendicionesContainer = document.getElementById("rendiciones-incluidas-container");
+            var rendicionesSelect = document.getElementById("id_rendiciones_incluidas");
+            if (generaActaInputs.length && rendicionesContainer && rendicionesSelect) {
+                function actualizarRendicionesIncluidas() {
+                    var seleccion = document.querySelector('input[name="genera_acta_auditoria"]:checked');
+                    var generaActa = seleccion && seleccion.value === "True";
+                    rendicionesContainer.classList.toggle("d-none", !generaActa);
+                    rendicionesSelect.disabled = !generaActa;
+                }
+                generaActaInputs.forEach(function (input) {
+                    input.addEventListener("change", actualizarRendicionesIncluidas);
+                });
+                actualizarRendicionesIncluidas();
+            }
             if (!resultado || !accion || !observacionesContainer || !observaciones) return;
             function actualizarResultadoAuditoria() {
                 var conObservaciones = resultado.value === "finalizar_con_observaciones";
