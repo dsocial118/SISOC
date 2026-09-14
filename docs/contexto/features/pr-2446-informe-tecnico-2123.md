@@ -16,6 +16,7 @@
 - El PR toca lógica en `services/`, por lo que impacta reglas de negocio u orquestación.
 - Hay cambios en vistas web y puede existir impacto en permisos o renderizado.
 - Se modifican templates, con posible impacto visual o de composición UI.
+- Existen cambios de persistencia o migraciones que requieren revisión de datos.
 
 ## Decisiones y supuestos detectados
 
@@ -34,6 +35,8 @@
 - Empezar por `docs/registro/prs/PR-2446.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
 - `admisiones/forms/admisiones_forms.py`
+- `admisiones/migrations/0082_caratula_borrador.py`
+- `admisiones/models/admisiones.py`
 - `admisiones/services/admisiones_service/impl.py`
 - `admisiones/services/informes_service/impl.py`
 - `admisiones/templates/admisiones/admisiones_tecnicos_form.html`
@@ -51,9 +54,7 @@
 - `static/custom/js/admisionesactualizarestado.js`
 - `static/custom/js/informeTecnicoCambiosSinGuardar.js`
 - `static/custom/js/informeTecnicoSecciones.js`
-- `tests/js/informeTecnicoCambiosSinGuardar.test.js`
-- `tests/test_admisiones_flujo_unico_boton_db.py`
-- ... y 3 archivo(s) adicional(es) relacionados.
+- ... y 6 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
