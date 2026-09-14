@@ -1281,6 +1281,61 @@ class LegalesService:
 
         return table_items
 
+    # Botón del POST -> (clave del form en el contexto, id del modal)
+    MODALES_PROVIDENCIA = {
+        "btnPrimeraProvidencia": (
+            "primera_providencia_form",
+            "modalPrimeraProvidencia",
+        ),
+        "btnSegundaProvidencia": (
+            "segunda_providencia_form",
+            "modalSegundaProvidencia",
+        ),
+        "btnGDEPVPrimera": ("gde_pv_primera_form", "modalGDEPVPrimera"),
+        "btnGDEPVSegunda": ("gde_pv_segunda_form", "modalGDEPVSegunda"),
+    }
+
+    @staticmethod
+    def form_modal_invalido(request, admision):
+        """Valida el modal de providencia que se está enviando.
+
+        Devuelve `(clave_form, id_modal, form)` cuando el formulario tiene
+        errores, o None cuando el POST no corresponde a un modal de
+        providencia o el formulario es válido.
+
+        Sirve para que la vista vuelva a renderizar con el modal abierto y los
+        errores visibles, en vez de redirigir y hacerle perder al usuario lo
+        que había cargado.
+        """
+        post = getattr(request, "POST", {})
+        boton = next((b for b in LegalesService.MODALES_PROVIDENCIA if b in post), None)
+        if boton is None:
+            return None
+
+        clave_form, id_modal = LegalesService.MODALES_PROVIDENCIA[boton]
+        primera, segunda = LegalesService._providencias(admision)
+
+        if boton == "btnPrimeraProvidencia":
+            form = PrimeraProvidenciaForm(
+                post,
+                instance=primera,
+                es_judicializado=LegalesService._es_judicializado(admision),
+            )
+        elif boton == "btnSegundaProvidencia":
+            form = SegundaProvidenciaForm(
+                post,
+                instance=segunda,
+                numero_pv_inicial=(primera.numero_gde_pv if primera else ""),
+            )
+        elif boton == "btnGDEPVPrimera":
+            form = ProvidenciaGDEPVForm(post, instance=primera)
+        else:
+            form = ProvidenciaGDEPVForm(post, instance=segunda)
+
+        if form.is_valid():
+            return None
+        return clave_form, id_modal, form
+
     @staticmethod
     def procesar_post_legales(request, admision):
         try:
