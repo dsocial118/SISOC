@@ -87,6 +87,13 @@
         return;
     }
 
+    // Campo preseleccionado del listado. Sin `defaultField` la fila arranca en
+    // el placeholder "Buscar por", que al enviar ya cae en fieldOptions[0]: el
+    // default solo hace visible esa eleccion para que el usuario interactue
+    // directo con el filtro. No se aplica foco automatico a proposito, para no
+    // robarle el foco ni el scroll a quien usa teclado o lector de pantalla.
+    const defaultField = fieldsByName[config.defaultField] ? config.defaultField : '';
+
     function createOption(value, label) {
         const option = document.createElement('option');
         option.value = value;
@@ -230,6 +237,7 @@
             refs.fieldSel.value = prefill.field;
             ajustarValor(prefill.value);
         } else {
+            refs.fieldSel.value = defaultField;
             ajustarValor();
         }
 

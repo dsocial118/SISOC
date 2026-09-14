@@ -13,7 +13,10 @@ from django.http import FileResponse
 from django.urls import reverse
 from pypdf import PdfWriter
 
+from django.core.cache import cache
+
 from rendicioncuentasmensual import views as module
+from rendicioncuentasmensual import filter_config as module_filtros
 
 
 class _Req(SimpleNamespace):
@@ -146,6 +149,57 @@ def test_global_list_filtros_choice_exponen_todos_los_valores_del_modelo(
     assert [(choice["value"], choice["label"]) for choice in filtro["choices"]] == [
         (value, label) for value, label in model_choices
     ]
+
+
+def test_global_list_filtros_preseleccionan_proyecto_como_campo_por_defecto():
+    """El listado abre con Proyecto elegido, sin depender del HTML renderizado."""
+    cache.delete(module_filtros.FILTERS_UI_CONFIG_CACHE_KEY)
+
+    config = module.get_filters_ui_config()
+
+    assert config["defaultField"] == "codigo_proyecto"
+    assert config["fields"][0]["name"] == "codigo_proyecto"
+    assert config["fields"][0]["label"] == "Proyecto"
+
+
+def test_global_list_conserva_todos_los_filtros_disponibles():
+    """El default no puede achicar el set de filtros ni sus operadores."""
+    cache.delete(module_filtros.FILTERS_UI_CONFIG_CACHE_KEY)
+
+    config = module.get_filters_ui_config()
+
+    assert [field["name"] for field in config["fields"]] == [
+        field["name"] for field in module_filtros.FILTER_FIELDS
+    ]
+    assert set(config["operators"]) == {
+        "text",
+        "number",
+        "date",
+        "choice",
+        "boolean",
+    }
+
+
+def test_global_list_view_contexto_expone_campo_por_defecto(mocker):
+    view = module.RendicionCuentaMensualGlobalListView()
+    view.request = _Req(user=_user(), GET={})
+
+    mocker.patch(
+        "django.views.generic.list.MultipleObjectMixin.get_context_data",
+        return_value={"rendiciones_cuentas_mensuales": []},
+    )
+    mocker.patch.object(
+        view,
+        "_get_columns_context",
+        return_value={
+            "column_active_keys": ["proyecto"],
+            "column_config": {"available": []},
+        },
+    )
+
+    contexto = view.get_context_data()
+
+    assert contexto["filters_config"]["defaultField"] == "codigo_proyecto"
 
 
 def test_global_list_view_contexto_expone_titulo(mocker):
@@ -332,7 +386,8 @@ def test_update_view_renderiza_datos_de_rendicion_para_usuario_autorizado(
 
 
 @pytest.mark.django_db
-def test_update_view_rechaza_periodo_vacio_sin_error_de_servidor(client, superuser):
+def test_update_view_guarda_sin_periodo_en_rendicion_historica(client, superuser):
+    """Editar ya no exige completar campos: lo vacio conserva lo que habia."""
     rendicion = module.RendicionCuentaMensual.objects.create(mes=4, anio=2026)
     client.force_login(superuser)
 
@@ -347,13 +402,175 @@ def test_update_view_rechaza_periodo_vacio_sin_error_de_servidor(client, superus
         },
     )
 
-    assert response.status_code == 200
-    form = response.context["form"]
-    assert form.errors["periodo_inicio"] == ["Ingresá la fecha de inicio del período."]
-    assert form.errors["periodo_fin"] == ["Ingresá la fecha de fin del período."]
+    assert response.status_code == 302
     rendicion.refresh_from_db()
     assert rendicion.periodo_inicio is None
     assert rendicion.periodo_fin is None
+    assert rendicion.nombre == "Rendición histórica"
+    assert (rendicion.mes, rendicion.anio) == (4, 2026)
+
+
+def _rendicion_editable(**kwargs):
+    datos = {
+        "mes": 8,
+        "anio": 2026,
+        "convenio": "P02",
+        "numero_rendicion": 1,
+        "nombre": "Rendición agosto",
+        "periodo_inicio": date(2026, 8, 1),
+        "periodo_fin": date(2026, 8, 31),
+    }
+    datos.update(kwargs)
+    return module.RendicionCuentaMensual.objects.create(**datos)
+
+
+def _payload_edicion(**overrides):
+    datos = {
+        "convenio": "P02",
+        "numero_rendicion": "1",
+        "periodo_inicio": "2026-08-01",
+        "periodo_fin": "2026-08-31",
+        "nombre": "Rendición agosto",
+    }
+    datos.update(overrides)
+    return datos
+
+
+@pytest.mark.django_db
+def test_update_view_precarga_las_fechas_en_formato_iso(client, superuser):
+    """El input date solo entiende ISO; con dd/mm/aaaa el campo se veia vacio."""
+    rendicion = _rendicion_editable()
+    client.force_login(superuser)
+
+    response = client.get(
+        reverse("rendicioncuentasmensual_update", kwargs={"pk": rendicion.pk})
+    )
+    html = response.content.decode()
+
+    assert response.status_code == 200
+    assert 'value="2026-08-01"' in html
+    assert 'value="2026-08-31"' in html
+    assert 'value="P02" selected' in html
+    assert 'value="1" selected' in html
+
+
+@pytest.mark.django_db
+def test_update_view_guardar_sin_cambios_no_altera_nada(client, superuser):
+    rendicion = _rendicion_editable()
+    client.force_login(superuser)
+
+    response = client.post(
+        reverse("rendicioncuentasmensual_update", kwargs={"pk": rendicion.pk}),
+        data=_payload_edicion(),
+    )
+
+    assert response.status_code == 302
+    rendicion.refresh_from_db()
+    assert rendicion.convenio == "P02"
+    assert rendicion.numero_rendicion == 1
+    assert rendicion.periodo_inicio == date(2026, 8, 1)
+    assert rendicion.periodo_fin == date(2026, 8, 31)
+    assert rendicion.nombre == "Rendición agosto"
+
+
+@pytest.mark.django_db
+def test_update_view_modifica_un_campo_y_conserva_el_resto(client, superuser):
+    rendicion = _rendicion_editable()
+    client.force_login(superuser)
+
+    response = client.post(
+        reverse("rendicioncuentasmensual_update", kwargs={"pk": rendicion.pk}),
+        data=_payload_edicion(
+            convenio="",
+            numero_rendicion="",
+            periodo_inicio="",
+            periodo_fin="",
+            nombre="Rendición agosto corregida",
+        ),
+    )
+
+    assert response.status_code == 302
+    rendicion.refresh_from_db()
+    assert rendicion.nombre == "Rendición agosto corregida"
+    assert rendicion.convenio == "P02"
+    assert rendicion.numero_rendicion == 1
+    assert rendicion.periodo_inicio == date(2026, 8, 1)
+    assert rendicion.periodo_fin == date(2026, 8, 31)
+
+
+@pytest.mark.django_db
+def test_update_view_permite_limpiar_el_nombre_opcional(client, superuser):
+    rendicion = _rendicion_editable()
+    client.force_login(superuser)
+
+    client.post(
+        reverse("rendicioncuentasmensual_update", kwargs={"pk": rendicion.pk}),
+        data=_payload_edicion(nombre=""),
+    )
+
+    rendicion.refresh_from_db()
+    assert rendicion.nombre is None
+
+
+@pytest.mark.django_db
+def test_update_view_rechaza_usuario_sin_permiso(client, django_user_model):
+    rendicion = _rendicion_editable()
+    usuario = django_user_model.objects.create_user(
+        username="sin_permiso_edicion", password="x"
+    )
+    client.force_login(usuario)
+
+    response = client.post(
+        reverse("rendicioncuentasmensual_update", kwargs={"pk": rendicion.pk}),
+        data=_payload_edicion(nombre="Intento no autorizado"),
+    )
+
+    assert response.status_code in (302, 403)
+    rendicion.refresh_from_db()
+    assert rendicion.nombre == "Rendición agosto"
+
+
+@pytest.mark.django_db
+def test_update_view_aplica_las_mismas_reglas_de_dominio_que_el_alta(client, superuser):
+    """Convenio, numero y periodo se validan con la misma regla del alta."""
+    rendicion = _rendicion_editable()
+    client.force_login(superuser)
+
+    fuera_de_secuencia = client.post(
+        reverse("rendicioncuentasmensual_update", kwargs={"pk": rendicion.pk}),
+        data=_payload_edicion(numero_rendicion="4"),
+    )
+    assert fuera_de_secuencia.status_code == 200
+    assert fuera_de_secuencia.context["form"].errors["numero_rendicion"]
+
+    periodo_invalido = client.post(
+        reverse("rendicioncuentasmensual_update", kwargs={"pk": rendicion.pk}),
+        data=_payload_edicion(periodo_fin="2026-09-30"),
+    )
+    assert periodo_invalido.status_code == 200
+    assert periodo_invalido.context["form"].errors["periodo_fin"]
+
+    rendicion.refresh_from_db()
+    assert rendicion.numero_rendicion == 1
+    assert rendicion.periodo_fin == date(2026, 8, 31)
+
+
+@pytest.mark.django_db
+def test_update_view_permite_extender_el_periodo_en_linea_secos(client, superuser):
+    """La ventana de tres meses de Secos tambien rige en la edicion web."""
+    rendicion = _rendicion_editable(
+        linea_programatica=module.RendicionCuentaMensual.LINEA_SECOS
+    )
+    client.force_login(superuser)
+
+    response = client.post(
+        reverse("rendicioncuentasmensual_update", kwargs={"pk": rendicion.pk}),
+        data=_payload_edicion(periodo_fin="2026-10-31"),
+    )
+
+    assert response.status_code == 302
+    rendicion.refresh_from_db()
+    assert rendicion.periodo_fin == date(2026, 10, 31)
 
 
 @pytest.mark.django_db
