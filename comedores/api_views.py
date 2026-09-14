@@ -72,7 +72,10 @@ from intervenciones.models.intervenciones import Intervencion
 from relevamientos.models import ClasificacionComedor, Relevamiento
 from rendicioncuentasfinal.models import DocumentoRendicionFinal
 from rendicioncuentasmensual.models import DocumentacionAdjunta, RendicionCuentaMensual
-from rendicioncuentasmensual.services import RendicionCuentaMensualService
+from rendicioncuentasmensual.services import (
+    RendicionCuentaMensualService,
+    inferir_linea_programatica,
+)
 from organizaciones.models import ProyectoOrganizacion
 from pwa.models import NominaDestinatariosDocumentoPWA
 from users.api_permissions import (
@@ -1419,6 +1422,105 @@ class ComedorDetailViewSet(
             },
             status=status.HTTP_200_OK,
         )
+
+    @extend_schema(
+        request=RendicionMensualCreateSerializer,
+        responses=None,
+        tags=["Rendiciones"],
+    )
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="rendiciones/validar",
+        permission_classes=[IsPWAUserForComedor, CanViewPwaRendicionesPermission],
+    )
+    def rendicion_a_validar(self, request, pk=None):
+        """Valida datos generales de rendición sin persistirlos."""
+        comedor = self.get_object()
+        if is_coordinador_equipo_tecnico_pwa(request.user):
+            return Response(
+                {"detail": "El coordinador PWA tiene acceso de solo lectura."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        if not (
+            is_representante(request.user, comedor.id)
+            and request.user.has_perm("rendicioncuentasmensual.manage_mobile_rendicion")
+        ):
+            return Response(
+                {
+                    "detail": "No tiene permiso para gestionar rendiciones en SISOC Mobile."
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        serializer = RendicionMensualCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        rendicion_id = serializer.validated_data.get("rendicion_id")
+
+        with transaction.atomic():
+            if rendicion_id:
+                # Sin `select_for_update`: es un dry-run que no escribe la
+                # rendición, y su resultado es orientativo de todas formas. La
+                # regla se vuelve a aplicar, ya con bloqueo, al crear o editar.
+                rendicion = (
+                    self._get_rendiciones_detail_queryset(comedor)
+                    .filter(id=rendicion_id)
+                    .first()
+                )
+                if not rendicion:
+                    raise Http404("Rendición no encontrada.")
+                proyecto = rendicion.proyecto
+                linea_programatica = rendicion.linea_programatica
+                excluir_pk = rendicion.pk
+                numero_actual = rendicion.numero_rendicion
+            else:
+                proyecto_id = serializer.validated_data.get("proyecto_id") or getattr(
+                    comedor, "proyecto_id", None
+                )
+                proyecto = ProyectoOrganizacion.objects.filter(
+                    pk=proyecto_id,
+                    organizacion_id=comedor.organizacion_id,
+                    activo=True,
+                ).first()
+                if proyecto_id and not proyecto:
+                    return Response(
+                        {
+                            "detail": {
+                                "proyecto_id": (
+                                    "El proyecto seleccionado no pertenece a la organización."
+                                )
+                            }
+                        },
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                linea_programatica = DocumentacionAdjunta.normalizar_linea_programatica(
+                    serializer.validated_data.get("linea_programatica")
+                    or inferir_linea_programatica(comedor)
+                )
+                excluir_pk = None
+                numero_actual = None
+
+            try:
+                RendicionCuentaMensualService.validar_datos_generales(
+                    comedor=comedor,
+                    convenio=serializer.validated_data["convenio"],
+                    numero_rendicion=serializer.validated_data["numero_rendicion"],
+                    periodo=(
+                        serializer.validated_data["periodo_inicio"],
+                        serializer.validated_data["periodo_fin"],
+                    ),
+                    proyecto=proyecto,
+                    linea_programatica=linea_programatica,
+                    excluir_pk=excluir_pk,
+                    numero_actual=numero_actual,
+                )
+            except ValidationError as exc:
+                return Response(
+                    {"detail": self._format_validation_error(exc)},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @extend_schema(
         request=RendicionMensualUpdateSerializer,

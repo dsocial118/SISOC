@@ -221,6 +221,21 @@ puntos 2 y 3 del issue sin reimplementar la regla. El próximo número se calcul
 delegando en `siguiente_numero_rendicion`, de modo que sea exactamente el mismo
 valor que el servidor va a exigir después.
 
+**10.1 — Integración con el PR ya mergeado de la PWA.** Se agregan dos
+contratos aditivos que la PWA ya consume:
+
+- `POST /api/comedores/{id}/rendiciones/validar/` reutiliza el payload de alta
+  y acepta `rendicion_id` opcional para validar una edición. Exige los mismos
+  permisos del alta, devuelve `204` sin cuerpo cuando la validación pasa y
+  `400` con errores por campo bajo `detail`; no crea ni modifica rendiciones,
+  archivos ni estados. Una rendición inexistente para edición devuelve `404`.
+- Listado y detalle incorporan `subsanacion_origen` de solo lectura. SISOC lo
+  deriva de `etapa_proceso` + `subestado_proceso`: `territorial` para revisión
+  documental pendiente de correcciones, `auditoria` para revisión de auditoría
+  pendiente de correcciones y `null` en cualquier otro caso. La etapa interna
+  `revision_auditoria` sigue siendo origen `auditoria` aunque su etiqueta visible
+  sea «Revisión para Carga»; la etapa `auditoria` no se confunde con ella.
+
 ### 11. Health-check para la PWA (punto 9)
 
 `GET /api/pwa/health/` pasa a verificar también la base de datos:

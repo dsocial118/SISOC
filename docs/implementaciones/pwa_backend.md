@@ -191,6 +191,7 @@ Se exponen campos de aprobadas del informe técnico (`aprobadas_*`), tomando inf
 
 - `GET /api/comedores/{id}/rendiciones/`
   - filtros: `anio`, `mes`, `desde`, `hasta`, `page`
+- `POST /api/comedores/{id}/rendiciones/validar/` (issue #2377, ver abajo)
 - `GET /api/comedores/{id}/rendiciones/{rendicion_id}/`
 - `PATCH /api/comedores/{id}/rendiciones/{rendicion_id}/` (issue #2377, ver abajo)
 - `POST /api/comedores/{id}/rendiciones/{rendicion_id}/comprobantes/`
@@ -224,6 +225,30 @@ Los errores llegan **acumulados y por campo**, bajo `detail`:
 
 Claves posibles: `convenio`, `numero_rendicion`, `periodo_inicio`, `periodo_fin`
 y `periodo` (esta última no corresponde a un campo único del formulario).
+
+#### `POST /api/comedores/{id}/rendiciones/validar/`
+
+Validación previa, sin persistencia, para el flujo offline-first de la PWA.
+
+- Autenticación: `Authorization: Token <token>`.
+- Permisos: representante del espacio con
+  `rendicioncuentasmensual.manage_mobile_rendicion`; el coordinador de equipo
+  técnico PWA es de solo lectura.
+- Payload: el mismo del alta (`proyecto_id` opcional, `convenio`, `nombre`
+  opcional, `numero_rendicion`, `periodo_inicio`, `periodo_fin`,
+  `linea_programatica` opcional y `observaciones` opcional). `rendicion_id` es
+  opcional: si llega, se valida una edición de esa rendición y se conservan su
+  proyecto y línea programática persistidos.
+- No crea, modifica ni adjunta archivos: solo aplica las reglas de datos
+  generales del servidor.
+
+| Situación | HTTP | Cuerpo |
+| --- | --- | --- |
+| Validación correcta | `204` | Sin cuerpo |
+| Validación de dominio | `400` | `{"detail": {"<campo>": ["<mensaje>"]}}` |
+| Payload mal formado | `400` | errores por campo del serializer |
+| Rendición de edición inexistente | `404` | `{"detail": "Rendición no encontrada."}` |
+| Sin permiso o fuera de alcance | `403` | `{"detail": "..."}` |
 
 #### `PATCH /api/comedores/{id}/rendiciones/{rendicion_id}/`
 
@@ -287,6 +312,19 @@ no cambia) para que la PWA arme el formulario y sus alertas sin duplicar reglas:
 - `meses_periodo` es 3 en Línea Secos y 1 en el resto: sirve para calcular el
   `periodo_fin` máximo en el cliente.
 - `edicion_habilitada` refleja si el estado permite editar en este momento.
+
+El contrato de lectura de listado y detalle también suma el campo de solo
+lectura `subsanacion_origen`, derivado por SISOC de `etapa_proceso` +
+`subestado_proceso`:
+
+| valor | Texto que muestra la PWA |
+| --- | --- |
+| `territorial` | Subsanación solicitada por equipo Territorial |
+| `auditoria` | Subsanación solicitada por equipo de Auditoría |
+| `null` | No hay subsanación pendiente de correcciones |
+
+La derivación exacta se detalla en la sección de Estados internos de rendición;
+la PWA no tiene que recalcularla.
 
 ### 7) Gestión PWA de usuarios por comedor (representante)
 
@@ -401,13 +439,14 @@ los valores persistidos y no cambian.
 `estado` (estado general de la presentación): `elaboracion`, `revision`,
 `subsanar`, `finalizada`.
 
-Distinción de subsanaciones según origen (punto 8 del issue), que la PWA resuelve
-con el par:
+Distinción de subsanaciones según origen (punto 8 del issue): SISOC ahora entrega
+el campo derivado `subsanacion_origen`; la PWA solo usa ese valor y no recalcula
+el origen con el par persistido.
 
-| `etapa_proceso` | `subestado_proceso` | Texto que debe mostrar la PWA |
-| --- | --- | --- |
-| `revision_documentacion` | `pendiente_correcciones` | Subsanación solicitada por equipo Territorial |
-| `revision_auditoria` | `pendiente_correcciones` | Subsanación solicitada por equipo de Auditoría |
+| `etapa_proceso` | `subestado_proceso` | `subsanacion_origen` | Texto que debe mostrar la PWA |
+| --- | --- | --- | --- |
+| `revision_documentacion` | `pendiente_correcciones` | `territorial` | Subsanación solicitada por equipo Territorial |
+| `revision_auditoria` | `pendiente_correcciones` | `auditoria` | Subsanación solicitada por equipo de Auditoría |
 
 `revision_auditoria` sigue siendo el valor interno aunque SISOC lo muestre como
 «Revisión para Carga». La etapa `auditoria` es otra cosa y no debe confundirse.
@@ -465,5 +504,3 @@ Cobertura actual incluye auth, contexto, scope por comedor, gestión de operador
   - runner `scripts/run_pwa_smoke_postman.sh`
 - Después de migrar `users.0046` y `users.0047`, ejecutar el dry-run del
   comando de reconciliación y conservar su salida antes de aplicar cambios.
-
-

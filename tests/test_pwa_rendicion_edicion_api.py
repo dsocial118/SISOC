@@ -398,3 +398,319 @@ def test_get_conserva_contrato_y_agrega_reglas_de_datos_generales(comedores):
         consulta["sql"] for consulta in queries if "MAX(" in consulta["sql"].upper()
     ]
     assert len(consultas_maximo) == len(reglas["convenios"])
+
+
+def _url_validar(comedor):
+    return f"/api/comedores/{comedor.id}/rendiciones/validar/"
+
+
+def _payload_validar(**overrides):
+    payload = {
+        "convenio": "P01",
+        "numero_rendicion": 1,
+        "nombre": "Rendición para validar",
+        "periodo_inicio": "2026-01-01",
+        "periodo_fin": "2026-01-31",
+        "observaciones": "Sin persistencia",
+    }
+    payload.update(overrides)
+    return payload
+
+
+@pytest.mark.django_db
+def test_validar_alta_valida_sin_crear_rendicion(comedores):
+    comedor, _ = comedores
+    _, client = _cliente_representante(comedor, username="representante_validar_alta")
+    cantidad_antes = RendicionCuentaMensual.objects.count()
+
+    response = client.post(_url_validar(comedor), _payload_validar(), format="json")
+
+    assert response.status_code == 204, response.data
+    assert RendicionCuentaMensual.objects.count() == cantidad_antes
+
+
+@pytest.mark.django_db
+def test_validar_alta_rechaza_numero_fuera_de_secuencia_sin_escribir(comedores):
+    comedor, _ = comedores
+    _, client = _cliente_representante(
+        comedor,
+        username="representante_validar_secuencia",
+    )
+    cantidad_antes = RendicionCuentaMensual.objects.count()
+
+    response = client.post(
+        _url_validar(comedor),
+        _payload_validar(numero_rendicion=2),
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert "numero_rendicion" in response.data["detail"]
+    assert RendicionCuentaMensual.objects.count() == cantidad_antes
+
+
+@pytest.mark.django_db
+def test_validar_alta_rechaza_periodo_fuera_de_ventana(comedores):
+    comedor, _ = comedores
+    _, client = _cliente_representante(
+        comedor,
+        username="representante_validar_período",
+    )
+
+    response = client.post(
+        _url_validar(comedor),
+        _payload_validar(periodo_fin="2026-02-28"),
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert "periodo_fin" in response.data["detail"]
+    convenio_invalido = client.post(
+        _url_validar(comedor),
+        _payload_validar(convenio="P99"),
+        format="json",
+    )
+    assert convenio_invalido.status_code == 400
+    assert "convenio" in convenio_invalido.data
+
+
+@pytest.mark.django_db
+def test_validar_edicion_acepta_los_datos_persistidos_de_la_rendicion(comedores):
+    comedor, _ = comedores
+    _, client = _cliente_representante(
+        comedor,
+        username="representante_validar_edición",
+    )
+    rendicion = _crear_rendicion(comedor)
+
+    response = client.post(
+        _url_validar(comedor),
+        _payload_validar(
+            rendicion_id=rendicion.id,
+            convenio=rendicion.convenio,
+            numero_rendicion=rendicion.numero_rendicion,
+            periodo_inicio=rendicion.periodo_inicio.isoformat(),
+            periodo_fin=rendicion.periodo_fin.isoformat(),
+        ),
+        format="json",
+    )
+
+    assert response.status_code == 204, response.data
+    numero_invalido = client.post(
+        _url_validar(comedor),
+        _payload_validar(rendicion_id=rendicion.id, numero_rendicion=3),
+        format="json",
+    )
+    assert numero_invalido.status_code == 400
+    assert "numero_rendicion" in numero_invalido.data["detail"]
+
+
+@pytest.mark.django_db
+def test_validar_edicion_inexistente_devuelve_404(comedores):
+    comedor, _ = comedores
+    _, client = _cliente_representante(
+        comedor,
+        username="representante_validar_inexistente",
+    )
+
+    response = client.post(
+        _url_validar(comedor),
+        _payload_validar(rendicion_id=999999),
+        format="json",
+    )
+
+    assert response.status_code == 404
+
+
+@pytest.mark.django_db
+def test_validar_rechaza_usuario_sin_alcance_sobre_el_comedor(comedores):
+    comedor, otro_comedor = comedores
+    _, client = _cliente_representante(
+        otro_comedor,
+        username="representante_validar_sin_alcance",
+    )
+
+    response = client.post(_url_validar(comedor), _payload_validar(), format="json")
+
+    assert response.status_code == 403
+
+
+@pytest.mark.django_db
+def test_validar_rechaza_coordinador_pwa(comedores):
+    comedor, _ = comedores
+    coordinador = _create_coordinador_pwa(
+        comedor=comedor,
+        username="coordinador_validar",
+    )
+    client = _token_client(coordinador)
+
+    response = client.post(_url_validar(comedor), _payload_validar(), format="json")
+
+    assert response.status_code == 403
+    assert response.data["detail"] == "El coordinador PWA tiene acceso de solo lectura."
+
+
+@pytest.mark.django_db
+def test_validar_rechaza_proyecto_de_otra_organizacion(comedores):
+    comedor, _ = comedores
+    organizacion = Organizacion.objects.create(nombre="Organización del comedor")
+    otra_organizacion = Organizacion.objects.create(nombre="Otra organización")
+    proyecto_ajeno = ProyectoOrganizacion.objects.create(
+        organizacion=otra_organizacion,
+        codigo="PROY-AJENO",
+        nombre="Proyecto ajeno",
+    )
+    comedor.organizacion = organizacion
+    comedor.save(update_fields=("organizacion",))
+    _, client = _cliente_representante(
+        comedor,
+        username="representante_validar_proyecto",
+    )
+
+    response = client.post(
+        _url_validar(comedor),
+        _payload_validar(proyecto_id=proyecto_ajeno.id),
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert "proyecto_id" in response.data["detail"]
+
+
+@pytest.mark.django_db
+def test_ruta_validar_resuelve_la_action_especifica(comedores):
+    from django.urls import resolve
+
+    comedor, _ = comedores
+
+    match = resolve(_url_validar(comedor))
+
+    assert match.func.actions["post"] == "rendicion_a_validar"
+
+
+@pytest.mark.django_db
+def test_subsanacion_origen_territorial_aparece_en_listado_y_detalle(comedores):
+    comedor, _ = comedores
+    _, client = _cliente_representante(
+        comedor,
+        username="representante_subsanación_territorial",
+    )
+    rendicion = _crear_rendicion(
+        comedor,
+        etapa_proceso=RendicionCuentaMensual.ETAPA_REVISION_DOCUMENTACION,
+        subestado_proceso=RendicionCuentaMensual.SUBESTADO_PENDIENTE_CORRECCIONES,
+    )
+
+    listado = client.get(f"/api/comedores/{comedor.id}/rendiciones/")
+    detalle = client.get(_url(comedor, rendicion))
+
+    assert listado.status_code == 200, listado.data
+    assert detalle.status_code == 200, detalle.data
+    assert listado.data["results"][0]["subsanacion_origen"] == "territorial"
+    assert detalle.data["subsanacion_origen"] == "territorial"
+
+
+@pytest.mark.django_db
+def test_subsanacion_origen_auditoria_para_revision_auditoria(comedores):
+    comedor, _ = comedores
+    _, client = _cliente_representante(
+        comedor,
+        username="representante_subsanación_auditoría",
+    )
+    rendicion = _crear_rendicion(
+        comedor,
+        etapa_proceso=RendicionCuentaMensual.ETAPA_REVISION_AUDITORIA,
+        subestado_proceso=RendicionCuentaMensual.SUBESTADO_PENDIENTE_CORRECCIONES,
+    )
+
+    response = client.get(_url(comedor, rendicion))
+
+    assert response.status_code == 200, response.data
+    assert response.data["subsanacion_origen"] == "auditoria"
+    etapa_auditoria = _crear_rendicion(
+        comedor,
+        etapa_proceso=RendicionCuentaMensual.ETAPA_AUDITORIA,
+        subestado_proceso=RendicionCuentaMensual.SUBESTADO_PENDIENTE_CORRECCIONES,
+    )
+    respuesta_etapa_auditoria = client.get(_url(comedor, etapa_auditoria))
+    assert respuesta_etapa_auditoria.status_code == 200, respuesta_etapa_auditoria.data
+    assert respuesta_etapa_auditoria.data["subsanacion_origen"] is None
+
+
+@pytest.mark.django_db
+def test_subsanacion_origen_es_nulo_fuera_de_pendiente_correcciones(comedores):
+    comedor, _ = comedores
+    _, client = _cliente_representante(
+        comedor,
+        username="representante_subsanación_nula",
+    )
+    for subestado in (
+        RendicionCuentaMensual.SUBESTADO_EN_CURSO,
+        RendicionCuentaMensual.SUBESTADO_PENDIENTE,
+    ):
+        rendicion = _crear_rendicion(
+            comedor,
+            etapa_proceso=RendicionCuentaMensual.ETAPA_REVISION_DOCUMENTACION,
+            subestado_proceso=subestado,
+        )
+        response = client.get(_url(comedor, rendicion))
+
+        assert response.status_code == 200, response.data
+        assert response.data["subsanacion_origen"] is None
+
+
+@pytest.mark.django_db
+def test_validar_acepta_el_payload_exacto_que_envia_la_pwa(comedores):
+    """Contrato de integración con Espacios-Comunitarios (PR #11, ya mergeado).
+
+    La PWA postea el mismo objeto que usa para el alta, con `linea_programatica`
+    incluida, y sólo mira que la respuesta no sea un error. Este test fija ese
+    shape para que un cambio en el serializer no rompa la app en silencio.
+    """
+    comedor, _ = comedores
+    _, client = _cliente_representante(comedor, username="representante_pwa_shape")
+
+    payload = {
+        "proyecto_id": None,
+        "convenio": "P01",
+        "nombre": "Rendición Secos",
+        "numero_rendicion": 1,
+        "periodo_inicio": "2026-09-03",
+        "periodo_fin": "2026-11-30",
+        "linea_programatica": "secos",
+        "observaciones": "",
+    }
+
+    response = client.post(_url_validar(comedor), payload, format="json")
+
+    assert response.status_code == 204, response.data
+    assert RendicionCuentaMensual.objects.count() == 0
+
+
+@pytest.mark.django_db
+def test_validar_respeta_la_linea_programatica_enviada_en_el_payload(comedores):
+    """Un período de tres meses sólo es válido en Secos, no en Tradicional."""
+    comedor, _ = comedores
+    _, client = _cliente_representante(comedor, username="representante_pwa_linea")
+
+    base = {
+        "convenio": "P01",
+        "numero_rendicion": 1,
+        "periodo_inicio": "2026-09-03",
+        "periodo_fin": "2026-11-30",
+    }
+
+    secos = client.post(
+        _url_validar(comedor),
+        {**base, "linea_programatica": "secos"},
+        format="json",
+    )
+    tradicional = client.post(
+        _url_validar(comedor),
+        {**base, "linea_programatica": "tradicional"},
+        format="json",
+    )
+
+    assert secos.status_code == 204, secos.data
+    assert tradicional.status_code == 400
+    assert "periodo_fin" in tradicional.data["detail"]

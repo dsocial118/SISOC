@@ -1526,6 +1526,7 @@ class RendicionMensualListSerializer(serializers.ModelSerializer):
     periodo_inicio = serializers.DateField(read_only=True)
     periodo_fin = serializers.DateField(read_only=True)
     periodo_label = serializers.SerializerMethodField()
+    subsanacion_origen = serializers.SerializerMethodField()
 
     class Meta:
         model = RendicionCuentaMensual
@@ -1547,6 +1548,7 @@ class RendicionMensualListSerializer(serializers.ModelSerializer):
             "estado_label",
             "etapa_proceso",
             "subestado_proceso",
+            "subsanacion_origen",
             "estado_proceso_label",
             "documento_adjunto",
             "observaciones",
@@ -1561,6 +1563,18 @@ class RendicionMensualListSerializer(serializers.ModelSerializer):
                 f"{obj.periodo_fin.strftime('%d/%m/%Y')}"
             )
         return f"{obj.get_mes_display()} {obj.anio}"
+
+    def get_subsanacion_origen(self, obj):
+        if (
+            obj.subestado_proceso
+            != RendicionCuentaMensual.SUBESTADO_PENDIENTE_CORRECCIONES
+        ):
+            return None
+        if obj.etapa_proceso == RendicionCuentaMensual.ETAPA_REVISION_DOCUMENTACION:
+            return "territorial"
+        if obj.etapa_proceso == RendicionCuentaMensual.ETAPA_REVISION_AUDITORIA:
+            return "auditoria"
+        return None
 
 
 class RendicionMensualDetailSerializer(RendicionMensualListSerializer):
@@ -1696,6 +1710,7 @@ class RendicionMensualDetailSerializer(RendicionMensualListSerializer):
 
 
 class RendicionMensualCreateSerializer(NoSaveSerializer):
+    rendicion_id = serializers.IntegerField(min_value=1, required=False)
     proyecto_id = serializers.IntegerField(min_value=1, required=False, allow_null=True)
     convenio = serializers.ChoiceField(choices=("P01", "P02", "P03"))
     numero_rendicion = serializers.ChoiceField(choices=(1, 2, 3, 4, 5, 6))
