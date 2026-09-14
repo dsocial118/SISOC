@@ -1144,6 +1144,7 @@ class InformeService:
                     )
                 return {
                     "success": False,
+                    "saved_as_draft": True,
                     "error": (
                         f"{error_template} Se guardó el Informe Técnico como borrador; "
                         "puede corregir sus validaciones e intentar nuevamente."

@@ -66,6 +66,16 @@ ADMISION_ADVANCED_FILTER = AdvancedFilterEngine(
 
 
 class AdmisionService:
+    ESTADOS_EDICION_INFORME_TECNICO = {
+        "convenio_seleccionado",
+        "documentacion_en_proceso",
+        "documentacion_finalizada",
+        "documentacion_aprobada",
+        "documentacion_carga_finalizada",
+        "expediente_cargado",
+        "informe_tecnico_en_proceso",
+        "informe_tecnico_en_subsanacion",
+    }
     TIPO_ENTIDAD_A_CONVENIO = {
         "personeria juridica": "personeria juridica",
         "personeria juridica eclesiastica": "personeria juridica eclesiastica",
@@ -890,6 +900,38 @@ class AdmisionService:
             return False
         return user.is_superuser or AdmisionService._verificar_permiso_tecnico_dupla(
             user, admision.comedor
+        )
+
+    @staticmethod
+    def puede_editar_informe_tecnico(user, admision, informe_tecnico=None):
+        """Autoriza la edición del informe desde Convenio seleccionado.
+
+        La carga puede empezar antes de que la documentación esté completa, pero
+        queda limitada al técnico de la dupla y a un informe en borrador o a
+        subsanar. Los informes finalizados, validados y las admisiones fuera de
+        ese tramo del flujo no admiten modificaciones.
+        """
+        if not user or not admision:
+            return False
+        if (
+            getattr(admision, "estado_admision", None)
+            not in AdmisionService.ESTADOS_EDICION_INFORME_TECNICO
+        ):
+            return False
+        if not (
+            getattr(user, "is_superuser", False)
+            or AdmisionService._verificar_permiso_tecnico_dupla(
+                user, getattr(admision, "comedor", None)
+            )
+        ):
+            return False
+        if informe_tecnico is None:
+            return True
+        if getattr(informe_tecnico, "estado", None) == "A subsanar":
+            return True
+        return (
+            getattr(informe_tecnico, "estado", None) in {"Iniciado", "Para revision"}
+            and getattr(informe_tecnico, "estado_formulario", None) == "borrador"
         )
 
     @staticmethod

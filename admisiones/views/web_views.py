@@ -185,10 +185,15 @@ CARATULA_FORM_PREFIX = "caratula"
 
 def _get_informe_tecnico_vigente(admision, tipo):
     return (
-        InformeTecnico.objects.filter(admision=admision, tipo=tipo)
+        InformeTecnico.objects.select_for_update()
+        .filter(admision=admision, tipo=tipo)
         .order_by("-id")
         .first()
     )
+
+
+def _get_admision_para_editar_informe(admision_pk):
+    return Admision.objects.select_for_update().get(pk=admision_pk)
 
 
 def _get_informe_tecnico_edit_success_url(informe):
@@ -1124,7 +1129,9 @@ class AdmisionesTecnicosUpdateView(LoginRequiredMixin, UpdateView):
         """Contexto de la sección que combina Informe Técnico y caratulación."""
         tipo = getattr(admision, "tipo_informe", None)
         informe = context.get("informe_tecnico")
-        if not tipo or (informe is not None and informe.estado == "Validado"):
+        if not tipo or not AdmisionService.puede_editar_informe_tecnico(
+            self.request.user, admision, informe
+        ):
             return
 
         context["informe_tipo"] = tipo
@@ -1211,6 +1218,10 @@ class AdmisionesTecnicosUpdateView(LoginRequiredMixin, UpdateView):
                 usuario=request.user,
             )
             if not resultado.get("success"):
+                if resultado.get("saved_as_draft"):
+                    return None, resultado.get(
+                        "error", "El informe técnico se guardó como borrador."
+                    )
                 transaction.set_rollback(True)
                 return None, resultado.get(
                     "error", "No se pudo guardar el informe técnico."
@@ -1222,37 +1233,45 @@ class AdmisionesTecnicosUpdateView(LoginRequiredMixin, UpdateView):
         if "btnInformeTecnicoCaratula" not in request.POST:
             return None
 
-        tipo = getattr(admision, "tipo_informe", None)
-        if not tipo:
-            messages.error(
-                request,
-                "La admisión no tiene un tipo de informe técnico asociado.",
+        with transaction.atomic():
+            # Se relee y bloquea el estado antes de autorizar: otro usuario no
+            # puede finalizar o validar el informe entre esta comprobación y el
+            # guardado posterior.
+            admision = _get_admision_para_editar_informe(admision.pk)
+            tipo = getattr(admision, "tipo_informe", None)
+            if not tipo:
+                messages.error(
+                    request,
+                    "La admisión no tiene un tipo de informe técnico asociado.",
+                )
+                return self._safe_redirect_to_edit(request, admision)
+            action = request.POST.get("action")
+            informe = _get_informe_tecnico_vigente(admision, tipo)
+            if not AdmisionService.puede_editar_informe_tecnico(
+                request.user, admision, informe
+            ):
+                return HttpResponse(status=403)
+            informe_form = InformeService.get_form_class_por_tipo(tipo)(
+                request.POST,
+                request.FILES,
+                instance=informe,
+                admision=admision,
+                require_full=action == "submit",
             )
-            return self._safe_redirect_to_edit(request, admision)
+            if not informe_form.is_valid():
+                _flash_informe_form_invalid_messages(request, informe_form)
+                return self._render_informe_form_con_errores(informe_form=informe_form)
 
-        action = request.POST.get("action")
-        informe = _get_informe_tecnico_vigente(admision, tipo)
-        informe_form = InformeService.get_form_class_por_tipo(tipo)(
-            request.POST,
-            request.FILES,
-            instance=informe,
-            admision=admision,
-            require_full=action == "submit",
-        )
-        if not informe_form.is_valid():
-            _flash_informe_form_invalid_messages(request, informe_form)
-            return self._render_informe_form_con_errores(informe_form=informe_form)
-
-        informe_form.instance.tipo = tipo
-        caratular_form, error = self._guardar_informe_y_caratula(
-            request, admision, informe_form, action
-        )
-        if error:
-            messages.error(request, error)
-            return self._render_informe_form_con_errores(
-                informe_form=informe_form,
-                caratular_form_informe=caratular_form,
+            informe_form.instance.tipo = tipo
+            caratular_form, error = self._guardar_informe_y_caratula(
+                request, admision, informe_form, action
             )
+            if error:
+                messages.error(request, error)
+                return self._render_informe_form_con_errores(
+                    informe_form=informe_form,
+                    caratular_form_informe=caratular_form,
+                )
 
         messages.success(request, "Informe técnico guardado correctamente.")
         return self._safe_redirect_to_edit(request, admision)

@@ -1410,9 +1410,19 @@ def _view_informe_tecnico(mocker, admision):
     view.get_object = lambda: admision
     view.get_context_data = mocker.Mock(return_value={"base": "context"})
     view.render_to_response = mocker.Mock(return_value="rendered")
+    mocker.patch(
+        "admisiones.views.web_views._get_admision_para_editar_informe",
+        return_value=admision,
+    )
+    mocker.patch.object(
+        module.AdmisionService,
+        "puede_editar_informe_tecnico",
+        return_value=True,
+    )
     return view
 
 
+@pytest.mark.django_db
 def test_informe_tecnico_inline_sin_tipo_redirige_con_error(mocker):
     admision = SimpleNamespace(pk=1, tipo_informe=None, num_expediente=None)
     view = _view_informe_tecnico(mocker, admision)
@@ -1428,6 +1438,36 @@ def test_informe_tecnico_inline_sin_tipo_redirige_con_error(mocker):
     assert view.post(request) == "redir"
 
 
+@pytest.mark.django_db
+def test_informe_tecnico_inline_rechaza_post_sin_permiso(mocker):
+    admision = SimpleNamespace(pk=1, tipo_informe="base", num_expediente=None)
+    view = _view_informe_tecnico(mocker, admision)
+    mocker.patch.object(
+        module.AdmisionService,
+        "puede_editar_informe_tecnico",
+        return_value=False,
+    )
+    request = _Req(
+        POST={"btnInformeTecnicoCaratula": "1", "action": "draft"},
+        FILES={},
+        user=_user(),
+        get_full_path=lambda: "/admisiones/1",
+    )
+    get_informe = mocker.patch(
+        "admisiones.views.web_views._get_informe_tecnico_vigente", return_value=None
+    )
+    get_form = mocker.patch(
+        "admisiones.views.web_views.InformeService.get_form_class_por_tipo"
+    )
+
+    response = view.post(request)
+
+    assert response.status_code == 403
+    get_informe.assert_called_once_with(admision, "base")
+    get_form.assert_not_called()
+
+
+@pytest.mark.django_db
 def test_informe_tecnico_inline_form_invalido_reenderiza_con_errores(mocker):
     admision = SimpleNamespace(pk=1, tipo_informe="base", num_expediente="EX-1")
     view = _view_informe_tecnico(mocker, admision)
@@ -1533,6 +1573,35 @@ def test_informe_tecnico_inline_finalizar_caratula_en_definitivo(mocker):
     assert view.post(request) == "redir"
     assert caratular.call_args.kwargs["borrador"] is False
     assert guardar_informe.call_args.kwargs["action"] == "submit"
+
+
+@pytest.mark.django_db
+def test_informe_tecnico_inline_conserva_borrador_recuperable(mocker):
+    admision = SimpleNamespace(pk=1, tipo_informe="base", num_expediente=None)
+    view = _view_informe_tecnico(mocker, admision)
+    informe_form = SimpleNamespace(instance=SimpleNamespace(pk=None))
+    request = _Req(POST={}, user=_user())
+    mocker.patch(
+        "admisiones.views.web_views.AdmisionService.guardar_caratulacion",
+        return_value=(True, "ok", None),
+    )
+    mocker.patch(
+        "admisiones.views.web_views.InformeService.guardar_informe",
+        return_value={
+            "success": False,
+            "saved_as_draft": True,
+            "error": "No hay plantilla activa; se guardó como borrador.",
+        },
+    )
+    rollback = mocker.patch("admisiones.views.web_views.transaction.set_rollback")
+
+    caratular_form, error = view._guardar_informe_y_caratula(
+        request, admision, informe_form, "submit"
+    )
+
+    assert caratular_form is None
+    assert error == "No hay plantilla activa; se guardó como borrador."
+    rollback.assert_not_called()
 
 
 @pytest.mark.django_db

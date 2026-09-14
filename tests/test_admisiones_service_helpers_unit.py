@@ -64,6 +64,31 @@ def test_estado_normalization_and_resumen_helpers():
     assert stats["obligatorios_completos"] == 2
 
 
+def test_puede_editar_informe_tecnico_desde_convenio_y_hasta_borrador():
+    user = SimpleNamespace(is_superuser=True)
+    admision = SimpleNamespace(
+        comedor=SimpleNamespace(), estado_admision="convenio_seleccionado"
+    )
+
+    assert module.AdmisionService.puede_editar_informe_tecnico(user, admision, None)
+
+    admision.estado_admision = "informe_tecnico_finalizado"
+    informe_finalizado = SimpleNamespace(
+        estado="Para revision", estado_formulario="finalizado"
+    )
+    assert not module.AdmisionService.puede_editar_informe_tecnico(
+        user, admision, informe_finalizado
+    )
+
+    admision.estado_admision = "informe_tecnico_en_subsanacion"
+    informe_a_subsanar = SimpleNamespace(
+        estado="A subsanar", estado_formulario="finalizado"
+    )
+    assert module.AdmisionService.puede_editar_informe_tecnico(
+        user, admision, informe_a_subsanar
+    )
+
+
 def test_archivo_nombre_and_serialization():
     archivo = SimpleNamespace(nombre_personalizado="Doc X", archivo=None)
     assert module.AdmisionService._archivo_nombre(archivo) == "Doc X"
