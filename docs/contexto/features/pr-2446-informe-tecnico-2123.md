@@ -54,7 +54,7 @@
 - `static/custom/js/admisionesactualizarestado.js`
 - `static/custom/js/informeTecnicoCambiosSinGuardar.js`
 - `static/custom/js/informeTecnicoSecciones.js`
-- ... y 6 archivo(s) adicional(es) relacionados.
+- ... y 7 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
