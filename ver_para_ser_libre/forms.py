@@ -103,6 +103,16 @@ class ItinerarioVPSLForm(BootstrapModelForm):
             selected_ids = list(self.instance.sedes.values_list("pk", flat=True))
         raw_ids = self.data.getlist("sedes") if self.is_bound else selected_ids
         self.fields["sedes"].queryset = SedeVPSL.objects.filter(pk__in=raw_ids)
+        if self.is_bound and not self.instance.pk:
+            provincia = self.provincia_bloqueada
+            if not provincia:
+                provincia_id = self.data.get("provincia")
+                if provincia_id and str(provincia_id).isdigit():
+                    provincia = Provincia.objects.filter(pk=provincia_id).first()
+            if provincia:
+                self.fields["sedes"].queryset = self.fields["sedes"].queryset.filter(
+                    jurisdiccion__iexact=provincia.nombre
+                )
         self.fields["carta_archivo"].required = not bool(
             self.instance and self.instance.carta_archivo
         )
@@ -111,8 +121,8 @@ class ItinerarioVPSLForm(BootstrapModelForm):
         self.fields["referente_apellido"].label = "Apellido del referente"
         self.fields["referente_telefono"].label = "Teléfono"
         self.fields["referente_email"].label = "Correo electrónico"
-        self._set_localidad_choices()
         if self.provincia_bloqueada:
+            self._set_localidad_choices()
             self.fields["provincia"].initial = self.provincia_bloqueada.pk
             self.fields["provincia"].disabled = True
             css_class = self.fields["provincia"].widget.attrs.get("class", "")
@@ -122,6 +132,15 @@ class ItinerarioVPSLForm(BootstrapModelForm):
             self.fields["provincia"].help_text = (
                 "Provincia asignada al usuario provincial."
             )
+        elif not self.instance.pk:
+            self._set_localidad_choices()
+            self.fields["provincia"].queryset = Provincia.objects.order_by("nombre")
+            self.fields["provincia"].empty_label = "Seleccione una provincia"
+            self.fields["provincia"].widget.attrs[
+                "class"
+            ] = "form-control select2-provincia-vpsl"
+        else:
+            self._set_localidad_choices()
         if self.freeze_completed_fields:
             self._freeze_completed_fields()
         if self.subsanacion_only:
@@ -139,7 +158,9 @@ class ItinerarioVPSLForm(BootstrapModelForm):
                 provincia = None
         sedes = SedeVPSL.objects.all()
         if provincia:
-            sedes = sedes.filter(jurisdiccion__icontains=provincia.nombre)
+            sedes = sedes.filter(jurisdiccion__iexact=provincia.nombre)
+        elif not self.instance.pk:
+            sedes = sedes.none()
         localidades = (
             sedes.exclude(localidad="")
             .order_by("localidad")

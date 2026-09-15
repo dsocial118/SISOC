@@ -55,6 +55,9 @@ from ver_para_ser_libre.services import workflow
 
 
 VIEW_ALL_ITINERARIOS_PERMISSION = "ver_para_ser_libre.view_all_itinerarios_vpsl"
+CREATE_ANY_PROVINCE_PERMISSION = (
+    "ver_para_ser_libre.create_itinerarios_any_province_vpsl"
+)
 
 
 def _breadcrumb(*items):
@@ -132,6 +135,10 @@ def _filtrar_itinerarios_por_usuario(queryset, user):
     if _puede_ver_todos_los_itinerarios(user):
         return queryset
     provincia = _provincia_usuario_provincial(user)
+    if user_has_permission_code(user, CREATE_ANY_PROVINCE_PERMISSION):
+        if provincia:
+            return queryset.filter(Q(provincia=provincia) | Q(creado_por=user))
+        return queryset.filter(creado_por=user)
     if provincia:
         return queryset.filter(provincia=provincia)
     return queryset.none()
@@ -326,7 +333,7 @@ def sedes_autocomplete(request):
     if provincia_id:
         provincia = Provincia.objects.filter(pk=provincia_id).first()
         if provincia:
-            sedes = sedes.filter(jurisdiccion__icontains=provincia.nombre)
+            sedes = sedes.filter(jurisdiccion__iexact=provincia.nombre)
     if localidad:
         sedes = sedes.filter(localidad__iexact=localidad)
     if exclude_ids:
@@ -360,6 +367,25 @@ def sedes_autocomplete(request):
             "pagination": {"more": end < total},
         }
     )
+
+
+def sedes_localidades(request):
+    provincia_id = request.GET.get("provincia")
+    provincia = (
+        Provincia.objects.filter(pk=provincia_id).first()
+        if provincia_id and str(provincia_id).isdigit()
+        else None
+    )
+    if not provincia:
+        return JsonResponse({"localidades": []})
+    localidades = list(
+        SedeVPSL.objects.filter(jurisdiccion__iexact=provincia.nombre)
+        .exclude(localidad="")
+        .order_by("localidad")
+        .values_list("localidad", flat=True)
+        .distinct()
+    )
+    return JsonResponse({"localidades": localidades})
 
 
 class ItinerarioListView(LoginRequiredMixin, ListView):
@@ -405,7 +431,12 @@ class ItinerarioListView(LoginRequiredMixin, ListView):
             queryset = queryset.filter(filtro)
         if estado:
             queryset = queryset.filter(estado=estado)
-        if provincia_id and _puede_ver_todos_los_itinerarios(self.request.user):
+        if provincia_id and (
+            _puede_ver_todos_los_itinerarios(self.request.user)
+            or user_has_permission_code(
+                self.request.user, CREATE_ANY_PROVINCE_PERMISSION
+            )
+        ):
             queryset = queryset.filter(provincia_id=provincia_id)
         if localidad:
             queryset = queryset.filter(
@@ -424,6 +455,9 @@ class ItinerarioListView(LoginRequiredMixin, ListView):
         provincia_usuario = (
             None
             if _puede_ver_todos_los_itinerarios(self.request.user)
+            or user_has_permission_code(
+                self.request.user, CREATE_ANY_PROVINCE_PERMISSION
+            )
             else _provincia_usuario_provincial(self.request.user)
         )
         context["query"] = self.request.GET.get("busqueda", "")
@@ -439,6 +473,9 @@ class ItinerarioListView(LoginRequiredMixin, ListView):
         context["estado_choices"] = EstadoItinerario.choices
         context["provincias"] = Provincia.objects.order_by("nombre")
         context["provincia_restringida"] = provincia_usuario
+        context["puede_crear_itinerario"] = user_has_permission_code(
+            self.request.user, "ver_para_ser_libre.add_itinerariovpsl"
+        ) or user_has_permission_code(self.request.user, CREATE_ANY_PROVINCE_PERMISSION)
         context["breadcrumb_items"] = _breadcrumb(
             {"text": "Itinerarios", "active": True}
         )
@@ -451,21 +488,42 @@ class ItinerarioCreateView(LoginRequiredMixin, CreateView):
     template_name = "ver_para_ser_libre/itinerario_form.html"
 
     def dispatch(self, request, *args, **kwargs):
-        if not _provincia_usuario_provincial(request.user):
+        permiso_global = user_has_permission_code(
+            request.user, CREATE_ANY_PROVINCE_PERMISSION
+        )
+        profile = getattr(request.user, "profile", None)
+        provincia_asignada = bool(profile and profile.provincia_id)
+        if not (
+            provincia_asignada
+            if permiso_global
+            else _provincia_usuario_provincial(request.user)
+        ):
             messages.error(
                 request,
-                "Para crear itinerarios debe ser usuario provincial y tener una provincia asignada.",
+                (
+                    "Para crear itinerarios debe tener una provincia asignada."
+                    if permiso_global
+                    else "Para crear itinerarios debe ser usuario provincial y tener una provincia asignada."
+                ),
             )
             return redirect("vpsl_itinerario_list")
         return super().dispatch(request, *args, **kwargs)
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        kwargs["provincia_bloqueada"] = _provincia_usuario_provincial(self.request.user)
+        if not user_has_permission_code(
+            self.request.user, CREATE_ANY_PROVINCE_PERMISSION
+        ):
+            kwargs["provincia_bloqueada"] = _provincia_usuario_provincial(
+                self.request.user
+            )
         return kwargs
 
     def form_valid(self, form):
-        form.instance.provincia = _provincia_usuario_provincial(self.request.user)
+        if not user_has_permission_code(
+            self.request.user, CREATE_ANY_PROVINCE_PERMISSION
+        ):
+            form.instance.provincia = _provincia_usuario_provincial(self.request.user)
         form.instance.creado_por = self.request.user
         form.instance.modificado_por = self.request.user
         messages.success(self.request, "Itinerario creado correctamente.")

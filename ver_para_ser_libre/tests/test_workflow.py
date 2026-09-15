@@ -480,12 +480,13 @@ def test_itinerario_subsanar_reemplaza_sede_y_deja_pendiente_evaluacion(client):
 
 def test_itinerario_create_bloquea_provincia_de_usuario_provincial(client):
     provincia = Provincia.objects.create(nombre="Cordoba")
-    user = get_user_model().objects.create_superuser(
+    user = get_user_model().objects.create_user(
         username="vpsl-create-provincial",
         email="vpsl-create-provincial@example.com",
         password="testpass123",
     )
     hacer_usuario_provincial(user, provincia)
+    asignar_permiso(user, "add_itinerariovpsl")
     client.force_login(user)
 
     response = client.get(reverse("vpsl_itinerario_create"))
@@ -511,12 +512,13 @@ def test_itinerario_create_usa_provincia_del_usuario_aunque_posteen_otra(client)
     provincia_usuario = Provincia.objects.create(nombre="Cordoba")
     provincia_posteada = Provincia.objects.create(nombre="Buenos Aires")
     sede = crear_sede(jurisdiccion="Cordoba")
-    user = get_user_model().objects.create_superuser(
+    user = get_user_model().objects.create_user(
         username="vpsl-create-provincia-server",
         email="vpsl-create-provincia-server@example.com",
         password="testpass123",
     )
     hacer_usuario_provincial(user, provincia_usuario)
+    asignar_permiso(user, "add_itinerariovpsl")
     client.force_login(user)
 
     response = client.post(
@@ -544,6 +546,149 @@ def test_itinerario_create_usa_provincia_del_usuario_aunque_posteen_otra(client)
     itinerario = ItinerarioVPSL.objects.get(referente_nombre="Referente")
     assert itinerario.provincia == provincia_usuario
     assert itinerario.referente_apellido == "Provincial"
+
+
+def test_itinerario_create_permiso_global_muestra_provincias_y_sedes_filtradas(client):
+    provincia_usuario = Provincia.objects.create(nombre="Cordoba")
+    provincia_destino = Provincia.objects.create(nombre="Santa Fe")
+    sede_destino = crear_sede(
+        jurisdiccion="Santa Fe",
+        nombre="Sede santafesina",
+        localidad="ROSARIO",
+    )
+    crear_sede(jurisdiccion="Cordoba", nombre="Sede cordobesa", cueanexo="CORDOBA001")
+    user = get_user_model().objects.create_user(username="vpsl-create-global")
+    hacer_usuario_provincial(user, provincia_usuario)
+    asignar_permiso(user, "create_itinerarios_any_province_vpsl")
+    client.force_login(user)
+
+    response = client.get(reverse("vpsl_itinerario_create"))
+
+    assert response.status_code == 200
+    html = response.content.decode()
+    assert "select2-provincia-vpsl" in html
+    assert f'value="{provincia_usuario.pk}"' in html
+    assert f'value="{provincia_destino.pk}"' in html
+    assert not response.context["form"].fields["provincia"].disabled
+    assert response.context["form"].fields["localidad_filtro"].choices == [
+        ("", "Todas")
+    ]
+
+    listado = client.get(reverse("vpsl_itinerario_list"))
+    assert listado.status_code == 200
+    assert "Crear itinerario" in listado.content.decode()
+
+    response = client.get(
+        reverse("vpsl_sedes_autocomplete"), {"provincia": provincia_destino.pk}
+    )
+    assert response.status_code == 200
+    assert [item["id"] for item in response.json()["results"]] == [sede_destino.pk]
+
+    localidades = client.get(
+        reverse("vpsl_sedes_localidades"), {"provincia": provincia_destino.pk}
+    )
+    assert localidades.status_code == 200
+    assert localidades.json() == {"localidades": ["ROSARIO"]}
+
+
+def test_itinerario_create_permiso_global_guarda_provincia_elegida_y_ve_solo_propios(
+    client,
+):
+    provincia_usuario = Provincia.objects.create(nombre="Cordoba")
+    provincia_destino = Provincia.objects.create(nombre="Santa Fe")
+    sede_destino = crear_sede(jurisdiccion="Santa Fe")
+    itinerario_ajeno = crear_itinerario(
+        provincia=provincia_destino,
+        sedes=[crear_sede(cueanexo="AJENA001")],
+    )
+    user = get_user_model().objects.create_user(username="vpsl-global-own")
+    hacer_usuario_provincial(user, provincia_usuario)
+    asignar_permiso(user, "add_itinerariovpsl")
+    asignar_permiso(user, "create_itinerarios_any_province_vpsl")
+    client.force_login(user)
+
+    response = client.post(
+        reverse("vpsl_itinerario_create"),
+        {
+            "provincia": str(provincia_destino.pk),
+            "fecha_inicio": "2026-05-01",
+            "fecha_fin": "2026-05-10",
+            "sedes": [str(sede_destino.pk)],
+            "referente_nombre": "Referente global",
+            "referente_telefono": "351111111",
+            "referente_email": "referente@example.com",
+            "carta_archivo": SimpleUploadedFile("carta.pdf", b"contenido"),
+        },
+    )
+
+    assert response.status_code == 302, response.context["form"].errors
+    itinerario = ItinerarioVPSL.objects.get(referente_nombre="Referente global")
+    assert itinerario.provincia == provincia_destino
+    assert itinerario.creado_por == user
+    assert client.get(response.url).status_code == 200
+    assert (
+        client.get(
+            reverse("vpsl_itinerario_detail", args=[itinerario_ajeno.pk])
+        ).status_code
+        == 404
+    )
+
+
+def test_itinerario_create_permiso_global_rechaza_sede_de_otra_provincia(client):
+    provincia_usuario = Provincia.objects.create(nombre="Cordoba")
+    provincia_destino = Provincia.objects.create(nombre="Santa Fe")
+    sede_otra = crear_sede(jurisdiccion="Cordoba")
+    user = get_user_model().objects.create_user(username="vpsl-global-invalid-sede")
+    hacer_usuario_provincial(user, provincia_usuario)
+    asignar_permiso(user, "add_itinerariovpsl")
+    asignar_permiso(user, "create_itinerarios_any_province_vpsl")
+    client.force_login(user)
+
+    response = client.post(
+        reverse("vpsl_itinerario_create"),
+        {
+            "provincia": str(provincia_destino.pk),
+            "fecha_inicio": "2026-05-01",
+            "fecha_fin": "2026-05-10",
+            "sedes": [str(sede_otra.pk)],
+            "referente_nombre": "Referente global",
+            "carta_archivo": SimpleUploadedFile("carta.pdf", b"contenido"),
+        },
+    )
+
+    assert response.status_code == 200
+    assert "sedes" in response.context["form"].errors
+    assert not ItinerarioVPSL.objects.filter(
+        referente_nombre="Referente global"
+    ).exists()
+
+
+def test_itinerario_create_permiso_global_exige_provincia_asignada(client):
+    user = get_user_model().objects.create_user(username="vpsl-global-no-province")
+    asignar_permiso(user, "add_itinerariovpsl")
+    asignar_permiso(user, "create_itinerarios_any_province_vpsl")
+    client.force_login(user)
+
+    response = client.get(reverse("vpsl_itinerario_create"))
+
+    assert response.status_code == 302
+    assert response.url == reverse("vpsl_itinerario_list")
+
+
+def test_itinerario_create_permiso_global_acepta_usuario_con_provincia_asignada(
+    client,
+):
+    provincia = Provincia.objects.create(nombre="Cordoba")
+    user = get_user_model().objects.create_user(username="vpsl-global-assigned")
+    user.profile.provincia = provincia
+    user.profile.save(update_fields=["provincia"])
+    asignar_permiso(user, "create_itinerarios_any_province_vpsl")
+    client.force_login(user)
+
+    response = client.get(reverse("vpsl_itinerario_create"))
+
+    assert response.status_code == 200
+    assert not response.context["form"].fields["provincia"].disabled
 
 
 def test_aprobar_itinerario_bloquea_si_sede_pendiente():
@@ -1359,6 +1504,12 @@ def test_sedes_autocomplete_filtra_por_provincia_y_busqueda(client):
         jurisdiccion="Cordoba",
         nombre="Escuela Primaria 2",
         cueanexo="CBA001",
+    )
+    crear_sede(
+        jurisdiccion="Ciudad de Buenos Aires",
+        nombre="Escuela Primaria CABA",
+        cueanexo="CABA001",
+        localidad="LA PLATA",
     )
     client.force_login(user)
 

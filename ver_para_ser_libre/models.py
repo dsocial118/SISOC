@@ -192,6 +192,10 @@ class ItinerarioVPSL(SoftDeleteModelMixin, models.Model):
         verbose_name_plural = "Itinerarios VPSL"
         permissions = [
             (
+                "create_itinerarios_any_province_vpsl",
+                "Puede crear itinerarios VPSL en cualquier provincia",
+            ),
+            (
                 "view_all_itinerarios_vpsl",
                 "Puede ver todos los itinerarios VPSL sin restriccion provincial",
             ),
