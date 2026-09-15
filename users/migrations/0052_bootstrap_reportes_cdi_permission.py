@@ -2,7 +2,11 @@
 
 El módulo de reportes no reutiliza `auth.role_exportar_a_csv` porque ese permiso
 es global: dárselo a los roles SIMEPI también habilitaría exportar comedores,
-usuarios y el resto de los listados del sistema.
+usuarios y el resto de los listados del sistema. Custodia tanto la pantalla como
+la descarga, así que sin esto el módulo queda invisible para esos roles.
+
+Se incluye Admin para que los perfiles administrativos, que hoy llegan por el
+permiso global de exportación, no pierdan el acceso.
 """
 
 from django.db import migrations
@@ -17,6 +21,7 @@ GRUPOS = (
     "SIMEPI - Equipo Nacional",
     "SIMEPI - Auditoría",
     "SIMEPI - EGP",
+    "Admin",
 )
 
 

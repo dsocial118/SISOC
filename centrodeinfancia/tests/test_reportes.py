@@ -387,16 +387,34 @@ def test_centro_sin_horarios_ni_oferta_no_rompe_el_reporte():
 
 @pytest.mark.django_db
 @pytest.mark.parametrize(
-    "otorgar", [_dar_permiso_reportes, _dar_permiso_exportacion], ids=["propio", "csv"]
+    "ruta", ["centrodeinfancia_reportes", "centrodeinfancia_reportes_descargar"]
 )
-def test_descarga_exige_permiso_de_reportes(client, datos, otorgar):
-    user = _dar_permiso_vista(_usuario(f"reportes-descarga-{otorgar.__name__}"))
+def test_el_modulo_exige_el_permiso_propio_de_reportes(client, datos, ruta):
+    """Ver los CDI no alcanza: la pantalla y la descarga piden el permiso SIMEPI."""
+    user = _dar_permiso_vista(_usuario(f"reportes-permiso-{ruta}"))
     client.force_login(user)
 
-    respuesta = client.get(reverse("centrodeinfancia_reportes_descargar"))
-    assert respuesta.status_code == 403
+    assert client.get(reverse(ruta)).status_code == 403
 
-    client.force_login(otorgar(user))
+    client.force_login(_dar_permiso_reportes(user))
+    assert client.get(reverse(ruta)).status_code == 200
+
+
+@pytest.mark.django_db
+def test_el_permiso_global_de_csv_no_habilita_el_modulo(client, datos):
+    """`role_exportar_a_csv` es de otros listados; no abre los reportes de CDI."""
+    user = _dar_permiso_exportacion(_dar_permiso_vista(_usuario("reportes-solo-csv")))
+    client.force_login(user)
+
+    assert client.get(reverse("centrodeinfancia_reportes")).status_code == 403
+    assert client.get(reverse("centrodeinfancia_reportes_descargar")).status_code == 403
+
+
+@pytest.mark.django_db
+def test_descarga_declara_adjunto_y_no_cachea(client, datos):
+    user = _dar_permiso_reportes(_usuario("reportes-descarga-cabeceras"))
+    client.force_login(user)
+
     respuesta = client.get(reverse("centrodeinfancia_reportes_descargar"))
 
     assert respuesta.status_code == 200
@@ -413,19 +431,51 @@ def test_descarga_exige_permiso_de_reportes(client, datos, otorgar):
         "SIMEPI - Equipo Nacional",
         "SIMEPI - Auditoría",
         "SIMEPI - EGP",
+        "Admin",
     ],
 )
-def test_roles_simepi_tienen_el_permiso_de_reportes(grupo):
+def test_roles_habilitados_tienen_el_permiso_de_reportes(grupo):
     """Sin esto el módulo queda inaccesible para quienes lo pidieron."""
     assert "auth.role_reportes_cdi" in permission_codes_for_bootstrap_group(grupo)
 
 
 @pytest.mark.django_db
-def test_pantalla_avisa_cuando_no_puede_exportar(client, datos):
-    user = _dar_permiso_vista(_usuario("reportes-pantalla"))
+def test_pantalla_previsualiza_la_hoja_resumen(client, datos):
+    user = _dar_permiso_reportes(_usuario("reportes-preview"))
+    AccesoCDI.objects.create(user=user, centro=datos["propio"])
     client.force_login(user)
 
     respuesta = client.get(reverse("centrodeinfancia_reportes"))
+    contenido = respuesta.content.decode("utf-8")
 
     assert respuesta.status_code == 200
-    assert respuesta.context["puede_exportar"] is False
+    # La vista previa es la misma hoja que se descarga, con el mismo alcance.
+    hojas = _hojas(generar_reporte_cdi_xlsx(user))
+    assert [list(fila) for fila in respuesta.context["resumen_filas"]] == [
+        list(fila) for fila in hojas["Resumen"][1:]
+    ]
+    assert "Vista previa: hoja Resumen" in contenido
+    assert "Centros de Desarrollo Infantil" in contenido
+
+
+@pytest.mark.django_db
+def test_la_previsualizacion_acompana_el_filtro_de_provincia(client, datos):
+    otra = Provincia.objects.create(nombre="San Juan")
+    CentroDeInfancia.objects.create(nombre="CDI Otra", provincia=otra)
+    user = _dar_permiso_reportes(_usuario("reportes-preview-filtro", superuser=True))
+    client.force_login(user)
+
+    sin_filtro = client.get(reverse("centrodeinfancia_reportes"))
+    con_filtro = client.get(
+        reverse("centrodeinfancia_reportes"), {"provincia": otra.pk}
+    )
+
+    def _total(respuesta, detalle):
+        return next(
+            cantidad
+            for seccion, det, cantidad in respuesta.context["resumen_filas"]
+            if seccion == "Totales" and det == detalle
+        )
+
+    assert _total(sin_filtro, "Centros de Desarrollo Infantil") == 3
+    assert _total(con_filtro, "Centros de Desarrollo Infantil") == 1
