@@ -18,6 +18,10 @@ from ver_para_ser_libre.models import (
     ResultadoAtencion,
     SedeVPSL,
 )
+from ver_para_ser_libre.services.sedes import (
+    CABA_JURISDICCIONES,
+    filtrar_sedes_por_provincia,
+)
 from ver_para_ser_libre.services import workflow
 
 
@@ -110,8 +114,8 @@ class ItinerarioVPSLForm(BootstrapModelForm):
                 if provincia_id and str(provincia_id).isdigit():
                     provincia = Provincia.objects.filter(pk=provincia_id).first()
             if provincia:
-                self.fields["sedes"].queryset = self.fields["sedes"].queryset.filter(
-                    jurisdiccion__iexact=provincia.nombre
+                self.fields["sedes"].queryset = filtrar_sedes_por_provincia(
+                    self.fields["sedes"].queryset, provincia
                 )
         self.fields["carta_archivo"].required = not bool(
             self.instance and self.instance.carta_archivo
@@ -158,7 +162,7 @@ class ItinerarioVPSLForm(BootstrapModelForm):
                 provincia = None
         sedes = SedeVPSL.objects.all()
         if provincia:
-            sedes = sedes.filter(jurisdiccion__iexact=provincia.nombre)
+            sedes = filtrar_sedes_por_provincia(sedes, provincia)
         elif not self.instance.pk:
             sedes = sedes.none()
         localidades = (
@@ -522,7 +526,7 @@ class SedeVPSLForm(BootstrapModelForm):
 
 class SedeCreateVPSLForm(SedeVPSLForm):
     LEGACY_PROVINCE_NAMES = {
-        "Ciudad de Buenos Aires": "Ciudad Autónoma de Buenos Aires",
+        CABA_JURISDICCIONES[1]: CABA_JURISDICCIONES[0],
         "Tierra del Fuego": "Tierra del Fuego, Antártida e Islas del Atlántico Sur",
     }
     provincia = forms.ModelChoiceField(

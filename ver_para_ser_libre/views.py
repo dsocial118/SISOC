@@ -53,6 +53,7 @@ from ver_para_ser_libre.models import (
     SedeVPSL,
 )
 from ver_para_ser_libre.services import workflow
+from ver_para_ser_libre.services.sedes import filtrar_sedes_por_provincia
 
 
 VIEW_ALL_ITINERARIOS_PERMISSION = "ver_para_ser_libre.view_all_itinerarios_vpsl"
@@ -334,7 +335,7 @@ def sedes_autocomplete(request):
     if provincia_id:
         provincia = Provincia.objects.filter(pk=provincia_id).first()
         if provincia:
-            sedes = sedes.filter(jurisdiccion__iexact=provincia.nombre)
+            sedes = filtrar_sedes_por_provincia(sedes, provincia)
     if localidad:
         sedes = sedes.filter(localidad__iexact=localidad)
     if exclude_ids:
@@ -380,7 +381,7 @@ def sedes_localidades(request):
     if not provincia:
         return JsonResponse({"localidades": []})
     localidades = list(
-        SedeVPSL.objects.filter(jurisdiccion__iexact=provincia.nombre)
+        filtrar_sedes_por_provincia(SedeVPSL.objects.all(), provincia)
         .exclude(localidad="")
         .order_by("localidad")
         .values_list("localidad", flat=True)

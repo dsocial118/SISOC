@@ -692,6 +692,69 @@ def test_itinerario_create_permiso_global_acepta_usuario_con_provincia_asignada(
     assert not response.context["form"].fields["provincia"].disabled
 
 
+def test_itinerario_create_caba_acepta_ambos_nombres_de_jurisdiccion(client):
+    provincia_usuario = Provincia.objects.create(nombre="Cordoba")
+    caba = Provincia.objects.create(nombre="Ciudad Autónoma de Buenos Aires")
+    caba_historica = Provincia.objects.create(nombre="Ciudad de Buenos Aires")
+    buenos_aires = Provincia.objects.create(nombre="Buenos Aires")
+    sede_historica = crear_sede(
+        jurisdiccion="Ciudad de Buenos Aires",
+        cueanexo="CABA-HISTORICA",
+        localidad="PALERMO",
+    )
+    sede_actual = crear_sede(
+        jurisdiccion="Ciudad Autónoma de Buenos Aires",
+        cueanexo="CABA-ACTUAL",
+        localidad="RECOLETA",
+    )
+    crear_sede(jurisdiccion="Buenos Aires", cueanexo="BA-OTRA")
+    user = get_user_model().objects.create_user(username="vpsl-global-caba")
+    hacer_usuario_provincial(user, provincia_usuario)
+    asignar_permiso(user, "create_itinerarios_any_province_vpsl")
+    client.force_login(user)
+
+    sedes = client.get(reverse("vpsl_sedes_autocomplete"), {"provincia": caba.pk})
+    localidades = client.get(reverse("vpsl_sedes_localidades"), {"provincia": caba.pk})
+
+    assert sedes.status_code == 200
+    assert {item["id"] for item in sedes.json()["results"]} == {
+        sede_historica.pk,
+        sede_actual.pk,
+    }
+    assert localidades.json() == {"localidades": ["PALERMO", "RECOLETA"]}
+
+    sedes_nombre_historico = client.get(
+        reverse("vpsl_sedes_autocomplete"), {"provincia": caba_historica.pk}
+    )
+    assert {item["id"] for item in sedes_nombre_historico.json()["results"]} == {
+        sede_historica.pk,
+        sede_actual.pk,
+    }
+    sedes_buenos_aires = client.get(
+        reverse("vpsl_sedes_autocomplete"), {"provincia": buenos_aires.pk}
+    )
+    assert len(sedes_buenos_aires.json()["results"]) == 1
+
+    response = client.post(
+        reverse("vpsl_itinerario_create"),
+        {
+            "provincia": str(caba.pk),
+            "fecha_inicio": "2026-05-01",
+            "fecha_fin": "2026-05-10",
+            "sedes": [str(sede_historica.pk)],
+            "referente_nombre": "Referente CABA",
+            "referente_telefono": "111111111",
+            "referente_email": "caba@example.com",
+            "carta_archivo": SimpleUploadedFile("carta.pdf", b"contenido"),
+        },
+    )
+
+    assert response.status_code == 302, response.context["form"].errors
+    itinerario = ItinerarioVPSL.objects.get(referente_nombre="Referente CABA")
+    assert itinerario.provincia == caba
+    assert list(itinerario.sedes.all()) == [sede_historica]
+
+
 def test_aprobar_itinerario_bloquea_si_sede_pendiente():
     itinerario = crear_itinerario()
     workflow.presentar_itinerario(itinerario)
