@@ -11,11 +11,18 @@
     <div class="row">
         <div class="col-12">
             {% if not error %}
-                <div class="mb-3">
+                <div class="mb-3 d-flex align-items-center gap-2">
                     <span class="badge bg-primary fs-6">
                         <i class="bi bi-info-circle-fill me-1"></i>
                         Última actualización: {{ current_version }}
                     </span>
+                    <a href="{% url 'mapa_arquitectura' %}"
+                       class="btn btn-sm btn-outline-primary"
+                       target="_blank"
+                       rel="noopener">
+                        <i class="bi bi-diagram-3 me-1"></i>
+                        Ver arquitectura
+                    </a>
                 </div>
                 {% for entry in versions %}
                     <div class="card mb-3">
