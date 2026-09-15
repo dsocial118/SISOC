@@ -274,6 +274,7 @@ class PasDeclaracionJuradaForm(forms.Form):
             "Confirmo que estos datos son correctos y acepto recibir notificaciones del Programa por estos medios."
         )
     )
+
     def __init__(self, *args, persona=None, **kwargs):
         self.persona = persona
         super().__init__(*args, **kwargs)
