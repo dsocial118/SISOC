@@ -3,7 +3,7 @@ from pathlib import Path
 
 from django import forms
 
-from core.models import Provincia
+from core.models import Localidad, Provincia
 from ver_para_ser_libre.models import (
     CasoLaboratorioVPSL,
     ChecklistJornadaVPSL,
@@ -352,7 +352,7 @@ class ChecklistSedeVPSLForm(forms.Form):
         ),
     )
 
-    def __init__(self, *args, sede=None, **kwargs):
+    def __init__(self, *args, sede=None, required=True, **kwargs):
         super().__init__(*args, **kwargs)
         self.sede = sede
         existing = {
@@ -365,10 +365,11 @@ class ChecklistSedeVPSLForm(forms.Form):
             checklist = existing.get(item_code)
             prefix = item_code
             self.fields[f"{prefix}_cumple"] = forms.TypedChoiceField(
-                label=f"{label} *",
+                label=f"{label}{' *' if required else ''}",
                 choices=(("", "Seleccionar"), ("true", "Si"), ("false", "No")),
                 coerce=lambda value: value == "true",
-                required=True,
+                empty_value=None,
+                required=required,
                 widget=forms.Select(attrs={"class": "form-control"}),
                 initial=(
                     None
@@ -513,9 +514,57 @@ class SedeVPSLForm(BootstrapModelForm):
             "codigo_postal",
             "telefono",
             "mail",
-            "latitud",
-            "longitud",
         ]
+
+    def clean_cueanexo(self):
+        return self.cleaned_data["cueanexo"] or None
+
+
+class SedeCreateVPSLForm(SedeVPSLForm):
+    provincia = forms.ModelChoiceField(
+        label="Provincia",
+        queryset=Provincia.objects.order_by("nombre"),
+        empty_label="Seleccioná una provincia",
+    )
+    localidad = forms.ChoiceField(
+        label="Localidad",
+        choices=(("", "Seleccioná una localidad"),),
+        widget=forms.Select(attrs={"class": "select2-localidad-vpsl"}),
+    )
+    mail = forms.EmailField(
+        label="Correo electrónico",
+        required=False,
+        max_length=254,
+        widget=forms.EmailInput(attrs={"size": 40}),
+    )
+
+    class Meta(SedeVPSLForm.Meta):
+        fields = [
+            field for field in SedeVPSLForm.Meta.fields if field != "jurisdiccion"
+        ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        provincia_id = self.data.get("provincia") if self.is_bound else None
+        if provincia_id and str(provincia_id).isdigit():
+            localidades = (
+                Localidad.objects.filter(municipio__provincia_id=provincia_id)
+                .order_by("nombre")
+                .values_list("nombre", flat=True)
+                .distinct()
+            )
+            self.fields["localidad"].choices = [
+                ("", "Seleccioná una localidad"),
+                *((nombre, nombre) for nombre in localidades),
+            ]
+        self.fields["domicilio"].label = "Domicilio"
+        self.fields["domicilio"].widget.attrs["placeholder"] = "Calle y altura"
+        self.fields["telefono"].required = True
+        self.fields["telefono"].label = "Teléfono"
+
+    def save(self, commit=True):
+        self.instance.jurisdiccion = self.cleaned_data["provincia"].nombre
+        return super().save(commit=commit)
 
 
 class CasoLaboratorioVPSLForm(BootstrapModelForm):

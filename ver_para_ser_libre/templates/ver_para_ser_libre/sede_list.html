@@ -38,7 +38,7 @@
                                             <td>{{ sede.jurisdiccion }}</td>
                                             <td>{{ sede.localidad }}</td>
                                             <td>{{ sede.domicilio }}</td>
-                                            <td>{{ sede.cueanexo }}</td>
+                                            <td>{{ sede.cueanexo|default:"Sin CUE" }}</td>
                                             <td>
                                                 {% if sede.checklist_aprobado %}
                                                     <span class="badge bg-success">Aprobado</span>

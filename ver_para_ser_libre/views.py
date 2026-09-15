@@ -37,6 +37,7 @@ from ver_para_ser_libre.forms import (
     ItinerarioVPSLForm,
     JornadaVPSLForm,
     RegistroNominalVPSLForm,
+    SedeCreateVPSLForm,
     SedeVPSLForm,
 )
 from ver_para_ser_libre.models import (
@@ -353,7 +354,7 @@ def sedes_autocomplete(request):
     results = [
         {
             "id": sede.pk,
-            "text": f"{sede.nombre} | {sede.cueanexo} | {sede.domicilio}",
+            "text": f"{sede.nombre} | {sede.cueanexo or 'Sin CUE'} | {sede.domicilio}",
             "localidad": sede.localidad,
             "domicilio": sede.domicilio,
             "cueanexo": sede.cueanexo,
@@ -881,12 +882,16 @@ class SedeMixin:
     model = SedeVPSL
     form_class = SedeVPSLForm
     template_name = "ver_para_ser_libre/sede_form.html"
+    checklist_required = True
 
     def get_success_url(self):
         return reverse("vpsl_sede_update", kwargs={"pk": self.object.pk})
 
     def _build_checklist_form(self):
-        kwargs = {"sede": getattr(self, "object", None)}
+        kwargs = {
+            "sede": getattr(self, "object", None),
+            "required": self.checklist_required,
+        }
         if self.request.method == "POST":
             kwargs.update({"data": self.request.POST, "files": self.request.FILES})
         return ChecklistSedeVPSLForm(**kwargs)
@@ -940,7 +945,7 @@ class SedeMixin:
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         checklist_form = kwargs.get("checklist_form") or ChecklistSedeVPSLForm(
-            sede=getattr(self, "object", None)
+            sede=getattr(self, "object", None), required=self.checklist_required
         )
         context["checklist_form"] = checklist_form
         context["field_groups"] = checklist_form.field_groups
@@ -954,7 +959,31 @@ class SedeMixin:
 
 
 class SedeCreateView(LoginRequiredMixin, SedeMixin, CreateView):
-    pass
+    form_class = SedeCreateVPSLForm
+    template_name = "ver_para_ser_libre/sede_create_form.html"
+    checklist_required = False
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        form = context["form"]
+        context["required_fields"] = [
+            form[name]
+            for name in ("nombre", "domicilio", "provincia", "localidad", "telefono")
+        ]
+        context["additional_fields"] = [
+            form[name]
+            for name in (
+                "sector",
+                "ambito",
+                "departamento",
+                "codigo_departamento",
+                "codigo_localidad",
+                "cueanexo",
+                "codigo_postal",
+                "mail",
+            )
+        ]
+        return context
 
 
 class SedeUpdateView(LoginRequiredMixin, SedeMixin, UpdateView):

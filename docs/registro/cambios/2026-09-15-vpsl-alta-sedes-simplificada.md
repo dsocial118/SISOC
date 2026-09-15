@@ -1,0 +1,9 @@
+# Alta simplificada de sedes VPSL
+
+El alta de sedes pide nombre, domicilio (calle y altura en un solo campo), provincia, localidad y teléfono. La provincia se selecciona del catálogo existente y se guarda en `jurisdiccion`. La localidad se elige con select2 del catálogo `core.Localidad`, filtrado por `Localidad.municipio.provincia`; el servidor rechaza localidades ajenas a la provincia indicada. El domicilio continúa almacenándose sin dividirse. Sector, ámbito, departamento y sus códigos, código de localidad, CUE/anexo, código postal y correo son opcionales. El CUE/anexo conserva su unicidad cuando se informa y admite varias sedes sin CUE mediante `NULL`.
+
+El formulario de creación presenta primero los campos obligatorios, luego el botón de búsqueda y el iframe de Google Maps, y después la información adicional y el checklist. La búsqueda mantiene el mapa embebido y usa domicilio, localidad, provincia y los datos geográficos adicionales presentes. El iframe no devuelve coordenadas ni permite leer su resultado desde SISOC; por eso latitud y longitud se retiran de los formularios, pero las coordenadas históricas siguen en el modelo. El resultado visual del iframe no modifica datos del formulario. El correo del alta se muestra en un input de una línea y ocupa media columna; admite una longitud válida de email, sin limitarlo artificialmente a 40 caracteres.
+
+El checklist puede quedar sin responder al crear una sede; se guardan sus tres ítems como pendientes y la sede no queda aprobada. La edición de sedes existentes conserva su formulario y domicilio histórico. No se infiere calle o altura por separado en direcciones anteriores.
+
+La migración `0014_sedevpsl_optional_school_data.py` flexibiliza los campos antiguos y hace nullable el CUE/anexo para evitar conflictos de unicidad entre sedes sin código.

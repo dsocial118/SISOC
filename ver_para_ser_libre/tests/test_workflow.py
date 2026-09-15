@@ -8,7 +8,7 @@ from django.contrib.auth.models import Permission
 from django.urls import reverse
 
 from ciudadanos.models import Ciudadano
-from core.models import Provincia, Sexo
+from core.models import Localidad, Municipio, Provincia, Sexo
 from ver_para_ser_libre.forms import JornadaVPSLForm, RegistroNominalVPSLForm
 from ver_para_ser_libre.models import (
     CasoLaboratorioVPSL,
@@ -1109,6 +1109,178 @@ def test_paginas_principales_renderizan(client):
         assert response.status_code == 200
 
 
+def test_sede_create_guarda_solo_datos_obligatorios_y_checklist_pendiente(client):
+    user = get_user_model().objects.create_superuser(username="vpsl-sede-minima")
+    provincia = Provincia.objects.create(nombre="Buenos Aires")
+    municipio = Municipio.objects.create(nombre="La Plata", provincia=provincia)
+    Localidad.objects.create(nombre="La Plata", municipio=municipio)
+    client.force_login(user)
+    url = reverse("vpsl_sede_create")
+    datos = {
+        "nombre": "Sede de prueba",
+        "domicilio": "Calle 12 345",
+        "localidad": "La Plata",
+        "provincia": provincia.pk,
+        "telefono": "221 555-1234",
+    }
+
+    response = client.get(url)
+    html = response.content.decode()
+    assert response.status_code == 200
+    assert html.index("Campos obligatorios") < html.index('id="vpsl-sede-map"')
+    assert html.index('id="vpsl-sede-map"') < html.index("Información adicional")
+    assert html.index('id="vpsl-sede-map-search"') < html.index('id="vpsl-sede-map"')
+    assert html.index('id="id_provincia"') < html.index('id="id_localidad"')
+    assert 'id="id_latitud"' not in html
+    assert 'id="id_longitud"' not in html
+    assert 'type="email"' in html
+    assert '<textarea name="mail"' not in html
+
+    for indice in range(2):
+        response = client.post(url, {**datos, "nombre": f"Sede {indice}"})
+        assert response.status_code == 302
+
+    sedes = list(SedeVPSL.objects.order_by("nombre"))
+    assert len(sedes) == 2
+    assert all(sede.jurisdiccion == provincia.nombre for sede in sedes)
+    assert all(sede.domicilio == datos["domicilio"] for sede in sedes)
+    assert all(sede.cueanexo is None for sede in sedes)
+    assert all(not sede.checklist_aprobado for sede in sedes)
+    assert all(sede.checklist.count() == 3 for sede in sedes)
+    assert all(not sede.checklist.exclude(cumple=None).exists() for sede in sedes)
+
+    edicion = client.get(reverse("vpsl_sede_update", kwargs={"pk": sedes[0].pk}))
+    assert edicion.status_code == 200
+    assert datos["domicilio"] in edicion.content.decode()
+    assert 'id="id_provincia"' not in edicion.content.decode()
+
+
+@pytest.mark.parametrize(
+    "campo", ("nombre", "domicilio", "localidad", "provincia", "telefono")
+)
+def test_sede_create_rechaza_campo_obligatorio_faltante(client, campo):
+    user = get_user_model().objects.create_superuser(username=f"vpsl-sede-{campo}")
+    provincia = Provincia.objects.create(nombre="Cordoba")
+    municipio = Municipio.objects.create(nombre="Cordoba", provincia=provincia)
+    Localidad.objects.create(nombre="Cordoba", municipio=municipio)
+    client.force_login(user)
+    datos = {
+        "nombre": "Sede de prueba",
+        "domicilio": "San Martin 123",
+        "localidad": "Cordoba",
+        "provincia": provincia.pk,
+        "telefono": "351 555-1234",
+    }
+    datos.pop(campo)
+
+    response = client.post(reverse("vpsl_sede_create"), datos)
+
+    assert response.status_code == 200
+    assert campo in response.context["form"].errors
+    assert not SedeVPSL.objects.exists()
+
+
+def test_sede_create_cue_opcional_conserva_unicidad_si_se_informa(client):
+    user = get_user_model().objects.create_superuser(username="vpsl-sede-cue-unico")
+    provincia = Provincia.objects.create(nombre="Santa Fe")
+    municipio = Municipio.objects.create(nombre="Rosario", provincia=provincia)
+    Localidad.objects.create(nombre="Rosario", municipio=municipio)
+    client.force_login(user)
+    datos = {
+        "nombre": "Primera sede",
+        "domicilio": "Belgrano 123",
+        "localidad": "Rosario",
+        "provincia": provincia.pk,
+        "telefono": "341 555-1234",
+        "cueanexo": "SF001",
+    }
+
+    primera = client.post(reverse("vpsl_sede_create"), datos)
+    segunda = client.post(
+        reverse("vpsl_sede_create"), {**datos, "nombre": "Segunda sede"}
+    )
+
+    assert primera.status_code == 302
+    assert segunda.status_code == 200
+    assert "cueanexo" in segunda.context["form"].errors
+    assert SedeVPSL.objects.count() == 1
+
+
+def test_sede_create_rechaza_localidad_de_otra_provincia(client):
+    user = get_user_model().objects.create_superuser(username="vpsl-sede-localidad")
+    cordoba = Provincia.objects.create(nombre="Cordoba")
+    santa_fe = Provincia.objects.create(nombre="Santa Fe")
+    Localidad.objects.create(
+        nombre="Cordoba",
+        municipio=Municipio.objects.create(nombre="Capital", provincia=cordoba),
+    )
+    Localidad.objects.create(
+        nombre="Rosario",
+        municipio=Municipio.objects.create(nombre="Rosario", provincia=santa_fe),
+    )
+    client.force_login(user)
+
+    disponibles = client.get(
+        reverse("ajax_load_localidades"), {"provincia_id": cordoba.pk}
+    )
+    response = client.post(
+        reverse("vpsl_sede_create"),
+        {
+            "nombre": "Sede erronea",
+            "domicilio": "Belgrano 123",
+            "localidad": "Rosario",
+            "provincia": cordoba.pk,
+            "telefono": "351 555-1234",
+        },
+    )
+
+    assert disponibles.status_code == 200
+    assert [item["nombre"] for item in disponibles.json()] == ["Cordoba"]
+    assert response.status_code == 200
+    assert "localidad" in response.context["form"].errors
+    assert not SedeVPSL.objects.exists()
+
+
+def test_sede_update_conserva_coordenadas_historicas_sin_mostrarlas(client):
+    user = get_user_model().objects.create_superuser(username="vpsl-sede-coordenadas")
+    sede = crear_sede(latitud="-34.900000", longitud="-57.950000")
+    client.force_login(user)
+    url = reverse("vpsl_sede_update", kwargs={"pk": sede.pk})
+
+    formulario = client.get(url)
+    html = formulario.content.decode()
+    assert formulario.status_code == 200
+    assert 'id="id_latitud"' not in html
+    assert 'id="id_longitud"' not in html
+
+    response = client.post(
+        url,
+        {
+            "jurisdiccion": sede.jurisdiccion,
+            "sector": sede.sector,
+            "ambito": sede.ambito,
+            "departamento": sede.departamento,
+            "codigo_departamento": sede.codigo_departamento,
+            "localidad": sede.localidad,
+            "codigo_localidad": sede.codigo_localidad,
+            "cueanexo": sede.cueanexo,
+            "nombre": "Sede editada",
+            "domicilio": sede.domicilio,
+            "codigo_postal": sede.codigo_postal,
+            "telefono": sede.telefono,
+            "mail": sede.mail,
+            "electricidad_cumple": "true",
+            "viandas_cumple": "true",
+            "seguridad_cumple": "true",
+        },
+    )
+
+    assert response.status_code == 302
+    sede.refresh_from_db()
+    assert str(sede.latitud) == "-34.900000"
+    assert str(sede.longitud) == "-57.950000"
+
+
 def test_itinerario_list_restringe_usuario_provincial_y_filtra(client):
     provincia_visible = Provincia.objects.create(nombre="Cordoba")
     provincia_oculta = Provincia.objects.create(nombre="Santa Fe")
@@ -1523,6 +1695,22 @@ def test_sedes_autocomplete_filtra_por_provincia_y_busqueda(client):
     assert len(results) == 1
     assert results[0]["cueanexo"] == "BA001"
     assert response.json()["pagination"]["more"] is False
+
+
+def test_sede_sin_cue_se_muestra_en_listado_y_autocomplete(client):
+    user = get_user_model().objects.create_superuser(username="vpsl-sede-sin-cue")
+    sede = crear_sede(cueanexo=None, nombre="Sede sin codigo")
+    client.force_login(user)
+
+    listado = client.get(reverse("vpsl_sede_list"))
+    autocomplete = client.get(reverse("vpsl_sedes_autocomplete"), {"q": sede.nombre})
+
+    assert listado.status_code == 200
+    assert "Sin CUE" in listado.content.decode()
+    assert autocomplete.status_code == 200
+    assert autocomplete.json()["results"][0]["text"] == (
+        f"{sede.nombre} | Sin CUE | {sede.domicilio}"
+    )
 
 
 def test_sedes_autocomplete_excluye_ids_solicitados(client):
