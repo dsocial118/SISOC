@@ -99,6 +99,7 @@ class AdminRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
 class UsuariosLoginView(LoginView):
     template_name = "user/login.html"
     authentication_form = BackofficeAuthenticationForm
+    redirect_authenticated_user = True
 
 
 @method_decorator(ensure_csrf_cookie, name="dispatch")
