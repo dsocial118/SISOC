@@ -20,13 +20,13 @@ dependencias: openpyxl ya estaba en `requirements/base.txt`.
 | Archivo | Cambio |
 | --- | --- |
 | centrodeinfancia/services_reportes.py | Columnas, alcance, consultas y armado del libro XLSX. |
-| centrodeinfancia/views_reportes.py | Pantalla del módulo y descarga con permiso de exportación. |
+| centrodeinfancia/views_reportes.py | Pantalla con vista previa y descarga, ambas tras el permiso propio. |
 | centrodeinfancia/templates/centrodeinfancia/reportes.html | Pantalla del módulo. |
 | centrodeinfancia/urls.py | Rutas `centrodeinfancia_reportes` y `centrodeinfancia_reportes_descargar`. |
 | templates/includes/sidebar/opciones.html | Entrada Reportes dentro de Centro de Infancia. |
 | centrodeinfancia/tests/test_reportes.py | Contrato de columnas, alcance por rol, indicadores, permisos, filtro y hojas nuevas. |
 | core/permissions/registry.py | Alias del permiso `Reportes CDI`. |
-| users/bootstrap/groups_seed.py | El permiso en los cinco roles SIMEPI. |
+| users/bootstrap/groups_seed.py | El permiso en los cinco roles SIMEPI y en Admin. |
 | users/migrations/0052_bootstrap_reportes_cdi_permission.py | Crea el permiso y lo asigna en entornos existentes. |
 | docs/implementaciones/centrodeinfancia_reportes.md | Contrato, alcance, permisos y límites. |
 | docs/indice.md, AGENT_REPO_MAP.md | Navegación del nuevo módulo. |
@@ -128,3 +128,31 @@ entrada Reportes visible en el sidebar, y un usuario sin el permiso recibiendo
   el log con usuario y cantidad de filas por hoja.
 - Si alguien agrega columnas en el medio de las listas, rompe la paridad con el
   archivo que el equipo ya validó. El test de encabezados lo detecta.
+
+## Ajustes posteriores a la primera revisión
+
+Pedidos sobre la pantalla ya implementada:
+
+- El título de la card era un `h4` que el diseño del repo no estilaba y se veía
+  como texto suelto. Ahora usa `{% block titulo-pagina %}` más `h3` dentro de la
+  card, como `formulario_cdi_list.html`.
+- Se eliminó la leyenda sobre alcance y datos personales de la pantalla. La
+  advertencia sigue en la hoja `Metadatos` del archivo, que es donde acompaña al
+  dato cuando circula.
+- **El permiso pasó a custodiar también la pantalla.** Antes `/reportes/` pedía
+  `view_centrodeinfancia` y solo la descarga pedía el permiso propio. Ahora las
+  dos rutas y la entrada del sidebar piden `auth.role_reportes_cdi`, así que a
+  quien no lo tiene el módulo le queda invisible. Se quitó el respaldo por
+  `role_exportar_a_csv`: hay una sola puerta. Para que los perfiles
+  administrativos no perdieran el acceso, el permiso se agregó también al grupo
+  Admin, en el seed y en la migración.
+- La pantalla previsualiza la hoja `Resumen` completa antes de descargar,
+  armada con la misma función que escribe esa hoja y sensible al filtro de
+  provincia.
+
+Validación de estos ajustes: 767 tests en verde (1 skip), 26 del módulo; black,
+djlint y pylint 10.00/10; la migración 0052 se revirtió y reaplicó sin
+problemas. Verificación manual con un usuario del grupo SIMEPI - Equipo
+Nacional, sin superusuario: pantalla 200 con la vista previa, y 403 más sidebar
+sin la entrada para un usuario con `view_centrodeinfancia` pero sin el permiso
+nuevo.

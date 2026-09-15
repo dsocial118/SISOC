@@ -962,6 +962,7 @@ LISTADO_DEFINED_GROUPS = (
     BootstrapGroupSeed(
         UserGroups.ADMIN,
         (
+            "auth.role_reportes_cdi",
             "acompanamientos.view_informacionrelevante",
             "admisiones.view_admision",
             "auth.add_group",

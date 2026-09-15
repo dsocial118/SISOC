@@ -89,21 +89,34 @@ El alcance se resuelve con `aplicar_scope_centros_cdi`, el mismo del listado:
 
 | Flujo | Ruta | Permiso |
 | --- | --- | --- |
-| Pantalla del módulo | `/centrodeinfancia/reportes/` | `view_centrodeinfancia` |
-| Descarga del XLSX | `/centrodeinfancia/reportes/descargar/` | `view_centrodeinfancia` más `auth.role_reportes_cdi`, con excepción de superusuario |
+| Pantalla del módulo | `/centrodeinfancia/reportes/` | `auth.role_reportes_cdi` |
+| Descarga del XLSX | `/centrodeinfancia/reportes/descargar/` | `auth.role_reportes_cdi` |
 
-El permiso de descarga es **propio del módulo**, no el global
-`auth.role_exportar_a_csv`. Ese permiso habilita la exportación de comedores,
-usuarios y el resto de los listados, así que dárselo a los roles SIMEPI para que
-pudieran bajar este reporte les habría abierto todo lo demás. `role_reportes_cdi`
-se asigna a SIMEPI Administrador, Analista de datos, Equipo Nacional, Auditoría y
-EGP (`users/migrations/0052_bootstrap_reportes_cdi_permission.py`). Quien ya
-tiene `role_exportar_a_csv` sigue pudiendo descargar, para no romper a los
-perfiles administrativos existentes.
+`auth.role_reportes_cdi` es un permiso **propio del módulo** y custodia tanto la
+pantalla como la descarga; el superusuario lo saltea. La entrada del sidebar usa
+la misma condición, así que a quien no lo tiene el módulo le queda invisible.
+
+No se reutilizó el global `auth.role_exportar_a_csv`: ese habilita la
+exportación de comedores, usuarios y el resto de los listados, así que dárselo a
+los roles SIMEPI para que pudieran bajar este reporte les habría abierto todo lo
+demás. Tenerlo tampoco alcanza para entrar acá.
+
+Lo reciben SIMEPI Administrador, Analista de datos, Equipo Nacional, Auditoría y
+EGP, más Admin para que los perfiles administrativos no pierdan el acceso
+(`users/migrations/0052_bootstrap_reportes_cdi_permission.py`).
 
 Los roles CDI locales —Referente centro y Trabajador— **no** lo reciben: el
 módulo se pensó para el equipo nacional y provincial. Dárselo es una decisión
 aparte; alcanza con agregar el permiso a esos grupos.
+
+## Vista previa
+
+La pantalla muestra la hoja `Resumen` completa antes de descargar, con las
+mismas filas y el mismo alcance que el archivo. Se arma con `filas_resumen`, la
+misma función que escribe esa hoja, y acompaña al filtro de provincia: el
+selector y el botón de descarga comparten un formulario, donde "Actualizar
+resumen" recarga la pantalla y el botón de descarga apunta a la otra ruta por
+`formaction`.
 
 La descarga responde con `Cache-Control: private, no-store`, como el PDF
 provincial. El archivo concentra datos personales de niños, niñas y
