@@ -1,0 +1,569 @@
+/* Mapa de arquitectura de SISOC — hoja generada, no editar la copia de static/.
+   Fuente: scripts/arquitectura/plantilla/mapa.css */
+
+html:has(> body > .mapa-app),
+html:has(> body > .mapa-app) > body { margin: 0; padding: 0; height: 100%; }
+
+.mapa-app {
+  --bg: #e9ecea;
+  --lienzo: #f4f6f5;
+  --panel: #fbfcfb;
+  --chip: #ffffff;
+  --ink: #101917;
+  --ink-2: #47534f;
+  --muted: #5a6864;
+  --line: #c7cfcb;
+  --line-suave: #dbe1de;
+  --api: #0b6558;
+  --deuda: #9c5210;
+  --movil: #34438f;
+  --s2s: #6d3268;
+  --neutro: #5a6864;
+  --alerta: #9a2c2c;
+  --sombra: 0 1px 2px rgba(16, 25, 23, .06), 0 8px 24px -16px rgba(16, 25, 23, .25);
+  --pulgar: #8d9a96;
+  --pulgar-activo: #6d7a76;
+  --radio: 5px;
+
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  min-height: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 13.5px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+
+@media (prefers-color-scheme: dark) {
+  .mapa-app:not([data-tema="claro"]) {
+    --bg: #0d1211;
+    --lienzo: #131a19;
+    --panel: #171f1d;
+    --chip: #1d2725;
+    --ink: #e7ecea;
+    --ink-2: #b2bfbb;
+    --muted: #8a9995;
+    --line: #2e3a37;
+    --line-suave: #242f2d;
+    --api: #4cb3a0;
+    --deuda: #d9913f;
+    --movil: #8e9bef;
+    --s2s: #c993c2;
+    --neutro: #8a9995;
+    --alerta: #e58b8b;
+    --sombra: 0 1px 2px rgba(0, 0, 0, .4), 0 10px 30px -18px rgba(0, 0, 0, .8);
+    --pulgar: #55655f;
+    --pulgar-activo: #6f817a;
+  }
+}
+
+.mapa-app[data-tema="oscuro"] {
+  --bg: #0d1211;
+  --lienzo: #131a19;
+  --panel: #171f1d;
+  --chip: #1d2725;
+  --ink: #e7ecea;
+  --ink-2: #b2bfbb;
+  --muted: #8a9995;
+  --line: #2e3a37;
+  --line-suave: #242f2d;
+  --api: #4cb3a0;
+  --deuda: #d9913f;
+  --movil: #8e9bef;
+  --s2s: #c993c2;
+  --neutro: #8a9995;
+  --alerta: #e58b8b;
+  --sombra: 0 1px 2px rgba(0, 0, 0, .4), 0 10px 30px -18px rgba(0, 0, 0, .8);
+  --pulgar: #55655f;
+  --pulgar-activo: #6f817a;
+}
+
+/* Scrollbars discretas y del mismo material que el resto del modulo.
+   Solo aparecen cuando el contenido realmente desborda. */
+
+.mapa-app .lienzo,
+.mapa-app .hoja,
+.mapa-app .ficha {
+  scrollbar-width: thin;
+  scrollbar-color: var(--pulgar) transparent;
+  overscroll-behavior: contain;
+}
+
+.mapa-app ::-webkit-scrollbar { width: 10px; height: 10px; }
+.mapa-app ::-webkit-scrollbar-track { background: transparent; }
+.mapa-app ::-webkit-scrollbar-corner { background: transparent; }
+
+.mapa-app ::-webkit-scrollbar-thumb {
+  background-color: var(--pulgar);
+  border: 3px solid transparent;
+  background-clip: content-box;
+  border-radius: 100px;
+}
+
+.mapa-app ::-webkit-scrollbar-thumb:hover { background-color: var(--pulgar-activo); }
+
+.mapa-app *,
+.mapa-app *::before,
+.mapa-app *::after { box-sizing: border-box; }
+
+.mapa-app .mono,
+.mapa-app code { font-family: "IBM Plex Mono", ui-monospace, "Cascadia Mono", monospace; }
+
+/* ---------- barra superior ---------- */
+
+.mapa-app .barra {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+  position: relative;
+  z-index: 20;
+}
+
+.mapa-app .marca { display: flex; align-items: center; gap: 7px; margin-right: 2px; }
+
+.mapa-app .marca h1 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -.012em;
+  white-space: nowrap;
+}
+
+.mapa-app .ayuda-btn {
+  width: 19px;
+  height: 19px;
+  flex: none;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: var(--chip);
+  color: var(--muted);
+  font: 600 11px/1 "IBM Plex Sans", sans-serif;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  padding: 0;
+}
+
+.mapa-app .ayuda-btn:hover { color: var(--ink); border-color: var(--ink-2); }
+.mapa-app .ayuda-btn[aria-expanded="true"] { background: var(--ink); color: var(--panel); border-color: var(--ink); }
+
+.mapa-app .ficha {
+  position: absolute;
+  top: calc(100% - 2px);
+  left: 12px;
+  z-index: 40;
+  width: min(420px, calc(100vw - 24px));
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  box-shadow: var(--sombra);
+  padding: 13px 14px;
+}
+
+.mapa-app .ficha[hidden] { display: none; }
+.mapa-app .ficha h2 { margin: 0 0 8px; font-size: 11px; text-transform: uppercase; letter-spacing: .09em; color: var(--muted); font-weight: 600; }
+.mapa-app .ficha + .ficha { margin-top: 0; }
+
+.mapa-app .ficha dl {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 2px 14px;
+  margin: 0 0 11px;
+  font-size: 12.5px;
+}
+
+.mapa-app .ficha dt { color: var(--muted); }
+.mapa-app .ficha dd { margin: 0; font-family: "IBM Plex Mono", monospace; font-variant-numeric: tabular-nums; word-break: break-word; }
+.mapa-app .ficha p { margin: 0 0 8px; font-size: 12px; color: var(--ink-2); text-wrap: pretty; }
+.mapa-app .ficha p:last-child { margin-bottom: 0; }
+.mapa-app .ficha code { background: color-mix(in srgb, var(--ink) 8%, transparent); padding: 1px 4px; border-radius: 3px; font-size: 11.5px; }
+
+.mapa-app .buscador {
+  flex: 0 1 230px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--chip);
+  border: 1px solid var(--line);
+  border-radius: var(--radio);
+  padding: 0 8px;
+}
+
+.mapa-app .buscador input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  padding: 5px 0;
+}
+
+.mapa-app .buscador input:focus { outline: none; }
+.mapa-app .buscador:focus-within { border-color: var(--api); box-shadow: 0 0 0 3px color-mix(in srgb, var(--api) 20%, transparent); }
+.mapa-app .buscador .lupa { color: var(--muted); font: 500 11px/1 "IBM Plex Mono", monospace; }
+
+.mapa-app .capas { display: flex; flex-wrap: wrap; gap: 6px; margin-left: auto; }
+
+.mapa-app .capa {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--line);
+  background: var(--chip);
+  color: var(--ink-2);
+  border-radius: 100px;
+  padding: 4px 10px 4px 8px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color .15s, color .15s, background .15s;
+}
+
+.mapa-app .capa:hover { border-color: var(--hue, var(--line)); color: var(--ink); }
+.mapa-app .capa .trazo { width: 16px; height: 0; border-top: 2px solid var(--hue); opacity: .32; }
+.mapa-app .capa[aria-pressed="true"] { color: var(--ink); border-color: var(--hue); background: color-mix(in srgb, var(--hue) 10%, var(--chip)); }
+.mapa-app .capa[aria-pressed="true"] .trazo { opacity: 1; }
+.mapa-app .capa .cuenta { font-family: "IBM Plex Mono", monospace; font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.mapa-app .capa[data-punteado="1"] .trazo { border-top-style: dashed; }
+
+.mapa-app .volver {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--ink-2);
+  text-decoration: none;
+  border: 1px solid var(--line);
+  border-radius: var(--radio);
+  padding: 4px 9px;
+  background: var(--chip);
+  white-space: nowrap;
+}
+
+.mapa-app .volver:hover { color: var(--ink); border-color: var(--ink-2); }
+
+.mapa-app button:focus-visible,
+.mapa-app [tabindex]:focus-visible { outline: 2px solid var(--api); outline-offset: 2px; }
+
+/* ---------- cuerpo ---------- */
+
+.mapa-app .cuerpo {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 328px;
+  gap: 9px;
+  padding: 9px;
+}
+
+.mapa-app .lienzo {
+  position: relative;
+  background: var(--lienzo);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 11px;
+  overflow: auto;
+}
+
+/* Los cables se posicionan contra este wrapper, no contra el area scrolleable:
+   asi miden exactamente el contenido y nunca generan desborde propio. */
+.mapa-app .lienzo-contenido {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.mapa-app .cables { position: absolute; inset: 0; pointer-events: none; z-index: 2; }
+
+.mapa-app .marco {
+  position: relative;
+  z-index: 1;
+  border: 1.5px solid var(--ink);
+  border-radius: 6px;
+  padding: 10px 11px 11px;
+  background: color-mix(in srgb, var(--chip) 45%, transparent);
+}
+
+.mapa-app .marco > header,
+.mapa-app .rail > header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 3px 10px;
+  margin-bottom: 9px;
+}
+
+.mapa-app .marco h2,
+.mapa-app .rail h2 {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+}
+
+.mapa-app .marco header p,
+.mapa-app .rail header p { margin: 0; font-size: 11.5px; color: var(--muted); }
+
+.mapa-app .zonas { display: flex; flex-direction: column; gap: 7px; }
+
+.mapa-app .zona {
+  display: grid;
+  grid-template-columns: 124px minmax(0, 1fr);
+  gap: 10px;
+  padding-top: 7px;
+  border-top: 1px solid var(--line-suave);
+}
+
+.mapa-app .zona:first-child { border-top: 0; padding-top: 0; }
+.mapa-app .zona-nombre { font-size: 11.5px; font-weight: 600; margin: 0; }
+.mapa-app .zona-detalle { font-size: 11px; color: var(--muted); margin: 1px 0 0; text-wrap: pretty; line-height: 1.35; }
+
+.mapa-app .rejilla {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(116px, 1fr));
+  gap: 6px;
+  align-content: start;
+}
+
+/* ---------- nodos ---------- */
+
+.mapa-app .nodo {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  text-align: left;
+  background: var(--chip);
+  border: 1px solid var(--line);
+  border-radius: var(--radio);
+  padding: 6px 7px 5px;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  transition: border-color .12s, box-shadow .12s, opacity .12s;
+}
+
+.mapa-app .nodo:hover { border-color: var(--ink-2); box-shadow: var(--sombra); }
+.mapa-app .nodo[aria-pressed="true"] { border-color: var(--ink); box-shadow: 0 0 0 1px var(--ink); }
+.mapa-app .nodo .titulo { font-size: 12px; font-weight: 600; line-height: 1.2; }
+.mapa-app .nodo .paquete { font-family: "IBM Plex Mono", monospace; font-size: 10.5px; color: var(--muted); word-break: break-all; line-height: 1.25; }
+
+.mapa-app .insignias { display: flex; flex-wrap: wrap; gap: 3px; margin-top: auto; padding-top: 2px; }
+
+.mapa-app .insignia {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+  line-height: 1.45;
+  padding: 0 3px;
+  border-radius: 3px;
+  border: 1px solid color-mix(in srgb, var(--hue) 45%, transparent);
+  color: var(--hue);
+  background: color-mix(in srgb, var(--hue) 10%, transparent);
+  white-space: nowrap;
+}
+
+.mapa-app .barrita { height: 2px; border-radius: 2px; background: var(--line-suave); overflow: hidden; }
+.mapa-app .barrita span { display: block; height: 100%; background: var(--ink-2); opacity: .45; }
+
+.mapa-app .lienzo.enfocado .nodo:not(.foco):not(.vecino) { opacity: .26; }
+.mapa-app .lienzo.enfocado .nodo.vecino { border-color: var(--ink-2); }
+.mapa-app .lienzo.filtrando .nodo.oculto { opacity: .14; }
+
+/* ---------- rails ---------- */
+
+.mapa-app .rails { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 9px; position: relative; z-index: 1; }
+
+.mapa-app .rail {
+  border: 1px dashed var(--line);
+  border-radius: 6px;
+  padding: 10px 11px 11px;
+  background: color-mix(in srgb, var(--chip) 30%, transparent);
+}
+
+.mapa-app .rail .rejilla { grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); }
+
+.mapa-app .async { display: flex; flex-wrap: wrap; gap: 4px; margin: 0; padding: 0; list-style: none; }
+
+.mapa-app .async li {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10.5px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 1px 5px;
+  background: var(--chip);
+  color: var(--ink-2);
+}
+
+.mapa-app .async li.celery { border-color: color-mix(in srgb, var(--s2s) 50%, transparent); color: var(--s2s); }
+.mapa-app .nota { font-size: 11px; color: var(--muted); margin: 7px 0 0; text-wrap: pretty; }
+
+/* ---------- panel ---------- */
+
+.mapa-app .panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  overflow: hidden;
+}
+
+.mapa-app .pestanias { display: flex; border-bottom: 1px solid var(--line); flex: none; }
+
+.mapa-app .pestania {
+  flex: 1;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--muted);
+  font: 500 12px/1 "IBM Plex Sans", sans-serif;
+  padding: 9px 6px;
+  cursor: pointer;
+}
+
+.mapa-app .pestania[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--ink); font-weight: 600; }
+.mapa-app .pestania:hover { color: var(--ink); }
+
+.mapa-app .hoja { flex: 1; min-height: 0; overflow-y: auto; padding: 13px 14px 18px; }
+.mapa-app .hoja[hidden] { display: none; }
+
+.mapa-app .panel h3 { margin: 0; font-size: 16px; font-weight: 600; letter-spacing: -.01em; }
+.mapa-app .panel .sub { font-family: "IBM Plex Mono", monospace; font-size: 11.5px; color: var(--muted); margin: 1px 0 12px; }
+
+.mapa-app .bloque { border-top: 1px solid var(--line-suave); padding-top: 10px; margin-top: 11px; }
+.mapa-app .bloque:first-of-type { border-top: 0; margin-top: 0; padding-top: 0; }
+
+.mapa-app .bloque h4 {
+  margin: 0 0 6px;
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.mapa-app .datos { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 2px 11px; margin: 0; font-size: 12px; }
+.mapa-app .datos dt { color: var(--muted); }
+.mapa-app .datos dd { margin: 0; font-family: "IBM Plex Mono", monospace; font-variant-numeric: tabular-nums; word-break: break-word; }
+
+.mapa-app .lista { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; font-size: 12px; }
+.mapa-app .lista li { display: flex; flex-direction: column; gap: 1px; }
+.mapa-app .lista .meta { font-size: 11px; color: var(--muted); font-family: "IBM Plex Mono", monospace; word-break: break-word; line-height: 1.35; }
+.mapa-app .lista .camino { color: var(--ink-2); font-size: 11px; }
+
+.mapa-app .rel { display: flex; flex-direction: column; gap: 1px; font-size: 12px; padding: 2px 0; }
+.mapa-app .rel-linea { display: flex; align-items: baseline; gap: 6px; }
+
+.mapa-app .rel .meta {
+  margin: 0 0 0 12px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10.5px;
+  color: var(--muted);
+  line-height: 1.3;
+  word-break: break-word;
+}
+
+/* Solo para lectores de pantalla: cambios de seleccion y de filtro. */
+.mapa-app .anuncio {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.mapa-app .rel .pip { width: 6px; height: 6px; border-radius: 2px; background: var(--hue); flex: none; translate: 0 -1px; }
+.mapa-app .rel .n { font-family: "IBM Plex Mono", monospace; font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+.mapa-app .rel button,
+.mapa-app .enlace {
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: var(--line);
+  text-underline-offset: 2px;
+}
+
+.mapa-app .rel button:hover,
+.mapa-app .enlace:hover { text-decoration-color: currentColor; }
+
+.mapa-app .hallazgo { font-size: 12px; margin: 0 0 8px; padding-left: 9px; border-left: 2px solid var(--hue, var(--line)); color: var(--ink-2); text-wrap: pretty; }
+.mapa-app .hallazgo strong { color: var(--ink); font-weight: 600; }
+.mapa-app .hallazgo:last-child { margin-bottom: 0; }
+.mapa-app .pista { font-size: 11.5px; color: var(--muted); margin: 9px 0 0; text-wrap: pretty; }
+
+/* ---------- menu del usuario (pestaña) ---------- */
+
+.mapa-app .grupo { margin-bottom: 14px; }
+.mapa-app .grupo:last-child { margin-bottom: 0; }
+.mapa-app .grupo h4 { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.mapa-app .grupo h4 .cant { font-family: "IBM Plex Mono", monospace; letter-spacing: 0; text-transform: none; }
+.mapa-app .grupo ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1px; }
+
+.mapa-app .grupo li > button {
+  width: 100%;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 12px;
+  color: var(--ink);
+  text-align: left;
+  padding: 2px 5px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.mapa-app .grupo li > button:hover { background: color-mix(in srgb, var(--api) 12%, transparent); }
+.mapa-app .grupo li .destino { font-family: "IBM Plex Mono", monospace; font-size: 10.5px; color: var(--muted); flex: none; }
+.mapa-app .grupo li[data-nivel="2"] > button { padding-left: 13px; }
+.mapa-app .grupo li[data-nivel="3"] > button { padding-left: 24px; }
+.mapa-app .grupo li[data-nivel="2"] .etq::before,
+.mapa-app .grupo li[data-nivel="3"] .etq::before { content: "· "; color: var(--muted); }
+.mapa-app .grupo .rama { font-size: 11px; color: var(--muted); padding: 6px 5px 0; font-weight: 500; }
+
+/* ---------- sin datos ---------- */
+
+.mapa-app .vacio { margin: auto; max-width: 46ch; text-align: center; padding: 40px 20px; }
+.mapa-app .vacio h2 { font-size: 17px; margin: 0 0 8px; }
+.mapa-app .vacio p { color: var(--ink-2); margin: 0 0 8px; text-wrap: pretty; }
+.mapa-app .vacio code { background: color-mix(in srgb, var(--ink) 8%, transparent); padding: 2px 5px; border-radius: 3px; font-size: 12px; }
+
+/* ---------- angosto ---------- */
+
+@media (max-width: 900px) {
+  .mapa-app { height: auto; min-height: 100dvh; }
+  .mapa-app .cuerpo { grid-template-columns: minmax(0, 1fr); }
+  .mapa-app .lienzo { overflow: visible; }
+  .mapa-app .panel { max-height: none; }
+  .mapa-app .hoja { overflow-y: visible; }
+  .mapa-app .zona { grid-template-columns: minmax(0, 1fr); gap: 6px; }
+  .mapa-app .capas { margin-left: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mapa-app * { transition: none !important; animation: none !important; }
+}
