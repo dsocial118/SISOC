@@ -445,6 +445,13 @@
                                     <p>Ver Centros de Infancia</p>
                                 </a>
                             </li>
+                            <li class="nav-item">
+                                <a href="{% url 'centrodeinfancia_reportes' %}"
+                                   class="nav-link ms-4 {% if 'centrodeinfancia/reportes' in pagina_actual %}active{% endif %}">
+                                    <i class="nav-icon bi bi-arrow-return-right"></i>
+                                    <p>Reportes</p>
+                                </a>
+                            </li>
                         </ul>
                     </li>
                 {% endif %}
