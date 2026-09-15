@@ -89,21 +89,7 @@
                                                     </a>
                                                 {% endif %}
                                                 {% if can_manage_centro and perms.VAT.change_curso %}
-                                                    <button type="button"
-                                                            class="sisoc-btn sisoc-btn--edit btn-editar-curso"
-                                                            data-bs-toggle="modal"
-                                                            data-bs-target="#modalCurso"
-                                                            data-curso-mode="edit"
-                                                            data-edit-url="{% url 'vat_curso_update' curso.id %}"
-                                                            data-plan-estudio-id="{{ curso.plan_estudio_id|default:'' }}"
-                                                            data-nombre="{{ curso.nombre }}"
-                                                            data-tipo="{{ curso.tipo|join:',' }}"
-                                                            data-estado="{{ curso.estado|default:'' }}"
-                                                            data-usa-voucher="{{ curso.usa_voucher|yesno:'1,0' }}"
-                                                            data-inscripcion-libre="{{ curso.inscripcion_libre|yesno:'1,0' }}"
-                                                            data-costo-creditos="{{ curso.costo_creditos|default:'' }}"
-                                                            data-observaciones="{{ curso.observaciones|default:'' }}"
-                                                            data-voucher-ids="{% for voucher in curso.voucher_parametrias.all %}{% if not forloop.first %},{% endif %}{{ voucher.id }}{% endfor %}">
+                                                    <button type="button" class="sisoc-btn sisoc-btn--edit btn-editar-curso" data-bs-toggle="modal" data-bs-target="#modalCurso" data-curso-mode="edit" data-edit-url="{% url 'vat_curso_update' curso.id %}" data-plan-estudio-id="{{ curso.plan_estudio_id|default:'' }}" data-nombre="{{ curso.nombre }}" data-tipo="{{ curso.tipo|join:',' }}" data-estado="{{ curso.estado|default:'' }}" data-usa-voucher="{{ curso.usa_voucher|yesno:'1,0' }}" data-inscripcion-libre="{{ curso.inscripcion_libre|yesno:'1,0' }}" data-costo-creditos="{{ curso.costo_creditos|default:'' }}" data-observaciones="{{ curso.observaciones|default:'' }}" data-voucher-ids="{% for voucher in curso.voucher_parametrias.all %}{% if not forloop.first %},{% endif %}{{ voucher.id }}{% endfor %}">
                                                         <i class="fas fa-pen"></i>
                                                         <span>Editar</span>
                                                     </button>
