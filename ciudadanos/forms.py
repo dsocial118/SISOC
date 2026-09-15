@@ -131,6 +131,9 @@ class CiudadanoForm(forms.ModelForm):
             if field_name in self.fields:
                 self.fields[field_name].required = False
 
+        if self.instance.pk and "tipo_documento" in self.fields:
+            self.fields["tipo_documento"].disabled = True
+
         self.fields["provincia"].queryset = Provincia.objects.all().order_by("nombre")
         self.fields["municipio"].queryset = Municipio.objects.none()
         self.fields["localidad"].queryset = Localidad.objects.none()

@@ -10,6 +10,7 @@ from VAT.services.reportes_inscripciones_asistencia import (
     ReporteFiltros,
     build_detalle_queryset,
     build_reporte_inscripciones_asistencia,
+    detalle_row_numero_documento,
     export_detalle_to_csv,
     export_detalle_to_excel,
     export_rows_to_csv,
@@ -79,6 +80,8 @@ class ReporteInscriptosAsistenciasView(LoginRequiredMixin, TemplateView):
         page = max(1, min(page, num_pages))
         offset = (page - 1) * DETALLE_PER_PAGE
         rows = list(detalle_qs[offset : offset + DETALLE_PER_PAGE])
+        for row in rows:
+            row["numero_documento"] = detalle_row_numero_documento(row)
         info = {
             "number": page,
             "num_pages": num_pages,

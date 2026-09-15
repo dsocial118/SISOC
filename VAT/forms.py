@@ -2497,15 +2497,19 @@ class CiudadanoInscripcionRapidaForm(forms.ModelForm):
         label="Fecha de Nacimiento",
         widget=forms.DateInput(attrs={"class": "form-control", "type": "date"}),
     )
-    tipo_documento = forms.CharField(
+    tipo_documento = forms.ChoiceField(
+        choices=[
+            (Ciudadano.DOCUMENTO_DNI, "DNI"),
+            (Ciudadano.DOCUMENTO_PASAPORTE, "Pasaporte"),
+        ],
         initial=Ciudadano.DOCUMENTO_DNI,
-        widget=forms.HiddenInput(),
+        label="Tipo de documento",
+        widget=forms.Select(attrs={"class": "form-control"}),
     )
-    documento = forms.IntegerField(
+    documento = forms.CharField(
         label="Documento",
-        widget=forms.NumberInput(
-            attrs={"class": "form-control", "inputmode": "numeric"}
-        ),
+        # Sin inputmode numérico: el campo admite DNI y pasaporte alfanumérico.
+        widget=forms.TextInput(attrs={"class": "form-control"}),
     )
     sexo = forms.ModelChoiceField(
         queryset=Sexo.objects.all(),
@@ -2516,14 +2520,74 @@ class CiudadanoInscripcionRapidaForm(forms.ModelForm):
 
     class Meta:
         model = Ciudadano
+        # "documento" queda fuera a propósito: es un PositiveBigIntegerField y
+        # el ModelForm intentaría castearlo a entero en full_clean() incluso
+        # para pasaportes alfanuméricos. Se asigna en clean() según el tipo.
         fields = [
             "apellido",
             "nombre",
             "fecha_nacimiento",
             "tipo_documento",
-            "documento",
             "sexo",
         ]
+
+    def clean(self):
+        cleaned_data = super().clean()
+        tipo_documento = cleaned_data.get("tipo_documento")
+        documento = (cleaned_data.get("documento") or "").strip()
+
+        if not tipo_documento or not documento:
+            return cleaned_data
+
+        if tipo_documento == Ciudadano.DOCUMENTO_PASAPORTE:
+            documento = documento.upper().replace(" ", "")
+            if not re.fullmatch(r"[A-Z0-9]{6,15}", documento):
+                self.add_error(
+                    "documento",
+                    "El pasaporte debe tener entre 6 y 15 caracteres alfanuméricos.",
+                )
+                return cleaned_data
+            self.instance.documento_pasaporte = documento
+            self.instance.documento = None
+        else:
+            if not re.fullmatch(r"[0-9]{7,8}", documento):
+                self.add_error(
+                    "documento",
+                    "El DNI debe tener 7 u 8 dígitos numéricos, sin puntos ni separadores.",
+                )
+                return cleaned_data
+            self.instance.documento_pasaporte = None
+            self.instance.documento = int(documento)
+
+        cleaned_data["documento"] = documento
+        self.instance.tipo_documento = tipo_documento
+        self._validar_documento_disponible(tipo_documento)
+        return cleaned_data
+
+    def _validar_documento_disponible(self, tipo_documento):
+        """La unicidad real la impone documento_unico_key (unique=True), que
+        alcanza también a los registros borrados lógicamente: se consulta con
+        all_objects para no caer en un IntegrityError al guardar."""
+        candidato_key = self.instance.build_documento_unico_key()
+        if not candidato_key:
+            return
+
+        conflicto = (
+            Ciudadano.all_objects.filter(documento_unico_key=candidato_key)
+            .only("id", "nombre", "apellido")
+            .first()
+        )
+        if conflicto is None:
+            return
+
+        etiqueta = (
+            "pasaporte" if tipo_documento == Ciudadano.DOCUMENTO_PASAPORTE else "DNI"
+        )
+        self.add_error(
+            "documento",
+            f"Ya existe un legajo con este {etiqueta} "
+            f"(legajo #{conflicto.pk}: {conflicto.nombre_completo}).",
+        )
 
 
 # ============================================================================
