@@ -80,14 +80,12 @@ urlpatterns = [
     ),
     path(
         "centrodeinfancia/reportes/",
-        permissions_any_required(["centrodeinfancia.view_centrodeinfancia"])(
-            ReportesCDIView.as_view()
-        ),
+        permissions_any_required(["auth.role_reportes_cdi"])(ReportesCDIView.as_view()),
         name="centrodeinfancia_reportes",
     ),
     path(
         "centrodeinfancia/reportes/descargar/",
-        permissions_any_required(["centrodeinfancia.view_centrodeinfancia"])(
+        permissions_any_required(["auth.role_reportes_cdi"])(
             ReporteCDIDescargaView.as_view()
         ),
         name="centrodeinfancia_reportes_descargar",

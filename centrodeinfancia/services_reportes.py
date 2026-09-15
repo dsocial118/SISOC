@@ -424,7 +424,7 @@ def _contar_por(queryset, campo, etiquetas=None):
     ]
 
 
-def _filas_resumen(user, provincia_id=None):
+def filas_resumen(user, provincia_id=None):
     centros = centros_en_alcance(user, provincia_id)
     trabajadores = queryset_trabajadores(user, provincia_id)
     nominas = queryset_nomina(user, provincia_id)
@@ -528,7 +528,7 @@ def _escribir_filas(workbook, titulo, columnas, filas):
 
 def _escribir_resumen(workbook, user, provincia_id=None):
     return _escribir_filas(
-        workbook, "Resumen", COLUMNAS_RESUMEN, _filas_resumen(user, provincia_id)
+        workbook, "Resumen", COLUMNAS_RESUMEN, filas_resumen(user, provincia_id)
     )
 
 
