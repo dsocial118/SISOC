@@ -121,7 +121,19 @@ class SedeVPSL(SoftDeleteModelMixin, models.Model):
     def mapa_query(self):
         if self.latitud is not None and self.longitud is not None:
             return f"{self.latitud},{self.longitud}"
-        return f"{self.nombre}, {self.domicilio}, {self.localidad}, {self.jurisdiccion}"
+        return ", ".join(
+            filter(
+                None,
+                (
+                    self.domicilio,
+                    self.localidad,
+                    self.departamento,
+                    self.jurisdiccion,
+                    self.codigo_postal,
+                    "Argentina",
+                ),
+            )
+        )
 
 
 class ItinerarioVPSL(SoftDeleteModelMixin, models.Model):

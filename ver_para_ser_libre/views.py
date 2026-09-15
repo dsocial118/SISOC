@@ -38,7 +38,7 @@ from ver_para_ser_libre.forms import (
     JornadaVPSLForm,
     RegistroNominalVPSLForm,
     SedeCreateVPSLForm,
-    SedeVPSLForm,
+    SedeUpdateVPSLForm,
 )
 from ver_para_ser_libre.models import (
     CasoLaboratorioVPSL,
@@ -880,7 +880,7 @@ class SedeListView(LoginRequiredMixin, ListView):
 
 class SedeMixin:
     model = SedeVPSL
-    form_class = SedeVPSLForm
+    form_class = SedeUpdateVPSLForm
     template_name = "ver_para_ser_libre/sede_form.html"
     checklist_required = True
 
@@ -917,10 +917,12 @@ class SedeMixin:
             old_observacion = checklist.observacion
             checklist.descripcion = label
             checklist.critico = True
-            checklist.cumple = checklist_form.cleaned_data[f"{item_code}_cumple"]
-            checklist.observacion = checklist_form.cleaned_data.get(
-                f"{item_code}_observacion", ""
-            )
+            if f"{item_code}_cumple" in self.request.POST:
+                checklist.cumple = checklist_form.cleaned_data[f"{item_code}_cumple"]
+            if f"{item_code}_observacion" in self.request.POST:
+                checklist.observacion = checklist_form.cleaned_data.get(
+                    f"{item_code}_observacion", ""
+                )
             evidencia = checklist_form.cleaned_data.get(f"{item_code}_evidencia")
             if evidencia:
                 checklist.evidencia = evidencia
@@ -951,20 +953,6 @@ class SedeMixin:
         context["field_groups"] = checklist_form.field_groups
         sede = getattr(self, "object", None)
         context["mapa_query"] = quote_plus(sede.mapa_query) if sede else ""
-        context["breadcrumb_items"] = _breadcrumb(
-            {"text": "Sedes", "url": reverse("vpsl_sede_list")},
-            {"text": "Editar" if sede else "Nueva sede", "active": True},
-        )
-        return context
-
-
-class SedeCreateView(LoginRequiredMixin, SedeMixin, CreateView):
-    form_class = SedeCreateVPSLForm
-    template_name = "ver_para_ser_libre/sede_create_form.html"
-    checklist_required = False
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
         form = context["form"]
         context["required_fields"] = [
             form[name]
@@ -983,11 +971,20 @@ class SedeCreateView(LoginRequiredMixin, SedeMixin, CreateView):
                 "mail",
             )
         ]
+        context["breadcrumb_items"] = _breadcrumb(
+            {"text": "Sedes", "url": reverse("vpsl_sede_list")},
+            {"text": "Editar" if sede else "Nueva sede", "active": True},
+        )
         return context
 
 
+class SedeCreateView(LoginRequiredMixin, SedeMixin, CreateView):
+    form_class = SedeCreateVPSLForm
+    checklist_required = False
+
+
 class SedeUpdateView(LoginRequiredMixin, SedeMixin, UpdateView):
-    pass
+    checklist_required = False
 
 
 class SedeDeleteView(SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteView):

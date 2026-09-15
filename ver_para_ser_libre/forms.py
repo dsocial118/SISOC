@@ -521,6 +521,10 @@ class SedeVPSLForm(BootstrapModelForm):
 
 
 class SedeCreateVPSLForm(SedeVPSLForm):
+    LEGACY_PROVINCE_NAMES = {
+        "Ciudad de Buenos Aires": "Ciudad Autónoma de Buenos Aires",
+        "Tierra del Fuego": "Tierra del Fuego, Antártida e Islas del Atlántico Sur",
+    }
     provincia = forms.ModelChoiceField(
         label="Provincia",
         queryset=Provincia.objects.order_by("nombre"),
@@ -545,14 +549,37 @@ class SedeCreateVPSLForm(SedeVPSLForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        provincia_id = self.data.get("provincia") if self.is_bound else None
+        provincia_actual = None
+        if self.instance.pk:
+            nombre_provincia = self.LEGACY_PROVINCE_NAMES.get(
+                self.instance.jurisdiccion, self.instance.jurisdiccion
+            )
+            provincia_actual = Provincia.objects.filter(
+                nombre__iexact=nombre_provincia
+            ).first()
+            if provincia_actual:
+                self.fields["provincia"].initial = provincia_actual.pk
+                self.fields["localidad"].initial = self.instance.localidad
+        provincia_id = (
+            self.data.get("provincia")
+            if self.is_bound
+            else (provincia_actual.pk if provincia_actual else None)
+        )
         if provincia_id and str(provincia_id).isdigit():
-            localidades = (
+            localidades = list(
                 Localidad.objects.filter(municipio__provincia_id=provincia_id)
                 .order_by("nombre")
                 .values_list("nombre", flat=True)
                 .distinct()
             )
+            if (
+                self.instance.pk
+                and provincia_actual
+                and str(provincia_id) == str(provincia_actual.pk)
+                and self.instance.localidad
+                and self.instance.localidad not in localidades
+            ):
+                localidades.append(self.instance.localidad)
             self.fields["localidad"].choices = [
                 ("", "Seleccioná una localidad"),
                 *((nombre, nombre) for nombre in localidades),
@@ -563,8 +590,21 @@ class SedeCreateVPSLForm(SedeVPSLForm):
         self.fields["telefono"].label = "Teléfono"
 
     def save(self, commit=True):
+        if self.instance.pk and set(self.changed_data).intersection(
+            {"domicilio", "localidad", "provincia", "departamento", "codigo_postal"}
+        ):
+            self.instance.latitud = None
+            self.instance.longitud = None
         self.instance.jurisdiccion = self.cleaned_data["provincia"].nombre
         return super().save(commit=commit)
+
+
+class SedeUpdateVPSLForm(SedeCreateVPSLForm):
+    mail = forms.CharField(
+        label="Correo electrónico",
+        required=False,
+        widget=forms.TextInput(attrs={"size": 40}),
+    )
 
 
 class CasoLaboratorioVPSLForm(BootstrapModelForm):

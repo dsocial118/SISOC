@@ -1,4 +1,5 @@
 from datetime import date
+from urllib.parse import quote_plus
 
 import pytest
 from django.core.exceptions import ValidationError
@@ -1152,7 +1153,9 @@ def test_sede_create_guarda_solo_datos_obligatorios_y_checklist_pendiente(client
     edicion = client.get(reverse("vpsl_sede_update", kwargs={"pk": sedes[0].pk}))
     assert edicion.status_code == 200
     assert datos["domicilio"] in edicion.content.decode()
-    assert 'id="id_provincia"' not in edicion.content.decode()
+    assert 'id="id_provincia"' in edicion.content.decode()
+    assert edicion.context["form"]["provincia"].value() == provincia.pk
+    assert edicion.context["form"]["localidad"].value() == "La Plata"
 
 
 @pytest.mark.parametrize(
@@ -1243,7 +1246,16 @@ def test_sede_create_rechaza_localidad_de_otra_provincia(client):
 
 def test_sede_update_conserva_coordenadas_historicas_sin_mostrarlas(client):
     user = get_user_model().objects.create_superuser(username="vpsl-sede-coordenadas")
-    sede = crear_sede(latitud="-34.900000", longitud="-57.950000")
+    provincia = Provincia.objects.create(nombre="Ciudad Autónoma de Buenos Aires")
+    Localidad.objects.create(
+        nombre="CIUDAD DE BUENOS AIRES",
+        municipio=Municipio.objects.create(nombre="Comuna 4", provincia=provincia),
+    )
+    sede = crear_sede(
+        jurisdiccion=provincia.nombre,
+        latitud="-34.900000",
+        longitud="-57.950000",
+    )
     client.force_login(user)
     url = reverse("vpsl_sede_update", kwargs={"pk": sede.pk})
 
@@ -1256,7 +1268,7 @@ def test_sede_update_conserva_coordenadas_historicas_sin_mostrarlas(client):
     response = client.post(
         url,
         {
-            "jurisdiccion": sede.jurisdiccion,
+            "provincia": provincia.pk,
             "sector": sede.sector,
             "ambito": sede.ambito,
             "departamento": sede.departamento,
@@ -1279,6 +1291,81 @@ def test_sede_update_conserva_coordenadas_historicas_sin_mostrarlas(client):
     sede.refresh_from_db()
     assert str(sede.latitud) == "-34.900000"
     assert str(sede.longitud) == "-57.950000"
+
+    cambio_ubicacion = client.post(
+        url,
+        {
+            "provincia": provincia.pk,
+            "localidad": sede.localidad,
+            "nombre": sede.nombre,
+            "domicilio": "NUEVA CALLE 123",
+            "telefono": sede.telefono,
+            "cueanexo": sede.cueanexo,
+        },
+    )
+    assert cambio_ubicacion.status_code == 302
+    sede.refresh_from_db()
+    assert sede.latitud is None
+    assert sede.longitud is None
+    assert sede.checklist_aprobado
+
+
+def test_sede_edit_y_jornada_usan_misma_ubicacion_guardada(client):
+    user = get_user_model().objects.create_superuser(username="vpsl-sede-mapa")
+    provincia = Provincia.objects.create(
+        nombre="Tierra del Fuego, Antártida e Islas del Atlántico Sur"
+    )
+    Localidad.objects.create(
+        nombre="Ushuaia",
+        municipio=Municipio.objects.create(nombre="Ushuaia", provincia=provincia),
+    )
+    sede = crear_sede(
+        nombre="qqweq",
+        domicilio="del michay 511",
+        localidad="Ushuaia",
+        jurisdiccion=provincia.nombre,
+        departamento="",
+        codigo_postal="",
+        cueanexo=None,
+        latitud=None,
+        longitud=None,
+    )
+    itinerario = crear_itinerario(provincia=provincia, sedes=[sede])
+    jornada = crear_jornada(itinerario=itinerario, sede_vpsl=sede)
+    client.force_login(user)
+    editar_url = reverse("vpsl_sede_update", kwargs={"pk": sede.pk})
+    jornada_url = reverse("vpsl_jornada_detail", kwargs={"pk": jornada.pk})
+
+    edicion = client.get(editar_url)
+    detalle = client.get(jornada_url)
+    html = edicion.content.decode()
+    assert edicion.status_code == 200
+    assert html.index("Campos obligatorios") < html.index('id="vpsl-sede-map"')
+    assert html.index('id="vpsl-sede-map"') < html.index("Información adicional")
+    assert edicion.context["form"]["provincia"].value() == provincia.pk
+    assert edicion.context["form"]["localidad"].value() == "Ushuaia"
+    assert edicion.context["mapa_query"] == detalle.context["mapa_query"]
+    assert "qqweq" not in detalle.context["mapa_query"]
+    assert quote_plus("del michay 511") in detalle.context["mapa_query"]
+
+    guardado = client.post(
+        editar_url,
+        {
+            "nombre": sede.nombre,
+            "domicilio": "del michay 513",
+            "provincia": provincia.pk,
+            "localidad": sede.localidad,
+            "telefono": sede.telefono,
+        },
+    )
+    assert guardado.status_code == 302
+    sede.refresh_from_db()
+    assert sede.domicilio == "del michay 513"
+    assert not sede.checklist_aprobado
+
+    detalle_actualizado = client.get(jornada_url)
+    assert detalle_actualizado.context["mapa_query"] == quote_plus(sede.mapa_query)
+    assert quote_plus("del michay 513") in detalle_actualizado.context["mapa_query"]
 
 
 def test_itinerario_list_restringe_usuario_provincial_y_filtra(client):
