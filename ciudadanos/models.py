@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.db.models import Q
@@ -134,6 +135,11 @@ class Ciudadano(SoftDeleteModelMixin, models.Model):
     documento = models.PositiveBigIntegerField(
         validators=[MinValueValidator(1)], null=True
     )
+    # Número de pasaporte (alfanumérico). Solo se usa cuando tipo_documento es
+    # DOCUMENTO_PASAPORTE, porque `documento` es numérico y lo usan como int
+    # decenas de módulos fuera de VAT/ciudadanos.
+    documento_pasaporte = models.CharField(max_length=15, null=True, blank=True)
+    pais_emisor = models.CharField(max_length=100, null=True, blank=True)
     sexo = models.ForeignKey(Sexo, on_delete=models.SET_NULL, null=True, blank=True)
     nacionalidad = models.ForeignKey(
         Nacionalidad, on_delete=models.SET_NULL, null=True, blank=True
@@ -306,9 +312,26 @@ class Ciudadano(SoftDeleteModelMixin, models.Model):
     def __str__(self) -> str:
         return f"{self.apellido}, {self.nombre}".strip(", ")
 
+    @classmethod
+    def from_db(cls, db, field_names, values):
+        # Guarda el tipo de documento persistido para que save() detecte
+        # intentos de modificarlo sin pagar una query extra por guardado.
+        instance = super().from_db(db, field_names, values)
+        if "tipo_documento" in field_names:
+            instance._tipo_documento_cargado = instance.tipo_documento
+        return instance
+
     @property
     def nombre_completo(self) -> str:
         return f"{self.nombre} {self.apellido}".strip()
+
+    @property
+    def numero_documento(self):
+        """Número vigente según el tipo. Los pasaportes cargados antes de
+        documento_pasaporte guardaron su número en `documento`."""
+        if self.tipo_documento == self.DOCUMENTO_PASAPORTE:
+            return self.documento_pasaporte or self.documento
+        return self.documento
 
     def _set_identity_field(self, field_name, value):
         if getattr(self, field_name) == value:
@@ -317,12 +340,12 @@ class Ciudadano(SoftDeleteModelMixin, models.Model):
         return {field_name}
 
     def build_documento_unico_key(self):
-        if (
-            self.tipo_registro_identidad == self.TIPO_REGISTRO_ESTANDAR
-            and self.documento
-        ):
-            return f"{self.tipo_documento}_{self.documento}"
-        return None
+        if self.tipo_registro_identidad != self.TIPO_REGISTRO_ESTANDAR:
+            return None
+        numero = self.numero_documento
+        if not numero:
+            return None
+        return f"{self.tipo_documento}_{numero}"
 
     def _debe_requerir_revision_manual(self, tipo, update_fields=None):
         if tipo == self.TIPO_REGISTRO_ESTANDAR:
@@ -394,6 +417,14 @@ class Ciudadano(SoftDeleteModelMixin, models.Model):
         return changed_fields
 
     def save(self, *args, **kwargs):
+        tipo_documento_cargado = getattr(self, "_tipo_documento_cargado", None)
+        if (
+            tipo_documento_cargado is not None
+            and tipo_documento_cargado != self.tipo_documento
+        ):
+            raise ValidationError(
+                "El tipo de documento no se puede modificar una vez creado el legajo."
+            )
         update_fields = kwargs.get("update_fields")
         changed_fields = self.normalizar_identidad(update_fields=update_fields)
         if update_fields is not None and changed_fields:
