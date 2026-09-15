@@ -86,9 +86,7 @@ urlpatterns = [
                 "ver_para_ser_libre.add_itinerariovpsl",
                 "ver_para_ser_libre.create_itinerarios_any_province_vpsl",
             ]
-        )(
-            views.ItinerarioCreateView.as_view()
-        ),
+        )(views.ItinerarioCreateView.as_view()),
         name="vpsl_itinerario_create",
     ),
     path(
