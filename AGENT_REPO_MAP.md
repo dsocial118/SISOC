@@ -653,6 +653,20 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
   `GESTIONAR_INTEGRATION_ENABLED` corta todo el tráfico AppSheet/GESTIONAR; no
   usarlo como interruptor parcial.
 - RENAPER: `core/integrations/renaper.py`, `core/services/renaper.py`, docs `docs/flujos/consulta_renaper.md`
+- Validación RENAPER de nómina CDI (#2508, Fase 1): payload en
+  `ciudadanos/services_renaper_validacion.py`, indicador compartido del PDF en
+  `centrodeinfancia/services_renaper_estado.py` y comando
+  `validar_renaper_nominas_cdi --dry-run --batch-size 500 --limit 100`.
+  Incluso dry-run consulta RENAPER real: requiere ventana autorizada. El comando
+  confirma por lote de `--batch-size`, así que una falla conserva los lotes
+  anteriores y reejecutarlo retoma donde quedó.
+  Contrato y límites: `docs/implementaciones/centrodeinfancia_nomina_renaper.md`.
+- Reporte XLSX de CDI (#2508, Fase 2): `centrodeinfancia/services_reportes.py` y
+  `views_reportes.py`, en `/centrodeinfancia/reportes/`. Las columnas replican el
+  archivo validado en el issue y el alcance sale de `aplicar_scope_centros_cdi`:
+  no agregar columnas en el medio ni saltear ese scope. La descarga usa el
+  permiso propio `auth.role_reportes_cdi`, no el global `role_exportar_a_csv`.
+  Contrato: `docs/implementaciones/centrodeinfancia_reportes.md`.
 - Ticketera: `ticketera/`, `docs/integraciones/ticketera_api.md`
 
 ### Si necesitas cambiar preinscriptos CDF o vouchers VAT
