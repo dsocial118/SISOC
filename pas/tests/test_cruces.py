@@ -11,6 +11,7 @@ from openpyxl import load_workbook
 
 from core.models import Municipio, Provincia
 from pas.models import (
+    PasAviso,
     PasCircuitoMensual,
     PasControlRenaper,
     PasEstado,
@@ -96,6 +97,32 @@ def test_cruces_muestra_estado_renaper_e_incompatibilidad(
     assert "Actualizado 29/07/2026" in contenido
     assert "RENAPER informó fallecimiento." in contenido
     assert "08/2026" in contenido
+
+
+@pytest.mark.django_db
+def test_cruces_no_reporta_persona_ya_baja_fallecida(
+    client,
+    usuario_pas,
+    persona_pas,
+):
+    baja = PasEstado.objects.create(nombre="Baja")
+    fallecido = PasAviso.objects.create(codigo=40, descripcion="FALLECIDO")
+    fallecido.estados.add(baja)
+    persona_pas.estado = baja
+    persona_pas.save(update_fields=["estado"])
+    persona_pas.avisos.set([fallecido])
+    PasIncompatibilidad.objects.create(
+        persona=persona_pas,
+        categoria=PasIncompatibilidad.Categoria.SUPERVIVENCIA,
+        periodo_impacto=date(2026, 8, 1),
+        detalle="No debe aparecer en el reporte.",
+    )
+    client.force_login(usuario_pas)
+
+    response = client.get(reverse("pas_cruces"))
+
+    assert response.status_code == 200
+    assert "No debe aparecer en el reporte." not in response.content.decode()
 
 
 @pytest.mark.django_db

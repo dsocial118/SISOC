@@ -10,6 +10,23 @@ La importación de declaraciones juradas usa tokens para evitar duplicados y
 asociaciones cruzadas. Los informes son fotografías persistentes: una vez
 generados no cambian aunque luego se modifique el padrón.
 
+La importación CSV del padrón admite género mediante `Genero`,
+`ciudadano_genero` o `ciudadano_genero_cod`, con valores `M`, `F` o `X`.
+También conserva Calle y Altura por separado y mantiene el domicilio compuesto
+por compatibilidad. La primera pantalla pública de la DDJJ edita Calle y Número
+como campos independientes. En pantallas móviles, los banners superior e
+inferior permanecen fijos y el desplazamiento ocurre únicamente dentro del
+contenido central del formulario.
+
+La DDJJ pública sigue el flujo de cinco pasos del prototipo UX. Las respuestas
+afirmativas sobre embarazo y menores de 18 años despliegan sus preguntas de
+controles dentro de la misma pantalla; al responder negativamente, esos campos
+se ocultan y dejan de enviarse. Los textos visibles y el resumen final respetan
+la terminología del prototipo, incluyendo `Número`, `compra de divisas` y
+`Menores de 18 años a cargo`. El resumen incluye todas las respuestas emitidas,
+incluidas las condicionales que correspondan. La presentación se confirma sin
+solicitar ni almacenar una firma con el nombre completo.
+
 ## Informes reproducibles
 
 `PasInforme` almacena los filtros, el modo y las filas serializadas de cada
@@ -34,6 +51,11 @@ debe otorgar exportación por el solo hecho de permitir una consulta.
 La migración `pas.0003_pasinforme` es aditiva. Revertirla elimina los informes
 persistidos, por lo que los resultados que deban conservarse deben exportarse o
 respaldarse antes del rollback.
+
+La migración de datos `pas.0008_remove_ddjj_firma_respuestas` elimina de forma
+irreversible la antigua clave `firma_nombre_completo` de las respuestas JSON de
+DDJJ ya presentadas. Si ese dato histórico debiera conservarse fuera de PAS,
+debe respaldarse antes de aplicar la migración.
 
 ## Puntos de entrada
 

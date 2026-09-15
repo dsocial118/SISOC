@@ -1,3 +1,5 @@
+import re
+
 from django import forms
 from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator
@@ -185,6 +187,20 @@ class PasDeclaracionJuradaForm(forms.Form):
         choices=SI_NO,
         widget=forms.RadioSelect,
     )
+    calle = forms.CharField(
+        label="Calle",
+        max_length=255,
+        required=False,
+        widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "Calle"}),
+    )
+    altura = forms.CharField(
+        label="Número",
+        max_length=10,
+        required=False,
+        widget=forms.TextInput(
+            attrs={"class": "form-control", "placeholder": "Número"}
+        ),
+    )
     provincia = forms.ModelChoiceField(
         label="Provincia",
         queryset=Provincia.objects.order_by("nombre"),
@@ -196,14 +212,6 @@ class PasDeclaracionJuradaForm(forms.Form):
         queryset=Municipio.objects.order_by("nombre"),
         required=False,
         widget=forms.Select(attrs={"class": "form-select"}),
-    )
-    domicilio = forms.CharField(
-        label="Domicilio",
-        max_length=255,
-        required=False,
-        widget=forms.TextInput(
-            attrs={"class": "form-control", "placeholder": "Calle y número"}
-        ),
     )
     correo_electronico = forms.EmailField(
         label="Correo electrónico",
@@ -266,13 +274,6 @@ class PasDeclaracionJuradaForm(forms.Form):
             "Confirmo que estos datos son correctos y acepto recibir notificaciones del Programa por estos medios."
         )
     )
-    firma_nombre_completo = forms.CharField(
-        label="Firma con tu nombre completo",
-        max_length=255,
-        widget=forms.TextInput(
-            attrs={"class": "form-control", "placeholder": "Nombre completo"}
-        ),
-    )
 
     def __init__(self, *args, persona=None, **kwargs):
         self.persona = persona
@@ -287,17 +288,29 @@ class PasDeclaracionJuradaForm(forms.Form):
             if provincia_id
             else Municipio.objects.none()
         )
-        self.campos_datos_existentes = (
+        calle, altura = self._direccion_inicial(persona)
+        self.valores_datos_existentes = (
             {
+                "calle": calle,
+                "altura": altura,
                 "provincia": bool(persona.provincia_id),
                 "municipio": bool(persona.municipio_id),
-                "domicilio": bool((persona.domicilio or "").strip()),
-                "correo_electronico": bool((persona.correo_electronico or "").strip()),
-                "telefono_celular": bool((persona.telefono_celular or "").strip()),
+                "correo_electronico": persona.correo_electronico,
+                "telefono_celular": persona.telefono_celular,
             }
             if persona
             else {}
         )
+        if persona:
+            self.valores_datos_existentes.update(
+                {
+                    "provincia": persona.provincia,
+                    "municipio": persona.municipio,
+                }
+            )
+        self.campos_datos_existentes = {
+            campo: bool(valor) for campo, valor in self.valores_datos_existentes.items()
+        }
         for campo, existe in self.campos_datos_existentes.items():
             self.fields[campo].widget.attrs["data-pas-existente"] = (
                 "true" if existe else "false"
@@ -305,29 +318,50 @@ class PasDeclaracionJuradaForm(forms.Form):
         if persona and not self.is_bound:
             self.initial.update(
                 {
+                    "calle": calle,
+                    "altura": altura,
                     "provincia": persona.provincia_id,
                     "municipio": persona.municipio_id,
-                    "domicilio": persona.domicilio,
                     "correo_electronico": persona.correo_electronico,
                     "telefono_celular": persona.telefono_celular,
                 }
             )
 
+    @staticmethod
+    def _direccion_inicial(persona):
+        if not persona:
+            return "", ""
+        calle = (persona.calle or "").strip()
+        altura = (persona.altura or "").strip()
+        domicilio = (persona.domicilio or "").strip()
+        if calle or altura or not domicilio:
+            return calle, altura
+        partes = domicilio.rsplit(maxsplit=1)
+        if len(partes) == 2 and re.fullmatch(r"\d+[A-Za-z]?", partes[1]):
+            return partes[0], partes[1]
+        return domicilio, ""
+
     def clean(self):
         data = super().clean()
         confirma = data.get("datos_mi_argentina_confirmados") == "si"
         for campo in (
+            "calle",
+            "altura",
             "provincia",
             "municipio",
-            "domicilio",
             "correo_electronico",
             "telefono_celular",
         ):
             if confirma and self.campos_datos_existentes.get(campo, False):
-                data[campo] = getattr(self.persona, campo)
+                data[campo] = self.valores_datos_existentes[campo]
                 self._errors.pop(campo, None)
             elif not data.get(campo):
                 self.add_error(campo, "Este dato es obligatorio.")
+        data["domicilio"] = " ".join(
+            parte for parte in (data.get("calle"), data.get("altura")) if parte
+        )
+        if len(data["domicilio"]) > PasPersona._meta.get_field("domicilio").max_length:
+            self.add_error("calle", "Calle y altura superan el máximo permitido.")
         provincia = data.get("provincia")
         municipio = data.get("municipio")
         if provincia and municipio and municipio.provincia_id != provincia.id:
