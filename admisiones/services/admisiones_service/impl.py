@@ -3323,11 +3323,9 @@ class AdmisionService:
 
     @staticmethod
     def _append_botones_generales_admision(botones, admision, es_tecnico):
-        # Antes se habilitaba con la Disposición cargada. Eliminada la
-        # Disposición, el hito equivalente pasa a ser el Convenio.
         if (
             es_tecnico
-            and admision.numero_convenio
+            and admision.numero_disposicion
             and not admision.enviado_acompaniamiento
         ):
             botones.append("comenzar_acompaniamiento")
