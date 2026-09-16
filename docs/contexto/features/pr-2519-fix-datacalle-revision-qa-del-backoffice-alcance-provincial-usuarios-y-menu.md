@@ -34,6 +34,7 @@
 
 - Empezar por `docs/registro/prs/PR-2519.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
+- `CHANGELOG.md`
 - `core/templatetags/custom_filters.py`
 - `datacalle/api_views.py`
 - `datacalle/apps.py`
@@ -45,16 +46,15 @@
 - `datacalle/templates/datacalle/relevamiento_form.html`
 - `datacalle/urls.py`
 - `datacalle/views.py`
+- `docs/contexto/features/pr-2519-fix-datacalle-revision-qa-del-backoffice-alcance-provincial-usuarios-y-menu.md`
 - `docs/registro/cambios/2026-09-16-datacalle-qa-alcance-provincial.md`
+- `docs/registro/cambios/2026-09-16-datacalle-qa-carga-antes-de-iniciar.md`
 - `docs/registro/cambios/2026-09-16-datacalle-qa-usuarios-y-menu.md`
+- `docs/registro/prs/PR-2519.md`
+- `docs/registro/releases/pending/2026-09-16-pr-2519.md`
 - `templates/includes/sidebar/opciones.html`
 - `tests/test_datacalle_api.py`
-- `tests/test_datacalle_qa_usuarios.py`
-- `tests/test_datacalle_relevamientos.py`
-- `users/forms.py`
-- `users/services.py`
-- `users/services_datacalle.py`
-- ... y 1 archivo(s) adicional(es) relacionados.
+- ... y 6 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
