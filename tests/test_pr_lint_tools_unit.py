@@ -1,6 +1,7 @@
 """Tests unitarios para el helper de lint de PR."""
 
 from pathlib import Path
+import json
 import subprocess
 
 from scripts.ci import pr_lint_tools
@@ -87,3 +88,21 @@ def test_get_changed_files_usa_fallback_si_falta_el_base_sha(monkeypatch):
         Path("scripts/ci/pr_lint_tools.py"),
         Path("VAT/serializers.py"),
     ]
+
+
+def test_list_changed_files_excluye_artefactos_generados(monkeypatch, capsys):
+    """El mapa de arquitectura lo reescribe su generador: djlint no debe tocarlo."""
+
+    monkeypatch.setattr(
+        pr_lint_tools,
+        "get_changed_files",
+        lambda: [
+            Path("docs/arquitectura/mapa_sisoc.html"),
+            Path("templates/changelog.html"),
+        ],
+    )
+    monkeypatch.setattr(Path, "is_file", lambda self: True)
+
+    assert pr_lint_tools.list_changed_files("templates") == 0
+    emitidos = [Path(item) for item in json.loads(capsys.readouterr().out)]
+    assert emitidos == [Path("templates/changelog.html")]

@@ -142,7 +142,9 @@ def test_run_server_sigue_si_falla_el_mapa_de_arquitectura(
         module,
         "run_command",
         side_effect=[
-            subprocess.CalledProcessError(1, ["manage.py", "generar_mapa_arquitectura"]),
+            subprocess.CalledProcessError(
+                1, ["manage.py", "generar_mapa_arquitectura"]
+            ),
             None,
         ],
     )
