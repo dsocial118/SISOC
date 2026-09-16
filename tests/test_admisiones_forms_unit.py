@@ -6,11 +6,10 @@ from types import SimpleNamespace
 
 import pytest
 
+from admisiones.models.admisiones import Providencia
 from admisiones.forms.admisiones_forms import (
     ConvenioForm,
     ConvenioNumIFFORM,
-    DisposicionForm,
-    DisposicionNumIFFORM,
     DocumentosExpedienteForm,
     IFInformeTecnicoForm,
     IntervencionJuridicosForm,
@@ -21,8 +20,9 @@ from admisiones.forms.admisiones_forms import (
     LegalesNumIFForm,
     LegalesRectificarForm,
     MontoDecimalField,
+    PrimeraProvidenciaForm,
+    ProvidenciaGDEPVForm,
     ProyectoConvenioForm,
-    ProyectoDisposicionForm,
     ReinicioExpedienteForm,
     SolicitarInformeComplementarioForm,
     _armar_domicilio,
@@ -335,14 +335,11 @@ def test_intervencion_juridicos_form_valido_cuando_rechazado_completo():
     "form_class",
     [
         LegalesRectificarForm,
-        ProyectoDisposicionForm,
         ProyectoConvenioForm,
         DocumentosExpedienteForm,
         ConvenioNumIFFORM,
-        DisposicionNumIFFORM,
         InformeSGAForm,
         ConvenioForm,
-        DisposicionForm,
         IFInformeTecnicoForm,
         ReinicioExpedienteForm,
         SolicitarInformeComplementarioForm,
@@ -360,10 +357,92 @@ def test_documentos_expediente_form_label_vacio_en_value():
     assert form.fields["value"].label == ""
 
 
-def test_convenio_y_disposicion_num_if_labels_configurados():
-    """Verifica labels explícitos de formularios de número IF."""
+def test_convenio_num_if_label_configurado():
+    """Verifica el label explícito del formulario de número IF."""
     form_convenio = ConvenioNumIFFORM()
-    form_disposicion = DisposicionNumIFFORM()
 
     assert "Proyecto de Convenio" in form_convenio.fields["numero_if"].label
-    assert "Proyecto Disposición" in form_disposicion.fields["numero_if"].label
+
+
+def test_primera_providencia_pide_datos_de_causa_solo_si_es_judicializado():
+    """Carátula, juzgado y memo son obligatorios sólo para comedores judicializados."""
+    campos_causa = ("caratula_causa", "juzgado", "memo")
+
+    form = PrimeraProvidenciaForm(es_judicializado=False)
+    assert form.fields["cantidad_espacios"].required
+    assert not any(form.fields[nombre].required for nombre in campos_causa)
+
+    form_judicial = PrimeraProvidenciaForm(es_judicializado=True)
+    assert all(form_judicial.fields[nombre].required for nombre in campos_causa)
+
+
+def test_primera_providencia_descarta_datos_de_causa_si_no_es_judicializado():
+    """Si el comedor no es judicializado, los datos de la causa no se guardan."""
+    form = PrimeraProvidenciaForm(
+        data={
+            "cantidad_espacios": "hasta_5",
+            "caratula_causa": "No corresponde",
+            "juzgado": "No corresponde",
+            "memo": "No corresponde",
+        },
+        es_judicializado=False,
+    )
+
+    assert form.is_valid(), form.errors
+    assert form.cleaned_data["caratula_causa"] is None
+    assert form.cleaned_data["juzgado"] is None
+    assert form.cleaned_data["memo"] is None
+
+
+def test_numero_gde_pv_se_compila_sin_rellenar_ceros():
+    """El número de PV se arma con el formato de GDE y se guarda tal cual."""
+    form = ProvidenciaGDEPVForm(
+        data={
+            "pv_anio": "2025",
+            "pv_numero": "103",
+            "pv_reparticion": "dps",
+            "pv_organismo": "mch",
+        }
+    )
+
+    assert form.is_valid(), form.errors
+    # A diferencia del expediente, no se completa a 9 dígitos.
+    assert form.cleaned_data["numero_gde_pv_compilado"] == "PV-2025-103-APN-DPS#MCH"
+
+
+def test_numero_gde_pv_entra_en_el_campo_con_reparticion_y_organismo_maximas():
+    """El número armado con los máximos del formulario debe entrar en el modelo.
+
+    Repartición y organismo aceptan 50 caracteres cada uno, así que el número
+    compilado puede llegar a 123 caracteres.
+    """
+    form = ProvidenciaGDEPVForm(
+        data={
+            "pv_anio": "2025",
+            "pv_numero": "103008562",
+            "pv_reparticion": "R" * 50,
+            "pv_organismo": "O" * 50,
+        }
+    )
+
+    assert form.is_valid(), form.errors
+    numero = form.cleaned_data["numero_gde_pv_compilado"]
+    assert len(numero) == 123
+    for campo in ("numero_gde_pv", "numero_pv_primera"):
+        assert len(numero) <= Providencia._meta.get_field(campo).max_length
+
+
+@pytest.mark.parametrize("anio", ["25", "20255"])
+def test_numero_gde_pv_rechaza_anio_invalido(anio):
+    """El año debe tener exactamente 4 dígitos."""
+    form = ProvidenciaGDEPVForm(
+        data={
+            "pv_anio": anio,
+            "pv_numero": "103008562",
+            "pv_reparticion": "DPS",
+            "pv_organismo": "MCH",
+        }
+    )
+
+    assert not form.is_valid()
+    assert "pv_anio" in form.errors
