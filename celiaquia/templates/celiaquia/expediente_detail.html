@@ -267,7 +267,7 @@
                     <table class="table table-sm table-bordered mb-0" style="color:#fff;">
                         <thead style="background:#13212f;">
                             <tr>
-                                <th>DNI</th>
+                                <th>CUIL</th>
                                 <th>Nombre</th>
                                 <th>Apellido</th>
                             </tr>
@@ -347,7 +347,7 @@
                     <input type="text"
                            id="search-legajos"
                            class="form-control"
-                           placeholder="Buscar por ID, nombre, apellido o DNI..."
+                           placeholder="Buscar por ID, nombre, apellido o CUIL..."
                            style="width: 300px" />
                 </div>
             </div>
@@ -392,7 +392,7 @@
                                                     {% endif %}
                                                 {% endif %}
                                             </div>
-                                            <small class="text-muted">DNI: {{ leg.ciudadano.documento }}</small>
+                                            <small class="text-muted">CUIL: {{ leg.ciudadano.documento }}</small>
                                             {% if leg.es_doble_rol %}
                                                 <small class="badge bg-info mt-1">Beneficiario y Responsable</small>
                                                 {% if leg.hijos_a_cargo %}
@@ -525,7 +525,7 @@
                                                     <!-- Col 1: Datos básicos -->
                                                     <div class="col-lg-3 col-md-5">
                                                         <h6 class="mb-2">{{ leg.ciudadano.nombre }} {{ leg.ciudadano.apellido }}</h6>
-                                                        <div class="small text-muted mb-2">DNI: {{ leg.ciudadano.documento }}</div>
+                                                        <div class="small text-muted mb-2">CUIL: {{ leg.ciudadano.documento }}</div>
                                                         <div class="small">
                                                             <span class="text-muted">Estado:</span>
                                                             {% if leg.revision_tecnico == 'APROBADO' %}
@@ -766,7 +766,7 @@
                                     <!-- Col 1: Datos básicos -->
                                     <div class="col-lg-3 col-md-5">
                                         <h6 class="mb-2">{{ leg.ciudadano.nombre }} {{ leg.ciudadano.apellido }}</h6>
-                                        <div class="small text-muted mb-2">DNI: {{ leg.ciudadano.documento }}</div>
+                                        <div class="small text-muted mb-2">CUIL: {{ leg.ciudadano.documento }}</div>
                                         <div class="small">
                                             <span class="text-muted">Estado:</span>
                                             {% if leg.revision_tecnico == 'APROBADO' %}
@@ -1084,7 +1084,7 @@
                                                 <br />
                                             {% endif %}
                                             {% if registro.datos_raw.documento %}
-                                                <strong>DNI:</strong> {{ registro.datos_raw.documento }}
+                                                <strong>CUIL:</strong> {{ registro.datos_raw.documento }}
                                                 <br />
                                             {% endif %}
                                             {% if registro.datos_raw.fecha_nacimiento %}
@@ -1143,12 +1143,16 @@
                                                                    required />
                                                         </div>
                                                         <div class="col-md-4">
-                                                            <label class="form-label">Documento *</label>
+                                                            <label class="form-label">CUIL *</label>
                                                             <input type="text"
                                                                    class="form-control{% if 'documento' in registro.invalid_fields %} field-error-soft{% endif %}"
                                                                    name="documento"
                                                                    value="{{ registro.datos_raw.documento|default:'' }}"
                                                                    {% if 'documento' in registro.invalid_fields %}aria-invalid="true"{% endif %}
+                                                                   inputmode="numeric"
+                                                                   maxlength="11"
+                                                                   pattern="[0-9]{11}"
+                                                                   title="El CUIL debe tener 11 dígitos numéricos."
                                                                    required />
                                                         </div>
                                                         <div class="col-md-4">
@@ -1303,7 +1307,7 @@
                                                         </div>
                                                         <div class="col-md-4">
                                                             <label class="form-label">
-                                                                CUIT/Documento Responsable
+                                                                CUIL Responsable
                                                                 {% if registro.responsable_requerido %}*{% endif %}
                                                             </label>
                                                             <input type="text"
@@ -1311,6 +1315,10 @@
                                                                    name="documento_responsable"
                                                                    value="{{ registro.datos_raw.documento_responsable|default:'' }}"
                                                                    {% if 'documento_responsable' in registro.invalid_fields %}aria-invalid="true"{% endif %}
+                                                                   inputmode="numeric"
+                                                                   maxlength="11"
+                                                                   pattern="[0-9]{11}"
+                                                                   title="El CUIL debe tener 11 dígitos numéricos."
                                                                    {% if registro.responsable_requerido %}required{% endif %} />
                                                         </div>
                                                         <div class="col-md-4">
@@ -1770,7 +1778,7 @@
                                 <thead>
                                     <tr>
                                         <th>Nombre</th>
-                                        <th>DNI</th>
+                                        <th>CUIL</th>
                                         <th>Rol</th>
                                         <th>Relación</th>
                                         <th>Estado</th>
@@ -1967,11 +1975,15 @@
                                            required />
                                 </div>
                                 <div class="col-md-6">
-                                    <label for="editar-documento" class="form-label">Documento *</label>
+                                    <label for="editar-documento" class="form-label">CUIL *</label>
                                     <input type="text"
                                            class="form-control"
                                            id="editar-documento"
                                            name="documento"
+                                           inputmode="numeric"
+                                           maxlength="11"
+                                           pattern="[0-9]{11}"
+                                           title="El CUIL debe tener 11 dígitos numéricos."
                                            required />
                                 </div>
                                 <div class="col-md-6">
