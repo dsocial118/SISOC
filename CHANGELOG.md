@@ -1,3 +1,11 @@
+<!-- AUTO-GENERATED RELEASE START: 2026-09-16 -->
+# Versión SISOC 16.09.2026
+
+## Actualizaciones
+
+- [sin-area] fix(datacalle): revisión QA del backoffice — alcance provincial, usuarios y menú. (PR #2519)
+<!-- AUTO-GENERATED RELEASE END: 2026-09-16 -->
+
 <!-- AUTO-GENERATED RELEASE START: 2026-09-08 -->
 # Versión SISOC 08.09.2026
 
