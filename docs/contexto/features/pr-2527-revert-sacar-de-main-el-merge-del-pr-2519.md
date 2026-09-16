@@ -1,11 +1,11 @@
-# Contexto de feature PR #2519 - fix(datacalle): revisión QA del backoffice — alcance provincial, usuarios y menú
+# Contexto de feature PR #2527 - revert: sacar de main el merge del PR #2519
 
 ## Resumen
 
-- PR: https://github.com/dsocial118/SISOC/pull/2519
+- PR: https://github.com/dsocial118/SISOC/pull/2527
 - Base: `main`
-- Rama origen: `fix/datacalle-qa-backoffice`
-- Autor: `Mkdir-arg`
+- Rama origen: `revert/pr-2519-main`
+- Autor: `juanikitro`
 
 ## Contexto funcional
 
@@ -32,7 +32,7 @@
 
 ## Memoria operativa para agentes
 
-- Empezar por `docs/registro/prs/PR-2519.md` para contexto resumido del PR.
+- Empezar por `docs/registro/prs/PR-2527.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
 - `CHANGELOG.md`
 - `core/templatetags/custom_filters.py`

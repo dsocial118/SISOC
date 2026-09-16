@@ -1,11 +1,10 @@
 from django import forms
 
-from core.models import Localidad
+from core.models import Localidad, Municipio
 from datacalle.models import Relevamiento
 from datacalle.services import (
-    get_dispositivos_para_provincia,
-    get_entrevistadores_para_provincia,
-    get_municipios_para_usuario,
+    get_dispositivos_para_usuario,
+    get_entrevistadores_para_usuario,
     get_provincias_para_usuario,
 )
 from users.services_datacalle import get_relevador_calle_users_for_provincia
@@ -50,30 +49,19 @@ class RelevamientoForm(forms.ModelForm):
     def __init__(self, *args, actor=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.actor = actor
+        self.fields["provincia"].queryset = get_provincias_para_usuario(actor)
         self.fields["municipio"].required = False
         self.fields["localidades"].required = False
-
-        provincias = get_provincias_para_usuario(actor)
-        self.fields["provincia"].queryset = provincias
-        # QA-0008: si el coordinador tiene una sola provincia, no se le pregunta.
-        # `disabled` hace que Django ignore lo que venga por POST y use el
-        # initial, así que además cierra la puerta a mandar otra provincia.
-        self.provincia_fija = provincias.first() if provincias.count() == 1 else None
-        if self.provincia_fija is not None:
-            self.fields["provincia"].initial = self.provincia_fija
-            self.fields["provincia"].disabled = True
-            self.fields["provincia"].help_text = (
-                "Tu alcance territorial es esta provincia."
-            )
-
-        provincia_id = self._provincia_actual()
-        municipio_id = self._valor_actual("municipio", "municipio_id")
 
         # Municipio y localidad se cargan por cascada (endpoints de core). Sin
         # acotar acá, el formulario renderizaría los miles de municipios y las
         # 4.000 localidades del país en cada alta.
-        self.fields["municipio"].queryset = get_municipios_para_usuario(
-            actor, provincia_id
+        provincia_id = self._valor_actual("provincia", "provincia_id")
+        municipio_id = self._valor_actual("municipio", "municipio_id")
+        self.fields["municipio"].queryset = (
+            Municipio.objects.filter(provincia_id=provincia_id).order_by("nombre")
+            if provincia_id
+            else Municipio.objects.none()
         )
         self.fields["localidades"].queryset = (
             Localidad.objects.filter(municipio_id=municipio_id).order_by("nombre")
@@ -81,21 +69,11 @@ class RelevamientoForm(forms.ModelForm):
             else Localidad.objects.none()
         )
 
-        # QA-0010 y QA-0013: ambos se acotan a la provincia elegida, no al
-        # alcance completo del actor (que para un administrador es el país).
-        self.fields["dispositivo"].queryset = get_dispositivos_para_provincia(
-            actor, provincia_id
-        )
-        self.fields["equipo"].queryset = get_entrevistadores_para_provincia(
-            actor, provincia_id
-        )
-        self.fields["equipo"].label_from_instance = self.etiqueta_entrevistador
-
-    def _provincia_actual(self):
-        """Provincia con la que acotar los selectores dependientes."""
-        if self.provincia_fija is not None:
-            return self.provincia_fija.id
-        return self._valor_actual("provincia", "provincia_id")
+        # Ambos se acotan por el alcance del actor, no por la provincia elegida:
+        # para un coordinador ya es el padrón de su provincia y evita una cascada.
+        self.fields["dispositivo"].queryset = get_dispositivos_para_usuario(actor)
+        self.fields["equipo"].queryset = get_entrevistadores_para_usuario(actor)
+        self.fields["equipo"].label_from_instance = self._etiqueta_entrevistador
 
     def _valor_actual(self, campo, atributo_instancia):
         """Valor con el que acotar la cascada: lo enviado o lo ya guardado."""
@@ -107,7 +85,7 @@ class RelevamientoForm(forms.ModelForm):
         return getattr(self.instance, atributo_instancia, None)
 
     @staticmethod
-    def etiqueta_entrevistador(user):
+    def _etiqueta_entrevistador(user):
         nombre = f"{user.first_name} {user.last_name}".strip() or user.username
         dni = getattr(getattr(user, "profile", None), "dni", "")
         return f"{nombre} ({dni})" if dni else nombre

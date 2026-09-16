@@ -3,8 +3,6 @@ from django.urls import path
 from core.decorators import permissions_any_required
 from datacalle.views import (
     EncuestaDetailView,
-    cargar_dispositivos,
-    cargar_relevadores,
     RelevamientoCreateView,
     RelevamientoDeleteView,
     RelevamientoDetailView,
@@ -54,15 +52,5 @@ urlpatterns = [
             EncuestaDetailView.as_view()
         ),
         name="datacalle_casos_detalle",
-    ),
-    path(
-        "datacalle/ajax/dispositivos/",
-        permissions_any_required(["datacalle.view_relevamiento"])(cargar_dispositivos),
-        name="datacalle_ajax_dispositivos",
-    ),
-    path(
-        "datacalle/ajax/relevadores/",
-        permissions_any_required(["datacalle.view_relevamiento"])(cargar_relevadores),
-        name="datacalle_ajax_relevadores",
     ),
 ]
