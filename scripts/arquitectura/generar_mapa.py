@@ -67,7 +67,15 @@ ZONAS = [
         "id": "nucleo",
         "nombre": "Nucleo compartido",
         "detalle": "Base transversal. No puede importar dominios (contrato core-no-domains).",
-        "apps": ["core", "users", "iam", "audittrail", "historial", "healthcheck", "sentry"],
+        "apps": [
+            "core",
+            "users",
+            "iam",
+            "audittrail",
+            "historial",
+            "healthcheck",
+            "sentry",
+        ],
     },
     {
         "id": "personas",
@@ -154,17 +162,52 @@ NOMBRES = {
 # su evidencia. Revisar al tocar una PWA o al agregar un namespace de API.
 CONSUMO_PWA = {
     "espacios": [
-        ("users", "token", "declarado", "docs/contexto/aplicaciones.md: /api/users/ login, me, logout"),
-        ("pwa", "token", "declarado", "pwa/api_urls.py: espacios, nomina, actividades, mensajes, push"),
-        ("comedores", "token", "declarado", "/api/comedores/: nomina, documentos, prestaciones, rendiciones, usuarios"),
+        (
+            "users",
+            "token",
+            "declarado",
+            "docs/contexto/aplicaciones.md: /api/users/ login, me, logout",
+        ),
+        (
+            "pwa",
+            "token",
+            "declarado",
+            "pwa/api_urls.py: espacios, nomina, actividades, mensajes, push",
+        ),
+        (
+            "comedores",
+            "token",
+            "declarado",
+            "/api/comedores/: nomina, documentos, prestaciones, rendiciones, usuarios",
+        ),
     ],
     "gestionar": [
-        ("comedores", "token", "declarado", "/api/territorial/: comedores por provincia, actas, primer seguimiento, firma, imagenes"),
-        ("users", "token", "declarado", "/api/users/login/ con Profile.es_territorial_comedor"),
+        (
+            "comedores",
+            "token",
+            "declarado",
+            "/api/territorial/: comedores por provincia, actas, primer seguimiento, firma, imagenes",
+        ),
+        (
+            "users",
+            "token",
+            "declarado",
+            "/api/users/login/ con Profile.es_territorial_comedor",
+        ),
     ],
     "datacalle": [
-        ("datacalle", "token", "declarado", "datacalle/api_urls.py + TokenAuthentication en datacalle/api_views.py"),
-        ("users", "token", "inferido", "login unico del plano movil en /api/users/login/"),
+        (
+            "datacalle",
+            "token",
+            "declarado",
+            "datacalle/api_urls.py + TokenAuthentication en datacalle/api_views.py",
+        ),
+        (
+            "users",
+            "token",
+            "inferido",
+            "login unico del plano movil en /api/users/login/",
+        ),
     ],
 }
 
@@ -306,10 +349,15 @@ def apps_instaladas() -> list[str]:
     apps: list[str] = []
     for crudo in re.findall(r'"([^"]+)"', bloque.group(1)):
         paquete = crudo.split(".")[0]
-        if paquete in {"django", "rest_framework"} or "." in crudo and paquete in {
-            "crispy_forms",
-            "crispy_bootstrap5",
-        }:
+        if (
+            paquete in {"django", "rest_framework"}
+            or "." in crudo
+            and paquete
+            in {
+                "crispy_forms",
+                "crispy_bootstrap5",
+            }
+        ):
             continue
         if not (RAIZ / paquete).is_dir():
             continue
@@ -415,7 +463,10 @@ def aristas_de_imports(apps: list[str]) -> tuple[list[dict], dict[str, dict]]:
                     )
                     entrada["n"] += 1
                     muestra = f"{relativo} -> {modulo}"
-                    if len(entrada["ejemplos"]) < 4 and muestra not in entrada["ejemplos"]:
+                    if (
+                        len(entrada["ejemplos"]) < 4
+                        and muestra not in entrada["ejemplos"]
+                    ):
                         entrada["ejemplos"].append(muestra)
 
     aristas = sorted(acumulado.values(), key=lambda a: (-a["n"], a["src"], a["dst"]))
@@ -452,7 +503,9 @@ def menu_lateral(mapa_urls: dict[str, str]) -> list[dict]:
 
     def etiqueta_desde(indice: int) -> str:
         for salto in range(indice, min(indice + 8, len(lineas))):
-            encontrado = re_texto.search(lineas[salto]) or re_texto_suelto.search(lineas[salto])
+            encontrado = re_texto.search(lineas[salto]) or re_texto_suelto.search(
+                lineas[salto]
+            )
             if encontrado:
                 return (
                     encontrado.group(1)
@@ -588,11 +641,17 @@ def contratos_importlinter() -> list[dict]:
     ):
         clave, cuerpo = bloque
         nombre = re.search(r"^name\s*=\s*(.+)$", cuerpo, re.M)
-        excepciones = [
-            linea.strip()
-            for linea in re.search(r"ignore_imports\s*=(.*)$", cuerpo, re.S).group(1).split("\n")
-            if linea.strip() and not linea.strip().startswith("#")
-        ] if "ignore_imports" in cuerpo else []
+        excepciones = (
+            [
+                linea.strip()
+                for linea in re.search(r"ignore_imports\s*=(.*)$", cuerpo, re.S)
+                .group(1)
+                .split("\n")
+                if linea.strip() and not linea.strip().startswith("#")
+            ]
+            if "ignore_imports" in cuerpo
+            else []
+        )
         contratos.append(
             {
                 "id": clave,
@@ -617,7 +676,9 @@ def zona_de(app: str) -> str:
 
 def construir() -> dict:
     instaladas = apps_instaladas()
-    apps = instaladas + [p for p in PAQUETES_EXTRA if (RAIZ / p).is_dir() and p not in instaladas]
+    apps = instaladas + [
+        p for p in PAQUETES_EXTRA if (RAIZ / p).is_dir() and p not in instaladas
+    ]
 
     rutas = rutas_montadas()
     planos = auth_de_apis(apps)
@@ -677,14 +738,23 @@ def construir() -> dict:
                 "legacy_path": app_pwa.get("legacy_path", ""),
                 "enabled": app_pwa.get("enabled", False),
                 "consume": [
-                    {"modulo": m, "plano": plano, "certeza": certeza, "evidencia": evidencia}
-                    for m, plano, certeza, evidencia in CONSUMO_PWA.get(identificador, [])
+                    {
+                        "modulo": m,
+                        "plano": plano,
+                        "certeza": certeza,
+                        "evidencia": evidencia,
+                    }
+                    for m, plano, certeza, evidencia in CONSUMO_PWA.get(
+                        identificador, []
+                    )
                 ],
             }
         )
 
     return {
-        "generado": datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds"),
+        "generado": datetime.now(timezone.utc)
+        .astimezone()
+        .isoformat(timespec="seconds"),
         "commit": _git("rev-parse", "--short", "HEAD"),
         "rama": _git("rev-parse", "--abbrev-ref", "HEAD"),
         "zonas": [{k: v for k, v in z.items() if k != "apps"} for z in ZONAS],

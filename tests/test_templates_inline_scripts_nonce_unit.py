@@ -9,12 +9,16 @@ SCRIPT_TAG_RE = re.compile(r"<script\b(?P<attrs>[^>]*)>", re.IGNORECASE | re.DOT
 
 def _iter_repo_html_files():
     repo_root = Path(__file__).resolve().parents[1]
+    # Django solo renderiza BASE_DIR/templates y los templates de cada app
+    # (DIRS + APP_DIRS en config/settings.py). El HTML bajo docs/ son documentos
+    # offline y mockups que ningun response sirve, asi que no hay CSP que aplicar.
     excluded_path_parts = {
         ".venv",
         "node_modules",
         "site-packages",
         "coverage",
         "static_root",
+        "docs",
     }
     for html_file in repo_root.rglob("*.html"):
         rel_path = html_file.relative_to(repo_root)
