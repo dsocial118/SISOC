@@ -40,7 +40,6 @@ from users.services_pwa import (
 from users.services_bulk_credentials import get_bulk_credentials_send_type_choices
 from users.territorial_scope import (
     clean_territorial_scope_payload,
-    get_full_province_scope_ids,
     serialize_profile_scopes,
     sync_profile_territorial_scopes,
 )
@@ -978,11 +977,8 @@ class RelevadorCalleFormMixin:
             choices=[("", "---------")] + list(Profile.DataCalleRol.choices),
             required=False,
             widget=forms.Select(attrs={"class": "select2"}),
-            label="Rol en DataCalle",
-            help_text=(
-                "Rol con el que opera dentro de la app. No se mezcla con "
-                "'Tipo de usuario', que clasifica al usuario dentro de SISOC."
-            ),
+            label="Rol",
+            help_text="Rol con el que opera en DataCalle.",
         )
         self.fields["provincias_datacalle"] = forms.ModelMultipleChoiceField(
             queryset=Provincia.objects.all().order_by("nombre"),
@@ -991,59 +987,15 @@ class RelevadorCalleFormMixin:
             label="Provincias",
             help_text="Provincias que releva este usuario en DataCalle.",
         )
-        self._acotar_provincias_datacalle_al_actor()
-
-    def _acotar_provincias_datacalle_al_actor(self):
-        """QA-0016: la provincia del entrevistador sale del coordinador.
-
-        Un coordinador provincial no elige en qué provincia da de alta: se
-        deriva de su alcance. Con una sola provincia el campo queda fijo y
-        deshabilitado, así Django ignora lo que llegue por POST.
-        """
-        actor = getattr(self, "actor", None)
-        if actor is None or getattr(actor, "is_superuser", False):
-            return
-        provincia_ids = get_full_province_scope_ids(actor)
-        if not provincia_ids:
-            return
-        propias = Provincia.objects.filter(id__in=provincia_ids).order_by("nombre")
-        self.fields["provincias_datacalle"].queryset = propias
-        if len(provincia_ids) == 1:
-            self._provincias_datacalle_fijas = list(provincia_ids)
-            self.fields["provincias_datacalle"].initial = list(propias)
-            self.fields["provincias_datacalle"].disabled = True
-            self.fields["provincias_datacalle"].help_text = (
-                "Se deriva de tu alcance territorial."
-            )
 
     def _init_relevador_calle_fields(self, profile):
         if not profile:
             return
         self.fields["es_relevador_calle"].initial = profile.es_relevador_calle
         self.fields["datacalle_rol"].initial = profile.datacalle_rol
-        actuales = list(
+        self.fields["provincias_datacalle"].initial = list(
             profile.relevador_calle_provincias.values_list("provincia_id", flat=True)
         )
-        fijas = getattr(self, "_provincias_datacalle_fijas", None)
-        if not fijas:
-            self.fields["provincias_datacalle"].initial = actuales
-            return
-
-        # El campo quedó fijo al alcance del actor. Pisar el initial con lo que
-        # el perfil tiene hoy dejaría el formulario sin salida al habilitar a un
-        # usuario que todavía no es relevador: el initial sería vacío, el campo
-        # está deshabilitado y clean exige al menos una provincia.
-        # Se unen ambas para poder habilitarlo y, a la vez, no borrarle las
-        # provincias que el actor no administra (``_sync_relevador_calle_provincias``
-        # borra las que no lleguen en cleaned_data).
-        union = sorted(set(actuales) | set(fijas))
-        self.fields["provincias_datacalle"].initial = union
-        # El queryset tiene que contener todo el initial o ``clean`` lo rechaza
-        # por "opción no válida". Ampliarlo no habilita a elegir fuera de
-        # alcance: el campo es ``disabled``, así que Django ignora el POST.
-        self.fields["provincias_datacalle"].queryset = Provincia.objects.filter(
-            id__in=union
-        ).order_by("nombre")
 
     def _clean_relevador_calle_fields(self, cleaned):
         es_relevador = cleaned.get("es_relevador_calle", False)
@@ -1117,10 +1069,6 @@ class UserCreationForm(
         choices=Profile.TipoUsuario.choices,
         widget=forms.RadioSelect,
         label="Tipo de usuario",
-        help_text=(
-            "De dónde viene la persona: interno del organismo, provincial o "
-            "externo. Es informativo y no otorga permisos."
-        ),
     )
     groups = forms.ModelMultipleChoiceField(
         queryset=Group.objects.all(),
@@ -1166,15 +1114,7 @@ class UserCreationForm(
         label="Equipos técnicos (Duplas) asignadas",
         help_text="Duplas activas disponibles (con o sin comedores asignados)",
     )
-    rol = forms.CharField(
-        max_length=100,
-        required=False,
-        label="Rol (descriptivo)",
-        help_text=(
-            "Texto libre para describir el puesto. No define permisos: los "
-            "permisos salen de los grupos."
-        ),
-    )
+    rol = forms.CharField(max_length=100, required=False, label="Rol")
 
     class Meta:
         model = User
@@ -1357,10 +1297,6 @@ class CustomUserChangeForm(
         choices=Profile.TipoUsuario.choices,
         widget=forms.RadioSelect,
         label="Tipo de usuario",
-        help_text=(
-            "De dónde viene la persona: interno del organismo, provincial o "
-            "externo. Es informativo y no otorga permisos."
-        ),
     )
     groups = forms.ModelMultipleChoiceField(
         queryset=Group.objects.all(),
@@ -1406,15 +1342,7 @@ class CustomUserChangeForm(
         label="Equipos técnicos (Duplas) asignadas",
         help_text="Duplas activas disponibles (con o sin comedores asignados)",
     )
-    rol = forms.CharField(
-        max_length=100,
-        required=False,
-        label="Rol (descriptivo)",
-        help_text=(
-            "Texto libre para describir el puesto. No define permisos: los "
-            "permisos salen de los grupos."
-        ),
-    )
+    rol = forms.CharField(max_length=100, required=False, label="Rol")
 
     class Meta:
         model = User
