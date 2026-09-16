@@ -13,35 +13,10 @@ from django.views import View
 from celiaquia.models import Expediente, RegistroErroneo
 from celiaquia.services.expediente_service import ExpedienteService
 from celiaquia.services.legajo_service import LegajoService
-from celiaquia.services.validacion_edad_service import ValidacionEdadService
 from celiaquia.views.expediente import _is_ajax
 from users.territorial_scope import is_territorial_user, user_can_access_territory
 
 logger = logging.getLogger("django")
-
-
-def _rechazo_por_menores_sin_responsable(request, expediente):
-    """Corta el envio si algun menor quedo sin adulto responsable.
-
-    Devuelve la respuesta de rechazo, o ``None`` si no hay nada que objetar.
-    """
-    menores_huerfanos = ValidacionEdadService.menores_sin_responsable(expediente)
-    if not menores_huerfanos:
-        return None
-
-    msg = ValidacionEdadService.mensaje_menores_sin_responsable(menores_huerfanos)
-    logger.info("Validacion en confirmar envio fallo: %s", msg)
-    if _is_ajax(request):
-        return JsonResponse(
-            {
-                "success": False,
-                "error": msg,
-                "menores_sin_responsable_ids": [leg.pk for leg in menores_huerfanos],
-            },
-            status=400,
-        )
-    messages.error(request, msg)
-    return redirect("expediente_detail", pk=expediente.pk)
 
 
 class ExpedienteConfirmView(LoginRequiredMixin, View):
@@ -116,7 +91,7 @@ class ExpedienteConfirmView(LoginRequiredMixin, View):
         if faltantes:
             ejemplos = [
                 (
-                    f"{item['apellido']}, {item['nombre']} (CUIL {item['documento']})"
+                    f"{item['apellido']}, {item['nombre']} (DNI {item['documento']})"
                     f" - faltan: {', '.join(item['faltan_nombres'])}"
                 )
                 for item in faltantes
@@ -143,10 +118,6 @@ class ExpedienteConfirmView(LoginRequiredMixin, View):
                 )
             messages.error(request, msg)
             return redirect("expediente_detail", pk=expediente.pk)
-
-        rechazo_menores = _rechazo_por_menores_sin_responsable(request, expediente)
-        if rechazo_menores is not None:
-            return rechazo_menores
 
         try:
             result = ExpedienteService.confirmar_envio(expediente, request.user)

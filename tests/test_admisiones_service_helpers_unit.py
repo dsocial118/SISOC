@@ -64,31 +64,6 @@ def test_estado_normalization_and_resumen_helpers():
     assert stats["obligatorios_completos"] == 2
 
 
-def test_puede_editar_informe_tecnico_desde_convenio_y_hasta_borrador():
-    user = SimpleNamespace(is_superuser=True)
-    admision = SimpleNamespace(
-        comedor=SimpleNamespace(), estado_admision="convenio_seleccionado"
-    )
-
-    assert module.AdmisionService.puede_editar_informe_tecnico(user, admision, None)
-
-    admision.estado_admision = "informe_tecnico_finalizado"
-    informe_finalizado = SimpleNamespace(
-        estado="Para revision", estado_formulario="finalizado"
-    )
-    assert not module.AdmisionService.puede_editar_informe_tecnico(
-        user, admision, informe_finalizado
-    )
-
-    admision.estado_admision = "informe_tecnico_en_subsanacion"
-    informe_a_subsanar = SimpleNamespace(
-        estado="A subsanar", estado_formulario="finalizado"
-    )
-    assert module.AdmisionService.puede_editar_informe_tecnico(
-        user, admision, informe_a_subsanar
-    )
-
-
 def test_archivo_nombre_and_serialization():
     archivo = SimpleNamespace(nombre_personalizado="Doc X", archivo=None)
     assert module.AdmisionService._archivo_nombre(archivo) == "Doc X"
@@ -457,19 +432,15 @@ def test_post_update_router_cubre_ramas_restantes(mocker):
     )
     assert (ok_carat_bad, msg_carat_bad) == (False, "Error al guardar la caratulación.")
 
-    # La carga documental ya no condiciona la caratulación: se puede seguir
-    # sumando documentación en cualquier momento del proceso.
+    # caratulación bloqueada si no finalizó la carga documental
     adm.estado_admision = "documentacion_aprobada"
-    req_carat_libre = SimpleNamespace(POST={"btnCaratulacion": "1"}, user=user)
-    mocker.patch(
-        "admisiones.services.admisiones_service.CaratularForm", return_value=form_ok
+    req_carat_bloq = SimpleNamespace(POST={"btnCaratulacion": "1"}, user=user)
+    ok_carat_bloq, msg_carat_bloq = module.AdmisionService.procesar_post_update(
+        req_carat_bloq, adm
     )
-    ok_carat_libre, msg_carat_libre = module.AdmisionService.procesar_post_update(
-        req_carat_libre, adm
-    )
-    assert (ok_carat_libre, msg_carat_libre) == (
-        True,
-        "Caratulación del expediente guardado correctamente.",
+    assert (ok_carat_bloq, msg_carat_bloq) == (
+        False,
+        "Debe finalizar la carga de documentación antes de caratular.",
     )
 
     # tipo convenio precargado
