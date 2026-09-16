@@ -96,6 +96,12 @@ def is_cdi_local_sidebar_only(user):
 
 
 @register.filter
+def is_datacalle_sidebar_only(user):
+    """Indica si el menú debe mostrar sólo Situación de Calle (QA-0014)."""
+    return resolver_predicado_sidebar("datacalle", user)
+
+
+@register.filter
 def endswith(value, suffix):
     try:
         return str(value).lower().endswith(str(suffix).lower())
