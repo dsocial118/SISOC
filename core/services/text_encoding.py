@@ -192,3 +192,11 @@ def repair_utf8_mojibake_values(value: Any) -> Any:
     if isinstance(value, tuple):
         return tuple(repair_utf8_mojibake_values(item) for item in value)
     return value
+
+
+def normalize_text(value: object) -> str:
+    """Normaliza NFKD, diacríticos, espacios y mayúsculas para comparación."""
+    normalized = unicodedata.normalize("NFKD", str(value or ""))
+    return " ".join(
+        "".join(char for char in normalized if not unicodedata.combining(char)).split()
+    ).casefold()

@@ -14,7 +14,9 @@ Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrollador
   downtime y activa despues del health del backend. Las apps nuevas estan
   habilitadas en el registro: requieren Compose en main, .env privado en la raiz
   y la API de HML disponible antes de promover. `PWA_API_BASE_URL` fija la URL
-  HTTPS del entorno para Expo; Espacios conserva /api y /mobile/. Contrato y orden:
+  HTTPS del entorno para Expo; Espacios conserva /api y /mobile/ y agrega
+  /pwa/espacioscomunitarios/ con un segundo build en la misma imagen. Instalar
+  primero esa imagen y luego el include; no redirigir /mobile/. Contrato y orden:
   `docs/operacion/deploy_pwas.md`. `render_pwa_nginx.py` genera un include de servidor
   y una vista previa que no debe instalarse. No mover `/sisoc/SISOC-Mobile` ni
   asumir acceso publico de Git. Estado privado de releases: `SISOC/.deploy/pwa/`.
@@ -118,7 +120,7 @@ Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrollador
 - `scripts/ai/codex_task.ps1 <slug>`: crea branch `codex/<slug>`, worktree en `../worktrees/<slug>` y bootstrap.
 - `scripts/ai/codex_run.ps1 up`: bootstrap + levantar entorno.
 - `scripts/ai/codex_run.ps1 validate`: corre `black`, `djlint`, smoke tests y `makemigrations --check`.
-- `scripts/operacion/deploy_refresh.sh`: refresh operativo de deploy; acepta un SHA esperado para bloquear una revisión obsoleta antes del downtime.
+- `scripts/operacion/deploy_refresh.sh`: refresh operativo de deploy; acepta un SHA esperado, hace fast-forward antes de validar los Compose y bloquea una revisión obsoleta antes del downtime. Así un checkout anterior puede incorporar un Compose nuevo de forma segura.
 
 ## Estructura general del proyecto
 
@@ -186,8 +188,9 @@ SISOC/
 
 ### Hechos observados
 
-- No hay Celery ni broker declarado.
-- La asincronia es "simple":
+- PAS usa Celery/Redis mediante `docker-compose.celery.yml`; mantiene un solo
+  lote activo global y paralelismo acotado dentro del lote.
+- El resto de la asincronia sigue siendo "simple":
   - hilos / `ThreadPoolExecutor` en syncs (`comedores/tasks.py`, `relevamientos/tasks.py`);
   - workers dedicados por `DJANGO_SERVICE_ROLE` en `docker/django/entrypoint.py`.
 
@@ -219,11 +222,11 @@ SISOC/
 | Docker/puertos | `DOCKER_MYSQL_PORT_FORWARD`, `DOCKER_DJANGO_PORT_FORWARD`, `DOCKER_DEBUGGER_PORT_FORWARD`, `RUN_UID`, `RUN_GID` |
 | Runtime | `RUN_MAKEMIGRATIONS_ON_START`, `GUNICORN_WORKERS`, `GUNICORN_THREADS` |
 | Seguridad/CSP | `ENABLE_CSP`, `CSP_REPORT_ONLY`, `CSP_ALLOW_UNSAFE_INLINE_SCRIPTS`, `CSP_ALLOW_UNSAFE_EVAL` |
-| Async | `DISABLE_ASYNC_THREADS` |
+| Async | `DISABLE_ASYNC_THREADS`, `CELERY_BROKER_URL`, `PAS_MONTHLY_ENABLED`, `PAS_BATCH_SIZE`, `PAS_BATCH_SECONDS`, `PAS_REQUESTS_PER_SECOND`, `PAS_CONCURRENCY`, `PAS_CIRCUIT_BREAKER_TIMEOUTS` |
 | Testing | `USE_SQLITE_FOR_TESTS`, `PYTEST_RUNNING` |
 | Integracion GESTIONAR | `GESTIONAR_INTEGRATION_ENABLED` (corte total de envíos, pulls y comandos), `GESTIONAR_API_KEY`, endpoints `GESTIONAR_API_*`, workers `GESTIONAR_*`, `DOMINIO` |
 | Ticketera | `TICKETERA_ENABLED` |
-| RENAPER | `RENAPER_API_USERNAME`, `RENAPER_API_PASSWORD`, `RENAPER_REQUEST_TIMEOUT_SECONDS`, retries/backoff; sin cache ni TTL de token |
+| RENAPER | `RENAPER_API_USERNAME`, `RENAPER_API_PASSWORD`, `RENAPER_REQUEST_TIMEOUT_SECONDS`, reintentos/espera incremental; el cliente permite reutilización en memoria por worker, sin cache compartida ni TTL |
 | Google Maps | `GOOGLE_MAPS_API_KEY` |
 | Sentry | `SENTRY_ENABLED`, `SENTRY_DSN`, `SENTRY_RELEASE` |
 | Email/password reset | `EMAIL_*`, `DEFAULT_FROM_EMAIL`, `PASSWORD_RESET_TIMEOUT`, `INITIAL_PASSWORD_MAX_AGE_HOURS` |
@@ -312,7 +315,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 | `importarexpediente/` | flujo de importacion de expedientes | `views.py`, `models.py`, urls, tests | Medio |
 | `ocr/` | OCR y procesamiento asociado | `models.py`, `views.py`, urls, tests | Medio |
 | `ver_para_ser_libre/` | modulo de negocio independiente dentro del monolito | `models.py`, `views.py`, `services/workflow.py` | Medio |
-| `pas/` | núcleo del Programa de Acompañamiento Social, circuito DDJJ —padrón, tokens, formulario público, PDF e importación CSV— e Informes PAS versionados | `models.py`, `api.py`, `services/ddjj_service.py`, `services/titulares_import_service.py`, `services/informe_service.py`, `urls.py`, `migrations/` | Alto |
+| `pas/` | núcleo del Programa de Acompañamiento Social, circuito DDJJ —padrón, tokens, formulario público, PDF e importación CSV—, Informes PAS versionados, circuito mensual de cruces SINTyS/RENAPER, Panel de Control y Formación pendiente; el padrón lateral de Formación pagina por scroll mediante `/pas/formacion/personas` | `models.py`, `api.py`, `views.py`, `services/ddjj_service.py`, `services/titulares_import_service.py`, `services/informe_service.py`, `services/cruces_service.py`, `services/supervivencia_service.py`, `services/persona_service.py`, `services/formacion_service.py`, `templates/pas/`, `static/custom/js/pas_formacion.js`, `management/commands/`, `urls.py`, `migrations/` | Alto |
 | `audittrail/` | auditoria interna | `models.py`, `views.py`, `services/query_service` | Alto |
 | `historial/` | historial de dominio | `models.py`, `services/` | Bajo |
 | `intervenciones/` | intervenciones sobre casos | tests + archivos del modulo | Bajo; exploracion parcial |
@@ -571,13 +574,19 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 ### Si necesitas cambiar rendiciones mensuales u Organizaciones
 
 - estados, etapas, subsanaciones y alcance por proyecto: `rendicioncuentasmensual/services.py`
-- solicitudes de documentos faltantes y categorías documentales: `rendicioncuentasmensual/models.py`; el contrato PWA se serializa en `comedores/api_serializers.py`
+- regla única de datos generales (convenio, número secuencial, período): `RendicionCuentaMensualService.validar_datos_generales`; la usan el formulario web, el alta y la edición de la PWA. No duplicarla
+- el número de rendición es secuencial por proyecto + convenio y se serializa con `select_for_update()`: cualquier camino de escritura nuevo tiene que correr dentro de `transaction.atomic` o el bloqueo no protege nada
+- la ventana del período depende de la línea programática: 3 meses en `secos`, 1 mes en el resto (`periodo_fin_maximo`)
+- solicitudes de documentos faltantes y categorías documentales: `rendicioncuentasmensual/models.py`; el catálogo depende de la línea (`CATEGORIAS_CONFIG["lineas"]`) y web y API lo resuelven con `RendicionCuentaMensualService.obtener_categorias_visibles`; el contrato PWA se serializa en `comedores/api_serializers.py`
+- confirmación de lectura de documentos: campos `visualizacion_*` en `DocumentacionAdjunta` y vista `RendicionDocumentoVerView`; los documentos se sirven por Django, no por la URL de media
+- etiquetas visibles ≠ valores persistidos: la etapa `revision_auditoria` se muestra como «Revisión para Carga». No cambiar valores internos para acomodar un label
 - asociación actual: `RendicionCuentaMensual.proyecto`; conservar fallback por `comedor.codigo_de_proyecto` para datos legados
 - listado y detalle del legajo: `organizaciones/views.py` y templates `organizacion_*`
 - proyectos editables: `OrganizacionForm.codigos_proyecto` mantiene el contrato CSV mediante un campo oculto
-- tests: `tests/test_rendicioncuentasmensual_services_unit.py` y `organizaciones/tests.py`
+- tests: `tests/test_rendicioncuentasmensual_services_unit.py`, `tests/test_rendicioncuentasmensual_domain_rules.py`, `tests/test_rendicioncuentasmensual_visualizacion.py`, `tests/test_rendicioncuentasmensual_acta_auditoria.py` y `organizaciones/tests.py`
 - escenarios QA de permisos por etapa: `python manage.py seed_rendicion_stage_examples --comedor-id <id>` (solicita la contraseña de forma interactiva)
 - documentación canónica: `docs/flujos/rendiciones_mensuales_proyectos.md`
+- contratos que consume la PWA (estados internos, health-check, edición de datos generales): `docs/implementaciones/pwa_backend.md`
 
 ### Si necesitas cambiar altas de ciudadanos en nómina
 
@@ -644,6 +653,20 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
   `GESTIONAR_INTEGRATION_ENABLED` corta todo el tráfico AppSheet/GESTIONAR; no
   usarlo como interruptor parcial.
 - RENAPER: `core/integrations/renaper.py`, `core/services/renaper.py`, docs `docs/flujos/consulta_renaper.md`
+- Validación RENAPER de nómina CDI (#2508, Fase 1): payload en
+  `ciudadanos/services_renaper_validacion.py`, indicador compartido del PDF en
+  `centrodeinfancia/services_renaper_estado.py` y comando
+  `validar_renaper_nominas_cdi --dry-run --batch-size 500 --limit 100`.
+  Incluso dry-run consulta RENAPER real: requiere ventana autorizada. El comando
+  confirma por lote de `--batch-size`, así que una falla conserva los lotes
+  anteriores y reejecutarlo retoma donde quedó.
+  Contrato y límites: `docs/implementaciones/centrodeinfancia_nomina_renaper.md`.
+- Reporte XLSX de CDI (#2508, Fase 2): `centrodeinfancia/services_reportes.py` y
+  `views_reportes.py`, en `/centrodeinfancia/reportes/`. Las columnas replican el
+  archivo validado en el issue y el alcance sale de `aplicar_scope_centros_cdi`:
+  no agregar columnas en el medio ni saltear ese scope. La descarga usa el
+  permiso propio `auth.role_reportes_cdi`, no el global `role_exportar_a_csv`.
+  Contrato: `docs/implementaciones/centrodeinfancia_reportes.md`.
 - Ticketera: `ticketera/`, `docs/integraciones/ticketera_api.md`
 
 ### Si necesitas cambiar preinscriptos CDF o vouchers VAT
@@ -667,6 +690,17 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
   `test_api_vat_centros_cue_`.
 - Request manual: `postman/SISOC APIs.postman_collection.json`, carpeta VAT /
   Centros e institución.
+
+### Si necesitas cambiar el Buscador por Ciudadano de INET
+
+- Entrada y flujo POST: `VAT/views/buscador_ciudadano.py`, `VAT/urls.py` y
+  `VAT/templates/vat/buscador/ciudadano.html`.
+- Scope, trayectoria y exportaciones: `VAT/services/buscador_ciudadano_service.py`
+  sobre el queryset compartido `VAT/services/vat_inscripciones_base.py`.
+- La búsqueda global requiere `ciudadanos.view_ciudadano`; un usuario solo VAT
+  no debe poder inferir ciudadanos ni inscripciones fuera de su alcance.
+- Tests de seguridad, duplicación, exports y queries:
+  `VAT/test_buscador_ciudadano.py`.
 
 ### Si necesitas cambiar CI o reglas de calidad
 
@@ -937,10 +971,17 @@ Marcar esas zonas como `A inferir` hasta relevarlas cuando una tarea real las to
   `git status --porcelain --untracked-files=all` para incluir archivos nuevos.
   Solo pushea en ramas internas no protegidas; `sync_pr_artifacts` verifica
   también forks y ramas protegidas. Los PRs hacia `main` requieren además
-  release note pendiente y `CHANGELOG.md` ya versionados.
+  release note pendiente y `CHANGELOG.md` ya versionados. Las ejecuciones se
+  serializan por PR y el push automático reintenta con `fetch` + `rebase` si
+  otra automatización hizo avanzar la rama; los conflictos reales bloquean.
 - `.github/workflows/deploy.yml`
 - `scripts/ai/codex_run.ps1`
 - `scripts/ai/codex_task.ps1`
 - `.codex/environments/environment.toml`
 - inventario de archivos con `git ls-files`
 - inventario estructural de apps y scripts via shell
+
+## PAS Celery mensual
+- `config/celery.py`, `pas/tasks.py`, `pas/services/supervivencia_jobs.py`: programación, reconciliación y un lote exclusivo por MySQL GET_LOCK; dentro del lote, ventanas transaccionales, dos clientes por hilo y límite agregado inicial de 16 solicitudes/s.
+- `docker-compose.celery.yml` se incorpora desde deploy_refresh; Redis persistente, Beat único y worker PAS.
+- Runbook funcional: `docs/implementaciones/pas_control_mensual_celery.md`; retirada cron: `scripts/infra/remove_pas_cron.sh`.

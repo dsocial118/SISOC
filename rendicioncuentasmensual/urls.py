@@ -5,6 +5,7 @@ from rendicioncuentasmensual.views import (
     RendicionCuentaMensualListView,
     RendicionCuentaMensualDetailView,
     RendicionCuentaMensualDownloadPdfView,
+    RendicionDocumentoVerView,
     RendicionCuentaMensualDeleteView,
     RendicionCuentaMensualCreateView,
     RendicionCuentaMensualUpdateView,
@@ -48,6 +49,13 @@ urlpatterns = [
             RendicionCuentaMensualDownloadPdfView.as_view()
         ),
         name="rendicioncuentasmensual_download_pdf",
+    ),
+    path(
+        "rendicioncuentasmensual/documento/<int:pk>/ver/",
+        permissions_any_required(_RENDICION_ACCESS_PERMS)(
+            RendicionDocumentoVerView.as_view()
+        ),
+        name="rendicioncuentasmensual_documento_ver",
     ),
     path(
         "rendicioncuentasmensual/eliminar/<int:pk>/",

@@ -18,6 +18,9 @@ media
 # <django-project-name>/staticfiles/
 static_root/
 
+# Salidas de runtime del mapa de arquitectura (se regeneran en cada arranque)
+/var/
+
 ### Django.Python Stack ###
 # Byte-compiled / optimized / DLL files
 *.py[cod]
@@ -429,3 +432,6 @@ tmp_ocr_eval/
 /output/pdf/ddjj_pas_muestra.pdf
 /tmp/pdfs/ddjj-generated/
 /tmp/pdfs/ddjj-reference/
+
+# Templates de providencias locales (insumo para lectura, no versionar)
+/_templates_providencias/

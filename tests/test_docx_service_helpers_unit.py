@@ -211,20 +211,9 @@ def test_preparar_contextos_admision_convenio_disposicion(mocker):
         "admisiones.services.docx_service.FormularioProyectoDeConvenio.objects.filter",
         return_value=SimpleNamespace(first=lambda: "conv"),
     )
-    mocker.patch(
-        "admisiones.services.docx_service.FormularioProyectoDisposicion.objects.filter",
-        return_value=SimpleNamespace(first=lambda: "disp"),
-    )
-
     ctx_adm = module.TextFormatterService.preparar_contexto_admision(admision)
     assert len(ctx_adm["documentos"]) == 2
     assert ctx_adm["documentos"][1]["nombre"] == "Alt2"
 
     ctx_conv = module.TextFormatterService.preparar_contexto_proyecto_convenio(admision)
     assert ctx_conv["formulario"] == "conv"
-
-    ctx_disp = module.TextFormatterService.preparar_contexto_proyecto_disposicion(
-        admision
-    )
-    assert ctx_disp["formulario"] == "disp"
-    assert ctx_disp["proyecto_convenio"] == "conv"

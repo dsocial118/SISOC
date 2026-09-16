@@ -158,6 +158,7 @@ from VAT.views.evaluacion import (
     ResultadoEvaluacionDeleteView,
 )
 from VAT.views.reporte import ReporteInscriptosAsistenciasView
+from VAT.views.buscador_ciudadano import BuscadorCiudadanoView
 
 
 urlpatterns = [
@@ -167,6 +168,13 @@ urlpatterns = [
             ["VAT.view_inscripcion", "VAT.view_comisioncurso", "VAT.view_centro"]
         )(ReporteInscriptosAsistenciasView.as_view()),
         name="vat_reporte_inscripciones_asistencias",
+    ),
+    path(
+        "vat/buscador-ciudadano/",
+        permissions_any_required(["VAT.view_inscripcion", "VAT.view_centro"])(
+            BuscadorCiudadanoView.as_view()
+        ),
+        name="vat_buscador_ciudadano",
     ),
     path(
         "vat/centros/",

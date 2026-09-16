@@ -168,7 +168,7 @@ def test_post_validation_error_and_internal_error(mocker):
         POST={
             "apellido": "P",
             "nombre": "N",
-            "documento": "123",
+            "documento": "20123456783",
             "fecha_nacimiento": "2000-01-01",
             "sexo": "1",
             "nacionalidad": "2",
@@ -232,7 +232,7 @@ def test_post_success(mocker):
         POST={
             "apellido": "P",
             "nombre": "N",
-            "documento": "123",
+            "documento": "20123456783",
             "fecha_nacimiento": "2000-01-01",
             "sexo": "1",
             "nacionalidad": "2",
