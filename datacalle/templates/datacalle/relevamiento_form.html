@@ -51,7 +51,16 @@
                     <div class="col-md-4">{{ form.localidades|as_crispy_field }}</div>
                     <div class="col-md-4">{{ form.fase|as_crispy_field }}</div>
                     <div class="col-md-8" id="campo-area-operativa">{{ form.area_operativa|as_crispy_field }}</div>
-                    <div class="col-md-8" id="campo-dispositivo">{{ form.dispositivo|as_crispy_field }}</div>
+                    <div class="col-md-8" id="campo-dispositivo">
+                        {{ form.dispositivo|as_crispy_field }}
+                        {% if perms.dispositivos.add_dispositivo %}
+                            <p class="dc-form-seccion__ayuda mb-3">
+                                ¿No está en la lista?
+                                <a href="{% url 'dispositivos_crear' %}" target="_blank" rel="noopener">Dar de alta un dispositivo</a>
+                                y volvé a elegir la provincia para recargarlo.
+                            </p>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
         </div>
@@ -105,6 +114,9 @@
     if (!fase) {
       return;
     }
+    const inputArea = document.getElementById('id_area_operativa');
+    const selectDispositivo = document.getElementById('id_dispositivo');
+
     const sincronizarFase = () => {
       const esEspacioPublico = fase.value === 'espacio_publico';
       if (campoArea) {
@@ -112,6 +124,13 @@
       }
       if (campoDispositivo) {
         campoDispositivo.style.display = esEspacioPublico ? 'none' : '';
+      }
+      // QA-0009: se pide en el momento de elegir la fase, no recién al guardar.
+      if (inputArea) {
+        inputArea.required = esEspacioPublico;
+      }
+      if (selectDispositivo) {
+        selectDispositivo.required = !esEspacioPublico && fase.value !== '';
       }
     };
     fase.addEventListener('change', sincronizarFase);
@@ -179,9 +198,21 @@
       }
     };
 
+    // QA-0010 y QA-0013: dispositivos y equipo dependen de la provincia elegida.
+    const dispositivo = document.getElementById('id_dispositivo');
+    const equipo = document.getElementById('id_equipo');
+    const urlDispositivos = '{% url "datacalle_ajax_dispositivos" %}';
+    const urlRelevadores = '{% url "datacalle_ajax_relevadores" %}';
+
     alCambiar(provincia, () => {
       cargar(urlMunicipios, { provincia_id: provincia.value }, municipio, 'Seleccionar municipio...');
       reemplazar(localidades, [], null);
+      if (dispositivo) {
+        cargar(urlDispositivos, { provincia_id: provincia.value }, dispositivo, 'Seleccionar dispositivo...');
+      }
+      if (equipo) {
+        cargar(urlRelevadores, { provincia_id: provincia.value }, equipo, null);
+      }
     });
 
     alCambiar(municipio, () => {
