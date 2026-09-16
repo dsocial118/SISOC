@@ -246,11 +246,19 @@
         const sedesSelectEl = document.getElementById("id_sedes");
         const select = $("#id_sedes");
         const provincia = document.getElementById("id_provincia");
+        const provinciaSelect = $(".select2-provincia-vpsl");
         const localidad = document.getElementById("id_localidad_filtro");
         const fechaInicio = document.getElementById("id_fecha_inicio");
         const fechaFin = document.getElementById("id_fecha_fin");
         const localidadesBox = document.getElementById("sedes-localidades");
         const subsanacionSedeSelects = $(".select2-sede-subsanacion-vpsl");
+
+        if (provinciaSelect.length) {
+          provinciaSelect.select2({
+            width: "100%",
+            placeholder: "Seleccione una provincia",
+          });
+        }
 
         function validarRangoFechas() {
           if (!fechaInicio || !fechaFin) return;
@@ -291,7 +299,7 @@
               processResults: function (data, params) {
                 params.page = params.page || 1;
                 return {
-                  results: data.results,
+                  results: provincia && provincia.value ? data.results : [],
                   pagination: {
                     more: data.pagination && data.pagination.more,
                   },
@@ -304,8 +312,25 @@
             placeholder: "Buscar por nombre, cueanexo o domicilio",
           });
           if (provincia) {
-            provincia.addEventListener("change", function () {
+            $(provincia).on("change", async function () {
               select.val(null).trigger("change");
+              if (!provinciaSelect.length || !localidad) return;
+              const provinciaId = provincia.value;
+              localidad.replaceChildren(new Option("Todas", ""));
+              localidad.value = "";
+              if (!provinciaId) return;
+              try {
+                const url = new URL("{% url 'vpsl_sedes_localidades' %}", window.location.origin);
+                url.searchParams.set("provincia", provinciaId);
+                const response = await fetch(url);
+                if (!response.ok || provincia.value !== provinciaId) return;
+                const data = await response.json();
+                (data.localidades || []).forEach((item) => localidad.add(new Option(item, item)));
+              } catch (error) {
+                if (provincia.value === provinciaId) {
+                  localidad.replaceChildren(new Option("Todas", ""));
+                }
+              }
             });
           }
           if (localidad) {

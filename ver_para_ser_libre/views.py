@@ -37,7 +37,8 @@ from ver_para_ser_libre.forms import (
     ItinerarioVPSLForm,
     JornadaVPSLForm,
     RegistroNominalVPSLForm,
-    SedeVPSLForm,
+    SedeCreateVPSLForm,
+    SedeUpdateVPSLForm,
 )
 from ver_para_ser_libre.models import (
     CasoLaboratorioVPSL,
@@ -52,9 +53,13 @@ from ver_para_ser_libre.models import (
     SedeVPSL,
 )
 from ver_para_ser_libre.services import workflow
+from ver_para_ser_libre.services.sedes import filtrar_sedes_por_provincia
 
 
 VIEW_ALL_ITINERARIOS_PERMISSION = "ver_para_ser_libre.view_all_itinerarios_vpsl"
+CREATE_ANY_PROVINCE_PERMISSION = (
+    "ver_para_ser_libre.create_itinerarios_any_province_vpsl"
+)
 
 
 def _breadcrumb(*items):
@@ -132,6 +137,10 @@ def _filtrar_itinerarios_por_usuario(queryset, user):
     if _puede_ver_todos_los_itinerarios(user):
         return queryset
     provincia = _provincia_usuario_provincial(user)
+    if user_has_permission_code(user, CREATE_ANY_PROVINCE_PERMISSION):
+        if provincia:
+            return queryset.filter(Q(provincia=provincia) | Q(creado_por=user))
+        return queryset.filter(creado_por=user)
     if provincia:
         return queryset.filter(provincia=provincia)
     return queryset.none()
@@ -326,7 +335,7 @@ def sedes_autocomplete(request):
     if provincia_id:
         provincia = Provincia.objects.filter(pk=provincia_id).first()
         if provincia:
-            sedes = sedes.filter(jurisdiccion__icontains=provincia.nombre)
+            sedes = filtrar_sedes_por_provincia(sedes, provincia)
     if localidad:
         sedes = sedes.filter(localidad__iexact=localidad)
     if exclude_ids:
@@ -346,7 +355,7 @@ def sedes_autocomplete(request):
     results = [
         {
             "id": sede.pk,
-            "text": f"{sede.nombre} | {sede.cueanexo} | {sede.domicilio}",
+            "text": f"{sede.nombre} | {sede.cueanexo or 'Sin CUE'} | {sede.domicilio}",
             "localidad": sede.localidad,
             "domicilio": sede.domicilio,
             "cueanexo": sede.cueanexo,
@@ -360,6 +369,25 @@ def sedes_autocomplete(request):
             "pagination": {"more": end < total},
         }
     )
+
+
+def sedes_localidades(request):
+    provincia_id = request.GET.get("provincia")
+    provincia = (
+        Provincia.objects.filter(pk=provincia_id).first()
+        if provincia_id and str(provincia_id).isdigit()
+        else None
+    )
+    if not provincia:
+        return JsonResponse({"localidades": []})
+    localidades = list(
+        filtrar_sedes_por_provincia(SedeVPSL.objects.all(), provincia)
+        .exclude(localidad="")
+        .order_by("localidad")
+        .values_list("localidad", flat=True)
+        .distinct()
+    )
+    return JsonResponse({"localidades": localidades})
 
 
 class ItinerarioListView(LoginRequiredMixin, ListView):
@@ -405,7 +433,12 @@ class ItinerarioListView(LoginRequiredMixin, ListView):
             queryset = queryset.filter(filtro)
         if estado:
             queryset = queryset.filter(estado=estado)
-        if provincia_id and _puede_ver_todos_los_itinerarios(self.request.user):
+        if provincia_id and (
+            _puede_ver_todos_los_itinerarios(self.request.user)
+            or user_has_permission_code(
+                self.request.user, CREATE_ANY_PROVINCE_PERMISSION
+            )
+        ):
             queryset = queryset.filter(provincia_id=provincia_id)
         if localidad:
             queryset = queryset.filter(
@@ -424,6 +457,9 @@ class ItinerarioListView(LoginRequiredMixin, ListView):
         provincia_usuario = (
             None
             if _puede_ver_todos_los_itinerarios(self.request.user)
+            or user_has_permission_code(
+                self.request.user, CREATE_ANY_PROVINCE_PERMISSION
+            )
             else _provincia_usuario_provincial(self.request.user)
         )
         context["query"] = self.request.GET.get("busqueda", "")
@@ -439,6 +475,9 @@ class ItinerarioListView(LoginRequiredMixin, ListView):
         context["estado_choices"] = EstadoItinerario.choices
         context["provincias"] = Provincia.objects.order_by("nombre")
         context["provincia_restringida"] = provincia_usuario
+        context["puede_crear_itinerario"] = user_has_permission_code(
+            self.request.user, "ver_para_ser_libre.add_itinerariovpsl"
+        ) or user_has_permission_code(self.request.user, CREATE_ANY_PROVINCE_PERMISSION)
         context["breadcrumb_items"] = _breadcrumb(
             {"text": "Itinerarios", "active": True}
         )
@@ -451,21 +490,42 @@ class ItinerarioCreateView(LoginRequiredMixin, CreateView):
     template_name = "ver_para_ser_libre/itinerario_form.html"
 
     def dispatch(self, request, *args, **kwargs):
-        if not _provincia_usuario_provincial(request.user):
+        permiso_global = user_has_permission_code(
+            request.user, CREATE_ANY_PROVINCE_PERMISSION
+        )
+        profile = getattr(request.user, "profile", None)
+        provincia_asignada = bool(profile and profile.provincia_id)
+        if not (
+            provincia_asignada
+            if permiso_global
+            else _provincia_usuario_provincial(request.user)
+        ):
             messages.error(
                 request,
-                "Para crear itinerarios debe ser usuario provincial y tener una provincia asignada.",
+                (
+                    "Para crear itinerarios debe tener una provincia asignada."
+                    if permiso_global
+                    else "Para crear itinerarios debe ser usuario provincial y tener una provincia asignada."
+                ),
             )
             return redirect("vpsl_itinerario_list")
         return super().dispatch(request, *args, **kwargs)
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        kwargs["provincia_bloqueada"] = _provincia_usuario_provincial(self.request.user)
+        if not user_has_permission_code(
+            self.request.user, CREATE_ANY_PROVINCE_PERMISSION
+        ):
+            kwargs["provincia_bloqueada"] = _provincia_usuario_provincial(
+                self.request.user
+            )
         return kwargs
 
     def form_valid(self, form):
-        form.instance.provincia = _provincia_usuario_provincial(self.request.user)
+        if not user_has_permission_code(
+            self.request.user, CREATE_ANY_PROVINCE_PERMISSION
+        ):
+            form.instance.provincia = _provincia_usuario_provincial(self.request.user)
         form.instance.creado_por = self.request.user
         form.instance.modificado_por = self.request.user
         messages.success(self.request, "Itinerario creado correctamente.")
@@ -821,14 +881,18 @@ class SedeListView(LoginRequiredMixin, ListView):
 
 class SedeMixin:
     model = SedeVPSL
-    form_class = SedeVPSLForm
+    form_class = SedeUpdateVPSLForm
     template_name = "ver_para_ser_libre/sede_form.html"
+    checklist_required = True
 
     def get_success_url(self):
         return reverse("vpsl_sede_update", kwargs={"pk": self.object.pk})
 
     def _build_checklist_form(self):
-        kwargs = {"sede": getattr(self, "object", None)}
+        kwargs = {
+            "sede": getattr(self, "object", None),
+            "required": self.checklist_required,
+        }
         if self.request.method == "POST":
             kwargs.update({"data": self.request.POST, "files": self.request.FILES})
         return ChecklistSedeVPSLForm(**kwargs)
@@ -854,10 +918,12 @@ class SedeMixin:
             old_observacion = checklist.observacion
             checklist.descripcion = label
             checklist.critico = True
-            checklist.cumple = checklist_form.cleaned_data[f"{item_code}_cumple"]
-            checklist.observacion = checklist_form.cleaned_data.get(
-                f"{item_code}_observacion", ""
-            )
+            if f"{item_code}_cumple" in self.request.POST:
+                checklist.cumple = checklist_form.cleaned_data[f"{item_code}_cumple"]
+            if f"{item_code}_observacion" in self.request.POST:
+                checklist.observacion = checklist_form.cleaned_data.get(
+                    f"{item_code}_observacion", ""
+                )
             evidencia = checklist_form.cleaned_data.get(f"{item_code}_evidencia")
             if evidencia:
                 checklist.evidencia = evidencia
@@ -882,12 +948,30 @@ class SedeMixin:
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         checklist_form = kwargs.get("checklist_form") or ChecklistSedeVPSLForm(
-            sede=getattr(self, "object", None)
+            sede=getattr(self, "object", None), required=self.checklist_required
         )
         context["checklist_form"] = checklist_form
         context["field_groups"] = checklist_form.field_groups
         sede = getattr(self, "object", None)
         context["mapa_query"] = quote_plus(sede.mapa_query) if sede else ""
+        form = context["form"]
+        context["required_fields"] = [
+            form[name]
+            for name in ("nombre", "domicilio", "provincia", "localidad", "telefono")
+        ]
+        context["additional_fields"] = [
+            form[name]
+            for name in (
+                "sector",
+                "ambito",
+                "departamento",
+                "codigo_departamento",
+                "codigo_localidad",
+                "cueanexo",
+                "codigo_postal",
+                "mail",
+            )
+        ]
         context["breadcrumb_items"] = _breadcrumb(
             {"text": "Sedes", "url": reverse("vpsl_sede_list")},
             {"text": "Editar" if sede else "Nueva sede", "active": True},
@@ -896,11 +980,12 @@ class SedeMixin:
 
 
 class SedeCreateView(LoginRequiredMixin, SedeMixin, CreateView):
-    pass
+    form_class = SedeCreateVPSLForm
+    checklist_required = False
 
 
 class SedeUpdateView(LoginRequiredMixin, SedeMixin, UpdateView):
-    pass
+    checklist_required = False
 
 
 class SedeDeleteView(SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteView):

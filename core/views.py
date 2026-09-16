@@ -504,6 +504,9 @@ def mapa_arquitectura_datos(request):
         logger.warning("No se pudo leer el grafo de arquitectura: %s", exc)
         return JsonResponse({"detail": "El mapa todavía no fue generado."}, status=404)
 
+    # El grafo ya esta serializado en disco: JsonResponse obligaria a parsear y
+    # volver a serializar el archivo completo sin ningun beneficio.
+    # pylint: disable=http-response-with-content-type-json
     return HttpResponse(contenido, content_type="application/json")
 
 

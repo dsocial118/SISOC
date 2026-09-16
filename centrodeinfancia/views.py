@@ -260,10 +260,10 @@ def _build_trabajadores_context(request, centro):
     return {
         "trabajadores": centro.trabajadores.order_by("apellido", "nombre"),
         "puede_editar_trabajadores": request.user.has_perm(
-            "centrodeinfancia.change_centrodeinfancia"
+            "centrodeinfancia.change_trabajador"
         ),
         "puede_eliminar_trabajadores": request.user.has_perm(
-            "centrodeinfancia.delete_centrodeinfancia"
+            "centrodeinfancia.delete_trabajador"
         ),
     }
 
@@ -1153,7 +1153,10 @@ class TrabajadorCentroInfanciaDetailView(LoginRequiredMixin, DetailView):
         context = super().get_context_data(**kwargs)
         context["centro"] = self.object.centro
         context["puede_editar_trabajadores"] = self.request.user.has_perm(
-            "centrodeinfancia.change_centrodeinfancia"
+            "centrodeinfancia.change_trabajador"
+        )
+        context["puede_eliminar_trabajadores"] = self.request.user.has_perm(
+            "centrodeinfancia.delete_trabajador"
         )
         return context
 

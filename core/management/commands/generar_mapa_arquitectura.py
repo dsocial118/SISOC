@@ -29,7 +29,10 @@ class Command(BaseCommand):
         base_dir = Path(settings.BASE_DIR)
         try:
             result = subprocess.run(
-                [sys.executable, str(base_dir / "scripts/arquitectura/generar_mapa.py")],
+                [
+                    sys.executable,
+                    str(base_dir / "scripts/arquitectura/generar_mapa.py"),
+                ],
                 cwd=settings.BASE_DIR,
                 timeout=120,
                 capture_output=True,
@@ -47,9 +50,13 @@ class Command(BaseCommand):
                     f"El generador del mapa falló (exit={result.returncode})."
                 )
             if options["check"]:
-                faltantes = [ruta for ruta in SALIDAS if not (base_dir / ruta).is_file()]
+                faltantes = [
+                    ruta for ruta in SALIDAS if not (base_dir / ruta).is_file()
+                ]
                 if faltantes:
-                    raise CommandError("Faltan salidas del mapa: " + ", ".join(faltantes))
+                    raise CommandError(
+                        "Faltan salidas del mapa: " + ", ".join(faltantes)
+                    )
         except (OSError, subprocess.SubprocessError) as exc:
             logger.error("No se pudo generar el mapa de arquitectura: %s", exc)
             raise CommandError(f"No se pudo generar el mapa: {exc}") from exc
