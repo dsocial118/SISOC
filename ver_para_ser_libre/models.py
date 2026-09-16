@@ -79,13 +79,13 @@ class EstadoEvaluacionVPSL(models.TextChoices):
 
 class SedeVPSL(SoftDeleteModelMixin, models.Model):
     jurisdiccion = models.CharField(max_length=255)
-    sector = models.CharField(max_length=64)
-    ambito = models.CharField(max_length=64)
-    departamento = models.CharField(max_length=255)
-    codigo_departamento = models.CharField(max_length=32)
+    sector = models.CharField(max_length=64, blank=True)
+    ambito = models.CharField(max_length=64, blank=True)
+    departamento = models.CharField(max_length=255, blank=True)
+    codigo_departamento = models.CharField(max_length=32, blank=True)
     localidad = models.CharField(max_length=255)
-    codigo_localidad = models.CharField(max_length=32)
-    cueanexo = models.CharField(max_length=32, unique=True)
+    codigo_localidad = models.CharField(max_length=32, blank=True)
+    cueanexo = models.CharField(max_length=32, unique=True, blank=True, null=True)
     nombre = models.CharField(max_length=255)
     domicilio = models.CharField(max_length=255)
     codigo_postal = models.CharField(max_length=16, blank=True)
@@ -121,7 +121,19 @@ class SedeVPSL(SoftDeleteModelMixin, models.Model):
     def mapa_query(self):
         if self.latitud is not None and self.longitud is not None:
             return f"{self.latitud},{self.longitud}"
-        return f"{self.nombre}, {self.domicilio}, {self.localidad}, {self.jurisdiccion}"
+        return ", ".join(
+            filter(
+                None,
+                (
+                    self.domicilio,
+                    self.localidad,
+                    self.departamento,
+                    self.jurisdiccion,
+                    self.codigo_postal,
+                    "Argentina",
+                ),
+            )
+        )
 
 
 class ItinerarioVPSL(SoftDeleteModelMixin, models.Model):
@@ -191,6 +203,10 @@ class ItinerarioVPSL(SoftDeleteModelMixin, models.Model):
         verbose_name = "Itinerario VPSL"
         verbose_name_plural = "Itinerarios VPSL"
         permissions = [
+            (
+                "create_itinerarios_any_province_vpsl",
+                "Puede crear itinerarios VPSL en cualquier provincia",
+            ),
             (
                 "view_all_itinerarios_vpsl",
                 "Puede ver todos los itinerarios VPSL sin restriccion provincial",

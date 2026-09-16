@@ -12,6 +12,7 @@ urlpatterns = [
             [
                 "ver_para_ser_libre.view_itinerariovpsl",
                 "ver_para_ser_libre.view_all_itinerarios_vpsl",
+                "ver_para_ser_libre.create_itinerarios_any_province_vpsl",
             ]
         )(views.ItinerarioListView.as_view()),
         name="vpsl_itinerario_list",
@@ -22,9 +23,21 @@ urlpatterns = [
             [
                 "ver_para_ser_libre.view_sedevpsl",
                 "ver_para_ser_libre.view_itinerariovpsl",
+                "ver_para_ser_libre.create_itinerarios_any_province_vpsl",
             ]
         )(views.sedes_autocomplete),
         name="vpsl_sedes_autocomplete",
+    ),
+    path(
+        "ver-para-ser-libre/sedes/localidades/",
+        permissions_any_required(
+            [
+                "ver_para_ser_libre.view_sedevpsl",
+                "ver_para_ser_libre.view_itinerariovpsl",
+                "ver_para_ser_libre.create_itinerarios_any_province_vpsl",
+            ]
+        )(views.sedes_localidades),
+        name="vpsl_sedes_localidades",
     ),
     path(
         "ver-para-ser-libre/renaper/consultar/",
@@ -68,9 +81,12 @@ urlpatterns = [
     ),
     path(
         "ver-para-ser-libre/crear/",
-        permissions_any_required(["ver_para_ser_libre.add_itinerariovpsl"])(
-            views.ItinerarioCreateView.as_view()
-        ),
+        permissions_any_required(
+            [
+                "ver_para_ser_libre.add_itinerariovpsl",
+                "ver_para_ser_libre.create_itinerarios_any_province_vpsl",
+            ]
+        )(views.ItinerarioCreateView.as_view()),
         name="vpsl_itinerario_create",
     ),
     path(
@@ -79,6 +95,7 @@ urlpatterns = [
             [
                 "ver_para_ser_libre.view_itinerariovpsl",
                 "ver_para_ser_libre.view_all_itinerarios_vpsl",
+                "ver_para_ser_libre.create_itinerarios_any_province_vpsl",
             ]
         )(views.ItinerarioDetailView.as_view()),
         name="vpsl_itinerario_detail",
