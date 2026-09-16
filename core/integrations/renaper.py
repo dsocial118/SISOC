@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import time
 from typing import Any
 
 import requests
@@ -51,10 +52,14 @@ def _response_json_utf8(response: requests.Response) -> Any:
 class APIClient:
     """Encapsula autenticacion, transporte y errores de RENAPER."""
 
-    def __init__(self):
+    def __init__(self, *, reuse_token=False, request_interval=0, before_request=None):
         self.username = settings.RENAPER_API_USERNAME
         self.password = settings.RENAPER_API_PASSWORD
         self.session = requests.Session()
+        self.reuse_token = reuse_token
+        self.token = None
+        self.request_interval = request_interval
+        self.before_request = before_request
 
     @property
     def login_url(self) -> str:
@@ -66,7 +71,12 @@ class APIClient:
 
     def get_token(self) -> str:
         """Obtiene un token efímero sin persistirlo en cache local."""
-        return self._login()
+        if self.reuse_token and self.token:
+            return self.token
+        token = self._login()
+        if self.reuse_token:
+            self.token = token
+        return token
 
     def _login(self) -> str:
         try:
@@ -115,13 +125,19 @@ class APIClient:
 
         return token
 
-    def consultar_ciudadano(self, dni: str, sexo: str) -> dict[str, Any]:
+    def consultar_ciudadano(
+        self, dni: str, sexo: str, *, refreshed=False
+    ) -> dict[str, Any]:
         try:
             token = self.get_token()
         except RenaperServiceError as exc:
             return _error_result(str(exc), exc.error_type)
 
         try:
+            if self.before_request is not None:
+                self.before_request()
+            elif self.request_interval:
+                time.sleep(self.request_interval)
             response = self.session.get(
                 self.consulta_url,
                 headers={"Authorization": f"Bearer {token}"},
@@ -136,6 +152,9 @@ class APIClient:
             )
         except requests.HTTPError as exc:
             status_code = getattr(exc.response, "status_code", None)
+            if status_code == 401 and self.reuse_token and not refreshed:
+                self.token = None
+                return self.consultar_ciudadano(dni, sexo, refreshed=True)
             error_type = "auth_error" if status_code in {401, 403} else "remote_error"
             _log_failure("consult", error_type, status_code)
             message = (

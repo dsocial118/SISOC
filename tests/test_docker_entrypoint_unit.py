@@ -1,6 +1,7 @@
 """Tests unitarios para docker/django/entrypoint.py."""
 
 import importlib.util
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -119,10 +120,40 @@ def test_run_server_usa_gunicorn_en_entornos_deploy(mocker, monkeypatch, environ
     module.run_server()
 
     mock_cache_busting.assert_called_once_with()
-    mock_run_command.assert_called_once()
+
+    # El mapa de arquitectura se genera antes de collectstatic para que sus
+    # salidas entren en el manifest; recien despues arranca el servidor.
+    etapas = [llamada.kwargs["stage"] for llamada in mock_run_command.call_args_list]
+    assert etapas == ["mapa_arquitectura", "gunicorn"]
+
     args, kwargs = mock_run_command.call_args
     assert args[0][:2] == ["gunicorn", "config.wsgi:application"]
     assert kwargs["stage"] == "gunicorn"
+
+
+@pytest.mark.parametrize("environment", ["qa", "homologacion", "prd"])
+def test_run_server_sigue_si_falla_el_mapa_de_arquitectura(
+    mocker, monkeypatch, environment
+):
+    """El mapa es informativo: su fallo no puede abortar el arranque."""
+    module = _load_entrypoint_module()
+    mocker.patch.object(module, "cache_busting")
+    mock_run_command = mocker.patch.object(
+        module,
+        "run_command",
+        side_effect=[
+            subprocess.CalledProcessError(
+                1, ["manage.py", "generar_mapa_arquitectura"]
+            ),
+            None,
+        ],
+    )
+    monkeypatch.setenv("ENVIRONMENT", environment)
+
+    module.run_server()
+
+    etapas = [llamada.kwargs["stage"] for llamada in mock_run_command.call_args_list]
+    assert etapas == ["mapa_arquitectura", "gunicorn"]
 
 
 def test_run_bulk_credentials_worker_lanza_comando_dedicado(mocker):

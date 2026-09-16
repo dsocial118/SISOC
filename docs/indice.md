@@ -51,12 +51,14 @@
 - `docs/implementaciones/usuarios_perfil_iam.md`: implementación de Usuarios/Perfil + IAM por permisos Django y guía para extender nuevas features.
 - `docs/implementaciones/centrodeinfancia_nomina_renaper.md`: contrato de asistencia de nómina CDI, alcance y precarga RENAPER de trabajadores.
 - `docs/implementaciones/centrodeinfancia_nomina_ninos_simepi.md`: autorización, alcance provincial, privacidad y contrato del PDF de nómina infantil SIMEPI.
+- `docs/implementaciones/centrodeinfancia_reportes.md`: contrato de columnas, alcance por rol y permisos del reporte XLSX de CDI, trabajadores y nómina.
 - `docs/implementaciones/comedores_nomina_ciudadanos.md`: alta de ciudadanos con DNI/Sin DNI desde nómina y transacción de datos sociales.
 - `docs/implementaciones/centrodefamilia_preinscriptos.md`: contrato del listado y exportación CSV de preinscriptos CDF, incluyendo columnas, ordenamiento y permisos.
 - `docs/implementaciones/pas.md`: contrato del padrón PAS, DDJJ e informes reproducibles.
 - `docs/implementaciones/encuestas.md`: ciclo funcional de encuestas, permisos, privacidad y operación de rondas.
 - `docs/implementaciones/celiaquia_comentarios_tecnicos.md`: comentarios técnicos, publicación a Provincia y vínculo con Subsanar/Rechazar.
 - `docs/vat/`: guías funcionales, API, operación de vouchers y desarrollo del módulo VAT.
+- `docs/vat/manual_usuario.md`: operación de INET/VAT, incluido el Buscador por Ciudadano y su alcance de acceso.
 
 ### 5. Flujos y sincronizaciones
 - `docs/flujos/comedor_sync.md`: cómo funciona la sincronización de comedores con servicios externos.
@@ -75,6 +77,9 @@
 - `docs/registro/README.md`: reglas para registrar cambios y decisiones importantes en `docs/`.
 - `docs/registro/cambios/`: historial de cambios importantes.
 - `docs/registro/decisiones/`: decisiones relevantes (ADR livianas).
+- `docs/registro/decisiones/2026-07-28-pas-circuito-cruces.md`: alcance y límites del circuito mensual SINTyS de PAS.
+- `docs/registro/decisiones/2026-07-29-pas-supervivencia-renaper.md`: control diario RENAPER e incompatibilidades de supervivencia PAS.
+- `docs/registro/decisiones/2026-07-16-pas-formacion-vat.md`: Formación PAS permanece desacoplada hasta definir el contrato de integración.
 - `docs/registro/prs/`: documentación automática por pull request.
 - `docs/registro/releases/pending/`: release notes preliminares usadas para reconstruir `CHANGELOG.md` en PRs a `main`.
 - `docs/registro/analisis/` y `docs/analisis/`: hipótesis, relevamientos y propuestas; no reemplazan la documentación canónica ni un registro de cambio.
@@ -86,3 +91,5 @@
 - Stack: Django + MySQL con despliegue vía Docker Compose. Evidencia: README.md:1-4 y docker-compose.yml:1-34.
 - Variables de entorno documentadas en `.env.example` (incluye DB, GESTIONAR, RENAPER, puertos y dominio). Evidencia: .env.example:1-51.
 - Servicios externos activos: GESTIONAR (sincronización de comedores/relevamientos) y RENAPER (consulta de ciudadanos). Evidencia: comedores/tasks.py, relevamientos/tasks.py, core/integrations/renaper.py, core/services/renaper.py.
+
+- `docs/implementaciones/pas_control_mensual_celery.md`: funcionamiento, lotes, programación mensual, operación y retiro cron PAS.

@@ -16,6 +16,10 @@ on:
             - homologacion
             - main
 
+concurrency:
+    group: pr-docs-${{ github.event.pull_request.number || github.ref }}
+    cancel-in-progress: false
+
 jobs:
     generate_pr_artifacts:
         if: github.event.sender.login != 'github-actions[bot]' && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref != 'development' && github.event.pull_request.head.ref != 'homologacion' && github.event.pull_request.head.ref != 'main'
@@ -43,6 +47,8 @@ jobs:
               run: python scripts/ci/pr_doc_automation.py
 
             - name: Commit automatico de artefactos
+              env:
+                  PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
               run: |
                   changes="$(git status --porcelain --untracked-files=all -- docs/registro/prs docs/contexto/features docs/registro/releases/pending CHANGELOG.md)"
                   if [ -z "$changes" ]; then
@@ -55,7 +61,26 @@ jobs:
 
                   git add docs/registro/prs docs/contexto/features docs/registro/releases/pending CHANGELOG.md
                   git commit -m "docs(ci): actualizar artefactos automaticos del PR #${{ github.event.pull_request.number }}"
-                  git push
+
+                  for attempt in 1 2 3; do
+                    if git push origin "HEAD:${PR_HEAD_REF}"; then
+                      exit 0
+                    fi
+                    if [ "$attempt" -eq 3 ]; then
+                      break
+                    fi
+
+                    echo "La rama avanzo durante la generacion; reintentando sobre el HEAD remoto (intento $attempt/3)."
+                    git fetch --no-tags origin "+refs/heads/${PR_HEAD_REF}:refs/remotes/origin/${PR_HEAD_REF}"
+                    if ! git rebase "refs/remotes/origin/${PR_HEAD_REF}"; then
+                      git rebase --abort
+                      echo "No fue posible rebasar los artefactos automaticos sin conflictos."
+                      exit 1
+                    fi
+                  done
+
+                  echo "No fue posible publicar los artefactos automaticos tras 3 intentos."
+                  exit 1
 
     sync_pr_artifacts:
         needs: generate_pr_artifacts

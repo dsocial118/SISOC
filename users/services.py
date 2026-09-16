@@ -15,6 +15,7 @@ from iam.services import (
     user_has_permission_code,
 )
 from users.models import Profile
+from users.services_datacalle import get_relevadores_administrables
 from users.services_delegation import effective_delegatable_groups_qs
 from users.users_filter_config import (
     FIELD_MAP as BENEFICIARIO_FILTER_MAP,
@@ -149,8 +150,29 @@ class UsuariosService:
 
         has_group_scope = allowed_groups.exists()
         has_role_scope = allowed_roles.exists()
+
+        # Alcance aditivo de DataCalle: el coordinador administra a los
+        # entrevistadores de su provincia, que no se marcan con un grupo sino
+        # con un flag, así que la delegación genérica no los alcanza.
+        administrables = get_relevadores_administrables(actor)
+        extra_scope = (
+            Q(pk__in=administrables.values("pk")) if administrables is not None else Q()
+        )
+        tiene_extra = administrables is not None
+
         if not has_group_scope and not has_role_scope:
-            return base_qs.filter(pk=actor.pk)
+            if not tiene_extra:
+                return base_qs.filter(pk=actor.pk)
+            # Mismas guardas que la rama con alcance: este queryset también gatea
+            # edición y baja (UserUpdateView/UserDeleteView), así que no puede
+            # saltearse ni la exclusión de superusuarios ni los límites que
+            # aporten otros dominios.
+            solo_extra_qs = (
+                base_qs.filter(Q(pk=actor.pk) | extra_scope)
+                .exclude(is_superuser=True)
+                .distinct()
+            )
+            return apply_user_queryset_scopes(solo_extra_qs, actor)
 
         scoped_qs = base_qs.annotate(
             total_groups=Count("groups", distinct=True),
@@ -186,9 +208,9 @@ class UsuariosService:
         # filtro de subconjunto trivialmente (0 == 0); se excluyen para que un
         # actor con alcance no los vea ni pueda administrarlos. El actor es
         # siempre no-superuser (los superuser retornan base_qs antes).
-        scoped_qs = scoped_qs.filter(Q(pk=actor.pk) | scope_filter).exclude(
-            is_superuser=True
-        )
+        scoped_qs = scoped_qs.filter(
+            Q(pk=actor.pk) | scope_filter | extra_scope
+        ).exclude(is_superuser=True)
 
         scoped_qs = scoped_qs.distinct().order_by("-id")
 

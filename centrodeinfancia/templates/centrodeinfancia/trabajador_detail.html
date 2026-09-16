@@ -24,10 +24,51 @@
                     <i class="fas fa-edit me-1"></i>Editar
                 </a>
             {% endif %}
+            {% if puede_eliminar_trabajadores %}
+                <button type="button"
+                        class="btn btn-danger btn-sm"
+                        data-bs-toggle="modal"
+                        data-bs-target="#modalEliminarTrabajador">
+                    <i class="fas fa-trash me-1"></i>Eliminar
+                </button>
+            {% endif %}
             <a href="{% url 'centrodeinfancia_detalle' centro.id %}"
                class="btn btn-secondary btn-sm">Volver al CDI</a>
         </div>
     </div>
+
+    {% if puede_eliminar_trabajadores %}
+        <div class="modal fade"
+             id="modalEliminarTrabajador"
+             tabindex="-1"
+             aria-labelledby="modalEliminarTrabajadorLabel"
+             aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <form method="post"
+                          action="{% url 'centrodeinfancia_trabajador_eliminar' centro.id trabajador.id %}">
+                        {% csrf_token %}
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="modalEliminarTrabajadorLabel">Confirmar eliminación</h5>
+                            <button type="button"
+                                    class="btn-close btn-close-white"
+                                    data-bs-dismiss="modal"
+                                    aria-label="Cerrar"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p class="mb-0">
+                                ¿Está seguro de eliminar a <strong>{{ trabajador.apellido }}, {{ trabajador.nombre }}</strong>?
+                            </p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-danger">Eliminar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    {% endif %}
 
     {# ── 1. Institución ────────────────────────────────────── #}
     <div class="section-card" data-section="institucion">

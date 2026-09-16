@@ -7,11 +7,11 @@ from io import BytesIO
 
 from django.core.exceptions import ValidationError
 from django.db import transaction
-from django.utils import timezone
 from openpyxl import Workbook, load_workbook
 
 from ciudadanos.models import Ciudadano, CiudadanosImportJobRow
 from ciudadanos.api import construir_datos_ciudadano_desde_renaper
+from ciudadanos.services_renaper_validacion import build_validacion_renaper_payload
 from core.models import Sexo
 from core.services.renaper import consultar_datos_renaper
 
@@ -411,10 +411,7 @@ def _build_ciudadano_payload_from_renaper(
     ciudadano_data.update(
         {
             "tipo_registro_identidad": Ciudadano.TIPO_REGISTRO_ESTANDAR,
-            "estado_validacion_renaper": Ciudadano.RENAPER_VALIDADO,
-            "fecha_validacion_renaper": timezone.now(),
-            "datos_renaper": result.get("datos_api") or result.get("data") or {},
-            "origen_dato": "renaper",
+            **build_validacion_renaper_payload(result),
         }
     )
     renaper_cuil = _extract_renaper_cuil(result)

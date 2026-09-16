@@ -44,6 +44,11 @@ EXCLUDED_FILENAMES = {
     "package-lock.json",
     "poetry.lock",
 }
+# Artefactos generados por herramientas del repo: formatearlos a mano solo crea
+# drift, porque el generador los reescribe con su propio formato.
+GENERATED_ARTIFACTS = {
+    Path("docs/arquitectura/mapa_sisoc.html"),
+}
 TEMPLATE_SUFFIXES = {".html", ".htm", ".djhtml", ".jinja", ".j2"}
 PYTHON_SUFFIXES = {".py"}
 MOJIBAKE_REPLACEMENTS = {
@@ -256,7 +261,9 @@ def list_changed_files(kind: str) -> int:
     files = [
         str(path)
         for path in get_changed_files()
-        if path.suffix.lower() in suffixes and (REPO_ROOT / path).is_file()
+        if path.suffix.lower() in suffixes
+        and Path(*path.parts) not in GENERATED_ARTIFACTS
+        and (REPO_ROOT / path).is_file()
     ]
     print(json.dumps(files))
     return 0

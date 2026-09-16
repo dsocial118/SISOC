@@ -1155,7 +1155,7 @@ def test_importar_legajos_guarda_registros_erroneos_y_sin_bulk_legajos(mocker):
             [
                 {
                     "nombre": "Juan",
-                    "documento": "1234567890",
+                    "documento": "20123456783",
                     "fecha_nacimiento": "2000-01-01",
                 }
             ]

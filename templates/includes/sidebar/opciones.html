@@ -1,5 +1,5 @@
 {% load static custom_filters dashboard_tags %}
-{% with pagina_actual=request.resolver_match.route vat_sidebar_only=request.user|is_vat_sidebar_only cdi_local_sidebar_only=request.user|is_cdi_local_sidebar_only %}
+{% with pagina_actual=request.resolver_match.route vat_sidebar_only=request.user|is_vat_sidebar_only cdi_local_sidebar_only=request.user|is_cdi_local_sidebar_only datacalle_sidebar_only=request.user|is_datacalle_sidebar_only %}
     <!-- INFORMACIÓN DE USUARIO -->
     <li class="nav-item user-info mb-2 mt-2">
         <div class="user-panel d-flex align-items-center p-3">
@@ -35,7 +35,7 @@
             <p>Inicio</p>
         </a>
     </li>
-    {% if not vat_sidebar_only and not cdi_local_sidebar_only %}
+    {% if not vat_sidebar_only and not cdi_local_sidebar_only and not datacalle_sidebar_only %}
         <!-- COMUNICADOS -->
         <li class="nav-item nav-main-item {% if 'comunicados' in pagina_actual %}menu-open{% endif %}"
             style="order: 7;
@@ -128,7 +128,7 @@
             </ul>
         </li>
     {% endif %}
-    {% if not vat_sidebar_only and request.user|has_any_perm:"auth.role_admin,core.view_montoprestacionprograma,pwa.view_catalogoactividadpwa,pwa.manage_catalogoactividadpwa,insumos.view_insumo,admisiones.gestionar_templates_informe_tecnico" %}
+    {% if not vat_sidebar_only and not datacalle_sidebar_only and request.user|has_any_perm:"auth.role_admin,core.view_montoprestacionprograma,pwa.view_catalogoactividadpwa,pwa.manage_catalogoactividadpwa,insumos.view_insumo,admisiones.gestionar_templates_informe_tecnico" %}
         <li class="nav-item nav-main-item {% if 'dupla' in pagina_actual or 'equipo-tecnico' in pagina_actual or 'montoprestacion' in pagina_actual or 'cursos-app-mobile' in pagina_actual or 'actividades-pnud' in pagina_actual or 'insumos' in pagina_actual or 'configuracion/templates' in pagina_actual %}menu-open{% endif %}"
             style="order: 5">
             <a href="#" class="nav-link">
@@ -212,7 +212,7 @@
             </ul>
         </li>
     {% endif %}
-    {% if not vat_sidebar_only %}
+    {% if not vat_sidebar_only and not datacalle_sidebar_only %}
         {% if perms.ocr.use_ocr or request.user.is_superuser %}
             <li class="nav-item nav-main-item" style="order: 6">
                 <a href="{% url 'ocr_upload' %}"
@@ -271,7 +271,7 @@
         {% endwith %}
     {% endif %}
     <!-- MENÚ LEGAJOS -->
-    <li class="nav-item nav-main-item {% if 'comedores' in pagina_actual or 'admisiones' in pagina_actual or 'acompanamiento' in pagina_actual or 'rendicion_cuentas' in pagina_actual or 'organizaciones' in pagina_actual or 'centrodeinfancia' in pagina_actual or 'ver-para-ser-libre' in pagina_actual or 'ciudadanos' in pagina_actual or 'centros' in pagina_actual or 'celiaquia' in pagina_actual or 'expediente' in pagina_actual or 'dispositivos' in pagina_actual or 'datacalle' in pagina_actual %}menu-open{% endif %}"
+    <li class="nav-item nav-main-item {% if 'comedores' in pagina_actual or 'admisiones' in pagina_actual or 'acompanamiento' in pagina_actual or 'rendicion_cuentas' in pagina_actual or 'organizaciones' in pagina_actual or 'centrodeinfancia' in pagina_actual or 'ver-para-ser-libre' in pagina_actual or 'pas/' in pagina_actual or 'ciudadanos' in pagina_actual or 'centros' in pagina_actual or 'celiaquia' in pagina_actual or 'expediente' in pagina_actual or 'dispositivos' in pagina_actual or 'datacalle' in pagina_actual %}menu-open{% endif %}"
         style="order: 2">
         <a href="#" class="nav-link">
             <img src="{% static 'custom/img/iconos_sidebar/legajos.svg' %}" alt="" />
@@ -445,6 +445,15 @@
                                     <p>Ver Centros de Infancia</p>
                                 </a>
                             </li>
+                            {% if request.user|has_perm_code:"auth.role_reportes_cdi" %}
+                                <li class="nav-item">
+                                    <a href="{% url 'centrodeinfancia_reportes' %}"
+                                       class="nav-link ms-4 {% if 'centrodeinfancia/reportes' in pagina_actual %}active{% endif %}">
+                                        <i class="nav-icon bi bi-arrow-return-right"></i>
+                                        <p>Reportes</p>
+                                    </a>
+                                </li>
+                            {% endif %}
                         </ul>
                     </li>
                 {% endif %}
@@ -473,6 +482,41 @@
                                     </a>
                                 </li>
                             {% endif %}
+                        </ul>
+                    </li>
+                {% endif %}
+                <!-- PAS -->
+                {% if request.user|has_perm_code:"pas.view_paspersona" %}
+                    <li class="nav-item {% if 'pas/' in pagina_actual %}menu-open{% endif %}">
+                        <a href="#"
+                           class="nav-link nav-dot ms-2 {% if 'pas/' in pagina_actual %}active{% endif %}">
+                            <p>
+                                PAS
+                                <i class="nav-arrow bi bi-chevron-right"></i>
+                            </p>
+                        </a>
+                        <ul class="nav nav-treeview">
+                            <li class="nav-item">
+                                <a href="{% url 'pas_persona_listar' %}"
+                                   class="nav-link ms-4 {% if 'pas/listar' in pagina_actual %}active{% endif %}">
+                                    <i class="nav-icon bi bi-arrow-return-right"></i>
+                                    <p>Buscador PAS</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{% url 'pas_panel_control' %}"
+                                   class="nav-link ms-4 {% if 'pas/panel-control' in pagina_actual %}active{% endif %}">
+                                    <i class="nav-icon bi bi-arrow-return-right"></i>
+                                    <p>Panel de Control</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{% url 'pas_informe_listar' %}"
+                                   class="nav-link ms-4 {% if 'pas/informes' in pagina_actual %}active{% endif %}">
+                                    <i class="nav-icon bi bi-arrow-return-right"></i>
+                                    <p>Informes</p>
+                                </a>
+                            </li>
                         </ul>
                     </li>
                 {% endif %}
@@ -569,6 +613,13 @@
                                class="nav-link {% if 'vat/reportes/inscripciones-asistencias/' in pagina_actual %}active{% endif %} ms-4">
                                 <i class="nav-icon bi bi-arrow-return-right"></i>
                                 <p>Reporte Inscriptos y Asistencias</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{% url 'vat_buscador_ciudadano' %}"
+                               class="nav-link {% if 'vat/buscador-ciudadano/' in pagina_actual %}active{% endif %} ms-4">
+                                <i class="nav-icon bi bi-arrow-return-right"></i>
+                                <p>Buscador por Ciudadano</p>
                             </a>
                         </li>
                         <!-- Inscripciones (oculto temporalmente) -->
