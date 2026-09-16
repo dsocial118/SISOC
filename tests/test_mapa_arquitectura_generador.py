@@ -102,7 +102,7 @@ def test_ve_dependencias_que_import_linter_no_puede_ver(generador, apps):
 
 
 def test_un_enlace_suelto_no_queda_dentro_del_grupo_anterior(menu):
-    """"Mi cuenta" es hermano de los grupos, no un item de Legajos."""
+    """ "Mi cuenta" es hermano de los grupos, no un item de Legajos."""
     grupos_de_mi_cuenta = [
         g["label"] for g in menu for i in g["items"] if i["url_name"] == "mi_cuenta"
     ]
