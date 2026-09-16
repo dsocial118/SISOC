@@ -49,25 +49,9 @@ def _estado_doc_pendiente_id():
         raise ValidationError("Falta el estado DOCUMENTO_PENDIENTE")
 
 
-CUIL_LONGITUD = 11
-
-
-def validar_cuil_importacion(valor, campo_nombre="CUIL"):
-    """Valida que el CUIL/CUIT tenga exactamente 11 digitos."""
-    doc_str = str(valor or "").strip()
-    if not doc_str or not doc_str.isdigit():
-        raise ValidationError(f"{campo_nombre} debe contener solo digitos")
-    if len(doc_str) != CUIL_LONGITUD:
-        raise ValidationError(
-            f"El CUIL ingresado es invalido: debe tener {CUIL_LONGITUD} digitos "
-            f"(se ingresaron {len(doc_str)})"
-        )
-    return doc_str
-
-
 def _get_tipo_documento(doc_str):
     """Retorna el tipo de documento basado en la longitud"""
-    if len(str(doc_str or "")) == CUIL_LONGITUD:
+    if len(str(doc_str or "")) == 11:
         return Ciudadano.DOCUMENTO_CUIT
     return Ciudadano.DOCUMENTO_DNI
 
@@ -514,19 +498,14 @@ def _crear_relaciones_familiares_importacion(relaciones_familiares, warnings):
 def _persistir_legajos_importacion(
     legajos_crear, batch_size, relaciones_familiares, warnings
 ):
-    try:
-        if legajos_crear:
-            logger.info("Creando %s legajos en bulk_create", len(legajos_crear))
-            ExpedienteCiudadano.objects.bulk_create(
-                legajos_crear, batch_size=batch_size
-            )
-            logger.info("Legajos creados exitosamente")
-        else:
-            logger.info("No hay legajos nuevos para crear")
+    if not legajos_crear:
+        logger.info("No hay legajos para crear - lista vacia")
+        return
 
-        # Una recarga puede reactivar un responsable para un beneficiario que ya
-        # existia. En ese caso no hay legajos nuevos, pero igualmente hay que
-        # volver a asegurar la relacion familiar.
+    try:
+        logger.info("Creando %s legajos en bulk_create", len(legajos_crear))
+        ExpedienteCiudadano.objects.bulk_create(legajos_crear, batch_size=batch_size)
+        logger.info("Legajos creados exitosamente")
         _crear_relaciones_familiares_importacion(relaciones_familiares, warnings)
     except Exception as exc:  # pylint: disable=broad-exception-caught
         logger.error("Error en bulk_create de legajos: %s", exc)
@@ -803,7 +782,8 @@ def _aplicar_defaults_y_validar_payload_importacion(payload):
     doc = payload.get("documento")
     if not doc:
         raise ValidationError("Documento es obligatorio")
-    validar_cuil_importacion(doc, "Documento")
+    if not str(doc).isdigit():
+        raise ValidationError("Documento debe contener sólo dígitos")
 
 
 def _inferir_provincia_desde_municipio_importacion(
@@ -1068,10 +1048,6 @@ def _build_responsable_payload_importacion(
     validar_campos_obligatorios_importacion(
         payload=payload,
         required_fields=IMPORTACION_RESPONSABLE_REQUIRED_FIELDS,
-    )
-
-    validar_cuil_importacion(
-        payload.get("documento_responsable"), "CUIL del responsable"
     )
 
     return {
@@ -1352,7 +1328,7 @@ def _crear_responsable_y_legajo_importacion(
     validar_edad_responsable_fn,
     get_or_create_ciudadano,
 ):
-    del payload_beneficiario, validar_edad_responsable_fn
+    del payload_beneficiario, offset, add_warning, validar_edad_responsable_fn
     ciudadano_responsable = get_or_create_ciudadano(
         datos=responsable_payload,
         usuario=usuario,
@@ -1364,24 +1340,14 @@ def _crear_responsable_y_legajo_importacion(
 
     cid_resp = ciudadano_responsable.pk
 
-    legajo_agregado, legajo_reactivado = (
-        _registrar_legajo_responsable_importacion_si_corresponde(
-            cid_resp=cid_resp,
-            ciudadano_responsable=ciudadano_responsable,
-            expediente=expediente,
-            estado_id=estado_id,
-            existentes_ids=existentes_ids,
-            legajos_crear=legajos_crear,
-            usuario=usuario,
-        )
+    legajo_agregado = _registrar_legajo_responsable_importacion_si_corresponde(
+        cid_resp=cid_resp,
+        ciudadano_responsable=ciudadano_responsable,
+        expediente=expediente,
+        estado_id=estado_id,
+        existentes_ids=existentes_ids,
+        legajos_crear=legajos_crear,
     )
-
-    if legajo_reactivado:
-        add_warning(
-            offset,
-            "responsable",
-            "Se reactivo el legajo del adulto responsable eliminado.",
-        )
 
     return cid_resp, legajo_agregado
 
@@ -1412,41 +1378,9 @@ def _registrar_legajo_responsable_importacion_si_corresponde(
     estado_id,
     existentes_ids,
     legajos_crear,
-    usuario,
 ):
     if cid_resp in existentes_ids:
-        legajo_eliminado = (
-            ExpedienteCiudadano.all_objects.select_for_update()
-            .filter(
-                expediente=expediente,
-                ciudadano_id=cid_resp,
-                deleted_at__isnull=False,
-            )
-            .first()
-        )
-        if legajo_eliminado is None:
-            return False, False
-
-        rol_anterior = (legajo_eliminado.rol or "").strip().lower()
-        roles_con_beneficiario = {
-            ExpedienteCiudadano.ROLE_BENEFICIARIO,
-            ExpedienteCiudadano.ROLE_BENEFICIARIO_Y_RESPONSABLE,
-        }
-        rol_restaurado = (
-            ExpedienteCiudadano.ROLE_BENEFICIARIO_Y_RESPONSABLE
-            if rol_anterior in roles_con_beneficiario
-            else ExpedienteCiudadano.ROLE_RESPONSABLE
-        )
-        legajo_eliminado.restore(user=usuario, cascade=True)
-        if legajo_eliminado.rol != rol_restaurado:
-            legajo_eliminado.rol = rol_restaurado
-            legajo_eliminado.save(update_fields=["rol", "archivos_ok"])
-        logger.info(
-            "Legajo responsable %s reactivado por importacion en expediente %s",
-            legajo_eliminado.pk,
-            expediente.pk,
-        )
-        return False, True
+        return False
 
     legajos_crear.append(
         ExpedienteCiudadano(
@@ -1457,7 +1391,7 @@ def _registrar_legajo_responsable_importacion_si_corresponde(
         )
     )
     existentes_ids.add(cid_resp)
-    return True, False
+    return True
 
 
 def _registrar_relacion_familiar_importacion(
@@ -1902,27 +1836,16 @@ def _procesar_beneficiario_importacion(
     if not ciudadano:
         return "error", None
 
-    if ciudadano.pk in existentes_ids:
-        promovido_en_esta_importacion = (
-            _marcar_legajo_existente_como_doble_rol_importacion(
-                ciudadano=ciudadano,
-                expediente=expediente,
-                legajos_crear=legajos_crear,
-                abiertos=abiertos,
-            )
-        )
-        if promovido_en_esta_importacion:
-            return "ok", ciudadano.pk
-
-        _agregar_exclusion_beneficiario_existente_importacion(
-            excluidos=excluidos,
-            offset=offset,
+    if (
+        ciudadano.pk in existentes_ids
+        and _marcar_legajo_existente_como_doble_rol_importacion(
             ciudadano=ciudadano,
-            ciudadano_id=ciudadano.pk,
+            expediente=expediente,
+            legajos_crear=legajos_crear,
+            abiertos=abiertos,
         )
-        # La fila existente no crea otro beneficiario, pero debe continuar para
-        # poder reactivar y volver a vincular su responsable.
-        return "existente", ciudadano.pk
+    ):
+        return "ok", ciudadano.pk
 
     if _beneficiario_tiene_conflicto_importacion(
         ciudadano=ciudadano,
@@ -2053,17 +1976,25 @@ def _build_callbacks_importacion(warnings):
 
 
 def _validar_documento_importacion(doc_str, campo_nombre, _fila):
-    """Valida formato y longitud de documento (CUIL de 11 digitos)."""
+    """Valida formato y longitud de documento."""
     if not doc_str or not doc_str.isdigit():
-        raise ValidationError(f"{campo_nombre} debe contener solo digitos")
+        raise ValidationError(f"{campo_nombre} debe contener solo dígitos")
 
-    es_campo_cuil = campo_nombre == "documento" or (
+    doc_len = len(doc_str)
+
+    if campo_nombre == "documento":
+        if doc_len in (10, 11):
+            return doc_str
+        raise ValidationError(f"{campo_nombre} debe tener entre 10 y 11 dígitos")
+
+    if (
         "responsable" in campo_nombre
         and "telefono" not in campo_nombre
         and "contacto" not in campo_nombre
-    )
-    if es_campo_cuil:
-        return validar_cuil_importacion(doc_str, campo_nombre)
+    ):
+        if doc_len in (10, 11):
+            return doc_str
+        raise ValidationError(f"{campo_nombre} debe tener entre 10 y 11 dígitos")
 
     return doc_str
 
@@ -2272,9 +2203,7 @@ def _procesar_fila_legajo_importacion(
     cid_resp = None
     legajo_responsable_agregado = False
     relacion_agregada = False
-    resultado_beneficiario = None
     warnings_len = len(warnings)
-    excluidos_len = len(excluidos)
     legajos_len = len(legajos_crear)
     relaciones_len = len(relaciones_familiares)
 
@@ -2343,17 +2272,16 @@ def _procesar_fila_legajo_importacion(
                 responsable_payload=responsable_payload,
             )
 
-        return (0 if resultado_beneficiario == "existente" else 1), 0
+        return 1, 0
     except Exception as exc:  # pylint: disable=broad-exception-caught
         del warnings[warnings_len:]
-        del excluidos[excluidos_len:]
         del legajos_crear[legajos_len:]
         del relaciones_familiares[relaciones_len:]
         if relacion_agregada and cid_resp and cid:
             relaciones_familiares_pairs.discard((cid_resp, cid))
         if legajo_responsable_agregado and cid_resp:
             existentes_ids.discard(cid_resp)
-        if cid and resultado_beneficiario == "ok":
+        if cid:
             existentes_ids.discard(cid)
             abiertos.pop(cid, None)
         _registrar_error_fila_importacion(detalles_errores, row, offset, exc)

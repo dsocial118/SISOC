@@ -11,7 +11,6 @@ from admisiones.models.admisiones import (
     InformeTecnicoPDF,
     AdmisionHistorial,
     FormularioProyectoDisposicion,
-    Providencia,
     FormularioProyectoDeConvenio,
     DocumentosExpediente,
     IncidenciaTemplateInformeTecnico,
@@ -45,7 +44,6 @@ admin.site.register(InformeTecnico)
 admin.site.register(InformeTecnicoPDF)
 admin.site.register(AdmisionHistorial)
 admin.site.register(FormularioProyectoDisposicion)
-admin.site.register(Providencia)
 admin.site.register(FormularioProyectoDeConvenio)
 admin.site.register(DocumentosExpediente)
 
