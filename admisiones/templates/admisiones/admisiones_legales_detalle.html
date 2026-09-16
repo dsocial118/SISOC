@@ -69,7 +69,7 @@
                                         </a>
                                     {% endif %}
                                     {% if formulario_proyecto.archivo_docx %}
-                                        <a href="{{ formulario_proyecto.archivo_docx.url }}" download>
+                                        <a href="{{ formulario_proyecto.archivo_docx.url }}" target="_blank">
                                             <i class="bi bi-filetype-docx text-info h5 mx-2 text-bold"></i>
                                         </a>
                                     {% endif %}
@@ -95,7 +95,7 @@
                                         </a>
                                     {% endif %}
                                     {% if primera_providencia.archivo_docx %}
-                                        <a href="{{ primera_providencia.archivo_docx.url }}" download>
+                                        <a href="{{ primera_providencia.archivo_docx.url }}" target="_blank">
                                             <i class="bi bi-filetype-docx text-info h5 mx-2 text-bold"></i>
                                         </a>
                                     {% endif %}
@@ -121,7 +121,7 @@
                                         </a>
                                     {% endif %}
                                     {% if segunda_providencia.archivo_docx %}
-                                        <a href="{{ segunda_providencia.archivo_docx.url }}" download>
+                                        <a href="{{ segunda_providencia.archivo_docx.url }}" target="_blank">
                                             <i class="bi bi-filetype-docx text-info h5 mx-2 text-bold"></i>
                                         </a>
                                     {% endif %}
@@ -159,9 +159,9 @@
                                 </div>
                             </li>
                         {% else %}
-                            {% if admision.numero_disposicion %}
-                                <li class="nav-item">
-                                    <div class="comment-text">
+                            <li class="nav-item">
+                                <div class="comment-text">
+                                    {% if admision.numero_disposicion %}
                                         Disposición:
                                         {% if admision.archivo_disposicion %}
                                             <a href="{{ admision.archivo_disposicion.url }}" target="_blank">
@@ -170,9 +170,9 @@
                                         {% endif %}
                                         <span class="fw-bold">{{ admision.numero_disposicion }}</span>
                                         <i class="bi bi-check-circle-fill text-success"></i>
-                                    </div>
-                                </li>
-                            {% endif %}
+                                    {% endif %}
+                                </div>
+                            </li>
                             <li class="nav-item">
                                 <div class="comment-text">
                                     Convenio:
@@ -863,10 +863,10 @@
     </div>
 {% endblock %}
 {% block customJS %}
-    {% if abrir_modal %}
+    {% if abrir_modal_legales_num_if %}
         <script nonce="{{ request.csp_nonce }}">
             document.addEventListener("DOMContentLoaded", function() {
-                var modalElement = document.getElementById("{{ abrir_modal|escapejs }}");
+                var modalElement = document.getElementById("modalLegalesNumIF");
                 if (modalElement) {
                     new bootstrap.Modal(modalElement).show();
                 }
