@@ -1,8 +1,11 @@
 from datacalle.services.relevamientos import (  # noqa: F401
     apply_relevamientos_scope,
     delete_relevamiento,
+    get_dispositivos_para_provincia,
     get_dispositivos_para_usuario,
+    get_entrevistadores_para_provincia,
     get_entrevistadores_para_usuario,
+    get_municipios_para_usuario,
     get_provincias_para_usuario,
     get_relevamientos_queryset,
     marcar_en_curso,
@@ -11,6 +14,7 @@ from datacalle.services.relevamientos import (  # noqa: F401
 )
 from datacalle.services.encuestas import (  # noqa: F401
     RelevamientoCerrado,
+    RelevamientoNoIniciado,
     aplicar_columnas_indexadas,
     cerrar_relevamiento,
     get_encuestas_para_listado,

@@ -3,6 +3,7 @@
 
 ## Actualizaciones
 
+- [sin-area] fix(datacalle): revisión QA del backoffice — alcance provincial, usuarios y menú. (PR #2519)
 - [sin-area] revert: sacar de main el merge del PR #2519. (PR #2527)
 <!-- AUTO-GENERATED RELEASE END: 2026-09-16 -->
 
