@@ -22,7 +22,7 @@ from celiaquia.services.importacion_service import (
     ImportacionService,
     validar_cuil_importacion,
 )
-from ciudadanos.models import Ciudadano
+from ciudadanos.models import Ciudadano, GrupoFamiliar
 from core.models import Localidad, Municipio, Nacionalidad, Provincia, Sexo
 from users.models import Profile
 
@@ -110,6 +110,25 @@ def _fila_excel(documento, municipio, localidad):
     ]
 
 
+def _fila_excel_con_responsable(
+    documento_beneficiario, documento_responsable, municipio, localidad
+):
+    fila = _fila_excel(documento_beneficiario, municipio, localidad)
+    fila[3] = "01/01/2015"
+    fila[13:] = [
+        "Gomez",
+        "Laura",
+        documento_responsable,
+        "01/01/1980",
+        "F",
+        "Calle Responsable 456",
+        localidad.pk,
+        "",
+        "",
+    ]
+    return fila
+
+
 def _contexto_importacion(username, superuser=False):
     user, provincia = _crear_usuario_provincial(username)
     if superuser:
@@ -179,6 +198,49 @@ def test_importacion_acepta_cuil_de_once_digitos():
     assert resultado["errores"] == 0
     assert resultado["validos"] == 1
     assert ExpedienteCiudadano.objects.count() == 1
+
+
+@pytest.mark.django_db
+def test_reimportacion_reactiva_responsable_eliminado_y_conserva_su_pk():
+    user, expediente, municipio, localidad = _contexto_importacion(
+        "prov_cuil_reactivar"
+    )
+    fila = _fila_excel_con_responsable(
+        "20123456783", "20987654321", municipio, localidad
+    )
+    primer_resultado = ImportacionService.importar_legajos_desde_excel(
+        expediente=expediente,
+        archivo_excel=_crear_archivo_excel(fila),
+        usuario=user,
+    )
+    assert primer_resultado["errores"] == 0
+    responsable = ExpedienteCiudadano.objects.get(
+        expediente=expediente,
+        ciudadano__documento="20987654321",
+    )
+    responsable_pk = responsable.pk
+    responsable.delete(user=user, cascade=True)
+    assert not ExpedienteCiudadano.objects.filter(pk=responsable_pk).exists()
+
+    segundo_resultado = ImportacionService.importar_legajos_desde_excel(
+        expediente=expediente,
+        archivo_excel=_crear_archivo_excel(fila),
+        usuario=user,
+    )
+    responsable_reactivado = ExpedienteCiudadano.objects.get(pk=responsable_pk)
+    assert responsable_reactivado.deleted_at is None
+    assert responsable_reactivado.rol == ExpedienteCiudadano.ROLE_RESPONSABLE
+    assert segundo_resultado["validos"] == 0
+    assert segundo_resultado["errores"] == 0
+    assert segundo_resultado["excluidos_count"] == 1
+    assert any(
+        "reactivo" in warning["detalle"].lower()
+        for warning in segundo_resultado["warnings"]
+    )
+    assert GrupoFamiliar.objects.filter(
+        ciudadano_1_id=responsable_reactivado.ciudadano_id,
+        ciudadano_2__documento="20123456783",
+    ).exists()
 
 
 @pytest.mark.django_db
