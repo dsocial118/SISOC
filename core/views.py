@@ -4,6 +4,7 @@
 import json
 import re
 import logging
+from datetime import datetime
 from pathlib import Path
 
 # Third-party
@@ -15,9 +16,10 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.cache import cache
 from django.db import IntegrityError, transaction
-from django.http import JsonResponse, HttpResponseRedirect
+from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse, reverse_lazy
+from django.utils import timezone
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_GET, require_http_methods
 from django.views.generic import (
@@ -459,6 +461,50 @@ def changelog_view(request):
     }
 
     return render(request, "changelog.html", context)
+
+
+def _ruta_grafo_arquitectura():
+    """Grafo del mapa de arquitectura.
+
+    Vive fuera de ``static/`` a propósito: describe permisos, rutas y estructura
+    interna, y Nginx sirve ``/static/`` por alias sin pasar por Django. Se entrega
+    sólo por ``mapa_arquitectura_datos``, que exige sesión. Y fuera del checkout
+    versionado, porque se reescribe en cada arranque del contenedor.
+    """
+    return Path(settings.BASE_DIR) / "var" / "arquitectura" / "grafo.json"
+
+
+@login_required
+def mapa_arquitectura_view(request):
+    """Muestra el mapa de arquitectura cuando el grafo está disponible."""
+    grafo = _ruta_grafo_arquitectura()
+    grafo_disponible = False
+    generado = None
+    try:
+        if grafo.is_file():
+            generado = datetime.fromtimestamp(
+                grafo.stat().st_mtime, tz=timezone.get_current_timezone()
+            ).strftime("%d/%m/%Y %H:%M")
+            grafo_disponible = True
+    except OSError as exc:
+        logger.warning("No se pudo consultar el grafo de arquitectura: %s", exc)
+
+    context = {"grafo_disponible": grafo_disponible, "generado": generado}
+    return render(request, "core/mapa_arquitectura.html", context)
+
+
+@login_required
+@require_GET
+def mapa_arquitectura_datos(request):
+    """Entrega el grafo del mapa de arquitectura a una sesión autenticada."""
+    grafo = _ruta_grafo_arquitectura()
+    try:
+        contenido = grafo.read_bytes()
+    except OSError as exc:
+        logger.warning("No se pudo leer el grafo de arquitectura: %s", exc)
+        return JsonResponse({"detail": "El mapa todavía no fue generado."}, status=404)
+
+    return HttpResponse(contenido, content_type="application/json")
 
 
 def error_500_view(request):

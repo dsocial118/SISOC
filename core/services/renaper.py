@@ -97,10 +97,10 @@ def _mapear_datos_renaper(datos: dict[str, Any], dni: str, sexo: str) -> dict[st
     }
 
 
-def consultar_datos_renaper(dni: str, sexo: str) -> dict[str, Any]:
+def consultar_datos_renaper(dni: str, sexo: str, *, client=None) -> dict[str, Any]:
     """Adaptador temporal del contrato compartido de consulta ciudadana."""
     try:
-        response = APIClient().consultar_ciudadano(dni, sexo)
+        response = (client or APIClient()).consultar_ciudadano(dni, sexo)
         if not response.get("success"):
             return _error_result(
                 response.get("error", "Error desconocido al consultar RENAPER"),

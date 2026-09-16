@@ -1,0 +1,34 @@
+<div class="row g-3">
+    <div class="col-12 col-md-3">
+        <label class="form-label" for="{{ pv_form.pv_anio.id_for_label }}">Año</label>
+        <div class="input-group">
+            <span class="input-group-text">PV-</span>
+            {{ pv_form.pv_anio }}
+        </div>
+        {{ pv_form.pv_anio.errors }}
+    </div>
+    <div class="col-12 col-md-3">
+        <label class="form-label" for="{{ pv_form.pv_numero.id_for_label }}">Número</label>
+        {{ pv_form.pv_numero }}
+        {{ pv_form.pv_numero.errors }}
+    </div>
+    <div class="col-12 col-md-3">
+        <label class="form-label" for="{{ pv_form.pv_reparticion.id_for_label }}">Repartición</label>
+        <div class="input-group">
+            <span class="input-group-text">APN-</span>
+            {{ pv_form.pv_reparticion }}
+        </div>
+        {{ pv_form.pv_reparticion.errors }}
+    </div>
+    <div class="col-12 col-md-3">
+        <label class="form-label" for="{{ pv_form.pv_organismo.id_for_label }}">Organismo</label>
+        <div class="input-group">
+            <span class="input-group-text">#</span>
+            {{ pv_form.pv_organismo }}
+        </div>
+        {{ pv_form.pv_organismo.errors }}
+    </div>
+</div>
+{% if pv_form.non_field_errors %}
+    <div class="alert alert-danger mt-3 mb-0">{{ pv_form.non_field_errors }}</div>
+{% endif %}

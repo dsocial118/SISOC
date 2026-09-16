@@ -215,6 +215,7 @@ LISTADO_DEFINED_GROUPS = (
     BootstrapGroupSeed(
         "SIMEPI - Administrador",
         (
+            "auth.role_reportes_cdi",
             "auth.add_user",
             "auth.change_user",
             "auth.delete_user",
@@ -240,6 +241,7 @@ LISTADO_DEFINED_GROUPS = (
     BootstrapGroupSeed(
         "SIMEPI - Analista de datos",
         (
+            "auth.role_reportes_cdi",
             "centrodeinfancia.add_centrodeinfancia",
             "centrodeinfancia.change_centrodeinfancia",
             "centrodeinfancia.delete_centrodeinfancia",
@@ -261,6 +263,7 @@ LISTADO_DEFINED_GROUPS = (
     BootstrapGroupSeed(
         "SIMEPI - Equipo Nacional",
         (
+            "auth.role_reportes_cdi",
             "auth.add_user",
             "auth.change_user",
             "auth.view_user",
@@ -273,6 +276,7 @@ LISTADO_DEFINED_GROUPS = (
     BootstrapGroupSeed(
         "SIMEPI - Auditoría",
         (
+            "auth.role_reportes_cdi",
             "centrodeinfancia.view_centrodeinfancia",
             "centrodeinfancia.view_trabajador",
             "centrodeinfancia.view_nominacentroinfancia",
@@ -282,6 +286,7 @@ LISTADO_DEFINED_GROUPS = (
     BootstrapGroupSeed(
         "SIMEPI - EGP",
         (
+            "auth.role_reportes_cdi",
             "auth.add_user",
             "auth.change_user",
             "auth.view_user",
@@ -957,6 +962,7 @@ LISTADO_DEFINED_GROUPS = (
     BootstrapGroupSeed(
         UserGroups.ADMIN,
         (
+            "auth.role_reportes_cdi",
             "acompanamientos.view_informacionrelevante",
             "admisiones.view_admision",
             "auth.add_group",

@@ -1,0 +1,84 @@
+{% extends "includes/main.html" %}
+
+{% block title %}Reportes de Centros de Desarrollo Infantil{% endblock %}
+{% block titulo-pagina %}Reportes{% endblock %}
+{% block breadcrumb %}
+    {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
+{% endblock %}
+
+{% block content %}
+    <div class="container-fluid">
+        <div class="card">
+            <div class="card-body">
+                <h3 class="mb-1">Reportes</h3>
+                <p class="text-muted">
+                    El archivo Excel trae seis hojas: Resumen, Centros de Desarrollo
+                    Infantil, Trabajadores, Nómina, Diccionario y Metadatos. La hoja de
+                    Nómina incluye la validación RENAPER de cada niño o niña y de sus
+                    responsables legales.
+                </p>
+                <form method="get"
+                      action="{% url 'centrodeinfancia_reportes' %}"
+                      class="row g-2 align-items-end">
+                    {% if provincias %}
+                        <div class="col-12 col-md-4">
+                            <label for="provincia" class="form-label">Provincia</label>
+                            <select class="form-select" id="provincia" name="provincia">
+                                <option value="">Todas</option>
+                                {% for provincia in provincias %}
+                                    <option value="{{ provincia.id }}"
+                                            {% if provincia_seleccionada == provincia.id|stringformat:"s" %}selected{% endif %}>
+                                        {{ provincia.nombre }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-auto">
+                            <button type="submit" class="btn btn-secondary">
+                                <i class="nav-icon bi bi-arrow-clockwise"></i>
+                                Actualizar resumen
+                            </button>
+                        </div>
+                    {% endif %}
+                    <div class="col-12 col-md-auto">
+                        <button type="submit"
+                                class="btn btn-primary"
+                                formaction="{% url 'centrodeinfancia_reportes_descargar' %}">
+                            <i class="nav-icon bi bi-file-earmark-excel"></i>
+                            Descargar reporte (XLSX)
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-body">
+                <h3 class="mb-1">Vista previa: hoja Resumen</h3>
+                <p class="text-muted">Es la primera hoja del archivo, tal como se descarga.</p>
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped">
+                        <thead>
+                            <tr>
+                                {% for columna in resumen_columnas %}<th>{{ columna }}</th>{% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for seccion, detalle, cantidad in resumen_filas %}
+                                <tr>
+                                    <td>{{ seccion }}</td>
+                                    <td>{{ detalle }}</td>
+                                    <td>{{ cantidad }}</td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="3" class="text-muted">No hay centros en tu alcance.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
