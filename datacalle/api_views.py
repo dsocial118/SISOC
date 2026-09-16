@@ -35,13 +35,20 @@ from datacalle.services import (
 
 logger = logging.getLogger("django")
 
+# Los dos rechazos son 409, pero no significan lo mismo para la app: cerrado es
+# definitivo y el caso no se va a poder subir nunca; no iniciado se resuelve
+# solo cuando arranca el operativo. ``reintentable`` lo hace explícito para que
+# la cola offline no descarte una jornada de campo por confundirlos. Es aditivo:
+# los clientes que no lo lean siguen funcionando igual.
 ERROR_CERRADO = {
     "detail": "El relevamiento está finalizado y no acepta más casos.",
     "codigo": "relevamiento_cerrado",
+    "reintentable": False,
 }
 ERROR_NO_INICIADO = {
     "detail": "El relevamiento todavía no empezó.",
     "codigo": "relevamiento_no_iniciado",
+    "reintentable": True,
 }
 
 

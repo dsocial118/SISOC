@@ -87,9 +87,16 @@ def upsert_encuesta(*, encuesta_id, relevamiento, datos, user, origen=None):
     """
     if relevamiento.estado == Relevamiento.Estado.FINALIZADO:
         raise RelevamientoCerrado()
-    # La fecha de fin no corta: un operativo puede estirarse y lo que manda es
-    # el estado. La de inicio sí, porque cargar antes de empezar es un error.
-    if relevamiento.fecha_inicio and timezone.localdate() < relevamiento.fecha_inicio:
+    # Ninguna de las dos fechas le gana al estado. La de fin no corta porque un
+    # operativo puede estirarse. La de inicio sólo corta mientras sigue
+    # ``planificado``: cargar antes de empezar es un error de la app. Una vez
+    # que arrancó, adelantar la fecha de inicio no puede volver a rechazar los
+    # casos de un operativo que ya está en curso.
+    if (
+        relevamiento.estado == Relevamiento.Estado.PLANIFICADO
+        and relevamiento.fecha_inicio
+        and timezone.localdate() < relevamiento.fecha_inicio
+    ):
         raise RelevamientoNoIniciado()
 
     encuesta = Encuesta.all_objects.filter(pk=encuesta_id).first()

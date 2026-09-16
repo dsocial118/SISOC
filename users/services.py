@@ -161,9 +161,18 @@ class UsuariosService:
         tiene_extra = administrables is not None
 
         if not has_group_scope and not has_role_scope:
-            if tiene_extra:
-                return base_qs.filter(Q(pk=actor.pk) | extra_scope).distinct()
-            return base_qs.filter(pk=actor.pk)
+            if not tiene_extra:
+                return base_qs.filter(pk=actor.pk)
+            # Mismas guardas que la rama con alcance: este queryset también gatea
+            # edición y baja (UserUpdateView/UserDeleteView), así que no puede
+            # saltearse ni la exclusión de superusuarios ni los límites que
+            # aporten otros dominios.
+            solo_extra_qs = (
+                base_qs.filter(Q(pk=actor.pk) | extra_scope)
+                .exclude(is_superuser=True)
+                .distinct()
+            )
+            return apply_user_queryset_scopes(solo_extra_qs, actor)
 
         scoped_qs = base_qs.annotate(
             total_groups=Count("groups", distinct=True),

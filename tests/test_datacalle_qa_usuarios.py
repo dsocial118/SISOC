@@ -132,3 +132,173 @@ def test_qa_0014_un_usuario_del_backoffice_conserva_su_menu(client, provincia):
 
     assert respuesta.status_code == 200
     assert "Comunicados" in respuesta.content.decode()
+
+
+def _dar_permisos_usuarios(user, codenames):
+    """Permisos del backoffice de usuarios (app ``auth``)."""
+    from django.contrib.auth.models import Permission
+
+    user.user_permissions.add(
+        *Permission.objects.filter(
+            content_type__app_label="auth", codename__in=codenames
+        )
+    )
+    return user
+
+
+@pytest.mark.django_db
+def test_el_alcance_datacalle_no_alcanza_a_un_superusuario(rf, provincia):
+    """Un superusuario marcado como relevador no queda administrable.
+
+    El queryset de alcance gatea edición y baja, y el formulario de usuario
+    permite fijar contraseña: sin esta exclusión, alcanzaría con tener el flag
+    para poder tomarle la cuenta a un superusuario.
+    """
+    coordinador = _coordinador_datacalle(provincia)
+    superusuario = get_user_model().objects.create_superuser(
+        username="super_relevador", email="s@example.com", password="Sisoc12345!"
+    )
+    superusuario.profile.es_relevador_calle = True
+    superusuario.profile.save()
+    superusuario.profile.relevador_calle_provincias.create(provincia=provincia)
+
+    assert superusuario.username not in _visibles(coordinador, rf)
+
+
+@pytest.mark.django_db
+def test_el_alcance_datacalle_no_alcanza_a_un_usuario_del_backoffice(rf, provincia):
+    """Marcar el flag degrada a no-staff, así que un staff con el flag es anómalo.
+
+    Puede pasar por carga directa o por un import: no puede volverse editable
+    por un coordinador provincial sólo por estar marcado en su provincia.
+    """
+    coordinador = _coordinador_datacalle(provincia)
+    del_backoffice = get_user_model().objects.create_user(
+        username="staff_relevador",
+        email="st@example.com",
+        password="Sisoc12345!",
+        is_staff=True,
+    )
+    del_backoffice.profile.es_relevador_calle = True
+    del_backoffice.profile.save()
+    del_backoffice.profile.relevador_calle_provincias.create(provincia=provincia)
+
+    assert del_backoffice.username not in _visibles(coordinador, rf)
+
+
+@pytest.mark.django_db
+def test_no_se_puede_editar_por_url_a_un_objetivo_privilegiado(client, provincia):
+    """La guarda anti-IDOR de UserUpdateView tiene que cerrarse, no sólo el listado."""
+    coordinador = _dar_permisos_usuarios(
+        _coordinador_datacalle(provincia, "coord_idor"),
+        ["view_user", "change_user"],
+    )
+    superusuario = get_user_model().objects.create_superuser(
+        username="super_idor", email="si@example.com", password="Sisoc12345!"
+    )
+    superusuario.profile.es_relevador_calle = True
+    superusuario.profile.save()
+    superusuario.profile.relevador_calle_provincias.create(provincia=provincia)
+    client.force_login(coordinador)
+
+    respuesta = client.get(f"/usuarios/editar/{superusuario.pk}/")
+
+    assert respuesta.status_code == 404
+
+
+@pytest.mark.django_db
+def test_el_entrevistador_legitimo_sigue_siendo_editable(client, provincia):
+    """La corrección no puede romper QA-0018: el caso real tiene que seguir andando."""
+    coordinador = _dar_permisos_usuarios(
+        _coordinador_datacalle(provincia, "coord_ok"),
+        ["view_user", "change_user"],
+    )
+    entrevistador = _entrevistador(provincia, "entrev_ok")
+    client.force_login(coordinador)
+
+    respuesta = client.get(f"/usuarios/editar/{entrevistador.pk}/")
+
+    assert respuesta.status_code == 200
+
+
+def _datos_edicion(user, **extra):
+    """Payload mínimo del formulario de edición (ver test_users_auth_flows)."""
+    datos = {
+        "username": user.username,
+        "tipo_usuario": "interno",
+        "email": "",
+        "password": "",
+    }
+    datos.update(extra)
+    return datos
+
+
+@pytest.mark.django_db
+def test_el_coordinador_puede_habilitar_a_un_usuario_existente(provincia):
+    """QA-0016 en el camino de edición, no sólo en el alta.
+
+    Con el campo de provincias fijo al alcance del actor, el initial no puede
+    salir del perfil: para un usuario que todavía no es relevador sería vacío,
+    y clean exige al menos una provincia sobre un campo deshabilitado.
+    """
+    from users.forms import CustomUserChangeForm
+
+    coordinador = _coordinador_datacalle(provincia, "coord_habilita")
+    existente = get_user_model().objects.create_user(
+        username="ya_existia", email="y@example.com", password="Sisoc12345!"
+    )
+
+    form = CustomUserChangeForm(
+        instance=existente,
+        actor=coordinador,
+        data=_datos_edicion(
+            existente,
+            es_relevador_calle="on",
+            datacalle_rol="entrevistador",
+        ),
+    )
+
+    assert form.is_valid(), form.errors
+    form.save()
+    existente.profile.refresh_from_db()
+    assert existente.profile.es_relevador_calle is True
+    assert list(
+        existente.profile.relevador_calle_provincias.values_list(
+            "provincia__nombre", flat=True
+        )
+    ) == [provincia.nombre]
+
+
+@pytest.mark.django_db
+def test_editar_no_borra_provincias_fuera_del_alcance_del_actor(provincia):
+    """El campo fijo no puede convertirse en una baja silenciosa.
+
+    ``_sync_relevador_calle_provincias`` borra las provincias que no lleguen en
+    cleaned_data, así que fijar el campo al alcance del actor le sacaría al
+    relevador las provincias que ese actor no administra.
+    """
+    from users.forms import CustomUserChangeForm
+
+    otra = Provincia.objects.create(nombre="Salta")
+    coordinador = _coordinador_datacalle(provincia, "coord_preserva")
+    entrevistador = _entrevistador(provincia, "entrev_dos_prov")
+    entrevistador.profile.relevador_calle_provincias.create(provincia=otra)
+
+    form = CustomUserChangeForm(
+        instance=entrevistador,
+        actor=coordinador,
+        data=_datos_edicion(
+            entrevistador,
+            es_relevador_calle="on",
+            datacalle_rol="entrevistador",
+        ),
+    )
+
+    assert form.is_valid(), form.errors
+    form.save()
+    entrevistador.profile.refresh_from_db()
+    assert sorted(
+        entrevistador.profile.relevador_calle_provincias.values_list(
+            "provincia__nombre", flat=True
+        )
+    ) == sorted([provincia.nombre, otra.nombre])

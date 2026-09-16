@@ -619,3 +619,87 @@ def test_endpoint_de_dispositivos_responde_json(client, provincias):
 
     assert respuesta.status_code == 200
     assert respuesta.json() == []
+
+
+def _coordinador_con_scope(provincia, username, municipio=None):
+    """Coordinador con alcance a provincia completa o acotado a un municipio."""
+    user = get_user_model().objects.create_user(
+        username=username,
+        email=f"{username}@example.com",
+        password="Sisoc12345!",
+    )
+    user.profile.es_usuario_provincial = True
+    user.profile.save()
+    user.profile.territorial_scopes.create(provincia=provincia, municipio=municipio)
+    return user
+
+
+@pytest.mark.django_db
+def test_municipios_de_un_coordinador_con_provincia_completa(provincias):
+    from datacalle.services import get_municipios_para_usuario
+
+    cordoba, _ = provincias
+    Municipio.objects.create(nombre="Córdoba Capital", provincia=cordoba)
+    Municipio.objects.create(nombre="Río Cuarto", provincia=cordoba)
+    coordinador = _coordinador_con_scope(cordoba, "coord_prov_completa")
+
+    municipios = get_municipios_para_usuario(coordinador, cordoba.id)
+
+    assert [m.nombre for m in municipios] == ["Córdoba Capital", "Río Cuarto"]
+
+
+@pytest.mark.django_db
+def test_municipios_de_un_coordinador_acotado_a_un_municipio(provincias):
+    """QA-0008: si el alcance baja a municipio, el selector no puede ofrecer la provincia."""
+    from datacalle.services import get_municipios_para_usuario
+
+    cordoba, _ = provincias
+    capital = Municipio.objects.create(nombre="Córdoba Capital", provincia=cordoba)
+    Municipio.objects.create(nombre="Río Cuarto", provincia=cordoba)
+    coordinador = _coordinador_con_scope(cordoba, "coord_municipal", municipio=capital)
+
+    municipios = get_municipios_para_usuario(coordinador, cordoba.id)
+
+    assert [m.nombre for m in municipios] == ["Córdoba Capital"]
+
+
+@pytest.mark.django_db
+def test_municipios_de_una_provincia_fuera_del_alcance(provincias):
+    """Provincia ausente del mapa de alcance: nada, no la provincia entera."""
+    from datacalle.services import get_municipios_para_usuario
+
+    cordoba, salta = provincias
+    Municipio.objects.create(nombre="Salta Capital", provincia=salta)
+    coordinador = _coordinador_con_scope(cordoba, "coord_ajeno")
+
+    assert get_municipios_para_usuario(coordinador, salta.id).count() == 0
+
+
+@pytest.mark.django_db
+def test_municipios_de_un_usuario_sin_restriccion_territorial(provincias):
+    """Superusuario o no-territorial: la provincia entera, sin mapa de alcance."""
+    from datacalle.services import get_municipios_para_usuario
+
+    cordoba, _ = provincias
+    Municipio.objects.create(nombre="Córdoba Capital", provincia=cordoba)
+    Municipio.objects.create(nombre="Río Cuarto", provincia=cordoba)
+    admin = get_user_model().objects.create_superuser(
+        username="admin_municipios", email="am@example.com", password="Sisoc12345!"
+    )
+
+    municipios = get_municipios_para_usuario(admin, cordoba.id)
+
+    assert [m.nombre for m in municipios] == ["Córdoba Capital", "Río Cuarto"]
+
+
+@pytest.mark.django_db
+def test_municipios_sin_provincia_no_carga_el_pais(provincias):
+    from datacalle.services import get_municipios_para_usuario
+
+    cordoba, _ = provincias
+    Municipio.objects.create(nombre="Córdoba Capital", provincia=cordoba)
+    admin = get_user_model().objects.create_superuser(
+        username="admin_sin_provincia", email="asp@example.com", password="Sisoc12345!"
+    )
+
+    assert get_municipios_para_usuario(admin, None).count() == 0

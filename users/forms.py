@@ -1009,6 +1009,7 @@ class RelevadorCalleFormMixin:
         propias = Provincia.objects.filter(id__in=provincia_ids).order_by("nombre")
         self.fields["provincias_datacalle"].queryset = propias
         if len(provincia_ids) == 1:
+            self._provincias_datacalle_fijas = list(provincia_ids)
             self.fields["provincias_datacalle"].initial = list(propias)
             self.fields["provincias_datacalle"].disabled = True
             self.fields["provincias_datacalle"].help_text = (
@@ -1020,9 +1021,29 @@ class RelevadorCalleFormMixin:
             return
         self.fields["es_relevador_calle"].initial = profile.es_relevador_calle
         self.fields["datacalle_rol"].initial = profile.datacalle_rol
-        self.fields["provincias_datacalle"].initial = list(
+        actuales = list(
             profile.relevador_calle_provincias.values_list("provincia_id", flat=True)
         )
+        fijas = getattr(self, "_provincias_datacalle_fijas", None)
+        if not fijas:
+            self.fields["provincias_datacalle"].initial = actuales
+            return
+
+        # El campo quedó fijo al alcance del actor. Pisar el initial con lo que
+        # el perfil tiene hoy dejaría el formulario sin salida al habilitar a un
+        # usuario que todavía no es relevador: el initial sería vacío, el campo
+        # está deshabilitado y clean exige al menos una provincia.
+        # Se unen ambas para poder habilitarlo y, a la vez, no borrarle las
+        # provincias que el actor no administra (``_sync_relevador_calle_provincias``
+        # borra las que no lleguen en cleaned_data).
+        union = sorted(set(actuales) | set(fijas))
+        self.fields["provincias_datacalle"].initial = union
+        # El queryset tiene que contener todo el initial o ``clean`` lo rechaza
+        # por "opción no válida". Ampliarlo no habilita a elegir fuera de
+        # alcance: el campo es ``disabled``, así que Django ignora el POST.
+        self.fields["provincias_datacalle"].queryset = Provincia.objects.filter(
+            id__in=union
+        ).order_by("nombre")
 
     def _clean_relevador_calle_fields(self, cleaned):
         es_relevador = cleaned.get("es_relevador_calle", False)

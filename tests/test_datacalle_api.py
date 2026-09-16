@@ -437,3 +437,71 @@ def test_la_fecha_de_fin_no_corta_la_carga(provincia):
     )
 
     assert respuesta.status_code == 201
+
+
+@pytest.mark.django_db
+def test_un_operativo_en_curso_acepta_casos_aunque_le_adelanten_la_fecha(provincia):
+    """El estado le gana a la fecha, igual que con la fecha de fin.
+
+    Si el coordinador corrige ``fecha_inicio`` hacia adelante después de que el
+    operativo arrancó, los casos que ya se están cargando no pueden empezar a
+    rebotar.
+    """
+    entrevistador = _entrevistador(provincia)
+    futuro = datetime.date.today() + datetime.timedelta(days=5)
+    relevamiento = _relevamiento(
+        provincia,
+        equipo=[entrevistador],
+        fecha_inicio=futuro,
+        fecha_fin=futuro + datetime.timedelta(days=2),
+        estado=Relevamiento.Estado.EN_CURSO,
+    )
+
+    respuesta = _cliente(entrevistador).put(
+        f"/api/datacalle/encuestas/{uuid.uuid4()}/",
+        _cuerpo(relevamiento),
+        format="json",
+    )
+
+    assert respuesta.status_code == 201
+
+
+@pytest.mark.django_db
+def test_los_dos_409_se_distinguen_por_reintentable(provincia):
+    """No iniciado se resuelve solo; cerrado no. La app no puede confundirlos."""
+    entrevistador = _entrevistador(provincia)
+    futuro = datetime.date.today() + datetime.timedelta(days=5)
+    no_iniciado = _relevamiento(
+        provincia,
+        equipo=[entrevistador],
+        fecha_inicio=futuro,
+        fecha_fin=futuro + datetime.timedelta(days=2),
+    )
+    pasado = datetime.date.today() - datetime.timedelta(days=30)
+    cerrado = _relevamiento(
+        provincia,
+        equipo=[entrevistador],
+        fecha_inicio=pasado,
+        fecha_fin=pasado + datetime.timedelta(days=2),
+        estado=Relevamiento.Estado.FINALIZADO,
+    )
+    cliente = _cliente(entrevistador)
+
+    temprano = cliente.put(
+        f"/api/datacalle/encuestas/{uuid.uuid4()}/",
+        _cuerpo(no_iniciado),
+        format="json",
+    )
+    tarde = cliente.put(
+        f"/api/datacalle/encuestas/{uuid.uuid4()}/",
+        _cuerpo(cerrado),
+        format="json",
+    )
+
+    assert temprano.status_code == 409
+    assert temprano.data["codigo"] == "relevamiento_no_iniciado"
+    assert temprano.data["reintentable"] is True
+
+    assert tarde.status_code == 409
+    assert tarde.data["codigo"] == "relevamiento_cerrado"
+    assert tarde.data["reintentable"] is False

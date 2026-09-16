@@ -94,6 +94,16 @@ def get_relevadores_administrables(actor):
     mostraría a todos los usuarios sin grupo del país. Esta regla es más
     angosta: sólo relevadores de DataCalle de sus provincias.
 
+    El objetivo legítimo es un usuario *solo de la app*, que no entra al
+    backoffice: ambos caminos de guardado fuerzan ``is_staff=False`` al marcar
+    el flag (ver ``UserCreationForm._configure_created_user`` y
+    ``CustomUserChangeForm.save``), y la importación masiva no toca el flag. Por
+    eso se excluye al staff y a los superusuarios: sin eso, alcanzaría con que
+    un usuario del backoffice estuviera además marcado como relevador en la
+    provincia para que un coordinador pudiera editarlo —y el formulario de
+    usuario permite fijar contraseña—. Marcar el flag degrada a no-staff, así
+    que el filtro no puede dejar afuera a un entrevistador real.
+
     Devuelve ``None`` cuando el actor no es coordinador, para que quien llame
     no altere el alcance de los demás roles.
     """
@@ -105,4 +115,6 @@ def get_relevadores_administrables(actor):
     return User.objects.filter(
         profile__es_relevador_calle=True,
         profile__relevador_calle_provincias__provincia_id__in=provincia_ids,
+        is_staff=False,
+        is_superuser=False,
     )
