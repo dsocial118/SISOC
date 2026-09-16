@@ -23,6 +23,7 @@ from datacalle.api_serializers import (
 from datacalle.models import Relevamiento
 from datacalle.services import (
     RelevamientoCerrado,
+    RelevamientoNoIniciado,
     get_catalogos,
     get_cuestionario,
     get_version,
@@ -37,6 +38,10 @@ logger = logging.getLogger("django")
 ERROR_CERRADO = {
     "detail": "El relevamiento está finalizado y no acepta más casos.",
     "codigo": "relevamiento_cerrado",
+}
+ERROR_NO_INICIADO = {
+    "detail": "El relevamiento todavía no empezó.",
+    "codigo": "relevamiento_no_iniciado",
 }
 
 
@@ -135,6 +140,8 @@ class EncuestaViewSet(viewsets.GenericViewSet):
             )
         except RelevamientoCerrado:
             return Response(ERROR_CERRADO, status=status.HTTP_409_CONFLICT)
+        except RelevamientoNoIniciado:
+            return Response(ERROR_NO_INICIADO, status=status.HTTP_409_CONFLICT)
 
         return Response(
             EncuestaSerializer(encuesta).data,

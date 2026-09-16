@@ -14,6 +14,7 @@ from datacalle.services.relevamientos import (  # noqa: F401
 )
 from datacalle.services.encuestas import (  # noqa: F401
     RelevamientoCerrado,
+    RelevamientoNoIniciado,
     aplicar_columnas_indexadas,
     cerrar_relevamiento,
     get_encuestas_para_listado,

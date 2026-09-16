@@ -373,3 +373,67 @@ def test_el_menor_se_distingue_de_la_negativa(provincia):
 
     assert resumen["menores"] == 1
     assert resumen["sin_entrevista"] == 1
+
+
+@pytest.mark.django_db
+def test_qa_0012_operativo_no_iniciado_rechaza_casos(provincia):
+    """QA-0012: cargar antes de la fecha de inicio es un error del lado app."""
+    entrevistador = _entrevistador(provincia)
+    futuro = datetime.date.today() + datetime.timedelta(days=5)
+    relevamiento = _relevamiento(
+        provincia,
+        equipo=[entrevistador],
+        fecha_inicio=futuro,
+        fecha_fin=futuro + datetime.timedelta(days=2),
+    )
+
+    respuesta = _cliente(entrevistador).put(
+        f"/api/datacalle/encuestas/{uuid.uuid4()}/",
+        _cuerpo(relevamiento),
+        format="json",
+    )
+
+    assert respuesta.status_code == 409
+    assert respuesta.data["codigo"] == "relevamiento_no_iniciado"
+    assert Encuesta.objects.count() == 0
+
+
+@pytest.mark.django_db
+def test_qa_0012_el_dia_de_inicio_ya_acepta_casos(provincia):
+    entrevistador = _entrevistador(provincia)
+    hoy = datetime.date.today()
+    relevamiento = _relevamiento(
+        provincia,
+        equipo=[entrevistador],
+        fecha_inicio=hoy,
+        fecha_fin=hoy + datetime.timedelta(days=2),
+    )
+
+    respuesta = _cliente(entrevistador).put(
+        f"/api/datacalle/encuestas/{uuid.uuid4()}/",
+        _cuerpo(relevamiento),
+        format="json",
+    )
+
+    assert respuesta.status_code == 201
+
+
+@pytest.mark.django_db
+def test_la_fecha_de_fin_no_corta_la_carga(provincia):
+    """El operativo puede estirarse: lo que manda es el estado, no la fecha."""
+    entrevistador = _entrevistador(provincia)
+    pasado = datetime.date.today() - datetime.timedelta(days=30)
+    relevamiento = _relevamiento(
+        provincia,
+        equipo=[entrevistador],
+        fecha_inicio=pasado,
+        fecha_fin=pasado + datetime.timedelta(days=2),
+    )
+
+    respuesta = _cliente(entrevistador).put(
+        f"/api/datacalle/encuestas/{uuid.uuid4()}/",
+        _cuerpo(relevamiento),
+        format="json",
+    )
+
+    assert respuesta.status_code == 201
