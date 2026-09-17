@@ -468,6 +468,27 @@ function guardarNumeroGDE(documentoId) {
     actualizarNumeroGDE(documentoId, numeroGDE);
 }
 
+/**
+ * Refleja en el formulario del Informe Técnico el número de GDE que el backend
+ * acaba de copiar al borrador. `campo` es el nombre del campo del informe
+ * (ej. "nota_gde_if"); si es null no había nada que sincronizar, y si el
+ * formulario no está renderizado en esta página no hace nada.
+ */
+function reflejarGDEEnInformeTecnico(campo, numeroGDE) {
+    if (!campo) {
+        return;
+    }
+    const input = document.getElementById(`id_${campo}`);
+    if (!input) {
+        return;
+    }
+    input.value = numeroGDE || "";
+    input.classList.add("border-success");
+    window.setTimeout(function () {
+        input.classList.remove("border-success");
+    }, 2000);
+}
+
 // Función principal de actualización (modificada)
 function actualizarNumeroGDE(documentoId, numeroGDE) {
     const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
@@ -512,7 +533,11 @@ function actualizarNumeroGDE(documentoId, numeroGDE) {
 
         // Actualizar la vista con el nuevo valor
         actualizarVistaGDE(documentoId, data.numero_gde);
-        
+
+        // El backend replica el GDE en el borrador del informe técnico; si el
+        // formulario está en esta misma página, reflejarlo sin recargar.
+        reflejarGDEEnInformeTecnico(data.campo_informe_actualizado, data.numero_gde);
+
         // Volver a modo vista
         volverAModoVista(documentoId);
     })

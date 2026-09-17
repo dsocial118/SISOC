@@ -1,0 +1,38 @@
+{% comment %}
+Aviso de cambios sin guardar del Informe Técnico. Lo maneja
+static/custom/js/informeTecnicoCambiosSinGuardar.js, que lo abre al
+interceptar un enlace que sacaría de la página con edición pendiente.
+{% endcomment %}
+<div class="modal fade"
+     id="modalCambiosSinGuardar"
+     tabindex="-1"
+     aria-labelledby="modalCambiosSinGuardarLabel"
+     aria-hidden="true"
+     data-bs-backdrop="static"
+     data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalCambiosSinGuardarLabel">
+                    <i class="fas fa-exclamation-triangle text-warning me-2"
+                       aria-hidden="true"></i>
+                    Cambios sin guardar
+                </h5>
+            </div>
+            <div class="modal-body">
+                <p class="mb-1">Hay cambios en el Informe Técnico que todavía no se guardaron.</p>
+                <p class="mb-0 text-muted small">
+                    Si salís sin guardar, se pierden. Al guardar como borrador vas a quedar en la pantalla
+                    que corresponde al informe, no necesariamente en el enlace que hiciste click.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Seguir editando</button>
+                <button type="button" class="btn btn-outline-danger" data-accion="salir">Salir sin guardar</button>
+                <button type="button" class="btn btn-primary" data-accion="guardar">
+                    <i class="fas fa-save me-1" aria-hidden="true"></i> Guardar borrador
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

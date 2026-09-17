@@ -9,6 +9,7 @@ from django.views.decorators.csrf import csrf_protect
 from django.db import transaction
 
 from celiaquia.models import Expediente, ExpedienteCiudadano
+from celiaquia.services.importacion_service import validar_cuil_importacion
 from core.models import Localidad, Nacionalidad, Sexo
 from iam.services import user_has_permission_code
 from users.territorial_scope import is_territorial_user, user_can_access_territory
@@ -176,6 +177,8 @@ class EditarLegajoView(View):
                         "Apellido, nombre y documento son obligatorios."
                     )
 
+                validar_cuil_importacion(ciudadano.documento, "CUIL")
+
                 # Fecha de nacimiento (obligatorio)
                 fecha_str = request.POST.get("fecha_nacimiento", "").strip()
                 if not fecha_str:
@@ -246,7 +249,7 @@ class EditarLegajoView(View):
                 ciudadano.save()
 
                 logger.info(
-                    "Legajo %s editado por usuario %s - Ciudadano: %s %s (DNI: %s)",
+                    "Legajo %s editado por usuario %s - Ciudadano: %s %s (CUIL: %s)",
                     legajo.pk,
                     user.username,
                     ciudadano.nombre,

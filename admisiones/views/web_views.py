@@ -1,4 +1,5 @@
 from django.contrib import messages
+from django.db import transaction
 from django.db.models import Q
 from django.http import (
     FileResponse,
@@ -177,6 +178,22 @@ def _build_informe_form_kwargs(base_kwargs, request, admision):
     kwargs = dict(base_kwargs)
     kwargs.update({"admision": admision, "require_full": action == "submit"})
     return kwargs
+
+
+CARATULA_FORM_PREFIX = "caratula"
+
+
+def _get_informe_tecnico_vigente(admision, tipo):
+    return (
+        InformeTecnico.objects.select_for_update()
+        .filter(admision=admision, tipo=tipo)
+        .order_by("-id")
+        .first()
+    )
+
+
+def _get_admision_para_editar_informe(admision_pk):
+    return Admision.objects.select_for_update().get(pk=admision_pk)
 
 
 def _get_informe_tecnico_edit_success_url(informe):
@@ -842,6 +859,9 @@ def actualizar_numero_gde_archivo(request):
         "success": resultado.get("success"),
         "numero_gde": resultado.get("numero_gde"),
         "valor_anterior": resultado.get("valor_anterior"),
+        # Campo del borrador del informe técnico que quedó sincronizado, para
+        # que el front lo refleje sin recargar la página.
+        "campo_informe_actualizado": resultado.get("campo_informe_actualizado"),
     }
 
     if not resultado.get("success"):
@@ -1102,7 +1122,41 @@ class AdmisionesTecnicosUpdateView(LoginRequiredMixin, UpdateView):
                 self.request.user, admision.comedor
             )
         )
+        self._add_informe_tecnico_context(context, admision, **kwargs)
         return context
+
+    def _add_informe_tecnico_context(self, context, admision, **kwargs):
+        """Contexto de la sección que combina Informe Técnico y caratulación."""
+        tipo = getattr(admision, "tipo_informe", None)
+        informe = context.get("informe_tecnico")
+        if not tipo or not AdmisionService.puede_editar_informe_tecnico(
+            self.request.user, admision, informe
+        ):
+            return
+
+        context["informe_tipo"] = tipo
+        # El formulario precarga por su cuenta los campos que reflejan el GDE de
+        # un documento (ver `_prellenar_campos_gde` en admisiones_forms).
+        context["informe_form"] = kwargs.get("informe_form") or (
+            InformeService.get_form_class_por_tipo(tipo)(
+                instance=informe, admision=admision
+            )
+        )
+        context["caratular_form_informe"] = kwargs.get("caratular_form_informe") or (
+            None
+            if admision.num_expediente
+            else CaratularForm(instance=admision, prefix=CARATULA_FORM_PREFIX)
+        )
+        context["informe_form_con_errores"] = kwargs.get(
+            "informe_form_con_errores", False
+        )
+        if informe is not None:
+            informe_context = InformeService.get_informe_update_context(informe, tipo)
+            context["informe_campos_a_subsanar"] = informe_context.get(
+                "campos_a_subsanar", []
+            )
+            context["informe_observacion"] = informe_context.get("observacion")
+        context.update(_get_template_informe_context(admision))
 
     def _safe_redirect_to_edit(self, request, admision):
         return safe_redirect(
@@ -1122,6 +1176,104 @@ class AdmisionesTecnicosUpdateView(LoginRequiredMixin, UpdateView):
         )
         if upload_response is not None:
             return upload_response
+        return self._safe_redirect_to_edit(request, admision)
+
+    def _render_informe_form_con_errores(self, **kwargs):
+        return self.render_to_response(
+            self.get_context_data(informe_form_con_errores=True, **kwargs)
+        )
+
+    def _guardar_informe_y_caratula(self, request, admision, informe_form, action):
+        """Guarda la caratulación del expediente y el informe técnico juntos.
+
+        Los dos pasos van en una sola transacción, así que si algo falla no
+        queda nada a medio aplicar. La carga documental no participa: la
+        documentación se puede seguir sumando en cualquier momento y no
+        condiciona ni la caratulación ni el informe.
+
+        La carátula sigue la misma lógica que el informe: en borrador se guarda
+        el avance sin exigir los campos completos, y al finalizar se compila el
+        número definitivo. Una admisión ya caratulada no se vuelve a tocar.
+
+        Devuelve ``(error_caratula_form, error_message)``; ambos ``None`` si el
+        guardado fue exitoso.
+        """
+        with transaction.atomic():
+            if not admision.num_expediente:
+                exito, mensaje, caratular_form = AdmisionService.guardar_caratulacion(
+                    admision,
+                    request.POST,
+                    prefix=CARATULA_FORM_PREFIX,
+                    borrador=action != "submit",
+                )
+                if not exito:
+                    transaction.set_rollback(True)
+                    return caratular_form, mensaje
+
+            resultado = InformeService.guardar_informe(
+                informe_form,
+                admision,
+                es_creacion=informe_form.instance.pk is None,
+                action=action,
+                usuario=request.user,
+            )
+            if not resultado.get("success"):
+                if resultado.get("saved_as_draft"):
+                    return None, resultado.get(
+                        "error", "El informe técnico se guardó como borrador."
+                    )
+                transaction.set_rollback(True)
+                return None, resultado.get(
+                    "error", "No se pudo guardar el informe técnico."
+                )
+
+        return None, None
+
+    def _handle_informe_tecnico_post(self, request, admision):
+        if "btnInformeTecnicoCaratula" not in request.POST:
+            return None
+
+        with transaction.atomic():
+            # Se relee y bloquea el estado antes de autorizar: otro usuario no
+            # puede finalizar o validar el informe entre esta comprobación y el
+            # guardado posterior.
+            admision = _get_admision_para_editar_informe(admision.pk)
+            tipo = getattr(admision, "tipo_informe", None)
+            if not tipo:
+                messages.error(
+                    request,
+                    "La admisión no tiene un tipo de informe técnico asociado.",
+                )
+                return self._safe_redirect_to_edit(request, admision)
+            action = request.POST.get("action")
+            informe = _get_informe_tecnico_vigente(admision, tipo)
+            if not AdmisionService.puede_editar_informe_tecnico(
+                request.user, admision, informe
+            ):
+                return HttpResponse(status=403)
+            informe_form = InformeService.get_form_class_por_tipo(tipo)(
+                request.POST,
+                request.FILES,
+                instance=informe,
+                admision=admision,
+                require_full=action == "submit",
+            )
+            if not informe_form.is_valid():
+                _flash_informe_form_invalid_messages(request, informe_form)
+                return self._render_informe_form_con_errores(informe_form=informe_form)
+
+            informe_form.instance.tipo = tipo
+            caratular_form, error = self._guardar_informe_y_caratula(
+                request, admision, informe_form, action
+            )
+            if error:
+                messages.error(request, error)
+                return self._render_informe_form_con_errores(
+                    informe_form=informe_form,
+                    caratular_form_informe=caratular_form,
+                )
+
+        messages.success(request, "Informe técnico guardado correctamente.")
         return self._safe_redirect_to_edit(request, admision)
 
     def _handle_post_update_actions(self, request, admision):
@@ -1152,6 +1304,7 @@ class AdmisionesTecnicosUpdateView(LoginRequiredMixin, UpdateView):
         response = _run_post_handlers_until_response(
             (
                 lambda: self._handle_docx_final_post(request),
+                lambda: self._handle_informe_tecnico_post(request, self.object),
                 lambda: self._handle_post_update_actions(request, self.object),
             )
         )
@@ -1651,6 +1804,9 @@ class AdmisionesLegalesDetailView(LoginRequiredMixin, FormMixin, DetailView):
         context.update(
             LegalesService.get_legales_context(self.get_object(), self.request)
         )
+        # Los kwargs explícitos ganan sobre los formularios limpios que arma el
+        # service: son los que traen los errores del intento anterior.
+        context.update(kwargs)
         context.setdefault("form", self.get_form())
         context.setdefault(
             "form_legales_num_if", LegalesNumIFForm(instance=self.get_object())
@@ -1665,9 +1821,19 @@ class AdmisionesLegalesDetailView(LoginRequiredMixin, FormMixin, DetailView):
                 return self.render_to_response(
                     self.get_context_data(
                         form_legales_num_if=legales_num_if_form,
-                        abrir_modal_legales_num_if=True,
+                        abrir_modal="modalLegalesNumIF",
                     )
                 )
+
+        modal_invalido = LegalesService.form_modal_invalido(request, admision)
+        if modal_invalido is not None:
+            clave_form, id_modal, form_con_errores = modal_invalido
+            return self.render_to_response(
+                self.get_context_data(
+                    **{clave_form: form_con_errores, "abrir_modal": id_modal}
+                )
+            )
+
         return LegalesService.procesar_post_legales(request, admision)
 
 
