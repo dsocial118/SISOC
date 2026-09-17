@@ -754,3 +754,47 @@ def test_qa_0020_sin_permiso_de_cambio_no_se_cierra(client, provincias):
     assert respuesta.status_code in (302, 403)
     relevamiento.refresh_from_db()
     assert relevamiento.estado != Relevamiento.Estado.FINALIZADO
+
+
+@pytest.mark.django_db
+def test_qa_0009_el_alta_valida_el_area_operativa_en_el_cliente(client, provincias):
+    """QA-0009: el campo no puede limitarse a `required`.
+
+    El formulario es `novalidate`, así que el navegador ignora el atributo: sin
+    un guard propio en el submit, el área operativa vacía se descubre recién
+    cuando contesta el servidor.
+    """
+    cordoba, _ = provincias
+    coordinador = _dar_permisos(
+        _crear_coordinador(cordoba), ["add_relevamiento", "view_relevamiento"]
+    )
+    client.force_login(coordinador)
+
+    respuesta = client.get("/datacalle/relevamientos/crear/")
+
+    assert respuesta.status_code == 200
+    html = respuesta.content.decode()
+    assert "addEventListener('submit'" in html
+    assert "Indicá el área operativa del espacio público." in html
+    assert "Elegí el dispositivo de alojamiento." in html
+    # Y el campo tiene que verse obligatorio apenas se elige la fase: el
+    # asterisco lo pone el JS, porque el field es opcional a nivel form.
+    assert "marcarObligatorio" in html
+
+
+@pytest.mark.django_db
+def test_qa_0009_el_servidor_sigue_siendo_la_fuente_de_verdad(client, provincias):
+    """El guard del cliente no reemplaza la validación: la agrega."""
+    cordoba, _ = provincias
+    entrevistador = _crear_entrevistador(cordoba, "entrev_sin_area")
+    coordinador = _dar_permisos(
+        _crear_coordinador(cordoba), ["add_relevamiento", "view_relevamiento"]
+    )
+    client.force_login(coordinador)
+    datos = _datos_form(cordoba, [entrevistador])
+    datos["area_operativa"] = ""
+
+    respuesta = client.post("/datacalle/relevamientos/crear/", data=datos)
+
+    assert respuesta.status_code == 200
+    assert not Relevamiento.objects.filter(denominacion=datos["denominacion"]).exists()
