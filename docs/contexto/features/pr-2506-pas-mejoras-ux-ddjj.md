@@ -34,9 +34,11 @@
 
 - Empezar por `docs/registro/prs/PR-2506.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
+- `docs/contexto/features/pr-2506-pas-mejoras-ux-ddjj.md`
 - `docs/implementaciones/pas.md`
 - `docs/implementaciones/pas_control_mensual_celery.md`
 - `docs/registro/cambios/2026-09-10-pas-renaper-genero-domicilio.md`
+- `docs/registro/prs/PR-2506.md`
 - `pas/forms.py`
 - `pas/migrations/0007_paspersona_genero_calle_altura.py`
 - `pas/migrations/0008_remove_ddjj_firma_respuestas.py`
@@ -52,9 +54,7 @@
 - `pas/tests/test_ddjj.py`
 - `pas/tests/test_supervivencia_jobs.py`
 - `pas/tests/test_supervivencia_service.py`
-- `pas/tests/test_titulares_import.py`
-- `pas/views.py`
-- ... y 3 archivo(s) adicional(es) relacionados.
+- ... y 5 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
