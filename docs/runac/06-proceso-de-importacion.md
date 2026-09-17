@@ -21,7 +21,7 @@ dispositivos de cada jurisdicción.
 > valores que el sistema ya no admite.
 
 <!-- COMENTARIO: la generación de plantillas desde el sistema ya está
-     implementada en el prototipo y probada sobre los cinco archivos: título,
+     implementada y probada sobre los cinco archivos: título,
      grupos de campos, listas desplegables vigentes, obligatorios marcados, una
      hoja de instrucciones con la ayuda de cada campo y un comentario en cada
      título de columna. -->
@@ -112,7 +112,7 @@ Los archivos se importan en un orden determinado, porque unos referencian a otro
 El operador no necesita recordar la secuencia: si intenta cargar un archivo cuyas
 dependencias faltan, la operación se rechaza indicando cuáles.
 
-<!-- COMENTARIO: en el prototipo la dependencia se deriva del orden de
+<!-- COMENTARIO: hoy la dependencia se deriva del orden de
      importación declarado en la Capa 1, y eso encadena todo con todo: DISP_SCP
      queda bloqueado por DISP_PENAL aunque sean independientes entre sí.
      Corresponde declarar las dependencias reales en la Capa 1 en lugar de

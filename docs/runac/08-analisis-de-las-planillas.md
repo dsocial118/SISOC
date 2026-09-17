@@ -78,7 +78,7 @@ de archivos.
 **No son excluyentes en el tiempo:** puede adoptarse A para el primer período y
 avanzar hacia B o C una vez que el circuito esté en funcionamiento.
 
-<!-- COMENTARIO: el prototipo funciona hoy con los archivos como están, que
+<!-- COMENTARIO: el sistema funciona hoy con los archivos como están, que
      equivale a la alternativa A sin criterio de precedencia implementado. Si se
      adopta B o C hay que rehacer plantillas y el orden de carga pasa a tres
      momentos.
@@ -441,7 +441,7 @@ padrón más numeroso. Ver el apartado 3.
 hoja se carga.
 
 **Los 9 campos de «Guardia Comisaría» están todos en CAD**, sin ninguno propio. Y
-es **la única de las seis hojas sin Localidad ni Dirección**, siendo que los
+es **la única de las cinco hojas sin Localidad ni Dirección**, siendo que los
 reportes previstos piden eventos por dependencia: sin localidad no se puede
 ubicar geográficamente un ingreso.
 

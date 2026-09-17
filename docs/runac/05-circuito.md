@@ -154,6 +154,6 @@ omisión fue un error de carga.
 > de la misma persona. Corresponde confirmar si ambos roles deben mantenerse
 > estrictamente separados.
 
-<!-- COMENTARIO: en el prototipo el responsable NO puede importar; sólo cierra y
+<!-- COMENTARIO: en la implementación el responsable NO puede importar; sólo cierra y
      presenta. Si se confirma que debe poder, se amplía `puede_cargar` en
      permissions.py. -->

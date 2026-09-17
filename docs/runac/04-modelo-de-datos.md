@@ -11,9 +11,11 @@ resolverse en una única estructura.
 | **Capa 2** | Los archivos recibidos, sus validaciones, observaciones y correcciones | *¿Qué informó cada provincia en cada período?* |
 | **Capa 3** | La base consolidada: personas, medidas, eventos y dispositivos | *¿Cuál es la situación, y cómo llegó a serlo?* |
 
-Todas las tablas llevan el prefijo `runac_`, que es el comportamiento por defecto
+Todas las tablas llevan el prefijo `mir_`, que es el comportamiento por defecto
 de SISOC —el nombre de la aplicación encabeza el de cada tabla—, y dentro del
-módulo el prefijo distingue la capa: `runac_c1_*`, `runac_c2_*`, `runac_c3_*`.
+módulo el prefijo distingue la capa: `mir_c1_*`, `mir_c2_*`, `mir_c3_*`. El
+prefijo nombra al **módulo**, no a la implementación: ver
+[03-arquitectura.md](03-arquitectura.md).
 
 ---
 
@@ -70,10 +72,10 @@ archivo se aceptó, o por qué se rechazó una fila.
 El archivo y su estructura se separan:
 
 ```
-runac_c1_archivo            La identidad del archivo: MPI, MPE, MPJ_DAE,
+mir_c1_archivo            La identidad del archivo: MPI, MPE, MPJ_DAE,
                             DISP_PENAL, DISP_SCP. No cambia nunca.
      │
-runac_c1_archivo_version    Cada versión de la estructura, con su estado
+mir_c1_archivo_version    Cada versión de la estructura, con su estado
      │                      (borrador, vigente, histórica).
      ├── hojas
      ├── dimensiones
@@ -229,7 +231,7 @@ su historia**.
 
 ### La identidad se separa de lo relevado
 
-`runac_c3_persona` contiene **sólo la identidad**: el identificador de SISOC, el
+`mir_c3_persona` contiene **sólo la identidad**: el identificador de SISOC, el
 vínculo con `ciudadanos`, el documento y el CUIL. Nada más.
 
 Todo lo que las planillas relevan sobre alguien vive en su **caracterización**:
@@ -269,6 +271,49 @@ dispositivos alcanzan a un municipio determinado.
 
 ### Normalización de los campos abiertos
 
+Muchos campos de texto **no son texto libre de verdad**: nombran una cosa del
+mundo que existe en cantidad finita, y cada jurisdicción la escribe distinto.
+«Sec. de Niñez», «Secretaría de Niñez» y «SENAF» quieren decir lo mismo.
+
+La Capa 1 declara, campo por campo, si sus valores se unifican y con qué
+alcance. Son tres opciones y **no un sí/no**:
+
+| Valor | Qué significa | Ejemplo |
+|---|---|---|
+| `SIN_NORMALIZAR` | El texto queda como viene | Apellido, observaciones |
+| `UNIVERSO` | Un diccionario para todas las jurisdicciones | Pueblo originario |
+| `POR_ENTIDAD` | Un diccionario por cada jurisdicción | Nombre del programa o dispositivo |
+
+**El alcance no es cosmético: decide si dos textos iguales son la misma cosa.**
+«Hogar San José» en Chubut y «Hogar San José» en Salta son **dos dispositivos
+distintos**; con un diccionario único, unificarlos fusiona dos entidades reales y
+se pierde una. «Mapuche», en cambio, es lo mismo en las veinticuatro, y tenerlo
+veinticuatro veces obliga a decidir lo mismo veinticuatro veces.
+
+La regla para elegir: **¿el nombre identifica a la cosa por sí solo, o sólo
+dentro de su jurisdicción?**
+
+Se guarda como `POR_ENTIDAD` y no como «por jurisdicción» a propósito: **la
+entidad que particiona es de la implementación, no del campo**. En RUNAC es la
+jurisdicción; en otro programa pueden ser organismos, áreas o regiones. En el
+documento que se trabaja con la contraparte se escribe con el nombre real que
+tiene ahí, porque quien lo completa no habla de entidades.
+
+**No cambia nada al importar.** El campo sigue admitiendo el texto como viene: es
+una declaración para la etapa de normalización posterior.
+
+<!-- COMENTARIO: la columna `normalizacion` existe en mir_c1_campo desde el
+     2026-09-16 y arranca en SIN_NORMALIZAR para los 365 campos. Lo que
+     corresponda se propone en el documento de supuestos y lo confirma la
+     contraparte: es un supuesto, no una decisión del equipo.
+
+     Ojo con dos confusiones frecuentes. Un campo cuya lista YA existe en la
+     Capa 1 no se normaliza: se le engancha el catálogo. Y localidad, partido y
+     departamento tampoco: ésos se resuelven contra el nomenclador territorial,
+     no contra un diccionario propio. -->
+
+### El caso concreto: unidad interviniente
+
 `unidad_interviniente` es una tabla referencial que **no se completa por
 adelantado**: se construye con lo que efectivamente se informa. El universo es
 abierto —la intervención puede realizarse desde un servicio local, un equipo
@@ -279,6 +324,10 @@ mantenimiento que ninguna instancia puede sostener.
 de esa tabla y **se perfecciona en cada importación**. Lo ya conocido se resuelve
 solo; lo nuevo queda pendiente, y su resolución incorpora una entrada para la vez
 siguiente.
+
+Es el mecanismo que va a servir para todos los campos declarados normalizables,
+no sólo para éste. Falta la pantalla de administración que agrupe lo que llegó y
+permita elegir el valor canónico o crear uno nuevo.
 
 ### Cuatro tablas de trazabilidad
 

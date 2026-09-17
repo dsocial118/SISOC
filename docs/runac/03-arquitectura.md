@@ -1,26 +1,50 @@
 # Arquitectura
 
-RUNAC es un **módulo de SISOC**: comparte autenticación, navegación, permisos,
-despliegue e identidad visual. Se construye en dos etapas.
+RUNAC **no es un sistema**: es una **implementación** de un módulo reusable.
+Entenderlo en esos términos es lo que explica casi todas las decisiones que
+siguen.
 
-**Etapa 1 — Prototipo.** Se está armando un prototipo navegable fuera del
-repositorio, para mostrar el circuito funcionando y resolver las definiciones
-pendientes frente a una pantalla en vez de frente a un texto, mediante
-depuraciones iterativas validadas con la contraparte. En esta etapa se trabaja
-con una base MySQL separada.
+```
+MIR      el módulo. Define qué archivo se espera, lo recibe, lo valida,
+         permite corregirlo y lo consolida. No sabe qué es una MPI.
+RUNAC    una implementación: su definición, sus usuarios, sus datos.
+```
 
-Se arranca afuera por dos motivos: las planillas provinciales y el propio
-circuito están en continuo cambio y todavía no hay un formato definitivo, y
-modificar el repositorio por cada ajuste implica migraciones y revisiones que no
-aportan mientras el diseño no esté cerrado.
+MIR —**Módulo de Importaciones Recurrentes**— es un nombre interno, para el
+equipo. Hacia afuera cada implementación lleva el suyo: hoy RUNAC.
 
-Mientras el prototipo esté fuera se trabaja **exclusivamente con datos
-ficticios** y con identificación visible en pantalla de que se trata de un
-prototipo. Las demostraciones se hacen publicándolo temporalmente con ngrok,
-siempre con acceso protegido por usuario y contraseña.
+## Por qué el módulo no conoce el negocio
 
-**Etapa 2 — Integración.** Cuando la contraparte dé el visto bueno, se integran a
-SISOC el código y las tablas, y allí queda en producción.
+La definición de cada archivo —hojas, columnas, tipos, listas de valores y
+reglas de validación— **vive en filas de la base**, no en el código. El motor
+las lee y las ejecuta.
+
+Eso no es una aspiración: es verificable. De las menciones a «runac» en
+`services/motor/`, todas son nombres de tabla o comentarios. Se buscó lógica de
+negocio —MPI, MPE, dispositivos, niño, medida de protección— y lo único que
+aparece es un ejemplo dentro de un comentario.
+
+La consecuencia práctica: **cuando una provincia cambia una planilla, se cambian
+datos, no programas**. Y el día que otro programa reciba novedades periódicas de
+las jurisdicciones, el motor sirve sin tocarlo.
+
+---
+
+## Cómo se construye
+
+**Hoy: fuera del repositorio, y funcionando.** Se trabaja sobre una
+implementación navegable con base MySQL propia, que se clona y se levanta con
+dos comandos. Se arrancó afuera por dos motivos que siguen vigentes: las
+planillas provinciales y el circuito cambian seguido, y modificar el
+repositorio por cada ajuste implica migraciones y revisiones que no aportan
+mientras el diseño no esté cerrado.
+
+Mientras esté afuera trabaja **exclusivamente con datos ficticios**, con aviso
+visible en pantalla. Las demostraciones se publican temporalmente con ngrok,
+siempre con acceso por usuario y contraseña.
+
+**Después: integración.** Cuando la contraparte dé el visto bueno, el código y
+las tablas se incorporan a SISOC.
 
 <!-- COMENTARIO: "PWA" se usa en el proyecto como sinónimo de "aplicación web
      autónoma y fácil de mostrar". Se descartó como requisito técnico: RUNAC no
@@ -31,8 +55,8 @@ SISOC el código y las tablas, y allí queda en producción.
 
 ## Qué implica la integración
 
-Al incorporarse al repositorio, RUNAC queda sujeto a las reglas que SISOC aplica
-a todo módulo nuevo (`docs/ia/MODULAR_BOUNDARIES.md`):
+Al incorporarse al repositorio, el módulo queda sujeto a las reglas que SISOC
+aplica a todo módulo nuevo (`docs/ia/MODULAR_BOUNDARIES.md`):
 
 - se define el **nombre interno de la aplicación una sola vez**, porque después
   no puede modificarse sin renombrar todas sus tablas;
@@ -46,11 +70,58 @@ a todo módulo nuevo (`docs/ia/MODULAR_BOUNDARIES.md`):
 
 | Campo | Valor |
 |---|---|
-| Nombre del dominio | `runac` |
+| Nombre del dominio | `mir` |
 | Clasificación | **Vertical extraíble.** No es cambio de kernel: no toca `Ciudadano` ni los domicilios embebidos. No es parte de un contexto existente: padrón y dispositivos propios |
 | Entidades propias | Padrón (persona, dispositivo, familia), eventos (medida, DAE) y las tres capas |
 | Dependencias al kernel | `ciudadanos.Ciudadano` **por vínculo opcional**, nunca obligatorio. Territorio a confirmar según el nomenclador |
 | Dependencias a otros verticales | Ninguna. Los dispositivos son propios: no requiere fachada de `dispositivos` |
+
+---
+
+## Nomenclatura de tablas, y una pregunta que hay que responder antes de integrar
+
+Todas las tablas llevan el prefijo **`mir_`**, y dentro del módulo el prefijo
+distingue las tres capas:
+
+- `mir_c1_*` — definición de los archivos esperados y sus reglas
+- `mir_c2_*` — importaciones, datos recibidos y gestión de observaciones
+- `mir_c3_*` — base consolidada
+
+El prefijo dice el nombre del **módulo**, no el de la implementación. Se
+renombró desde `runac_` a propósito y antes de integrar, justamente porque
+después «no puede modificarse sin renombrar todas sus tablas».
+
+> **Definición pendiente, y hay que tomarla antes de integrar.**
+>
+> Hoy, fuera del repositorio, **cada implementación tiene su propia base de
+> datos**. Eso es lo que permite que dos implementaciones no se pisen los
+> catálogos ni las definiciones.
+>
+> SISOC es **una sola base**. Al integrar, las implementaciones dejan de
+> separarse por base y tienen que separarse por dato: una columna que diga a qué
+> implementación pertenece cada archivo, cada período y cada presentación.
+>
+> No es difícil, pero **cambia el modelo** y conviene decidirlo antes de escribir
+> las migraciones, no después. Mientras haya una sola implementación la
+> diferencia no se nota; el día que haya dos, sí.
+
+---
+
+## La pieza que falta: el administrador de instancias
+
+Un módulo con varias implementaciones necesita algo que sepa **cuáles existen**:
+sus datos de conexión, sus generalidades, y qué tableros y funcionalidades se le
+habilitan a cada una.
+
+**Todavía no existe, y es deliberado**: la prioridad es que RUNAC funcione. Pero
+las dos condiciones para que siga siendo posible ya se cumplen y conviene no
+perderlas de vista:
+
+1. Cada implementación tiene su definición y sus datos separados de las demás.
+2. El motor no tiene lógica de ninguna implementación en particular.
+
+Mientras eso se mantenga, el administrador se puede construir después sin
+rehacer nada.
 
 ---
 
@@ -78,19 +149,19 @@ información de otras fuentes del sistema, sujeta a habilitación.
 
 Cuando la persona no exista en el registro de ciudadanos, SISOC ya cuenta con un
 mecanismo que la da de alta con datos de RENAPER, validando la identidad
-(`ciudadanos/api.py`). RUNAC utilizará ese mecanismo y no creará ciudadanos por
-su cuenta.
+(`ciudadanos/api.py`). Se utilizará ese mecanismo y no se crearán ciudadanos por
+cuenta propia.
 
-**Sobre la confidencialidad:** RUNAC **no escribe** en las tablas del resto del
-sistema. Los datos que llegan por este programa quedan dentro del módulo y no
-modifican información de otras áreas. La lectura del registro de ciudadanos es
-sólo para identificar a la persona.
+**Sobre la confidencialidad:** el módulo **no escribe** en las tablas del resto
+del sistema. Los datos que llegan por este programa quedan dentro del módulo y
+no modifican información de otras áreas. La lectura del registro de ciudadanos
+es sólo para identificar a la persona.
 
-> **Definición pendiente.** ¿RUNAC debe dar de alta ciudadanos en SISOC a partir
-> de las importaciones provinciales? Una presentación trimestral puede incorporar
-> miles de personas al padrón general. Existe precedente en sentido contrario:
-> VAT mantiene deliberadamente por fuera a los profesores, para no sumarlos al
-> padrón que alimenta la validación de identidad y la revisión de duplicados.
+> **Definición pendiente.** ¿Debe dar de alta ciudadanos en SISOC a partir de las
+> importaciones provinciales? Una presentación trimestral puede incorporar miles
+> de personas al padrón general. Existe precedente en sentido contrario: VAT
+> mantiene deliberadamente por fuera a los profesores, para no sumarlos al padrón
+> que alimenta la validación de identidad y la revisión de duplicados.
 
 > **Definición pendiente.** En los casos sin DNI, ¿hay alguna otra forma de
 > establecer el vínculo con el registro de ciudadanos?
@@ -118,18 +189,3 @@ habilitar para este módulo.
      nombre en texto libre, sin código INDEC ni BAHRA. Si RUNAC adopta un
      nomenclador, va a tener un catálogo territorial más preciso que el resto
      del sistema. Ver 08-analisis-de-las-planillas.md. -->
-
----
-
-## Nomenclatura de tablas
-
-Todas las tablas del módulo llevan el prefijo `runac_`, que es el comportamiento
-por defecto de SISOC: el nombre de la aplicación encabeza el de cada tabla. No
-requiere configuración adicional —se verificó que el repositorio usa el
-comportamiento por defecto, con sólo cuatro excepciones en todo el proyecto.
-
-Dentro del módulo, el prefijo distingue las tres capas:
-
-- `runac_c1_*` — definición de los archivos esperados y sus reglas
-- `runac_c2_*` — importaciones, datos recibidos y gestión de observaciones
-- `runac_c3_*` — base consolidada

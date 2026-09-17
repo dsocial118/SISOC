@@ -49,22 +49,33 @@ El sistema debe permitir:
 | **MPJ** *(hoja del archivo MPJ DAE)* | NyA alcanzados por medidas penales juveniles | Un NyA con una medida penal o permanencia en dispositivo penal |
 | **DAE** *(hoja del mismo archivo)* | Ingresos y egresos de CAD o guardias especializadas | Un evento de admisión o permanencia transitoria |
 | **Dispositivos SCP** | Dispositivos de cuidado residencial | Un dispositivo residencial |
-| **Dispositivos PENAL** | CRC, CRSC, MPT, CAD, guardias especializadas y categorías de prisión domiciliaria | Un dispositivo penal o equipo especializado, según la hoja |
+| **Dispositivos PENAL** | CRC, CRSC, MPT, CAD y guardias especializadas | Un dispositivo penal o equipo especializado, según la hoja |
 
-Son **cinco archivos con once hojas de datos y 368 columnas en total**:
+Son **cinco archivos con diez hojas de datos y 365 columnas en total**:
 
 - **Tres archivos con las cuatro nóminas**: MPI y MPE en un archivo cada uno, y
   MPJ y DAE compartiendo un mismo libro en dos hojas.
-- **Dos archivos de dispositivos**: el penal, con **seis** hojas según el tipo de
-  dispositivo, y el de cuidado residencial, con una.
+- **Dos archivos de dispositivos**: el penal, con **cinco** hojas según el tipo
+  de dispositivo, y el de cuidado residencial, con una.
 
-<!-- COMENTARIO: los números están verificados contra la Capa 1 cargada.
-     Disp-Penal 121 campos en 6 hojas · Disp-SCP 61 · MPI 64 · MPE 41 ·
-     MPJ_DAE 81 en 2 hojas. La hoja "categ prision domi" tiene sólo 3 columnas
-     y por su nombre parece una tabla de categorías, pero es una hoja de datos:
-     si se la excluyera serían 10 hojas y 365 columnas. -->
+De las 365 columnas, sólo **31 son obligatorias**: los dispositivos exigen una
+por hoja —el nombre— y las nóminas entre cinco y diez.
 
-Que un archivo tenga seis hojas y otro una sola es lo que vuelve significativo el
+<!-- COMENTARIO: los números están verificados contra la Capa 1 cargada, el
+     2026-09-17. Disp-Penal 118 campos en 5 hojas · Disp-SCP 61 · MPI 64 ·
+     MPE 41 · MPJ_DAE 81 en 2 hojas.
+
+     Antes decía 368 en 11 hojas. La diferencia es la hoja "categ prision domi"
+     del archivo penal, que este mismo comentario ya señalaba como sospechosa:
+     tiene tres columnas y su contenido documenta qué tipo admite cada una. Es
+     una hoja de CATEGORÍAS y se la estaba tratando como hoja de datos, así que
+     la plantilla se la pedía a la provincia. Se sacó el 2026-09-16.
+
+     Circulaba además un tercer número, 384, de contar las columnas que Excel
+     informa por hoja: hay 16 columnas fantasma sin título ni datos, creadas por
+     formato aplicado a lo ancho de la hoja. 365 + 3 + 16 = 384. -->
+
+Que un archivo tenga cinco hojas y otro una sola es lo que vuelve significativo el
 orden de importación: no es una formalidad, es lo que permite saber en todo
 momento qué entró y qué falta.
 
@@ -147,9 +158,9 @@ Del requerimiento original, a cargo del equipo:
 
 - propuesta de arquitectura y modelo de datos → **[03](03-arquitectura.md)** y **[04](04-modelo-de-datos.md)**
 - plantillas definitivas de importación y columnas obligatorias → **[08](08-analisis-de-las-planillas.md)**
-- prototipo de pantallas de carga, revisión, observación y consulta → **implementado**
+- pantallas de carga, revisión, observación y consulta → **implementadas y navegables**
 - matriz de reglas de validación y mensajes al usuario → **[07](07-reglas-de-validacion.md)**
 - definición de roles, permisos y auditoría → **[02](02-actores-y-roles.md)**
 - propuesta de reportes y alertas del MVP → pendiente
-- plan de pruebas con al menos una provincia piloto → pendiente
+- plan de pruebas con al menos una provincia piloto → **dos jurisdicciones con datos de prueba en tres variantes: correctos, con advertencias y con errores**
 - manual breve para usuarios provinciales y nacionales → pendiente

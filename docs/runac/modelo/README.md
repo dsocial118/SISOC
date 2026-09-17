@@ -10,8 +10,8 @@
 
 ## Qué son
 
-El modelo de tres capas, tal como está construido y verificado en el prototipo
-que se mantiene fuera del repositorio.
+El modelo de tres capas, tal como está construido y verificado en la
+implementación que hoy funciona fuera del repositorio.
 
 | Script | Capa | Qué define |
 |---|---|---|
@@ -37,7 +37,7 @@ Las genera un script de inicialización que se ejecuta una vez y se vuelve a
 ejecutar si la definición cambia antes de la aprobación. Ver
 [../09-alcance-primera-version.md](../09-alcance-primera-version.md).
 
-**Tampoco están los INSERT de la definición.** Los 368 campos, 81 catálogos y 708
+**Tampoco están los INSERT de la definición.** Los 365 campos, 93 catálogos y 797
 opciones relevados de las cinco planillas se cargan con scripts generados
 automáticamente desde los Excel, que pesan cientos de kilobytes y se regeneran
 cada vez que llega una versión nueva de una planilla. No tiene sentido
@@ -47,14 +47,15 @@ versionarlos acá.
 
 ## Convenciones
 
-Todas las tablas llevan el prefijo `runac_`, que es el comportamiento por defecto
-de SISOC: el nombre de la aplicación encabeza el de cada tabla.
+Todas las tablas llevan el prefijo `mir_`, que es el comportamiento por defecto
+de SISOC: el nombre de la aplicación encabeza el de cada tabla. El prefijo dice
+el nombre del **módulo**, no el de la implementación: `mir`, no `runac`.
 
 Dentro del módulo, el prefijo distingue además la capa:
 
-- `runac_c1_*` — definición de los archivos esperados y sus reglas
-- `runac_c2_*` — importaciones, datos recibidos y gestión de observaciones
-- `runac_c3_*` — base consolidada
+- `mir_c1_*` — definición de los archivos esperados y sus reglas
+- `mir_c2_*` — importaciones, datos recibidos y gestión de observaciones
+- `mir_c3_*` — base consolidada
 
 <!-- COMENTARIO: la Capa 3 es la única que necesariamente convive con el resto
      de la base de SISOC. Las Capas 1 y 2 son específicas del proceso de

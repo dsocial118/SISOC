@@ -116,9 +116,9 @@ bloqueantes se informan y quedan registradas, y **no hay importación parcial**.
 | Reportes y alertas | | ✓ |
 | Conexión por API a sistemas provinciales | | evaluación |
 
-<!-- COMENTARIO: el prototipo tiene implementado más que la primera versión: el
+<!-- COMENTARIO: hay implementado más que la primera versión: el
      circuito completo con los cuatro roles, la corrección de datos y los
-     informes de errores. Está así a propósito: el prototipo existe para mostrar
+     informes de errores. Está así a propósito: existe para mostrar
      el circuito y destrabar definiciones, no para marcar el alcance del
      desarrollo. Lo que se construye en SISOC es lo que dice esta tabla. -->
 

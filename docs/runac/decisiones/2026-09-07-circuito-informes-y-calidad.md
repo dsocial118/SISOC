@@ -1,11 +1,11 @@
 # Circuito de nueve pasos, informes de errores y tooling de calidad
 
 **Fecha:** 2026-09-07
-**Alcance:** prototipo de RUNAC (fuera del repositorio de SISOC)
+**Alcance:** la implementación RUNAC (fuera del repositorio de SISOC)
 
-Registro con la convención de `docs/registro/` de SISOC. El prototipo está fuera
-del repositorio, pero se documenta igual: al integrarse, este archivo es el que
-explica por qué las cosas están como están.
+Registro con la convención de `docs/registro/` de SISOC. La implementación está
+fuera del repositorio, pero se documenta igual: al integrarse, este archivo es el
+que explica por qué las cosas están como están.
 
 ---
 
@@ -77,7 +77,7 @@ puede señalar la celda.
 cambios `.pylintrc`, `.djlintrc` y `pyproject.toml`.
 
 **Por qué.** `AGENTS.md` define ese tooling como el real del repositorio. Si el
-prototipo se valida con otras herramientas o con otra configuración, al
+módulo se valida con otras herramientas o con otra configuración, al
 integrarlo aparecen diferencias de formato que no son decisiones de nadie.
 
 **Estado.** `black` y `djlint` limpios. `pylint` en 9.58/10.
@@ -101,7 +101,7 @@ motor se integre.
 permisos por rol y la convención de nombres de las tablas receptoras. No crean
 base de datos.
 
-**Por qué.** Los modelos del prototipo son `managed = False`: la estructura la
+**Por qué.** Los modelos del módulo son `managed = False`: la estructura la
 genera la Capa 1 y no Django, así que `pytest-django` no puede crearla. Lo que sí
 se puede testear sin base es la lógica, que es justamente donde están las reglas
 que no pueden romperse.
@@ -114,12 +114,20 @@ que no pueden romperse.
 ## 6. La estética no sigue a SISOC, y es a propósito
 
 **Situación.** SISOC usa AdminLTE sobre Bootstrap 4, con una biblioteca de
-componentes propios en `templates/components/`. El prototipo usa Bootstrap 5 con
+componentes propios en `templates/components/`. El módulo usa Bootstrap 5 con
 estilos propios.
 
-**Por qué.** El prototipo existe para mostrar el circuito y destrabar
+**Por qué.** Hoy existe para mostrar el circuito y destrabar
 definiciones, no para parecerse al sistema. Adoptar AdminLTE ahora sumaría
 trabajo sin cambiar ninguna de las decisiones que hay que tomar.
 
 **Consecuencia.** Al integrar el módulo hay que rehacer las plantillas con los
 componentes de SISOC. Es trabajo previsible y conviene tenerlo en la estimación.
+
+> **Actualizado el 17 de septiembre de 2026.** Este punto quedó a medias: las
+> pantallas adoptaron la **paleta institucional de SISOC** —verde de marca, nav
+> ámbar, y los colores de error y de atención— definida como variables de rol,
+> más un conmutador de modo oscuro. Lo que sigue siendo cierto es lo estructural:
+> son plantillas propias sobre Bootstrap 5, no los componentes de
+> `templates/components/`. Al integrar hay que rehacerlas; el color, al menos,
+> ya no cambia.

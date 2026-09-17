@@ -79,8 +79,9 @@ determina los parámetros necesarios y los operadores que admite.
 | **COMPARAR_CAMPO** | Compara con otro campo del mismo registro | campo_comparacion, operador | IGUAL, DISTINTO, MAYOR, MAYOR_IGUAL, MENOR, MENOR_IGUAL | La fecha de finalización debe ser posterior o igual a la de inicio |
 | **FORMATO** | El contenido respeta un formato | formato | — | El valor debe respetar el formato de CUIL |
 | **UNICO_EN_HOJA** | El valor no se repite dentro de la hoja | — | — | El identificador provincial no puede repetirse |
-| **UNICO_COMBINADO** | No se repite una combinación de campos | campos_combinados | — | No puede repetirse tipo y número de documento con fecha de inicio |
-| **EXISTE_EN** | El valor corresponde a un registro existente en otro conjunto ya cargado | conjunto, campo_destino, ambito | — | El nombre del dispositivo debe corresponder a uno cargado por la jurisdicción |
+| **UNICO_COMBINADO** | No se repite una combinación de campos | campos_combinados | — | No puede repetirse el documento con la fecha de inicio |
+| **PROHIBIDO_SI** | El campo debe quedar **vacío** cuando otro cumple una condición | campo_condicion, operador, valor_condicion | los mismos que OBLIGATORIO_SI | *Nombre de la residencia* tiene que estar vacío cuando la modalidad de cuidado no es alojamiento formal |
+| **EXISTE_EN_ARCHIVO** | El valor corresponde a un registro de otro archivo ya importado | archivo, hoja, campo | — | El nombre del dispositivo debe corresponder a uno cargado por la jurisdicción |
 | **EJECUTAR_FUNCION** | Ejecuta una función de validación implementada y habilitada en SISOC | funcion | — | Verificar que un CUIL o un correo sean válidos |
 
 `EJECUTAR_FUNCION` está destinado a validaciones que no pueden expresarse
@@ -88,11 +89,52 @@ mediante parámetros. Su alcance se limita a funciones previamente implementadas
 **no es una vía para incorporar lógica específica por fuera de la definición**,
 sino un conjunto acotado de verificaciones reutilizables.
 
-<!-- COMENTARIO: EXISTE_EN se incorporó al analizar la vinculación entre medidas
-     y dispositivos. Sin ese tipo, la propuesta del apartado 2 de
-     08-analisis-de-las-planillas.md no tiene cómo implementarse. El parámetro
-     `ambito` es el que evita que una provincia referencie un dispositivo de
-     otra. -->
+<!-- COMENTARIO: EXISTE_EN_ARCHIVO se incorporó al analizar la vinculación entre
+     medidas y dispositivos. Sin ese tipo, la propuesta del apartado 2 de
+     08-analisis-de-las-planillas.md no tiene cómo implementarse. Sólo mira la
+     importación VIGENTE de cada archivo referenciado: si la provincia reimportó
+     los dispositivos, los identificadores válidos son los de la última, no los
+     de la que quedó anulada.
+
+     PROHIBIDO_SI se agregó después, y es el espejo de OBLIGATORIO_SI. Ver más
+     abajo por qué van de a pares. -->
+
+---
+
+## Dos formas de usar el vocabulario que conviene conocer
+
+Son patrones, no tipos nuevos. Salieron de casos reales y se repiten.
+
+### El par completo: obligatorio de un lado, prohibido del otro
+
+Un campo que **sólo aplica en ciertos casos** no se resuelve con
+`obligatorio = sí`. Hace falta decir las dos cosas:
+
+```
+la condición se cumple      ->  OBLIGATORIO_SI
+la condición no se cumple   ->  PROHIBIDO_SI
+obligatorio                 ->  no
+```
+
+Entre las dos cubren todos los casos sin dejar hueco, y **una sin la otra deja
+pasar una contradicción**. Pasó con «Nombre de la residencia/hogar» del MPE: era
+obligatorio para todas las filas, o sea que el sistema le exigía nombrar una
+residencia también a un chico que está con su familia ampliada. Marcar un campo
+como obligatorio siempre, cuando en realidad depende de otro, es un error que no
+se nota hasta que alguien carga el caso que no aplica.
+
+### Dos techos para un mismo número: uno avisa, el otro impide
+
+Para los campos que cuentan cosas, un solo límite obliga a elegir entre dejar
+pasar un disparate o rechazar un caso legítimo. La respuesta son **dos reglas de
+rango sobre el mismo campo, con distinta severidad**:
+
+| | Ejemplo en «cantidad de agentes» | Efecto |
+|---|---|---|
+| Techo blando | más de 200 | **advierte**: puede ser cierto, conviene mirarlo |
+| Techo duro | más de 5000 | **bloquea**: no es un dato, es un error de carga |
+
+Así, 250 agentes entra observado y se revisa; 88.888.888 no entra.
 
 ---
 
@@ -101,7 +143,8 @@ sino un conjunto acotado de verificaciones reutilizables.
 Además de las reglas, cada campo tiene validaciones que surgen de su propia
 definición en la Capa 1 y no requieren declararse:
 
-- **tipo de dato**: lo que se declaró como fecha tiene que ser una fecha;
+- **tipo de dato**: lo que se declaró como fecha tiene que ser una fecha. Los
+  tipos son cinco: `TEXTO`, `ENTERO`, `DECIMAL`, `FECHA` y `HORA`;
 - **obligatoriedad**;
 - **valor de catálogo**: si el campo tiene lista cerrada, el valor debe estar en
   ella;
@@ -109,6 +152,12 @@ definición en la Capa 1 y no requieren declararse:
 
 Se informan igual que las reglas —con su fila, columna, valor y motivo— pero no
 tienen una regla asociada: el código del incumplimiento indica de cuál se trata.
+
+> **El tipo es la primera validación, y si está mal las demás no sirven.** Un
+> campo que cuenta plazas declarado como texto admite veintiocho dígitos sin una
+> queja, y ninguna regla de rango lo ataja: un rango sobre un texto no significa
+> nada. Antes de proponer reglas para un campo hay que confirmar que su tipo sea
+> el correcto. Ver 08-analisis-de-las-planillas.md.
 
 ---
 
@@ -158,16 +207,41 @@ en cada columna, y que cada regla que la DNPYPI defina se vuelva visible para
 quien tiene que cumplirla.
 
 ---
-
 ## Estado
 
-Cargadas y verificadas sobre los cinco archivos entregados: **368 campos, 81
-catálogos, 708 opciones** y las reglas identificadas hasta el momento.
+Cargadas y verificadas sobre los cinco archivos entregados, al **2026-09-17**:
 
-Las reglas concretas que hoy sugiere el análisis automático son **tentativas**:
-deben modelarse contra la realidad de cada archivo, no darse por buenas.
+| | |
+|---|---|
+| Campos del período | **365** |
+| Catálogos | **93**, con **797** opciones |
+| Campos con lista cerrada | **194** |
+| Reglas enganchadas a un campo | **156** |
+| Campos con al menos una regla | **85** |
 
-<!-- COMENTARIO: de los 368 campos, sólo 62 tienen hoy una regla declarada. La
-     enorme mayoría de las validaciones son intrínsecas —tipo, obligatoriedad,
-     pertenencia a un catálogo— y no requieren regla. Es esperable que la
-     columna de condiciones esté vacía en la mayor parte de las columnas. -->
+Repartidas por severidad: **84 advierten y 72 bloquean**. Y por tipo, el
+vocabulario se usa muy desparejo —lo cual es esperable:
+
+```
+RANGO 80 · COMPARAR_VALOR 23 · OBLIGATORIO_SI 21 · UNICO_EN_HOJA 6
+EJECUTAR_FUNCION 6 · PROHIBIDO_SI 5 · FORMATO 4 · UNICO_COMBINADO 4
+EXISTE_EN_ARCHIVO 4 · COMPARAR_CAMPO 3
+```
+
+**Diez formas, 156 reglas escritas con ellas.** Ese contraste es el punto: cuando
+llega una planilla nueva no se agregan formas, se escriben más reglas.
+
+Las reglas que hoy sugiere el análisis automático a partir del nombre del campo
+son **tentativas**, y se presentan marcadas como tales con su nivel de confianza.
+Deben confirmarse contra la realidad de cada archivo, no darse por buenas.
+
+<!-- COMENTARIO: 85 campos con regla sobre 365 es lo esperable. La enorme mayoría
+     de las validaciones son intrínsecas —tipo, obligatoriedad, pertenencia a un
+     catálogo— y no requieren regla: 194 campos tienen lista cerrada y se validan
+     solos. Es normal que la columna de condiciones esté vacía en la mayor parte
+     de las filas.
+
+     Quedan 312 campos de texto de los cuales pocos tienen regla propia. Hay una
+     pasada pendiente de reglas de sentido común sobre ellos —que un DNI no sea
+     un número de tres cifras, que un teléfono tenga forma de teléfono— que se
+     acordó hacer con la contraparte. -->

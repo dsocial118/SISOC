@@ -7,7 +7,7 @@
 --
 -- Convencion de nombres: runac_<capa>_<entidad>
 --
--- Las tablas runac_c3_disp_* llevan aca su clave y el comentario con los
+-- Las tablas mir_c3_disp_* llevan aca su clave y el comentario con los
 -- grupos de campos. Sus columnas reales se generan desde la definicion de la
 -- Capa 1, igual que las tablas receptoras de la Capa 2: la estructura de un
 -- dispositivo es la misma que la del archivo que lo informa.
@@ -15,33 +15,33 @@
 
 SET FOREIGN_KEY_CHECKS = 0;
 
-DROP TABLE IF EXISTS `runac_c3_coincidencia`;
-DROP TABLE IF EXISTS `runac_c3_precedencia`;
-DROP TABLE IF EXISTS `runac_c3_cambio`;
-DROP TABLE IF EXISTS `runac_c3_origen`;
-DROP TABLE IF EXISTS `runac_c3_unidad_alias`;
-DROP TABLE IF EXISTS `runac_c3_unidad_interviniente`;
-DROP TABLE IF EXISTS `runac_c3_disp_alcance_territorial`;
-DROP TABLE IF EXISTS `runac_c3_disp_guardia`;
-DROP TABLE IF EXISTS `runac_c3_disp_cad`;
-DROP TABLE IF EXISTS `runac_c3_disp_mpt`;
-DROP TABLE IF EXISTS `runac_c3_disp_crsc`;
-DROP TABLE IF EXISTS `runac_c3_disp_crc`;
-DROP TABLE IF EXISTS `runac_c3_disp_residencial`;
-DROP TABLE IF EXISTS `runac_c3_medida_dae`;
-DROP TABLE IF EXISTS `runac_c3_medida_mpj`;
-DROP TABLE IF EXISTS `runac_c3_medida_mpe`;
-DROP TABLE IF EXISTS `runac_c3_medida_mpi`;
-DROP TABLE IF EXISTS `runac_c3_dispositivo`;
-DROP TABLE IF EXISTS `runac_c3_familia_acogimiento`;
-DROP TABLE IF EXISTS `runac_c3_referente_adulto`;
-DROP TABLE IF EXISTS `runac_c3_nya_id_provincial`;
-DROP TABLE IF EXISTS `runac_c3_nino_adolescente`;
-DROP TABLE IF EXISTS `runac_c3_persona`;
+DROP TABLE IF EXISTS `mir_c3_coincidencia`;
+DROP TABLE IF EXISTS `mir_c3_precedencia`;
+DROP TABLE IF EXISTS `mir_c3_cambio`;
+DROP TABLE IF EXISTS `mir_c3_origen`;
+DROP TABLE IF EXISTS `mir_c3_unidad_alias`;
+DROP TABLE IF EXISTS `mir_c3_unidad_interviniente`;
+DROP TABLE IF EXISTS `mir_c3_disp_alcance_territorial`;
+DROP TABLE IF EXISTS `mir_c3_disp_guardia`;
+DROP TABLE IF EXISTS `mir_c3_disp_cad`;
+DROP TABLE IF EXISTS `mir_c3_disp_mpt`;
+DROP TABLE IF EXISTS `mir_c3_disp_crsc`;
+DROP TABLE IF EXISTS `mir_c3_disp_crc`;
+DROP TABLE IF EXISTS `mir_c3_disp_residencial`;
+DROP TABLE IF EXISTS `mir_c3_medida_dae`;
+DROP TABLE IF EXISTS `mir_c3_medida_mpj`;
+DROP TABLE IF EXISTS `mir_c3_medida_mpe`;
+DROP TABLE IF EXISTS `mir_c3_medida_mpi`;
+DROP TABLE IF EXISTS `mir_c3_dispositivo`;
+DROP TABLE IF EXISTS `mir_c3_familia_acogimiento`;
+DROP TABLE IF EXISTS `mir_c3_referente_adulto`;
+DROP TABLE IF EXISTS `mir_c3_nya_id_provincial`;
+DROP TABLE IF EXISTS `mir_c3_nino_adolescente`;
+DROP TABLE IF EXISTS `mir_c3_persona`;
 -- Tablas de la version anterior de esta capa, reemplazadas.
-DROP TABLE IF EXISTS `runac_c3_persona_dato_origen`;
-DROP TABLE IF EXISTS `runac_c3_familia`;
-DROP TABLE IF EXISTS `runac_c3_medida`;
+DROP TABLE IF EXISTS `mir_c3_persona_dato_origen`;
+DROP TABLE IF EXISTS `mir_c3_familia`;
+DROP TABLE IF EXISTS `mir_c3_medida`;
 
 SET FOREIGN_KEY_CHECKS = 1;
 
@@ -49,7 +49,7 @@ SET FOREIGN_KEY_CHECKS = 1;
 -- IDENTIDAD
 -- ===========================================================================
 
-CREATE TABLE `runac_c3_persona` (
+CREATE TABLE `mir_c3_persona` (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT 'ID SISOC. Se asigna una vez y no cambia.',
   `ciudadano_id` bigint DEFAULT NULL COMMENT 'Vinculo con ciudadanos.Ciudadano de SISOC. Definicion pendiente.',
   `tipo_documento` varchar(30) DEFAULT NULL,
@@ -63,7 +63,7 @@ CREATE TABLE `runac_c3_persona` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
   COMMENT='El mismo ser humano, y unicamente su identidad resuelta. Todo lo relevado sobre una persona vive en su caracterizacion: nino o adolescente, o referente adulto. Una misma persona puede tener las dos.';
 
-CREATE TABLE `runac_c3_nino_adolescente` (
+CREATE TABLE `mir_c3_nino_adolescente` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `persona_id` bigint NOT NULL,
 
@@ -105,11 +105,11 @@ CREATE TABLE `runac_c3_nino_adolescente` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_nya_persona` (`persona_id`),
   CONSTRAINT `fk_nya_persona` FOREIGN KEY (`persona_id`)
-    REFERENCES `runac_c3_persona` (`id`)
+    REFERENCES `mir_c3_persona` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-  COMMENT='Todo lo relevado sobre el chico, con independencia del archivo que lo informo y de la medida que tenga: la medida es circunstancial y el chico no. UNA fila por chico, con el dato vigente; si una presentacion informa un valor distinto se actualiza y el cambio va a runac_c3_cambio, que es la fuente de las series historicas.';
+  COMMENT='Todo lo relevado sobre el chico, con independencia del archivo que lo informo y de la medida que tenga: la medida es circunstancial y el chico no. UNA fila por chico, con el dato vigente; si una presentacion informa un valor distinto se actualiza y el cambio va a mir_c3_cambio, que es la fuente de las series historicas.';
 
-CREATE TABLE `runac_c3_nya_id_provincial` (
+CREATE TABLE `mir_c3_nya_id_provincial` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `nino_adolescente_id` bigint NOT NULL,
   `jurisdiccion_id` bigint NOT NULL,
@@ -118,13 +118,13 @@ CREATE TABLE `runac_c3_nya_id_provincial` (
   UNIQUE KEY `uq_id_provincial` (`jurisdiccion_id`, `identificador`),
   KEY `ix_id_prov_nya` (`nino_adolescente_id`),
   CONSTRAINT `fk_id_prov_nya` FOREIGN KEY (`nino_adolescente_id`)
-    REFERENCES `runac_c3_nino_adolescente` (`id`),
+    REFERENCES `mir_c3_nino_adolescente` (`id`),
   CONSTRAINT `fk_id_prov_jur` FOREIGN KEY (`jurisdiccion_id`)
-    REFERENCES `runac_c2_jurisdiccion` (`id`)
+    REFERENCES `mir_c2_jurisdiccion` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
   COMMENT='Identificador provincial del chico. Uno por jurisdiccion: un chico informado por dos provincias tiene un identificador en cada una y ambos lo designan. Debe ser obligatorio y estable en el tiempo. FALTA EN EL MPI: omision senalada a la DNPYPI.';
 
-CREATE TABLE `runac_c3_referente_adulto` (
+CREATE TABLE `mir_c3_referente_adulto` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `persona_id` bigint NOT NULL,
 
@@ -150,11 +150,11 @@ CREATE TABLE `runac_c3_referente_adulto` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_referente_persona` (`persona_id`),
   CONSTRAINT `fk_referente_persona` FOREIGN KEY (`persona_id`)
-    REFERENCES `runac_c3_persona` (`id`)
+    REFERENCES `mir_c3_persona` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
   COMMENT='18 campos, informados unicamente en el MPI. Limitacion: la planilla no preve identificador propio del referente; sin documento, cada presentacion lo registra como un adulto distinto.';
 
-CREATE TABLE `runac_c3_familia_acogimiento` (
+CREATE TABLE `mir_c3_familia_acogimiento` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `jurisdiccion_id` bigint NOT NULL,
   `modalidad` ENUM('FORMAL','AMPLIADA') NOT NULL,
@@ -163,7 +163,7 @@ CREATE TABLE `runac_c3_familia_acogimiento` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_familia` (`jurisdiccion_id`, `modalidad`, `id_provincial`),
   CONSTRAINT `fk_familia_jur` FOREIGN KEY (`jurisdiccion_id`)
-    REFERENCES `runac_c2_jurisdiccion` (`id`)
+    REFERENCES `mir_c2_jurisdiccion` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
   COMMENT='La planilla MPE informa dos modalidades en columnas paralelas, y hoy reune identificador y apellido de los cuidadores en un mismo campo. La separacion fue solicitada a la DNPYPI.';
 
@@ -171,7 +171,7 @@ CREATE TABLE `runac_c3_familia_acogimiento` (
 -- DISPOSITIVOS — identificacion comun y un registro por tipo
 -- ===========================================================================
 
-CREATE TABLE `runac_c3_dispositivo` (
+CREATE TABLE `mir_c3_dispositivo` (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT 'ID SISOC del dispositivo. Las plantillas siguientes deben traerlo.',
   `jurisdiccion_id` bigint NOT NULL,
   `tipo` ENUM('RESIDENCIAL','CRC','CRSC','MPT','CAD','GUARDIA') NOT NULL,
@@ -186,66 +186,66 @@ CREATE TABLE `runac_c3_dispositivo` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_dispositivo` (`jurisdiccion_id`, `denominacion`, `tipo`),
   CONSTRAINT `fk_dispositivo_jur` FOREIGN KEY (`jurisdiccion_id`)
-    REFERENCES `runac_c2_jurisdiccion` (`id`)
+    REFERENCES `mir_c2_jurisdiccion` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
   COMMENT='El lugar donde se lleva a cabo la medida. Identificacion comun a los seis tipos: un identificador unico que el resto del sistema referencia sin conocer el tipo. Son los cinco campos que efectivamente aparecen en las seis hojas. Localidad y direccion faltan en la hoja Guardia Comisaria: omision senalada a la DNPYPI.';
 
-CREATE TABLE `runac_c3_disp_residencial` (
+CREATE TABLE `mir_c3_disp_residencial` (
   `dispositivo_id` bigint NOT NULL,
   PRIMARY KEY (`dispositivo_id`),
   CONSTRAINT `fk_disp_resid` FOREIGN KEY (`dispositivo_id`)
-    REFERENCES `runac_c3_dispositivo` (`id`)
+    REFERENCES `mir_c3_dispositivo` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
   COMMENT='61 campos. Grupos: datos institucionales, gestion y convenio con el OPN, el establecimiento cuenta con..., protocolos, capacidad y cobertura, perfiles poblacionales admitidos, personal por funcion, 14 capacitaciones, proyecto de restitucion de derechos, insercion familiar y comunitaria. Comparte con los penales solo 5 de sus 61 campos, los de identificacion: son instrumentos distintos.';
 
-CREATE TABLE `runac_c3_disp_crc` (
+CREATE TABLE `mir_c3_disp_crc` (
   `dispositivo_id` bigint NOT NULL,
   PRIMARY KEY (`dispositivo_id`),
   CONSTRAINT `fk_disp_crc` FOREIGN KEY (`dispositivo_id`)
-    REFERENCES `runac_c3_dispositivo` (`id`)
+    REFERENCES `mir_c3_dispositivo` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
   COMMENT='36 campos. Grupos: capacidad por genero, proyecto institucional y normativa convivencial, personal por funcion, 6 protocolos, contacto socioafectivo, educacion obligatoria por nivel y horas, formacion profesional y talleres, espacios, condiciones de las celdas.';
 
-CREATE TABLE `runac_c3_disp_crsc` (
+CREATE TABLE `mir_c3_disp_crsc` (
   `dispositivo_id` bigint NOT NULL,
   PRIMARY KEY (`dispositivo_id`),
   CONSTRAINT `fk_disp_crsc` FOREIGN KEY (`dispositivo_id`)
-    REFERENCES `runac_c3_dispositivo` (`id`)
+    REFERENCES `mir_c3_dispositivo` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
   COMMENT='36 campos IDENTICOS a los de CRC: mismos nombres, misma cantidad. Se mantiene como registro propio porque son regimenes distintos y sus cuestionarios pueden diferenciarse. Consulta abierta a la DNPYPI: corresponde relevar lo mismo?';
 
-CREATE TABLE `runac_c3_disp_mpt` (
+CREATE TABLE `mir_c3_disp_mpt` (
   `dispositivo_id` bigint NOT NULL,
   PRIMARY KEY (`dispositivo_id`),
   CONSTRAINT `fk_disp_mpt` FOREIGN KEY (`dispositivo_id`)
-    REFERENCES `runac_c3_dispositivo` (`id`)
+    REFERENCES `mir_c3_dispositivo` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
   COMMENT='10 campos, 8 de ellos tambien en CRC. Propios: espacio de grupalidad y alcance territorial. Es un programa en territorio, no un lugar de alojamiento.';
 
-CREATE TABLE `runac_c3_disp_cad` (
+CREATE TABLE `mir_c3_disp_cad` (
   `dispositivo_id` bigint NOT NULL,
   PRIMARY KEY (`dispositivo_id`),
   CONSTRAINT `fk_disp_cad` FOREIGN KEY (`dispositivo_id`)
-    REFERENCES `runac_c3_dispositivo` (`id`)
+    REFERENCES `mir_c3_dispositivo` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
   COMMENT='27 campos, 22 compartidos con CRC. Propios: resolucion de creacion, articulacion interministerial, alcance territorial y tiempo maximo de permanencia en horas.';
 
-CREATE TABLE `runac_c3_disp_guardia` (
+CREATE TABLE `mir_c3_disp_guardia` (
   `dispositivo_id` bigint NOT NULL,
   PRIMARY KEY (`dispositivo_id`),
   CONSTRAINT `fk_disp_guardia` FOREIGN KEY (`dispositivo_id`)
-    REFERENCES `runac_c3_dispositivo` (`id`)
+    REFERENCES `mir_c3_dispositivo` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
   COMMENT='9 campos, todos contenidos en CAD: es un subconjunto exacto. Consulta abierta a la DNPYPI: faltan campos propios de la guardia?';
 
-CREATE TABLE `runac_c3_disp_alcance_territorial` (
+CREATE TABLE `mir_c3_disp_alcance_territorial` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `dispositivo_id` bigint NOT NULL,
   `jurisdiccion_alcanzada` varchar(120) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_alcance` (`dispositivo_id`, `jurisdiccion_alcanzada`),
   CONSTRAINT `fk_alcance_disp` FOREIGN KEY (`dispositivo_id`)
-    REFERENCES `runac_c3_dispositivo` (`id`)
+    REFERENCES `mir_c3_dispositivo` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
   COMMENT='MPT, CAD y guardia informan VARIAS jurisdicciones de alcance. Por eso es una relacion y no un campo de texto: permite responder que dispositivos alcanzan a un municipio determinado.';
 
@@ -253,7 +253,7 @@ CREATE TABLE `runac_c3_disp_alcance_territorial` (
 -- NORMALIZACION DE CAMPOS ABIERTOS
 -- ===========================================================================
 
-CREATE TABLE `runac_c3_unidad_interviniente` (
+CREATE TABLE `mir_c3_unidad_interviniente` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `jurisdiccion_id` bigint NOT NULL,
   `denominacion_normalizada` varchar(255) NOT NULL,
@@ -262,11 +262,11 @@ CREATE TABLE `runac_c3_unidad_interviniente` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_unidad` (`jurisdiccion_id`, `denominacion_normalizada`),
   CONSTRAINT `fk_unidad_jur` FOREIGN KEY (`jurisdiccion_id`)
-    REFERENCES `runac_c2_jurisdiccion` (`id`)
+    REFERENCES `mir_c2_jurisdiccion` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
   COMMENT='Tabla referencial de servicios, equipos y programas de proteccion integral. No es un padron que las jurisdicciones completen: se construye con lo que efectivamente se informa. El universo es abierto y por eso no admite un padron cerrado.';
 
-CREATE TABLE `runac_c3_unidad_alias` (
+CREATE TABLE `mir_c3_unidad_alias` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `jurisdiccion_id` bigint NOT NULL,
   `denominacion_informada` varchar(255) NOT NULL,
@@ -278,17 +278,17 @@ CREATE TABLE `runac_c3_unidad_alias` (
   UNIQUE KEY `uq_alias` (`jurisdiccion_id`, `denominacion_informada`),
   KEY `ix_alias_unidad` (`unidad_interviniente_id`),
   CONSTRAINT `fk_alias_jur` FOREIGN KEY (`jurisdiccion_id`)
-    REFERENCES `runac_c2_jurisdiccion` (`id`),
+    REFERENCES `mir_c2_jurisdiccion` (`id`),
   CONSTRAINT `fk_alias_unidad` FOREIGN KEY (`unidad_interviniente_id`)
-    REFERENCES `runac_c3_unidad_interviniente` (`id`)
+    REFERENCES `mir_c3_unidad_interviniente` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-  COMMENT='El diccionario. Opera en la importacion (Capa 2) y se perfecciona en cada iteracion: lo ya conocido se resuelve solo, lo nuevo queda pendiente y su resolucion incorpora una entrada para la proxima vez. Su mejora se puede aplicar a lo ya consolidado; ese reproceso queda en runac_c3_cambio.';
+  COMMENT='El diccionario. Opera en la importacion (Capa 2) y se perfecciona en cada iteracion: lo ya conocido se resuelve solo, lo nuevo queda pendiente y su resolucion incorpora una entrada para la proxima vez. Su mejora se puede aplicar a lo ya consolidado; ese reproceso queda en mir_c3_cambio.';
 
 -- ===========================================================================
 -- MEDIDAS — una entidad por tipo, con su nomenclatura
 -- ===========================================================================
 
-CREATE TABLE `runac_c3_medida_mpi` (
+CREATE TABLE `mir_c3_medida_mpi` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `nino_adolescente_id` bigint NOT NULL,
   `jurisdiccion_id` bigint NOT NULL,
@@ -322,21 +322,21 @@ CREATE TABLE `runac_c3_medida_mpi` (
   UNIQUE KEY `uq_mpi` (`nino_adolescente_id`, `jurisdiccion_id`, `fecha_inicio`),
   KEY `ix_mpi_estado` (`estado`),
   CONSTRAINT `fk_mpi_nya` FOREIGN KEY (`nino_adolescente_id`)
-    REFERENCES `runac_c3_nino_adolescente` (`id`),
+    REFERENCES `mir_c3_nino_adolescente` (`id`),
   CONSTRAINT `fk_mpi_jur` FOREIGN KEY (`jurisdiccion_id`)
-    REFERENCES `runac_c2_jurisdiccion` (`id`),
+    REFERENCES `mir_c2_jurisdiccion` (`id`),
   CONSTRAINT `fk_mpi_referente` FOREIGN KEY (`referente_adulto_id`)
-    REFERENCES `runac_c3_referente_adulto` (`id`),
+    REFERENCES `mir_c3_referente_adulto` (`id`),
   CONSTRAINT `fk_mpi_unidad` FOREIGN KEY (`unidad_interviniente_id`)
-    REFERENCES `runac_c3_unidad_interviniente` (`id`),
+    REFERENCES `mir_c3_unidad_interviniente` (`id`),
   CONSTRAINT `fk_mpi_pres_alta` FOREIGN KEY (`presentacion_alta_id`)
-    REFERENCES `runac_c2_presentacion` (`id`),
+    REFERENCES `mir_c2_presentacion` (`id`),
   CONSTRAINT `fk_mpi_pres_act` FOREIGN KEY (`presentacion_actualizacion_id`)
-    REFERENCES `runac_c2_presentacion` (`id`)
+    REFERENCES `mir_c2_presentacion` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
   COMMENT='Medida de Proteccion Integral. Se actualiza cuando presenta novedades.';
 
-CREATE TABLE `runac_c3_medida_mpe` (
+CREATE TABLE `mir_c3_medida_mpe` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `nino_adolescente_id` bigint NOT NULL,
   `jurisdiccion_id` bigint NOT NULL,
@@ -366,23 +366,23 @@ CREATE TABLE `runac_c3_medida_mpe` (
   UNIQUE KEY `uq_mpe` (`nino_adolescente_id`, `jurisdiccion_id`, `fecha_inicio`),
   KEY `ix_mpe_estado` (`estado`),
   CONSTRAINT `fk_mpe_nya` FOREIGN KEY (`nino_adolescente_id`)
-    REFERENCES `runac_c3_nino_adolescente` (`id`),
+    REFERENCES `mir_c3_nino_adolescente` (`id`),
   CONSTRAINT `fk_mpe_jur` FOREIGN KEY (`jurisdiccion_id`)
-    REFERENCES `runac_c2_jurisdiccion` (`id`),
+    REFERENCES `mir_c2_jurisdiccion` (`id`),
   CONSTRAINT `fk_mpe_disp` FOREIGN KEY (`dispositivo_id`)
-    REFERENCES `runac_c3_dispositivo` (`id`),
+    REFERENCES `mir_c3_dispositivo` (`id`),
   CONSTRAINT `fk_mpe_familia` FOREIGN KEY (`familia_id`)
-    REFERENCES `runac_c3_familia_acogimiento` (`id`),
+    REFERENCES `mir_c3_familia_acogimiento` (`id`),
   CONSTRAINT `fk_mpe_familia_amp` FOREIGN KEY (`familia_ampliada_id`)
-    REFERENCES `runac_c3_familia_acogimiento` (`id`),
+    REFERENCES `mir_c3_familia_acogimiento` (`id`),
   CONSTRAINT `fk_mpe_pres_alta` FOREIGN KEY (`presentacion_alta_id`)
-    REFERENCES `runac_c2_presentacion` (`id`),
+    REFERENCES `mir_c2_presentacion` (`id`),
   CONSTRAINT `fk_mpe_pres_act` FOREIGN KEY (`presentacion_actualizacion_id`)
-    REFERENCES `runac_c2_presentacion` (`id`)
+    REFERENCES `mir_c2_presentacion` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
   COMMENT='Medida de Proteccion Excepcional. La modalidad determina si se enlaza a un dispositivo residencial o a una familia.';
 
-CREATE TABLE `runac_c3_medida_mpj` (
+CREATE TABLE `mir_c3_medida_mpj` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `nino_adolescente_id` bigint NOT NULL,
   `jurisdiccion_id` bigint NOT NULL,
@@ -410,23 +410,23 @@ CREATE TABLE `runac_c3_medida_mpj` (
   UNIQUE KEY `uq_mpj` (`nino_adolescente_id`, `jurisdiccion_id`, `fecha_inicio`),
   KEY `ix_mpj_estado` (`estado`),
   CONSTRAINT `fk_mpj_nya` FOREIGN KEY (`nino_adolescente_id`)
-    REFERENCES `runac_c3_nino_adolescente` (`id`),
+    REFERENCES `mir_c3_nino_adolescente` (`id`),
   CONSTRAINT `fk_mpj_jur` FOREIGN KEY (`jurisdiccion_id`)
-    REFERENCES `runac_c2_jurisdiccion` (`id`),
+    REFERENCES `mir_c2_jurisdiccion` (`id`),
   CONSTRAINT `fk_mpj_disp` FOREIGN KEY (`dispositivo_id`)
-    REFERENCES `runac_c3_dispositivo` (`id`),
+    REFERENCES `mir_c3_dispositivo` (`id`),
   CONSTRAINT `fk_mpj_disp_proc` FOREIGN KEY (`procedencia_dispositivo_id`)
-    REFERENCES `runac_c3_dispositivo` (`id`),
+    REFERENCES `mir_c3_dispositivo` (`id`),
   CONSTRAINT `fk_mpj_disp_dest` FOREIGN KEY (`destino_dispositivo_id`)
-    REFERENCES `runac_c3_dispositivo` (`id`),
+    REFERENCES `mir_c3_dispositivo` (`id`),
   CONSTRAINT `fk_mpj_pres_alta` FOREIGN KEY (`presentacion_alta_id`)
-    REFERENCES `runac_c2_presentacion` (`id`),
+    REFERENCES `mir_c2_presentacion` (`id`),
   CONSTRAINT `fk_mpj_pres_act` FOREIGN KEY (`presentacion_actualizacion_id`)
-    REFERENCES `runac_c2_presentacion` (`id`)
+    REFERENCES `mir_c2_presentacion` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
   COMMENT='Medida Penal Juvenil. Referencia hasta tres dispositivos: el actual, la procedencia y el destino al egreso. DEFINICION PENDIENTE: como informan las jurisdicciones el traslado de un adolescente entre dispositivos por la misma causa penal.';
 
-CREATE TABLE `runac_c3_medida_dae` (
+CREATE TABLE `mir_c3_medida_dae` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `nino_adolescente_id` bigint NOT NULL,
   `jurisdiccion_id` bigint NOT NULL,
@@ -444,13 +444,13 @@ CREATE TABLE `runac_c3_medida_dae` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_dae` (`nino_adolescente_id`, `dispositivo_id`, `fecha_hora_ingreso`),
   CONSTRAINT `fk_dae_nya` FOREIGN KEY (`nino_adolescente_id`)
-    REFERENCES `runac_c3_nino_adolescente` (`id`),
+    REFERENCES `mir_c3_nino_adolescente` (`id`),
   CONSTRAINT `fk_dae_jur` FOREIGN KEY (`jurisdiccion_id`)
-    REFERENCES `runac_c2_jurisdiccion` (`id`),
+    REFERENCES `mir_c2_jurisdiccion` (`id`),
   CONSTRAINT `fk_dae_disp` FOREIGN KEY (`dispositivo_id`)
-    REFERENCES `runac_c3_dispositivo` (`id`),
+    REFERENCES `mir_c3_dispositivo` (`id`),
   CONSTRAINT `fk_dae_pres` FOREIGN KEY (`presentacion_id`)
-    REFERENCES `runac_c2_presentacion` (`id`)
+    REFERENCES `mir_c2_presentacion` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
   COMMENT='Ingreso y egreso de CAD o permanencia en dependencia policial. A diferencia de las otras tres, describe un HECHO ya ocurrido: se acumula, no se actualiza. Puede haber varios por chico. El requerimiento advierte que no debe confundirse con una medida penal prolongada.';
 
@@ -458,7 +458,7 @@ CREATE TABLE `runac_c3_medida_dae` (
 -- TRAZABILIDAD
 -- ===========================================================================
 
-CREATE TABLE `runac_c3_origen` (
+CREATE TABLE `mir_c3_origen` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `entidad` varchar(40) NOT NULL COMMENT 'Tabla de Capa 3 a la que pertenece el registro.',
   `entidad_id` bigint NOT NULL,
@@ -470,13 +470,13 @@ CREATE TABLE `runac_c3_origen` (
   PRIMARY KEY (`id`),
   KEY `ix_origen_entidad` (`entidad`, `entidad_id`),
   CONSTRAINT `fk_origen_pres` FOREIGN KEY (`presentacion_id`)
-    REFERENCES `runac_c2_presentacion` (`id`),
+    REFERENCES `mir_c2_presentacion` (`id`),
   CONSTRAINT `fk_origen_imp` FOREIGN KEY (`importacion_id`)
-    REFERENCES `runac_c2_importacion` (`id`)
+    REFERENCES `mir_c2_importacion` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
   COMMENT='Responde de donde salio cada dato: provincia, periodo, archivo, hoja, fila y version.';
 
-CREATE TABLE `runac_c3_cambio` (
+CREATE TABLE `mir_c3_cambio` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `entidad` varchar(40) NOT NULL,
   `entidad_id` bigint NOT NULL,
@@ -491,11 +491,11 @@ CREATE TABLE `runac_c3_cambio` (
   PRIMARY KEY (`id`),
   KEY `ix_cambio_entidad` (`entidad`, `entidad_id`, `campo`),
   CONSTRAINT `fk_cambio_pres` FOREIGN KEY (`presentacion_id`)
-    REFERENCES `runac_c2_presentacion` (`id`)
+    REFERENCES `mir_c2_presentacion` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
   COMMENT='El historial campo a campo. No es un accesorio de auditoria: es la fuente de las series historicas, porque la base guarda una sola fila por chico con el dato vigente. Por eso registra el valor ANTERIOR y la presentacion que produjo el cambio.';
 
-CREATE TABLE `runac_c3_precedencia` (
+CREATE TABLE `mir_c3_precedencia` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `entidad` varchar(40) NOT NULL,
   `entidad_id` bigint DEFAULT NULL,
@@ -509,7 +509,7 @@ CREATE TABLE `runac_c3_precedencia` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
   COMMENT='La decision sobre que valor prevalece, conservada para las presentaciones siguientes: la misma discrepancia no se resuelve dos veces.';
 
-CREATE TABLE `runac_c3_coincidencia` (
+CREATE TABLE `mir_c3_coincidencia` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `importacion_id` bigint NOT NULL,
   `numero_fila` int DEFAULT NULL,
@@ -522,8 +522,8 @@ CREATE TABLE `runac_c3_coincidencia` (
   PRIMARY KEY (`id`),
   KEY `ix_coincidencia_estado` (`estado`),
   CONSTRAINT `fk_coincidencia_imp` FOREIGN KEY (`importacion_id`)
-    REFERENCES `runac_c2_importacion` (`id`),
+    REFERENCES `mir_c2_importacion` (`id`),
   CONSTRAINT `fk_coincidencia_persona` FOREIGN KEY (`persona_candidata_id`)
-    REFERENCES `runac_c3_persona` (`id`)
+    REFERENCES `mir_c3_persona` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
   COMMENT='Coincidencias de identidad que no se pueden decidir solas: documento y nombre que coinciden parcialmente, o nombre y fecha de nacimiento sin documento.';

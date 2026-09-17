@@ -80,7 +80,7 @@ Debe ser restringido y registrado. Las descargas para análisis nacional salen
 **pseudonimizadas por defecto**: sin nombre, apellido, documento ni CUIL,
 conservando el identificador interno y las variables necesarias.
 
-<!-- COMENTARIO: en el prototipo esto no está implementado. Los roles y el
+<!-- COMENTARIO: en la implementación esto no está hecho. Los roles y el
      alcance territorial se resuelven con permissions.py, que es provisorio: al
      integrar el módulo, SISOC lo resuelve con iam/services.py y su propio
      alcance territorial. La auditoría de accesos tampoco está: la aporta

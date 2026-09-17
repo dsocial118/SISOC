@@ -6,7 +6,7 @@
 --
 -- Las tablas que SÍ dependen de la estructura (las que reciben los datos) se
 -- generan a partir de la Capa 1: una por hoja y versión de estructura. Su
--- nombre se deduce por convención: runac_c2_<archivo>_v<n>_<hoja>.
+-- nombre se deduce por convención: mir_c2_<archivo>_v<n>_<hoja>.
 --
 -- Circuito de 9 pasos: carga -> control de admisión -> validación de datos ->
 -- corrección -> cierre de carga -> revisión nacional -> subsanación ->
@@ -19,7 +19,7 @@ SET NAMES utf8mb4;
 -- Jurisdicción y período
 -- ---------------------------------------------------------------------------
 
-CREATE TABLE `runac_c2_jurisdiccion` (
+CREATE TABLE `mir_c2_jurisdiccion` (
   `id` bigint PRIMARY KEY AUTO_INCREMENT COMMENT 'Identificador interno.',
   `codigo` varchar(20) UNIQUE NOT NULL COMMENT 'Código estable de la jurisdicción.',
   `nombre` varchar(120) NOT NULL COMMENT 'Denominación de la jurisdicción.',
@@ -27,7 +27,7 @@ CREATE TABLE `runac_c2_jurisdiccion` (
   `activa` boolean NOT NULL DEFAULT true COMMENT 'Baja lógica.'
 ) COMMENT = 'Unidad que presenta. Es una entidad y no un texto, para que el mismo mecanismo sirva a provincias, municipios u organismos.';
 
-CREATE TABLE `runac_c2_periodo` (
+CREATE TABLE `mir_c2_periodo` (
   `id` bigint PRIMARY KEY AUTO_INCREMENT COMMENT 'Identificador interno.',
   `codigo` varchar(30) UNIQUE NOT NULL COMMENT 'Código del período, por ejemplo 2026_T1.',
   `anio` smallint NOT NULL COMMENT 'Año del corte.',
@@ -40,21 +40,21 @@ CREATE TABLE `runac_c2_periodo` (
   `declarado_el` datetime COMMENT 'Momento de la declaración.',
   `abierto_el` datetime COMMENT 'Momento en que se habilitó la carga.',
   `cerrado_el` datetime COMMENT 'Momento en que se cerró la carga.',
-  UNIQUE KEY `runac_c2_periodo_anio_numero` (`anio`, `numero`)
+  UNIQUE KEY `mir_c2_periodo_anio_numero` (`anio`, `numero`)
 ) COMMENT = 'Períodos de corte. Mientras un período está ABIERTO la estructura que utiliza no puede modificarse: alguna jurisdicción ya pudo haber importado.';
 
-CREATE TABLE `runac_c2_periodo_archivo` (
+CREATE TABLE `mir_c2_periodo_archivo` (
   `id` bigint PRIMARY KEY AUTO_INCREMENT COMMENT 'Identificador interno.',
   `periodo_id` bigint NOT NULL COMMENT 'Período.',
   `archivo_version_id` bigint NOT NULL COMMENT 'Versión de estructura que rige para ese archivo en ese período.',
-  UNIQUE KEY `runac_c2_periodo_archivo_unica` (`periodo_id`, `archivo_version_id`)
+  UNIQUE KEY `mir_c2_periodo_archivo_unica` (`periodo_id`, `archivo_version_id`)
 ) COMMENT = 'Qué versión de cada archivo rige en cada período. Si no hubo cambios, dos períodos apuntan a la misma versión y no se duplica ninguna definición. El nombre de la tabla receptora se deduce por convención del archivo y la versión.';
 
 -- ---------------------------------------------------------------------------
 -- Presentación
 -- ---------------------------------------------------------------------------
 
-CREATE TABLE `runac_c2_presentacion` (
+CREATE TABLE `mir_c2_presentacion` (
   `id` bigint PRIMARY KEY AUTO_INCREMENT COMMENT 'Identificador interno.',
   `periodo_id` bigint NOT NULL COMMENT 'Período al que corresponde la presentación.',
   `jurisdiccion_id` bigint NOT NULL COMMENT 'Jurisdicción que presenta.',
@@ -72,14 +72,14 @@ CREATE TABLE `runac_c2_presentacion` (
   `usuario_habilita` varchar(150) COMMENT 'Revisor técnico nacional que habilitó la presentación.',
   `usuario_presenta` varchar(150) COMMENT 'Responsable provincial que presentó formalmente.',
   `reemplaza_a` bigint COMMENT 'Presentación anterior que esta versión subsana.',
-  UNIQUE KEY `runac_c2_presentacion_unica` (`periodo_id`, `jurisdiccion_id`, `version`)
+  UNIQUE KEY `mir_c2_presentacion_unica` (`periodo_id`, `jurisdiccion_id`, `version`)
 ) COMMENT = 'Presentación de una jurisdicción para un período. Agrupa las importaciones de los distintos archivos.';
 
 -- ---------------------------------------------------------------------------
 -- Importación
 -- ---------------------------------------------------------------------------
 
-CREATE TABLE `runac_c2_importacion` (
+CREATE TABLE `mir_c2_importacion` (
   `id` bigint PRIMARY KEY AUTO_INCREMENT COMMENT 'Identificador interno.',
   `presentacion_id` bigint NOT NULL COMMENT 'Presentación a la que pertenece este intento.',
   `archivo_id` bigint NOT NULL COMMENT 'Archivo que el operador declaró estar cargando. El operador elige el archivo: el nombre del fichero no lo determina.',
@@ -100,7 +100,7 @@ CREATE TABLE `runac_c2_importacion` (
   `anulada_por` bigint COMMENT 'Importación posterior que dejó sin efecto a esta. Conserva el historial de intentos.'
 ) COMMENT = 'Cada intento de importación de un archivo, incluidos los que fallaron. Nunca se borra: es la trazabilidad. Permite distinguir a quien no cargó de quien intentó cargar y no pudo.';
 
-CREATE TABLE `runac_c2_errores_de_importacion` (
+CREATE TABLE `mir_c2_errores_de_importacion` (
   `id` bigint PRIMARY KEY AUTO_INCREMENT COMMENT 'Identificador interno.',
   `importacion_id` bigint NOT NULL COMMENT 'Intento en el que se detectó.',
   `tipo` ENUM(
@@ -116,11 +116,11 @@ CREATE TABLE `runac_c2_errores_de_importacion` (
   `detalle_tecnico` text COMMENT 'Traza del error, para soporte. No se muestra al usuario.'
 ) COMMENT = 'Motivos por los que un archivo no pudo importarse. Un archivo equivocado suele fallar por varias razones a la vez: se informan todas juntas para que el operador corrija una sola vez.';
 
-CREATE TABLE `runac_c2_reglas_incumplidas` (
+CREATE TABLE `mir_c2_reglas_incumplidas` (
   `id` bigint PRIMARY KEY AUTO_INCREMENT COMMENT 'Identificador interno.',
   `importacion_id` bigint NOT NULL COMMENT 'Importación en la que se detectó.',
-  `campo_id` bigint NOT NULL COMMENT 'Campo de Capa 1 afectado. Siempre presente: un incumplimiento sin campo es un problema del archivo y va a runac_c2_errores_de_importacion.',
-  `regla_id` bigint COMMENT 'Regla de Capa 1 que no se cumplió. Queda vacío cuando el incumplimiento es de una validación intrínseca del campo —tipo de dato, obligatoriedad, valor de catálogo o longitud máxima—, que se define en runac_c1_campo y no en runac_c1_regla. El código indica de cuál se trata.',
+  `campo_id` bigint NOT NULL COMMENT 'Campo de Capa 1 afectado. Siempre presente: un incumplimiento sin campo es un problema del archivo y va a mir_c2_errores_de_importacion.',
+  `regla_id` bigint COMMENT 'Regla de Capa 1 que no se cumplió. Queda vacío cuando el incumplimiento es de una validación intrínseca del campo —tipo de dato, obligatoriedad, valor de catálogo o longitud máxima—, que se define en mir_c1_campo y no en mir_c1_regla. El código indica de cuál se trata.',
   `codigo` varchar(50) NOT NULL COMMENT 'Código estable del incumplimiento, para contarlos y agruparlos: qué regla se incumple con más frecuencia, si se repite entre períodos.',
   `severidad` ENUM('BLOQUEANTE','ADVERTENCIA') NOT NULL COMMENT 'Tomada de la regla aplicada al campo.',
   `nombre_hoja` varchar(255) NOT NULL COMMENT 'Hoja del Excel donde está el problema.',
@@ -137,7 +137,7 @@ CREATE TABLE `runac_c2_reglas_incumplidas` (
 -- Revisión y corrección
 -- ---------------------------------------------------------------------------
 
-CREATE TABLE `runac_c2_observacion` (
+CREATE TABLE `mir_c2_observacion` (
   `id` bigint PRIMARY KEY AUTO_INCREMENT COMMENT 'Identificador interno.',
   `presentacion_id` bigint NOT NULL COMMENT 'Presentación observada.',
   `importacion_id` bigint COMMENT 'Importación puntual observada.',
@@ -153,7 +153,7 @@ CREATE TABLE `runac_c2_observacion` (
   `usuario_responde` varchar(150) COMMENT 'Usuario provincial que respondió.'
 ) COMMENT = 'Observaciones del revisor nacional. El revisor no modifica datos provinciales: observa. El ciclo de observación y subsanación no tiene límite de rondas.';
 
-CREATE TABLE `runac_c2_historial_cambios` (
+CREATE TABLE `mir_c2_historial_cambios` (
   `id` bigint PRIMARY KEY AUTO_INCREMENT COMMENT 'Identificador interno.',
   `importacion_id` bigint NOT NULL COMMENT 'Importación cuyos datos se editaron.',
   `numero_fila` int NOT NULL COMMENT 'Fila editada.',
@@ -171,40 +171,40 @@ CREATE TABLE `runac_c2_historial_cambios` (
 -- Índices
 -- ---------------------------------------------------------------------------
 
-CREATE INDEX `runac_c2_importacion_presentacion` ON `runac_c2_importacion` (`presentacion_id`, `archivo_id`, `estado`);
-CREATE INDEX `runac_c2_errores_importacion` ON `runac_c2_errores_de_importacion` (`importacion_id`, `tipo`);
-CREATE INDEX `runac_c2_reglas_incumplidas_sev` ON `runac_c2_reglas_incumplidas` (`importacion_id`, `severidad`);
-CREATE INDEX `runac_c2_reglas_incumplidas_ubic` ON `runac_c2_reglas_incumplidas` (`importacion_id`, `numero_fila`);
-CREATE INDEX `runac_c2_reglas_incumplidas_codigo` ON `runac_c2_reglas_incumplidas` (`codigo`);
-CREATE INDEX `runac_c2_observacion_presentacion` ON `runac_c2_observacion` (`presentacion_id`, `estado`);
-CREATE INDEX `runac_c2_historial_ubicacion` ON `runac_c2_historial_cambios` (`importacion_id`, `numero_fila`);
+CREATE INDEX `mir_c2_importacion_presentacion` ON `mir_c2_importacion` (`presentacion_id`, `archivo_id`, `estado`);
+CREATE INDEX `mir_c2_errores_importacion` ON `mir_c2_errores_de_importacion` (`importacion_id`, `tipo`);
+CREATE INDEX `mir_c2_reglas_incumplidas_sev` ON `mir_c2_reglas_incumplidas` (`importacion_id`, `severidad`);
+CREATE INDEX `mir_c2_reglas_incumplidas_ubic` ON `mir_c2_reglas_incumplidas` (`importacion_id`, `numero_fila`);
+CREATE INDEX `mir_c2_reglas_incumplidas_codigo` ON `mir_c2_reglas_incumplidas` (`codigo`);
+CREATE INDEX `mir_c2_observacion_presentacion` ON `mir_c2_observacion` (`presentacion_id`, `estado`);
+CREATE INDEX `mir_c2_historial_ubicacion` ON `mir_c2_historial_cambios` (`importacion_id`, `numero_fila`);
 
 -- ---------------------------------------------------------------------------
 -- Claves foráneas
 -- ---------------------------------------------------------------------------
 
-ALTER TABLE `runac_c2_periodo_archivo` ADD FOREIGN KEY (`periodo_id`) REFERENCES `runac_c2_periodo` (`id`);
-ALTER TABLE `runac_c2_periodo_archivo` ADD FOREIGN KEY (`archivo_version_id`) REFERENCES `runac_c1_archivo_version` (`id`);
+ALTER TABLE `mir_c2_periodo_archivo` ADD FOREIGN KEY (`periodo_id`) REFERENCES `mir_c2_periodo` (`id`);
+ALTER TABLE `mir_c2_periodo_archivo` ADD FOREIGN KEY (`archivo_version_id`) REFERENCES `mir_c1_archivo_version` (`id`);
 
-ALTER TABLE `runac_c2_presentacion` ADD FOREIGN KEY (`periodo_id`) REFERENCES `runac_c2_periodo` (`id`);
-ALTER TABLE `runac_c2_presentacion` ADD FOREIGN KEY (`jurisdiccion_id`) REFERENCES `runac_c2_jurisdiccion` (`id`);
-ALTER TABLE `runac_c2_presentacion` ADD FOREIGN KEY (`reemplaza_a`) REFERENCES `runac_c2_presentacion` (`id`);
+ALTER TABLE `mir_c2_presentacion` ADD FOREIGN KEY (`periodo_id`) REFERENCES `mir_c2_periodo` (`id`);
+ALTER TABLE `mir_c2_presentacion` ADD FOREIGN KEY (`jurisdiccion_id`) REFERENCES `mir_c2_jurisdiccion` (`id`);
+ALTER TABLE `mir_c2_presentacion` ADD FOREIGN KEY (`reemplaza_a`) REFERENCES `mir_c2_presentacion` (`id`);
 
-ALTER TABLE `runac_c2_importacion` ADD FOREIGN KEY (`presentacion_id`) REFERENCES `runac_c2_presentacion` (`id`);
-ALTER TABLE `runac_c2_importacion` ADD FOREIGN KEY (`archivo_id`) REFERENCES `runac_c1_archivo` (`id`);
-ALTER TABLE `runac_c2_importacion` ADD FOREIGN KEY (`archivo_version_id`) REFERENCES `runac_c1_archivo_version` (`id`);
-ALTER TABLE `runac_c2_importacion` ADD FOREIGN KEY (`anulada_por`) REFERENCES `runac_c2_importacion` (`id`);
+ALTER TABLE `mir_c2_importacion` ADD FOREIGN KEY (`presentacion_id`) REFERENCES `mir_c2_presentacion` (`id`);
+ALTER TABLE `mir_c2_importacion` ADD FOREIGN KEY (`archivo_id`) REFERENCES `mir_c1_archivo` (`id`);
+ALTER TABLE `mir_c2_importacion` ADD FOREIGN KEY (`archivo_version_id`) REFERENCES `mir_c1_archivo_version` (`id`);
+ALTER TABLE `mir_c2_importacion` ADD FOREIGN KEY (`anulada_por`) REFERENCES `mir_c2_importacion` (`id`);
 
-ALTER TABLE `runac_c2_errores_de_importacion` ADD FOREIGN KEY (`importacion_id`) REFERENCES `runac_c2_importacion` (`id`);
+ALTER TABLE `mir_c2_errores_de_importacion` ADD FOREIGN KEY (`importacion_id`) REFERENCES `mir_c2_importacion` (`id`);
 
-ALTER TABLE `runac_c2_reglas_incumplidas` ADD FOREIGN KEY (`importacion_id`) REFERENCES `runac_c2_importacion` (`id`);
-ALTER TABLE `runac_c2_reglas_incumplidas` ADD FOREIGN KEY (`campo_id`) REFERENCES `runac_c1_campo` (`id`);
-ALTER TABLE `runac_c2_reglas_incumplidas` ADD FOREIGN KEY (`regla_id`) REFERENCES `runac_c1_regla` (`id`);
+ALTER TABLE `mir_c2_reglas_incumplidas` ADD FOREIGN KEY (`importacion_id`) REFERENCES `mir_c2_importacion` (`id`);
+ALTER TABLE `mir_c2_reglas_incumplidas` ADD FOREIGN KEY (`campo_id`) REFERENCES `mir_c1_campo` (`id`);
+ALTER TABLE `mir_c2_reglas_incumplidas` ADD FOREIGN KEY (`regla_id`) REFERENCES `mir_c1_regla` (`id`);
 
-ALTER TABLE `runac_c2_observacion` ADD FOREIGN KEY (`presentacion_id`) REFERENCES `runac_c2_presentacion` (`id`);
-ALTER TABLE `runac_c2_observacion` ADD FOREIGN KEY (`importacion_id`) REFERENCES `runac_c2_importacion` (`id`);
-ALTER TABLE `runac_c2_observacion` ADD FOREIGN KEY (`campo_id`) REFERENCES `runac_c1_campo` (`id`);
+ALTER TABLE `mir_c2_observacion` ADD FOREIGN KEY (`presentacion_id`) REFERENCES `mir_c2_presentacion` (`id`);
+ALTER TABLE `mir_c2_observacion` ADD FOREIGN KEY (`importacion_id`) REFERENCES `mir_c2_importacion` (`id`);
+ALTER TABLE `mir_c2_observacion` ADD FOREIGN KEY (`campo_id`) REFERENCES `mir_c1_campo` (`id`);
 
-ALTER TABLE `runac_c2_historial_cambios` ADD FOREIGN KEY (`importacion_id`) REFERENCES `runac_c2_importacion` (`id`);
-ALTER TABLE `runac_c2_historial_cambios` ADD FOREIGN KEY (`campo_id`) REFERENCES `runac_c1_campo` (`id`);
-ALTER TABLE `runac_c2_historial_cambios` ADD FOREIGN KEY (`observacion_id`) REFERENCES `runac_c2_observacion` (`id`);
+ALTER TABLE `mir_c2_historial_cambios` ADD FOREIGN KEY (`importacion_id`) REFERENCES `mir_c2_importacion` (`id`);
+ALTER TABLE `mir_c2_historial_cambios` ADD FOREIGN KEY (`campo_id`) REFERENCES `mir_c1_campo` (`id`);
+ALTER TABLE `mir_c2_historial_cambios` ADD FOREIGN KEY (`observacion_id`) REFERENCES `mir_c2_observacion` (`id`);
