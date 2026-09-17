@@ -53,8 +53,9 @@
 - `ciudadanos/migrations/0032_ciudadano_documento_pasaporte_ciudadano_pais_emisor.py`
 - `ciudadanos/models.py`
 - `ciudadanos/templates/ciudadanos/ciudadano_detail.html`
+- `docs/contexto/features/pr-2512-feat-vat-baja-de-modalidad-en-el-legajo-y-tipo-de-documento-en-carg.md`
 - `docs/registro/cambios/2026-09-14-inet-modalidad-oculta-y-tipo-documento.md`
-- `docs/registro/decisiones/2026-09-14-inet-pasaporte-campo-dedicado.md`
+- ... y 2 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
