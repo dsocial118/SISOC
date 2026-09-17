@@ -5,6 +5,7 @@ from datacalle.views import (
     EncuestaDetailView,
     cargar_dispositivos,
     cargar_relevadores,
+    RelevamientoCerrarView,
     RelevamientoCreateView,
     RelevamientoDeleteView,
     RelevamientoDetailView,
@@ -40,6 +41,13 @@ urlpatterns = [
             RelevamientoUpdateView.as_view()
         ),
         name="datacalle_relevamientos_editar",
+    ),
+    path(
+        "datacalle/relevamientos/<uuid:pk>/cerrar/",
+        permissions_any_required(["datacalle.change_relevamiento"])(
+            RelevamientoCerrarView.as_view()
+        ),
+        name="datacalle_relevamientos_cerrar",
     ),
     path(
         "datacalle/relevamientos/<uuid:pk>/eliminar/",

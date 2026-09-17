@@ -703,3 +703,54 @@ def test_municipios_sin_provincia_no_carga_el_pais(provincias):
     )
 
     assert get_municipios_para_usuario(admin, None).count() == 0
+
+
+@pytest.mark.django_db
+def test_qa_0020_el_coordinador_cierra_desde_el_backoffice(client, provincias):
+    """QA-0020: contraparte de haberle sacado el cierre a la app."""
+    cordoba, _ = provincias
+    coordinador = _dar_permisos(
+        _crear_coordinador(cordoba), ["change_relevamiento", "view_relevamiento"]
+    )
+    relevamiento = _crear_relevamiento(cordoba, "Para cerrar")
+    client.force_login(coordinador)
+
+    respuesta = client.post(f"/datacalle/relevamientos/{relevamiento.pk}/cerrar/")
+
+    assert respuesta.status_code == 302
+    relevamiento.refresh_from_db()
+    assert relevamiento.estado == Relevamiento.Estado.FINALIZADO
+    assert relevamiento.cerrado_por == coordinador
+
+
+@pytest.mark.django_db
+def test_qa_0020_cerrar_por_get_no_cierra_nada(client, provincias):
+    """Un link no puede cerrar un operativo: sólo POST."""
+    cordoba, _ = provincias
+    coordinador = _dar_permisos(
+        _crear_coordinador(cordoba), ["change_relevamiento", "view_relevamiento"]
+    )
+    relevamiento = _crear_relevamiento(cordoba, "No cerrar por GET")
+    client.force_login(coordinador)
+
+    respuesta = client.get(f"/datacalle/relevamientos/{relevamiento.pk}/cerrar/")
+
+    assert respuesta.status_code == 405
+    relevamiento.refresh_from_db()
+    assert relevamiento.estado != Relevamiento.Estado.FINALIZADO
+
+
+@pytest.mark.django_db
+def test_qa_0020_sin_permiso_de_cambio_no_se_cierra(client, provincias):
+    cordoba, _ = provincias
+    mirón = _dar_permisos(
+        _crear_coordinador(cordoba, "solo_lectura"), ["view_relevamiento"]
+    )
+    relevamiento = _crear_relevamiento(cordoba, "Ajeno al cierre")
+    client.force_login(mirón)
+
+    respuesta = client.post(f"/datacalle/relevamientos/{relevamiento.pk}/cerrar/")
+
+    assert respuesta.status_code in (302, 403)
+    relevamiento.refresh_from_db()
+    assert relevamiento.estado != Relevamiento.Estado.FINALIZADO

@@ -1,8 +1,11 @@
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q
 from django.http import HttpResponseRedirect, JsonResponse
 from django.urls import reverse, reverse_lazy
+from django.views import View
+from django.views.generic.detail import SingleObjectMixin
 from django.views.generic import (
     CreateView,
     DeleteView,
@@ -15,6 +18,7 @@ from datacalle.forms import RelevamientoForm
 from datacalle.models import Encuesta, Relevamiento
 from datacalle.services import (
     apply_relevamientos_scope,
+    cerrar_relevamiento,
     get_dispositivos_para_provincia,
     get_entrevistadores_para_provincia,
     delete_relevamiento,
@@ -132,6 +136,30 @@ class RelevamientoDeleteView(RelevamientoScopeMixin, DeleteView):
     def form_valid(self, form):
         delete_relevamiento(self.get_object(), user=self.request.user)
         return HttpResponseRedirect(self.success_url)
+
+
+class RelevamientoCerrarView(RelevamientoScopeMixin, SingleObjectMixin, View):
+    """Cierre del operativo por el coordinador (QA-0020).
+
+    Es la contraparte de haberle sacado el cierre a la app: alguien tiene que
+    poder cerrar, y es quien planificó. Sólo POST, para que no se cierre un
+    operativo por abrir un link.
+    """
+
+    model = Relevamiento
+
+    def post(self, request, *args, **kwargs):
+        relevamiento = self.get_object()
+        _, cerrado_ahora = cerrar_relevamiento(
+            relevamiento=relevamiento, user=request.user
+        )
+        if cerrado_ahora:
+            messages.success(request, "El relevamiento quedó cerrado.")
+        else:
+            messages.info(request, "El relevamiento ya estaba cerrado.")
+        return HttpResponseRedirect(
+            reverse("datacalle_relevamientos_detalle", args=[relevamiento.pk])
+        )
 
 
 class EncuestaDetailView(LoginRequiredMixin, DetailView):

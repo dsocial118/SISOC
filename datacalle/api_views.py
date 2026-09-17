@@ -32,6 +32,7 @@ from datacalle.services import (
     get_relevamientos_queryset,
     upsert_encuesta,
 )
+from users.services_datacalle import es_coordinador_calle
 
 logger = logging.getLogger("django")
 
@@ -49,6 +50,14 @@ ERROR_NO_INICIADO = {
     "detail": "El relevamiento todavía no empezó.",
     "codigo": "relevamiento_no_iniciado",
     "reintentable": True,
+}
+# QA-0020: el cierre alcanza a todo el equipo, así que no es del relevador en
+# campo sino del coordinador desde el backoffice. No es reintentable: la app
+# no destraba esto esperando, tiene que dejar de ofrecer la acción.
+ERROR_CIERRE_NO_AUTORIZADO = {
+    "detail": "Sólo el coordinador cierra el relevamiento, desde SISOC.",
+    "codigo": "cierre_no_autorizado",
+    "reintentable": False,
 }
 
 
@@ -90,7 +99,22 @@ class RelevamientoViewSet(viewsets.ReadOnlyModelViewSet):
     @extend_schema(request=CierreRelevamientoSerializer)
     @action(detail=True, methods=["post"], url_path="cerrar")
     def cerrar(self, request, pk=None):
-        """Cierre desde la app. Idempotente: cerrar dos veces no es error."""
+        """Cierre del operativo. Idempotente: cerrar dos veces no es error.
+
+        QA-0020: queda reservado al coordinador. El relevador comparte el
+        operativo con el resto del equipo, así que cerrarlo desde campo le
+        corta la jornada a los demás.
+        """
+        if not es_coordinador_calle(request.user):
+            logger.warning(
+                "Intento de cierre sin rol de coordinador: relevamiento=%s user_id=%s",
+                pk,
+                request.user.id,
+            )
+            return Response(
+                ERROR_CIERRE_NO_AUTORIZADO, status=status.HTTP_403_FORBIDDEN
+            )
+
         relevamiento = self.get_object()
         serializer = CierreRelevamientoSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)

@@ -88,6 +88,17 @@
                     <i class="fas fa-pencil-alt mr-1"></i> Editar
                 </a>
             {% endif %}
+            {% if perms.datacalle.change_relevamiento and relevamiento.estado != "finalizado" %}
+                {# QA-0020: el cierre es del coordinador, no del relevador en campo. #}
+                <form method="post"
+                      action="{% url 'datacalle_relevamientos_cerrar' relevamiento.pk %}"
+                      class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-warning btn-sm">
+                        <i class="fas fa-flag-checkered mr-1"></i> Cerrar relevamiento
+                    </button>
+                </form>
+            {% endif %}
             {% if perms.datacalle.delete_relevamiento %}
                 <a href="{% url 'datacalle_relevamientos_eliminar' relevamiento.pk %}"
                    class="btn btn-danger btn-sm">
