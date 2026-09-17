@@ -429,7 +429,13 @@ class Ciudadano(SoftDeleteModelMixin, models.Model):
         changed_fields = self.normalizar_identidad(update_fields=update_fields)
         if update_fields is not None and changed_fields:
             kwargs["update_fields"] = set(update_fields) | changed_fields
-        return super().save(*args, **kwargs)
+        result = super().save(*args, **kwargs)
+        # Fija el valor persistido también tras un save() exitoso, no solo al
+        # cargar desde DB: sin esto, una misma instancia en memoria (creada y
+        # guardada, o recargada y guardada) podía mutar tipo_documento y
+        # guardar de nuevo sin que el guard lo detectara.
+        self._tipo_documento_cargado = self.tipo_documento
+        return result
 
     @staticmethod
     def documento_prefix_filter(cleaned, field_name="documento"):

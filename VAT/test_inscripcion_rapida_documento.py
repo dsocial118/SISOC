@@ -123,6 +123,18 @@ def test_tipo_documento_no_se_puede_modificar_despues_del_alta():
 
 
 @pytest.mark.django_db
+def test_tipo_documento_no_se_puede_modificar_en_la_misma_instancia_en_memoria():
+    """El guard también debe cubrir una instancia creada y guardada que se
+    reutiliza en el mismo proceso, sin pasar por from_db() otra vez."""
+    ciudadano = CiudadanoInscripcionRapidaForm(_datos()).save()
+
+    ciudadano.tipo_documento = Ciudadano.DOCUMENTO_PASAPORTE
+
+    with pytest.raises(ValidationError):
+        ciudadano.save()
+
+
+@pytest.mark.django_db
 def test_editar_otros_campos_sigue_funcionando():
     ciudadano = CiudadanoInscripcionRapidaForm(_datos()).save()
 
