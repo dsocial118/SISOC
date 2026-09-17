@@ -5,6 +5,7 @@
 
 - [sin-area] fix(datacalle): revisión QA del backoffice — alcance provincial, usuarios y menú. (PR #2519)
 - [sin-area] revert: sacar de main el merge del PR #2519. (PR #2527)
+- [sin-area] release: promocion a produccion sin features pospuestas (2026-09-16). (PR #2535)
 <!-- AUTO-GENERATED RELEASE END: 2026-09-16 -->
 
 <!-- AUTO-GENERATED RELEASE START: 2026-09-08 -->
