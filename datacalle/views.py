@@ -55,11 +55,18 @@ class RelevamientoListView(RelevamientoScopeMixin, ListView):
 
         busqueda = (self.request.GET.get("busqueda") or "").strip()
         if busqueda:
+            # QA-0007: con varios encuestadores y localidades en juego, buscar
+            # sólo por denominación no alcanza para dar con un archivo de
+            # trabajo. Se suma el equipo: nombre, usuario y DNI.
             queryset = queryset.filter(
                 Q(denominacion__icontains=busqueda)
                 | Q(area_operativa__icontains=busqueda)
                 | Q(provincia__nombre__icontains=busqueda)
                 | Q(localidades__nombre__icontains=busqueda)
+                | Q(equipo__first_name__icontains=busqueda)
+                | Q(equipo__last_name__icontains=busqueda)
+                | Q(equipo__username__icontains=busqueda)
+                | Q(equipo__profile__dni__icontains=busqueda)
             ).distinct()
         return queryset
 

@@ -798,3 +798,57 @@ def test_qa_0009_el_servidor_sigue_siendo_la_fuente_de_verdad(client, provincias
 
     assert respuesta.status_code == 200
     assert not Relevamiento.objects.filter(denominacion=datos["denominacion"]).exists()
+
+
+@pytest.mark.django_db
+def test_qa_0007_el_listado_busca_por_encuestador_y_dni(client, provincias):
+    """QA-0007: encontrar el archivo de trabajo entre varios encuestadores."""
+    cordoba, _ = provincias
+    ramirez = _crear_entrevistador(cordoba, "ramirez")
+    ramirez.first_name = "Lucía"
+    ramirez.last_name = "Ramírez"
+    ramirez.save()
+    ramirez.profile.dni = "30123456"
+    ramirez.profile.save()
+
+    otro = _crear_entrevistador(cordoba, "gomez")
+    otro.first_name = "Pedro"
+    otro.last_name = "Gómez"
+    otro.save()
+    otro.profile.dni = "28999111"
+    otro.profile.save()
+
+    suyo = _crear_relevamiento(cordoba, "Operativo centro")
+    suyo.equipo.add(ramirez)
+    ajeno = _crear_relevamiento(cordoba, "Operativo norte")
+    ajeno.equipo.add(otro)
+
+    coordinador = _dar_permisos(_crear_coordinador(cordoba), ["view_relevamiento"])
+    client.force_login(coordinador)
+
+    por_apellido = client.get("/datacalle/relevamientos/?busqueda=Ramírez")
+    assert "Operativo centro" in por_apellido.content.decode()
+    assert "Operativo norte" not in por_apellido.content.decode()
+
+    por_dni = client.get("/datacalle/relevamientos/?busqueda=30123456")
+    assert "Operativo centro" in por_dni.content.decode()
+    assert "Operativo norte" not in por_dni.content.decode()
+
+
+@pytest.mark.django_db
+def test_qa_0007_la_busqueda_no_duplica_por_el_join_del_equipo(client, provincias):
+    """Varios integrantes que matchean no pueden repetir el renglón."""
+    cordoba, _ = provincias
+    relevamiento = _crear_relevamiento(cordoba, "Operativo compartido")
+    for indice in range(3):
+        integrante = _crear_entrevistador(cordoba, f"perez{indice}")
+        integrante.last_name = "Pérez"
+        integrante.save()
+        relevamiento.equipo.add(integrante)
+
+    coordinador = _dar_permisos(_crear_coordinador(cordoba), ["view_relevamiento"])
+    client.force_login(coordinador)
+
+    respuesta = client.get("/datacalle/relevamientos/?busqueda=Pérez")
+
+    assert respuesta.content.decode().count("Operativo compartido") == 1
