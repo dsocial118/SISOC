@@ -970,9 +970,19 @@ class RelevadorCalleFormMixin:
     """
 
     def _setup_relevador_calle_fields(self):
+        # QA-0015: los tres roles de DataCalle no se eligen en el mismo lugar, y
+        # eso es lo que confundía. El entrevistador se marca acá porque es un
+        # usuario *sólo de la app*; el coordinador y el administrador son
+        # usuarios del backoffice y salen del grupo, no de este campo.
         self.fields["es_relevador_calle"] = forms.BooleanField(
             required=False,
             label="Habilitar acceso a SISOC - Mobile DataCalle",
+            help_text=(
+                "Marca al entrevistador, que trabaja sólo en la app y no entra "
+                "al backoffice. Para dar de alta a un coordinador o a un "
+                "administrador de DataCalle no se usa esta casilla: se le "
+                "asigna el grupo 'Coordinador DataCalle'."
+            ),
         )
         self.fields["datacalle_rol"] = forms.ChoiceField(
             choices=[("", "---------")] + list(Profile.DataCalleRol.choices),
@@ -980,8 +990,12 @@ class RelevadorCalleFormMixin:
             widget=forms.Select(attrs={"class": "select2"}),
             label="Rol en DataCalle",
             help_text=(
-                "Rol con el que opera dentro de la app. No se mezcla con "
-                "'Tipo de usuario', que clasifica al usuario dentro de SISOC."
+                "Rol con el que opera dentro de la app: hoy sólo entrevistador, "
+                "que releva en campo. Coordinador (planifica los operativos de "
+                "su provincia) y administrador (ve todo el país) son roles del "
+                "backoffice y se otorgan por grupo y alcance territorial, no "
+                "acá. No se mezcla con 'Tipo de usuario', que clasifica al "
+                "usuario dentro de SISOC."
             ),
         )
         self.fields["provincias_datacalle"] = forms.ModelMultipleChoiceField(

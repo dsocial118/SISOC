@@ -302,3 +302,27 @@ def test_editar_no_borra_provincias_fuera_del_alcance_del_actor(provincia):
             "provincia__nombre", flat=True
         )
     ) == sorted([provincia.nombre, otra.nombre])
+
+
+@pytest.mark.django_db
+def test_qa_0015_el_alta_explica_donde_se_define_cada_rol():
+    """QA-0015: los tres roles no se eligen en el mismo lugar.
+
+    El entrevistador sale del flag (usuario sólo de la app); el coordinador y
+    el administrador salen del grupo y del alcance territorial. La pantalla
+    tiene que decirlo, que era lo que QA no podía deducir.
+    """
+    from users.forms import UserCreationForm
+
+    form = UserCreationForm()
+
+    ayuda_flag = form.fields["es_relevador_calle"].help_text
+    ayuda_rol = form.fields["datacalle_rol"].help_text
+
+    assert "entrevistador" in ayuda_flag.lower()
+    assert "Coordinador DataCalle" in ayuda_flag
+    assert "coordinador" in ayuda_rol.lower()
+    assert "administrador" in ayuda_rol.lower()
+    # Y el rol de la app sigue teniendo una sola opción real: no se inventan
+    # coordinador ni administrador como roles de DataCalle.
+    assert [c[0] for c in form.fields["datacalle_rol"].choices] == ["", "entrevistador"]
