@@ -534,3 +534,68 @@ def test_qa_0020_el_entrevistador_no_puede_cerrar_el_operativo(provincia):
     relevamiento.refresh_from_db()
     assert relevamiento.estado == Relevamiento.Estado.PLANIFICADO
     assert relevamiento.fecha_cierre is None
+
+
+@pytest.mark.django_db
+def test_qa_0012_la_tarea_futura_viaja_marcada_como_no_iniciable(provincia):
+    """QA-0012: el operativo futuro se baja igual, pero avisa que no arrancó.
+
+    No se oculta: la app es offline-first y necesita tenerlo antes de salir.
+    """
+    entrevistador = _entrevistador(provincia)
+    futuro = datetime.date.today() + datetime.timedelta(days=5)
+    _relevamiento(
+        provincia,
+        equipo=[entrevistador],
+        denominacion="Arranca la semana que viene",
+        fecha_inicio=futuro,
+        fecha_fin=futuro + datetime.timedelta(days=2),
+    )
+
+    respuesta = _cliente(entrevistador).get("/api/datacalle/relevamientos/")
+
+    assert respuesta.status_code == 200
+    tarea = respuesta.data["results"][0]
+    assert tarea["denominacion"] == "Arranca la semana que viene"
+    assert tarea["puede_iniciar"] is False
+
+
+@pytest.mark.django_db
+def test_qa_0012_la_tarea_de_hoy_viaja_iniciable(provincia):
+    entrevistador = _entrevistador(provincia)
+    hoy = datetime.date.today()
+    _relevamiento(
+        provincia,
+        equipo=[entrevistador],
+        fecha_inicio=hoy,
+        fecha_fin=hoy + datetime.timedelta(days=2),
+    )
+
+    respuesta = _cliente(entrevistador).get("/api/datacalle/relevamientos/")
+
+    assert respuesta.data["results"][0]["puede_iniciar"] is True
+
+
+@pytest.mark.django_db
+def test_qa_0012_la_senal_no_se_separa_del_rechazo_real(provincia):
+    """``puede_iniciar`` y el 409 salen de la misma regla: no pueden divergir."""
+    entrevistador = _entrevistador(provincia)
+    futuro = datetime.date.today() + datetime.timedelta(days=3)
+    relevamiento = _relevamiento(
+        provincia,
+        equipo=[entrevistador],
+        fecha_inicio=futuro,
+        fecha_fin=futuro + datetime.timedelta(days=1),
+    )
+    client = _cliente(entrevistador)
+
+    listado = client.get("/api/datacalle/relevamientos/")
+    carga = client.put(
+        f"/api/datacalle/encuestas/{uuid.uuid4()}/",
+        _cuerpo(relevamiento),
+        format="json",
+    )
+
+    assert listado.data["results"][0]["puede_iniciar"] is False
+    assert carga.status_code == 409
+    assert carga.data["codigo"] == "relevamiento_no_iniciado"

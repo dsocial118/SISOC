@@ -7,6 +7,7 @@ son los ids del cuestionario y no se renombran.
 from rest_framework import serializers
 
 from datacalle.models import Encuesta, Relevamiento
+from datacalle.services.encuestas import puede_recibir_casos
 
 
 class NoSaveSerializer(serializers.Serializer):
@@ -49,6 +50,7 @@ class RelevamientoTareaSerializer(serializers.ModelSerializer):
     equipo = IntegranteEquipoSerializer(many=True, read_only=True)
     cantidad_encuestas = serializers.SerializerMethodField()
     actualizado_en = serializers.DateTimeField(source="updated_at", read_only=True)
+    puede_iniciar = serializers.SerializerMethodField()
 
     class Meta:
         model = Relevamiento
@@ -70,7 +72,20 @@ class RelevamientoTareaSerializer(serializers.ModelSerializer):
             "observaciones",
             "fecha_cierre",
             "actualizado_en",
+            "puede_iniciar",
         )
+
+    def get_puede_iniciar(self, obj):
+        """QA-0012: la tarea viaja igual, pero dice si hoy se puede arrancar.
+
+        No se oculta el operativo futuro porque la app es offline-first y
+        necesita bajarlo antes de salir a campo. Lo que faltaba era la señal
+        para no ofrecer el inicio: el servidor ya rechaza los casos con 409
+        ``relevamiento_no_iniciado``, pero recién al intentar subirlos.
+
+        Es aditivo: un cliente que no lea el campo se comporta como antes.
+        """
+        return puede_recibir_casos(obj)
 
     @staticmethod
     def _referencia(obj):
