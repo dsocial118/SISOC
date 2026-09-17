@@ -162,6 +162,13 @@ body.sidebar-collapse .sidebar-user-name {
 .bg-rojo-75 {
     background-color: #CB4542 !important;
 }
+/* "Dados de baja" del resumen de nomina (issue #2507). */
+.bg-gris {
+    background-color: #6C757D !important;
+}
+.bg-gris-75 {
+    background-color: #868E96 !important;
+}
 
 [data-bs-theme="dark"] .progress {
   background-color: #e0e0e0; /* un gris más oscuro */

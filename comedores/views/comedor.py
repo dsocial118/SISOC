@@ -297,6 +297,11 @@ def _build_nomina_metrics(nomina_total, nomina_rangos):
         return int(round((value or 0) * 100 / nomina_total_safe))
 
     return {
+        # El resumen del legajo cuenta solo asistentes activos (issue #2507);
+        # `nomina_total` queda para los porcentajes por rango de edad, que se
+        # calculan sobre el total de registros.
+        "nomina_asistentes": nomina_rangos.get("cantidad_activos") or 0,
+        "nomina_bajas": nomina_rangos.get("baja") or 0,
         "nomina_menores": nomina_menores,
         "nomina_pct_sin_dato": _pct(nomina_sin_dato),
         "nomina_pct_ninos": _pct(nomina_rangos.get("ninos")),

@@ -1479,7 +1479,7 @@
                                 <i class="bi bi-people-fill fs-1"></i>
                             </div>
                             <div>
-                                <div class="fw-bold fs-2 mb-0 py-0 text-white">{{ nomina_total|default:0 }}</div>
+                                <div class="fw-bold fs-2 mb-0 py-0 text-white">{{ nomina_asistentes|default:0 }}</div>
                                 <p class="mb-0 text-white fw-bold">Asistentes</p>
                             </div>
                         </div>
@@ -1525,6 +1525,17 @@
                             <div>
                                 <div class="fw-bold fs-2 mb-0 py-0 text-white">{{ nomina_espera|default:0 }}</div>
                                 <p class="mb-0 text-white fw-bold">Lista de espera</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="d-flex align-items-center bg-gris px-3 py-2 rounded-3 mb-2">
+                            <div class="d-flex align-items-center justify-content-center bg-gris-75 text-white rounded-circle mx-2 me-3 comedor-icon-60">
+                                <i class="bi bi-person-dash-fill fs-1"></i>
+                            </div>
+                            <div>
+                                <div class="fw-bold fs-2 mb-0 py-0 text-white">{{ nomina_bajas|default:0 }}</div>
+                                <p class="mb-0 text-white fw-bold">Dados de baja</p>
                             </div>
                         </div>
                     </div>

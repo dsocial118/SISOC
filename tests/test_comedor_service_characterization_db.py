@@ -328,7 +328,13 @@ def test_get_nomina_detail_con_db_real_calcula_resumen_y_rangos():
     )
 
     assert page_obj.paginator.count == 6
-    assert (cant_m, cant_f, cant_x, espera, total) == (3, 2, 1, 1, 6)
+    # El conteo por género toma solo activos (issue #2507): el registro en
+    # espera es masculino y antes se sumaba a `cant_m`. `total` sigue siendo el
+    # total de registros porque la API lo usa como `count` de paginación.
+    assert (cant_m, cant_f, cant_x, espera, total) == (2, 2, 1, 1, 6)
+    assert rangos["espera"] == 1
+    assert rangos["baja"] == 0
+    assert rangos["cantidad_activos"] == 5
     assert rangos["total_activos"] == 5
     assert rangos["ninos"] == 1
     assert rangos["adolescentes"] == 1
