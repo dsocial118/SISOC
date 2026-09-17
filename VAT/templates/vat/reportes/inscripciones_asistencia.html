@@ -575,19 +575,6 @@
                             </select>
                         </label>
 
-                        <label class="rep-field" for="id_modalidad_id">
-                            <span class="rep-field__label">Modalidad</span>
-                            <select id="id_modalidad_id" name="modalidad_id">
-                                <option value="">Todas</option>
-                                {% for modalidad in modalidades %}
-                                    <option value="{{ modalidad.modalidad_id_ref }}"
-                                            {% if filtros.modalidad_id == modalidad.modalidad_id_ref|stringformat:"s" %}selected{% endif %}>
-                                        {{ modalidad.modalidad_nombre_ref }}
-                                    </option>
-                                {% endfor %}
-                            </select>
-                        </label>
-
                         <label class="rep-field" for="id_estado">
                             <span class="rep-field__label">Estado inscripción</span>
                             <select id="id_estado" name="estado">
@@ -922,7 +909,7 @@
                     <tbody id="repDetalleBody">
                         {% for item in detalle_rows %}
                             <tr class="rep-detalle-row">
-                                <td>{{ item.ciudadano__documento|default:"—" }}</td>
+                                <td>{{ item.numero_documento|default:"—" }}</td>
                                 <td>{{ item.ciudadano__apellido|default:"" }}, {{ item.ciudadano__nombre|default:"" }}</td>
                                 <td>
                                     <span class="rep-pill">{{ item.estado }}</span>
