@@ -27,8 +27,14 @@ Hacia afuera cada implementación lleva el suyo.
 
 La distinción no es de vocabulario: **la definición de cada archivo vive en
 filas de la base, no en el código**. Cuando una provincia cambia una planilla se
-cambian datos, no programas. Y el día que otro programa reciba novedades
-periódicas de las jurisdicciones, el motor sirve sin tocarlo.
+cambian datos, no programas. Y cuando otro programa reciba novedades periódicas
+de las jurisdicciones, el motor sirve sin tocarlo.
+
+Eso ya tiene nombres: en la reunión del 27 de agosto de 2026 se planteó
+incorporar **Decreto 5/2023**, **PAE** y **RENNYA**. Los dos primeros comparten
+universo con RUNAC —el MPE— y hoy se manejan en Excel. En
+[03-arquitectura.md](03-arquitectura.md) está qué de eso cubre el módulo tal como
+está, y qué no.
 
 Está desarrollado en **[03-arquitectura.md](03-arquitectura.md)**, junto con la
 decisión que hay que tomar antes de integrar: hoy cada implementación tiene su
@@ -49,6 +55,7 @@ propia base, y SISOC es una sola.
 | [07-reglas-de-validacion.md](07-reglas-de-validacion.md) | Los diez tipos de regla y cómo se declaran | Desarrollo |
 | [08-analisis-de-las-planillas.md](08-analisis-de-las-planillas.md) | Propuestas de rediseño de los Excel provinciales | DNPYPI |
 | [09-alcance-primera-version.md](09-alcance-primera-version.md) | Qué entra en el MVP y qué queda para después | Todos |
+| [10-hechos-y-supuestos.md](10-hechos-y-supuestos.md) | **Qué está confirmado y qué supusimos nosotros**, y qué fuente le gana a cuál | Todos |
 | [decisiones/](decisiones/) | Registro de decisiones, con fecha y motivo | Desarrollo |
 | [modelo/](modelo/) | Los scripts del modelo de tres capas, **de referencia: no se ejecutan contra SISOC** | Desarrollo |
 

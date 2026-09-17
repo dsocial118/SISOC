@@ -30,6 +30,61 @@ las jurisdicciones, el motor sirve sin tocarlo.
 
 ---
 
+## Las próximas implementaciones, con nombre
+
+No es una hipótesis. En la reunión del **27 de agosto de 2026** se planteó
+incorporar a SISOC tres programas más, interrelacionados con RUNAC:
+
+| Programa | Universo | Cómo se gestiona hoy |
+|---|---|---|
+| **Decreto 5/2023** | El mismo que el MPE | Nómina en Excel |
+| **PAE** — Programa de Acompañamiento para el Egreso | El mismo que el MPE | Excel y PDF por TAD |
+| **RENNYA** | Distinto: NyA que sufrieron violencia intrafamiliar o un femicidio. Pueden estar en el MPE, pero no es excluyente | Excel, ~1.400 casos |
+
+**Dos de los tres comparten universo con RUNAC.** El MPE ya se recibe: las mismas
+provincias, el mismo período, la misma persona. Eso es lo que vuelve razonable
+que compartan motor y no que se construyan tres veces.
+
+### Qué de esto cubre el módulo tal como está
+
+La minuta describe, sin nombrarlo, el circuito que MIR ya hace:
+
+> «En una segunda instancia las provincias serán las que cargarán las novedades.
+> Queda definir si se remite nómina completa o altas, bajas y novedades. La
+> información podría ser adjuntada como csv.»
+
+Recibir un archivo periódico de cada jurisdicción, validarlo contra una
+definición, devolver los errores y consolidarlo **es exactamente el motor**.
+Cambia el contenido, no el mecanismo: son filas nuevas en la Capa 1.
+
+### Y qué no cubre, que es lo que hay que estimar
+
+- **Documentos adjuntos con vigencia.** DDJJ de responsables de cobro,
+  constancias de alumno regular. Hoy llegan como PDF sin identificar y se
+  verifican a mano, periódicamente. El módulo recibe planillas, no expedientes.
+- **Alertas por el paso del tiempo.** «Alguien está en etapa 1, cumplió 18 y la
+  provincia no pidió el pase a etapa 2.» Las reglas de MIR validan **una fila
+  contra su definición**, no el estado de una persona a lo largo del tiempo.
+- **RENNYA no encaja en el molde.** No participan las provincias: es una gestión
+  tripartita entre ANSES, el Ministerio de Justicia y la SNNAyF, caso por caso y
+  con un trámite de 140 días hábiles. Eso es gestión de expedientes, no
+  importación recurrente. Conviene decirlo ahora y no descubrirlo después.
+
+### Lo que esto cambia para el diseño
+
+Nada, y ése es el punto: las condiciones para que sirvan ya están —cada
+implementación con su definición y sus datos separados, y el motor sin lógica de
+ninguna—. Lo que sí adelanta es **la decisión de una base o varias**, más abajo:
+con RUNAC sola no se nota; con cuatro programas compartiendo universo, sí.
+
+<!-- COMENTARIO: el requerimiento técnico que acompaña a la minuta es de mayo de
+     2026 y estaba en revisión al 27 de agosto. Los números y las etapas de acá
+     salen de la minuta, no del requerimiento. Material en
+     `C:\CNCPS\RUNAC\Dec5-RENNYA-PAE\`. Chubut sería el piloto: está por firmar
+     convenio, y en total serían diez provincias. -->
+
+---
+
 ## Cómo se construye
 
 **Hoy: fuera del repositorio, y funcionando.** Se trabaja sobre una
