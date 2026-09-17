@@ -370,7 +370,7 @@ def test_formulario_versiona_javascript_del_resumen(client, persona_ddjj):
     respuesta = client.get(reverse("pas_ddjj_formulario", args=[invitacion.token]))
 
     assert respuesta.status_code == 200
-    assert b"pas_ddjj.js?v=20260911" in respuesta.content
+    assert b"pas_ddjj.js?v=20260917" in respuesta.content
     assert b"pas_ddjj.css?v=20260911b" in respuesta.content
 
 

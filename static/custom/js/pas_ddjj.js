@@ -77,7 +77,10 @@ document.addEventListener("DOMContentLoaded", () => {
         back.hidden = current === 0; next.hidden = index === totalSteps; submit.hidden = index !== totalSteps;
         next.textContent = index === 1 ? "Confirmar y continuar" : "Continuar";
         if (index === totalSteps) summary();
-        if (scroll) shell?.scrollTo({top: 0, behavior: "smooth"});
+        if (scroll) {
+            shell?.scrollTo({top: 0, behavior: "smooth"});
+            window.scrollTo({top: 0, behavior: "smooth"});
+        }
     };
     next.addEventListener("click", () => { if (validate()) { current += 1; show(); } });
     back.addEventListener("click", () => { current = Math.max(0, current - 1); show(); });
