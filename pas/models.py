@@ -50,6 +50,11 @@ class PasAviso(models.Model):
 
 
 class PasPersona(models.Model):
+    class Genero(models.TextChoices):
+        MASCULINO = "M", "Masculino"
+        FEMENINO = "F", "Femenino"
+        NO_BINARIO = "X", "No binario"
+
     id_persona = models.PositiveIntegerField(unique=True, verbose_name="IdPersona")
     apellidos = models.CharField(max_length=150)
     nombres = models.CharField(max_length=150)
@@ -57,6 +62,9 @@ class PasPersona(models.Model):
     cuit = models.CharField(max_length=20, blank=True)
     provincia = models.ForeignKey(Provincia, on_delete=models.PROTECT)
     municipio = models.ForeignKey(Municipio, on_delete=models.PROTECT)
+    genero = models.CharField(max_length=1, choices=Genero.choices, blank=True)
+    calle = models.CharField(max_length=255, blank=True)
+    altura = models.CharField(max_length=10, blank=True)
     domicilio = models.CharField(max_length=255, blank=True)
     correo_electronico = models.EmailField(blank=True)
     telefono_celular = models.CharField(max_length=30, blank=True)

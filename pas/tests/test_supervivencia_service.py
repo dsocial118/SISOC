@@ -5,6 +5,7 @@ import pytest
 
 from core.models import Municipio, Provincia
 from pas.models import (
+    PasAviso,
     PasControlRenaper,
     PasEstado,
     PasIncompatibilidad,
@@ -89,6 +90,78 @@ def test_sin_sexo_prueba_m_y_f_solo_ante_no_match(persona_supervivencia):
         call(str(persona_supervivencia.dni), "F"),
     ]
     assert PasControlRenaper.objects.get().sexo_consulta == "F"
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("genero", ["M", "F"])
+def test_con_genero_consulta_renaper_una_sola_vez(persona_supervivencia, genero):
+    persona_supervivencia.genero = genero
+    persona_supervivencia.save(update_fields=["genero"])
+    with patch(
+        "pas.services.supervivencia_service.consultar_datos_renaper",
+        return_value={"success": False, "error_type": "no_match"},
+    ) as consultar:
+        sincronizar_supervivencia_pas(fecha_consulta=date(2026, 7, 29))
+
+    consultar.assert_called_once_with(str(persona_supervivencia.dni), genero)
+
+
+@pytest.mark.django_db
+def test_genero_x_conserva_busqueda_por_m_y_f(persona_supervivencia):
+    persona_supervivencia.genero = "X"
+    persona_supervivencia.save(update_fields=["genero"])
+    with patch(
+        "pas.services.supervivencia_service.consultar_datos_renaper",
+        side_effect=[
+            {"success": False, "error_type": "no_match"},
+            {"success": True, "data": {}},
+        ],
+    ) as consultar:
+        sincronizar_supervivencia_pas(fecha_consulta=date(2026, 7, 29))
+
+    assert consultar.call_args_list == [
+        call(str(persona_supervivencia.dni), "M"),
+        call(str(persona_supervivencia.dni), "F"),
+    ]
+
+
+@pytest.mark.django_db
+def test_baja_fallecida_no_genera_nueva_incompatibilidad(persona_supervivencia):
+    baja = PasEstado.objects.create(nombre="Baja")
+    fallecido = PasAviso.objects.create(codigo=40, descripcion="FALLECIDO")
+    fallecido.estados.add(baja)
+    persona_supervivencia.estado = baja
+    persona_supervivencia.save(update_fields=["estado"])
+    persona_supervivencia.avisos.set([fallecido])
+
+    with patch(
+        "pas.services.supervivencia_service.consultar_datos_renaper",
+        return_value={
+            "success": False,
+            "error_type": "fallecido",
+            "fallecido": True,
+        },
+    ):
+        sincronizar_supervivencia_pas(fecha_consulta=date(2026, 7, 29))
+
+    assert not PasIncompatibilidad.objects.exists()
+
+
+@pytest.mark.django_db
+def test_fallecimiento_repetido_conserva_una_sola_novedad(persona_supervivencia):
+    respuesta = {
+        "success": False,
+        "error_type": "fallecido",
+        "fallecido": True,
+    }
+    with patch(
+        "pas.services.supervivencia_service.consultar_datos_renaper",
+        return_value=respuesta,
+    ):
+        sincronizar_supervivencia_pas(fecha_consulta=date(2026, 7, 29))
+        sincronizar_supervivencia_pas(fecha_consulta=date(2026, 8, 31))
+
+    assert PasIncompatibilidad.objects.count() == 1
 
 
 @pytest.mark.django_db

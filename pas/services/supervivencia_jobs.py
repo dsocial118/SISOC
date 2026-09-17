@@ -20,7 +20,11 @@ from django.utils import timezone
 
 from core.integrations.renaper import APIClient
 from pas.models import PasPersona, PasSupervivenciaRun, PasSupervivenciaBatch
-from pas.services.supervivencia_service import _consultar_persona, _guardar_resultado
+from pas.services.supervivencia_service import (
+    _consultar_persona,
+    _guardar_resultado,
+    aplicar_bajas_fallecimiento_pendientes,
+)
 
 logger = logging.getLogger("django")
 TRANSIENT_ERRORS = {"timeout", "remote_error"}
@@ -109,6 +113,7 @@ def schedule_monthly():
 def _prepare(run):
     """Fija el padrón en una transacción; la web nunca carga la nómina completa."""
     with transaction.atomic():
+        aplicar_bajas_fallecimiento_pendientes(run.period)
         run.batches.all().delete()
         run.active_slot = 1
         run.status = "running"
