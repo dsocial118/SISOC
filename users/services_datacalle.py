@@ -1,9 +1,12 @@
-"""Servicios del rol "Relevador DataCalle" (SISOC - Mobile).
+"""Servicios de los roles de DataCalle (SISOC - Mobile).
 
-Rol simple marcado con ``Profile.es_relevador_calle`` y alcance por provincia en
-``RelevadorCalleProvincia``. Es el equivalente, para el modulo de situacion de
-calle, de lo que ``services_pwa`` resuelve para comedores: habilita el login
-mobile y expone el alcance provincial que la app usa para filtrar operativos.
+El rol vive en ``Profile.datacalle_rol`` y es la unica fuente de verdad:
+administrador > coordinador > entrevistador, jerarquico y decreciente.
+
+``Profile.es_relevador_calle`` se conserva por contrato con la app (D1.2 lo
+expone en ``/api/users/me/``) pero **ya no decide nada**: significa "accede a
+DataCalle" y lo tienen los tres roles. Quien necesite saber *que puede hacer*
+un usuario, pregunta por el rol.
 """
 
 from django.contrib.auth.models import User
@@ -45,6 +48,62 @@ def get_relevador_calle_provincia_ids(user) -> list[int]:
     )
 
 
+def get_datacalle_rol(user) -> str:
+    """Rol DataCalle del usuario, o ``""`` si no tiene ninguno."""
+    if not user or not getattr(user, "is_authenticated", False):
+        return ""
+    profile = get_profile_or_none(user)
+    return getattr(profile, "datacalle_rol", "") or ""
+
+
+def tiene_acceso_datacalle(user) -> bool:
+    """Si el usuario entra a la app. Los tres roles entran (matriz, punto 5)."""
+    return get_datacalle_rol(user) in {
+        "administrador",
+        "coordinador",
+        "entrevistador",
+    }
+
+
+def es_administrador_datacalle(user) -> bool:
+    """Administrador Nacional: sin restriccion territorial."""
+    return get_datacalle_rol(user) == "administrador"
+
+
+def es_coordinador_datacalle(user) -> bool:
+    """Gestiona operativos: coordinador provincial **o** administrador.
+
+    La jerarquia es decreciente, asi que el superior incluye al inferior.
+    """
+    return get_datacalle_rol(user) in {"administrador", "coordinador"}
+
+
+def es_solo_app(user) -> bool:
+    """Relevador: no entra a SISOC (RN05)."""
+    return get_datacalle_rol(user) == "entrevistador"
+
+
+def get_datacalle_provincia_ids(user):
+    """Provincias sobre las que opera, o ``None`` si son todas.
+
+    ``None`` es "sin restriccion territorial" y solo lo devuelve el
+    administrador; la lista vacia es "no puede operar en ninguna".
+    """
+    rol = get_datacalle_rol(user)
+    if not rol:
+        return []
+    if rol == "administrador":
+        return None
+    if rol == "entrevistador":
+        profile = get_profile_or_none(user)
+        if not profile:
+            return []
+        return list(
+            profile.relevador_calle_provincias.values_list("provincia_id", flat=True)
+        )
+    return get_full_province_scope_ids(user)
+
+
 def get_relevador_calle_provincias(user) -> list[dict]:
     """Provincias de alcance del relevador como ``[{id, nombre}]`` (por nombre)."""
     provincia_ids = get_relevador_calle_provincia_ids(user)
@@ -68,7 +127,7 @@ def get_relevador_calle_users_for_provincia(provincia_id):
     return (
         User.objects.filter(
             is_active=True,
-            profile__es_relevador_calle=True,
+            profile__datacalle_rol="entrevistador",
             profile__relevador_calle_provincias__provincia_id=provincia_id,
         )
         .select_related("profile")
@@ -78,10 +137,11 @@ def get_relevador_calle_users_for_provincia(provincia_id):
 
 
 def es_coordinador_calle(user) -> bool:
-    """Indica si el usuario gestiona operativos de DataCalle en el backoffice."""
-    if not user or not getattr(user, "is_authenticated", False):
-        return False
-    return user.has_perm("datacalle.change_relevamiento")
+    """Alias historico de ``es_coordinador_datacalle``.
+
+    Se conserva mientras queden llamadores; no agregar usos nuevos.
+    """
+    return es_coordinador_datacalle(user)
 
 
 def get_relevadores_administrables(actor):
@@ -113,7 +173,7 @@ def get_relevadores_administrables(actor):
     if not provincia_ids:
         return None
     return User.objects.filter(
-        profile__es_relevador_calle=True,
+        profile__datacalle_rol="entrevistador",
         profile__relevador_calle_provincias__provincia_id__in=provincia_ids,
         is_staff=False,
         is_superuser=False,

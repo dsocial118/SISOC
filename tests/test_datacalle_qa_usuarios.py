@@ -29,6 +29,10 @@ def _coordinador_datacalle(provincia, username="coord_dc"):
     )
     user.groups.add(grupo)
     user.profile.es_usuario_provincial = True
+    # datacalle_rol es la unica fuente de verdad que miran los helpers de rol
+    # (es_coordinador_calle es alias de es_coordinador_datacalle): sin esto el
+    # fixture arma un coordinador que el modulo ya no reconoce como tal.
+    user.profile.datacalle_rol = "coordinador"
     user.profile.save()
     user.profile.territorial_scopes.create(provincia=provincia)
     return user
