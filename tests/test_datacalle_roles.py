@@ -407,3 +407,113 @@ def test_el_contenido_de_las_respuestas_no_queda_en_el_log_de_auditoria(provinci
         # igual porque compara contra los valores, no contra las claves.
         for valor in valores_sensibles:
             assert valor not in str(entrada.changes)
+
+
+@pytest.mark.django_db
+def test_el_cierre_del_operativo_no_deja_ubicacion_ni_observaciones_en_el_log(
+    provincia,
+):
+    """Mismo agujero que el test anterior, pero en Relevamiento.
+
+    `cerrar_relevamiento` completa `lat`/`lon` (coordenadas GPS exactas del
+    cierre) y `observacion_asentamiento`/`otra_observacion` (como vive el
+    grupo en ese punto, la segunda en texto libre) en cada cierre de
+    operativo. Es mas sensible que un caso individual porque describe a todo
+    un grupo, asi que audittrail/constants.py debe excluirlos igual.
+    """
+    import datetime
+
+    from datacalle.models import Relevamiento
+    from datacalle.services.encuestas import cerrar_relevamiento
+    from auditlog.models import LogEntry
+
+    relevamiento = Relevamiento.objects.create(
+        denominacion="Operativo a cerrar",
+        provincia=provincia,
+        fase=Relevamiento.Fase.ESPACIO_PUBLICO,
+        area_operativa="Plaza",
+        fecha_inicio=datetime.date(2026, 9, 20),
+        fecha_fin=datetime.date(2026, 9, 21),
+    )
+    lat_sensible = -34.612345
+    lon_sensible = -58.412345
+    observacion_sensible = "asentamiento_precario_distintivo"
+    texto_sensible = "Grupo familiar junto al puente, colchones y una carpa azul"
+    usuario = get_user_model().objects.create_user(
+        username="cierre_operativo",
+        email="cierre_operativo@example.com",
+        password="Sisoc12345!",
+    )
+
+    cerrar_relevamiento(
+        relevamiento=relevamiento,
+        user=usuario,
+        datos={
+            "lat": lat_sensible,
+            "lon": lon_sensible,
+            "observacion_asentamiento": [observacion_sensible],
+            "otra_observacion": texto_sensible,
+        },
+    )
+
+    entradas = LogEntry.objects.get_for_object(relevamiento)
+    assert entradas.count() >= 1
+
+    campos_excluidos = (
+        "lat",
+        "lon",
+        "observacion_asentamiento",
+        "otra_observacion",
+    )
+    valores_sensibles = (
+        str(lat_sensible),
+        str(lon_sensible),
+        observacion_sensible,
+        texto_sensible,
+    )
+    for entrada in entradas:
+        for campo in campos_excluidos:
+            assert campo not in entrada.changes
+        # Igual que en el test de Encuesta: aserto sobre los valores, no
+        # sobre las claves, para que la prueba falle si alguien saca un
+        # campo de `excluded_fields` pero deja el nombre intacto.
+        for valor in valores_sensibles:
+            assert valor not in str(entrada.changes)
+
+
+@pytest.mark.django_db
+def test_object_repr_de_una_encuesta_no_lleva_el_codigo_del_entrevistado(provincia):
+    """`object_repr` bypasea `excluded_fields`: sale de `__str__`, no de `changes`.
+
+    django-auditlog arma `LogEntry.object_repr` con `smart_str(instance)`
+    (o sea `Encuesta.__str__`) sin pasar por ningun filtro de campos, y ese
+    log es exportable y visible en `/admin/auditlog/logentry/` con el
+    permiso estandar de Django. Si `__str__` devolviera el codigo del
+    entrevistado -como hacia antes-, quedaria grabado igual pese a estar
+    excluido de `changes`.
+    """
+    import datetime
+
+    from datacalle.models import Encuesta, Relevamiento
+    from auditlog.models import LogEntry
+
+    relevamiento = Relevamiento.objects.create(
+        denominacion="Operativo con caso identificable",
+        provincia=provincia,
+        fase=Relevamiento.Fase.ESPACIO_PUBLICO,
+        area_operativa="Plaza",
+        fecha_inicio=datetime.date(2026, 9, 20),
+        fecha_fin=datetime.date(2026, 9, 21),
+    )
+    codigo_sensible = "COD-OBJECT-REPR-2026"
+
+    encuesta = Encuesta.objects.create(
+        relevamiento=relevamiento,
+        estado=Encuesta.Estado.COMPLETA,
+        codigo_entrevistado=codigo_sensible,
+    )
+
+    entradas = LogEntry.objects.get_for_object(encuesta)
+    assert entradas.count() >= 1
+    for entrada in entradas:
+        assert codigo_sensible not in entrada.object_repr

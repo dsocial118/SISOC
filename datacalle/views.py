@@ -201,7 +201,10 @@ class EncuestaDetailView(LoginRequiredMixin, DetailView):
                     "datacalle_relevamientos_detalle", kwargs={"pk": relevamiento.pk}
                 ),
             },
-            {"text": str(self.object)},
+            # No usar str(self.object): desde el fix de object_repr,
+            # Encuesta.__str__ devuelve sólo el id y perdería el código
+            # que se mostraba acá.
+            {"text": self.object.codigo_entrevistado or str(self.object.id)},
         ]
         context["respuestas"] = respuestas_legibles(self.object)
         return context

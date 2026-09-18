@@ -1,6 +1,6 @@
 {% extends "includes/main.html" %}
 {% load static %}
-{% block title %}Caso {{ encuesta }}{% endblock %}
+{% block title %}Caso {{ encuesta.codigo_entrevistado|default:encuesta.id }}{% endblock %}
 {% block breadcrumb %}
     {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
 {% endblock %}
@@ -9,7 +9,7 @@
 
     <div class="dc-header">
         <div>
-            <h1 class="dc-header__title">Caso {{ encuesta }}</h1>
+            <h1 class="dc-header__title">Caso {{ encuesta.codigo_entrevistado|default:encuesta.id }}</h1>
             <div class="dc-header__meta">
                 <span class="dc-chip dc-chip--{% if encuesta.estado == 'completa' %}finalizado{% else %}planificado{% endif %}">
                     {{ encuesta.get_estado_display }}
