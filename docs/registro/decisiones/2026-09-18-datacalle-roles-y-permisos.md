@@ -1,7 +1,7 @@
 # 2026-09-18 - DataCalle: tres roles explícitos, provincia única y acceso a la app para coordinadores
 
 ## Estado
-- propuesta (pendiente de revisión; se implementa en la rama `fix/datacalle-qa-2026-09`, mismo PR que el segundo bloque QA)
+- aceptada (implementada en `fix/datacalle-qa-2026-09`, 2026-09-18)
 
 ## Contexto
 
