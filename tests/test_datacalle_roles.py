@@ -618,3 +618,114 @@ def test_sin_actor_el_selector_de_rol_es_fail_closed(provincia):
     assert ofrecidos == ["entrevistador"]
 
 
+@pytest.mark.django_db
+def test_el_coordinador_del_formulario_ve_solo_su_provincia(provincia):
+    """BLOQUEANTE: las dos mitades del alcance, que es el bug que casi mergeamos.
+
+    La provincia elegida se escribía en ``RelevadorCalleProvincia``, tabla que
+    sólo lee el entrevistador. El coordinador quedaba sin
+    ``es_usuario_provincial`` y sin ``ProfileTerritorialScope``: en el
+    backoffice eso es **sin restricción** (veía, editaba, borraba y cerraba
+    operativos de todo el país, con el equipo y sus DNI) y en la app era
+    alcance vacío (cero operativos).
+    """
+    import datetime
+
+    from datacalle.models import Relevamiento
+    from datacalle.services.relevamientos import apply_relevamientos_scope
+
+    salta = Provincia.objects.create(nombre="Salta")
+    coord = _crear_por_formulario(
+        _superusuario("super_alcance"), "coord_alcance", "coordinador", provincia
+    )
+    perfil = coord.profile
+
+    # El sistema armó el alcance solo (D1), en la tabla que leen los lectores.
+    assert perfil.es_usuario_provincial is True
+    assert list(perfil.territorial_scopes.values_list("provincia_id", flat=True)) == [
+        provincia.id
+    ]
+    # Y no ensució la tabla del entrevistador.
+    assert perfil.relevador_calle_provincias.exists() is False
+
+    propio = Relevamiento.objects.create(
+        denominacion="Operativo propio",
+        provincia=provincia,
+        fase=Relevamiento.Fase.ESPACIO_PUBLICO,
+        area_operativa="Plaza",
+        fecha_inicio=datetime.date(2026, 9, 20),
+        fecha_fin=datetime.date(2026, 9, 21),
+    )
+    Relevamiento.objects.create(
+        denominacion="Operativo ajeno",
+        provincia=salta,
+        fase=Relevamiento.Fase.ESPACIO_PUBLICO,
+        area_operativa="Plaza",
+        fecha_inicio=datetime.date(2026, 9, 20),
+        fecha_fin=datetime.date(2026, 9, 21),
+    )
+
+    # Mitad backoffice: sólo su provincia.
+    visibles = apply_relevamientos_scope(Relevamiento.objects.all(), coord)
+    assert [r.pk for r in visibles] == [propio.pk]
+    # Mitad app: su provincia, no la lista vacía.
+    assert get_datacalle_provincia_ids(coord) == [provincia.id]
+    assert get_relevador_calle_provincias(coord) == [
+        {"id": provincia.id, "nombre": provincia.nombre}
+    ]
+
+
+@pytest.mark.django_db
+def test_el_administrador_del_formulario_queda_sin_alcance(provincia):
+    """Alcance nacional es, literalmente, no tener alcance."""
+    admin = _crear_por_formulario(
+        _superusuario("super_admin_form"), "admin_form", "administrador"
+    )
+    perfil = admin.profile
+
+    assert perfil.es_usuario_provincial is False
+    assert perfil.territorial_scopes.exists() is False
+    assert perfil.relevador_calle_provincias.exists() is False
+    assert get_datacalle_provincia_ids(admin) is None
+
+
+@pytest.mark.django_db
+def test_pasar_de_relevador_a_coordinador_limpia_la_tabla_del_relevador(provincia):
+    """``_sync_relevador_calle_provincias`` escribía filas para los tres roles."""
+    from users.forms import CustomUserChangeForm
+
+    relevador = _usuario("muta_rol", "entrevistador", provincia)
+    assert relevador.profile.relevador_calle_provincias.exists() is True
+
+    form = CustomUserChangeForm(
+        instance=relevador,
+        actor=_superusuario("super_muta"),
+        data=_datos_edicion(
+            relevador,
+            es_relevador_calle="on",
+            datacalle_rol="coordinador",
+            provincias_datacalle=[provincia.id],
+        ),
+    )
+
+    assert form.is_valid(), form.errors
+    form.save()
+    perfil = relevador.profile
+    perfil.refresh_from_db()
+    assert perfil.relevador_calle_provincias.exists() is False
+    assert list(perfil.territorial_scopes.values_list("provincia_id", flat=True)) == [
+        provincia.id
+    ]
+
+
+@pytest.mark.django_db
+def test_el_coordinador_del_formulario_recibe_su_grupo(provincia):
+    """D1: el operador elige el rol y el sistema asigna el grupo."""
+    from django.contrib.auth.models import Group
+
+    Group.objects.get_or_create(name="Coordinador DataCalle")
+    coord = _crear_por_formulario(
+        _superusuario("super_grupo"), "coord_grupo", "coordinador", provincia
+    )
+
+    assert coord.groups.filter(name="Coordinador DataCalle").exists()

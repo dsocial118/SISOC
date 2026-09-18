@@ -25,7 +25,11 @@ from users.models import (
     TerritorialComedorProvincia,
 )
 from users.profile_utils import get_profile_or_none
-from users.services_datacalle import es_administrador_datacalle, es_solo_app
+from users.services_datacalle import (
+    es_administrador_datacalle,
+    es_solo_app,
+    validar_alcance_coordinador,
+)
 from users.services_delegation import effective_delegatable_groups_qs
 from users.services_pwa import (
     PWA_ASSIGNABLE_PERMISSION_CODES,
@@ -1066,14 +1070,30 @@ class RelevadorCalleFormMixin:
                 "Se deriva de tu alcance territorial."
             )
 
+    @staticmethod
+    def _provincias_datacalle_del_perfil(profile):
+        """Provincia que el perfil ya tiene, leída de donde vive según el rol.
+
+        El entrevistador la tiene en ``RelevadorCalleProvincia`` y el
+        coordinador en ``ProfileTerritorialScope``; el administrador es
+        nacional y no tiene ninguna. Leer siempre la primera tabla dejaba el
+        campo vacío al editar a un coordinador y el ``clean`` lo rechazaba por
+        "Seleccione la provincia".
+        """
+        if profile.datacalle_rol == Profile.DataCalleRol.COORDINADOR:
+            return get_full_province_scope_ids(profile)
+        if profile.datacalle_rol == Profile.DataCalleRol.ADMINISTRADOR:
+            return []
+        return list(
+            profile.relevador_calle_provincias.values_list("provincia_id", flat=True)
+        )
+
     def _init_relevador_calle_fields(self, profile):
         if not profile:
             return
         self.fields["es_relevador_calle"].initial = profile.es_relevador_calle
         self.fields["datacalle_rol"].initial = profile.datacalle_rol
-        actuales = list(
-            profile.relevador_calle_provincias.values_list("provincia_id", flat=True)
-        )
+        actuales = self._provincias_datacalle_del_perfil(profile)
         fijas = getattr(self, "_provincias_datacalle_fijas", None)
         if not fijas:
             self.fields["provincias_datacalle"].initial = actuales
@@ -1120,8 +1140,14 @@ class RelevadorCalleFormMixin:
                 "datacalle_rol",
                 "Seleccione el rol del relevador de DataCalle.",
             )
+
+        if rol == Profile.DataCalleRol.ADMINISTRADOR:
+            # El Administrador Nacional no tiene provincia: pedirle una y
+            # después ignorarla sólo confunde al operador.
+            cleaned["provincias_datacalle"] = Provincia.objects.none()
+            provincias = cleaned["provincias_datacalle"]
         # RN01: exactamente una. El mensaje dice el porque, no solo el limite.
-        if not provincias:
+        elif not provincias:
             self.add_error(
                 "provincias_datacalle",
                 "Seleccione la provincia del usuario de DataCalle.",
@@ -1144,10 +1170,91 @@ class RelevadorCalleFormMixin:
                 "datacalle_rol",
                 "No tenes permiso para asignar ese rol de DataCalle.",
             )
+        return self._derivar_alcance_datacalle(cleaned)
+
+    def _derivar_alcance_datacalle(self, cleaned):
+        """D1: el operador elige un rol y el sistema arma el alcance.
+
+        Esto nunca se había implementado, y el agujero era grave: la provincia
+        elegida se escribía en ``RelevadorCalleProvincia``, que sólo lee el
+        entrevistador. Un coordinador creado por el formulario quedaba con
+        ``es_usuario_provincial=False`` y sin ``ProfileTerritorialScope``, o
+        sea **sin restricción** en el backoffice (veía, editaba, borraba y
+        cerraba operativos de todo el país, con el equipo y sus DNI) y con
+        alcance vacío en la app.
+
+        Se corre después de las validaciones de rol y provincia, y pisa lo que
+        haya dejado ``_clean_territorial_scope_fields``: el alcance de un
+        usuario de DataCalle lo decide el rol, no el panel territorial.
+        """
+        rol = cleaned.get("datacalle_rol")
+        if rol == Profile.DataCalleRol.COORDINADOR:
+            provincias = list(cleaned.get("provincias_datacalle") or [])
+            if len(provincias) != 1:
+                return cleaned
+            cleaned["es_usuario_provincial"] = True
+            cleaned["territorial_scopes_data"] = [
+                {
+                    "provincia_id": provincias[0].pk,
+                    "municipio_id": None,
+                    "localidad_id": None,
+                }
+            ]
+        elif rol == Profile.DataCalleRol.ADMINISTRADOR:
+            # El alcance nacional es, literalmente, no tener alcance: así lo
+            # leen `get_datacalle_provincia_ids` y `_provincia_ids_del_usuario`.
+            cleaned["es_usuario_provincial"] = False
+            cleaned["territorial_scopes_data"] = []
         return cleaned
 
+    def _validar_provincia_unica_coordinador(self, cleaned):
+        """RN01/D3 en el formulario: el coordinador tiene una provincia completa.
+
+        El servicio la vuelve a validar al guardar (``validar_alcance_coordinador``);
+        acá el error se muestra en el campo en vez de reventar la transacción.
+        """
+        if cleaned.get("datacalle_rol") != Profile.DataCalleRol.COORDINADOR:
+            return cleaned
+        scopes = cleaned.get("territorial_scopes_data") or []
+        completos = [
+            scope
+            for scope in scopes
+            if not scope.get("municipio_id") and not scope.get("localidad_id")
+        ]
+        if len(completos) != 1 or not cleaned.get("es_usuario_provincial"):
+            self.add_error(
+                "provincias_datacalle",
+                "Un Coordinador Provincial de DataCalle debe tener exactamente "
+                "una provincia completa como alcance territorial.",
+            )
+        return cleaned
+
+    def _sync_grupo_datacalle(self, user):
+        """D1: el grupo del backoffice sale del rol, no de una carga manual.
+
+        La ayuda del formulario promete que el sistema lo asigna solo; antes
+        había que acordarse de tildar el grupo a mano y, si el operador no lo
+        hacía, el coordinador entraba a SISOC sin permisos de DataCalle.
+        """
+        grupos_por_rol = {
+            Profile.DataCalleRol.COORDINADOR: "Coordinador DataCalle",
+            Profile.DataCalleRol.ADMINISTRADOR: "Administrador DataCalle",
+        }
+        nombre = grupos_por_rol.get(self.cleaned_data.get("datacalle_rol"))
+        if not nombre:
+            return
+        grupo = Group.objects.filter(name=nombre).first()
+        if grupo is not None:
+            user.groups.add(grupo)
+
     def _sync_relevador_calle_provincias(self, profile):
-        if not profile.es_relevador_calle:
+        # ``RelevadorCalleProvincia`` es la tabla del entrevistador y de nadie
+        # más: el coordinador tiene su provincia en ``ProfileTerritorialScope``
+        # y el administrador no tiene ninguna. Escribir filas acá para los tres
+        # roles era la mitad del bug de alcance, así que además se limpian las
+        # que hubiera dejado un guardado anterior.
+        rol = self.cleaned_data.get("datacalle_rol", "")
+        if not profile.es_relevador_calle or rol != Profile.DataCalleRol.ENTREVISTADOR:
             profile.relevador_calle_provincias.all().delete()
             return
         selected_ids = {
@@ -1296,7 +1403,8 @@ class UserCreationForm(
         self._validate_selected_within_allowed(cleaned)
         cleaned = self._clean_pwa_fields(cleaned)
         cleaned = self._clean_territorial_comedor_fields(cleaned)
-        return self._clean_relevador_calle_fields(cleaned)
+        cleaned = self._clean_relevador_calle_fields(cleaned)
+        return self._validar_provincia_unica_coordinador(cleaned)
 
     def save(self, commit=True):
         with transaction.atomic():
@@ -1338,6 +1446,7 @@ class UserCreationForm(
                 user.user_permissions.add(*pwa_permission_ids)
         else:
             self._aplicar_grupos_y_permisos(user)
+            self._sync_grupo_datacalle(user)
         self._sync_mobile_rendicion_permission(user)
         if self.cleaned_data.get("es_representante_pwa", False):
             self._sync_pwa_operation_permissions(user)
@@ -1371,6 +1480,7 @@ class UserCreationForm(
             profile,
             self.cleaned_data.get("territorial_scopes_data", []),
         )
+        validar_alcance_coordinador(profile)
         # Evita devolver un profile cacheado con valores viejos tras el signal de User.
         user.refresh_from_db()
         profile.grupos_asignables.set(self.cleaned_data.get("grupos_asignables", []))
@@ -1552,7 +1662,8 @@ class CustomUserChangeForm(
         self._validate_selected_within_allowed(cleaned)
         cleaned = self._clean_pwa_fields(cleaned)
         cleaned = self._clean_territorial_comedor_fields(cleaned)
-        return self._clean_relevador_calle_fields(cleaned)
+        cleaned = self._clean_relevador_calle_fields(cleaned)
+        return self._validar_provincia_unica_coordinador(cleaned)
 
     def save(self, commit=True):
         with transaction.atomic():
@@ -1604,6 +1715,7 @@ class CustomUserChangeForm(
                     else []
                 )
                 self._aplicar_grupos_y_permisos(user)
+                self._sync_grupo_datacalle(user)
                 if pwa_permission_ids:
                     user.user_permissions.add(*pwa_permission_ids)
             if not is_pwa_operator:
@@ -1654,6 +1766,7 @@ class CustomUserChangeForm(
                 profile,
                 self.cleaned_data.get("territorial_scopes_data", []),
             )
+            validar_alcance_coordinador(profile)
             user.refresh_from_db()
             profile.grupos_asignables.set(
                 self.cleaned_data.get("grupos_asignables", [])

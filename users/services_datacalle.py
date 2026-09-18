@@ -10,6 +10,7 @@ un usuario, pregunta por el rol.
 """
 
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
 
 from core.models import Provincia
 from users.profile_utils import get_profile_or_none
@@ -197,3 +198,26 @@ def get_relevadores_administrables(actor):
         is_staff=False,
         is_superuser=False,
     )
+
+
+def validar_alcance_coordinador(profile):
+    """RN01/D3: el coordinador provincial tiene exactamente una provincia completa.
+
+    La decision del 2026-09-18 lo declara pero nadie lo verificaba: el alcance
+    del coordinador vive en ``ProfileTerritorialScope``, tabla compartida que no
+    se puede constrainear (otros roles del backoffice si admiten varias
+    provincias), asi que el limite tiene que imponerse en el guardado.
+
+    Se valida con el mismo lector que usa el runtime
+    (``get_full_province_scope_ids``, que ademas exige
+    ``es_usuario_provincial``): si el perfil no lo satisface, el coordinador
+    terminaria viendo el pais entero en el backoffice y nada en la app.
+    """
+    if getattr(profile, "datacalle_rol", "") != "coordinador":
+        return
+    provincia_ids = get_full_province_scope_ids(profile)
+    if len(provincia_ids) != 1:
+        raise ValidationError(
+            "Un Coordinador Provincial de DataCalle debe tener exactamente una "
+            "provincia completa como alcance territorial."
+        )
