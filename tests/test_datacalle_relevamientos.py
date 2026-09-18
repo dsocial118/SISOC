@@ -210,6 +210,40 @@ def test_coordinador_solo_arma_equipo_con_los_suyos(provincias):
 
 
 @pytest.mark.django_db
+def test_el_administrador_no_ve_coordinadores_entre_los_entrevistadores(provincias):
+    """``es_relevador_calle`` ya no distingue el rol: lo llevan los tres.
+
+    Antes el filtro era ``profile__es_relevador_calle=True``, y ese flag hoy
+    lo tiene tambien el coordinador (y el administrador). Para un
+    administrador, ``_provincia_ids_del_usuario`` devuelve ``None`` (sin
+    restriccion), asi que no hay filtro de provincia que lo salve: si el
+    filtro sigue siendo por el flag viejo, un coordinador se cuela en una
+    lista pensada solo para entrevistadores.
+    """
+    cordoba, _ = provincias
+    entrevistador = _crear_entrevistador(cordoba, "entrev_para_admin")
+    coordinador = get_user_model().objects.create_user(
+        username="coord_para_admin",
+        email="coord_para_admin@example.com",
+        password="Sisoc12345!",
+    )
+    coordinador.profile.es_relevador_calle = True
+    coordinador.profile.datacalle_rol = "coordinador"
+    coordinador.profile.es_usuario_provincial = True
+    coordinador.profile.save()
+    coordinador.profile.territorial_scopes.create(provincia=cordoba)
+    admin = get_user_model().objects.create_superuser(
+        username="admin_sin_coordinadores",
+        email="admin_sin_coordinadores@example.com",
+        password="Sisoc12345!",
+    )
+
+    disponibles = get_entrevistadores_para_usuario(admin)
+
+    assert [u.username for u in disponibles] == [entrevistador.username]
+
+
+@pytest.mark.django_db
 def test_baja_es_logica(provincias):
     cordoba, _ = provincias
     relevamiento = _crear_relevamiento(cordoba, "Para borrar")

@@ -88,8 +88,12 @@ def get_entrevistadores_para_usuario(user):
     Es el universo máximo; el selector del formulario se acota además a la
     provincia elegida con ``get_entrevistadores_para_provincia``.
     """
+    # ``es_relevador_calle`` ya no sirve para filtrar: ahora lo llevan los tres
+    # roles (administrador, coordinador y entrevistador), asi que un filtro por
+    # ese flag deja pasar coordinadores y administradores a una lista pensada
+    # sólo para entrevistadores. El rol es la unica fuente de verdad.
     queryset = (
-        User.objects.filter(is_active=True, profile__es_relevador_calle=True)
+        User.objects.filter(is_active=True, profile__datacalle_rol="entrevistador")
         .select_related("profile")
         .distinct()
         .order_by("first_name", "last_name", "username")

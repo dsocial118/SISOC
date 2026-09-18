@@ -30,6 +30,25 @@ def _entrevistador(provincia, username="entrev_api"):
     return user
 
 
+def _con_rol(provincia, username, rol):
+    """Usuario DataCalle con rol explicito, para los tests de jerarquia."""
+    user = get_user_model().objects.create_user(
+        username=username, email=f"{username}@example.com", password="Sisoc12345!"
+    )
+    user.profile.es_relevador_calle = True
+    user.profile.datacalle_rol = rol
+    if rol == "coordinador":
+        user.profile.es_usuario_provincial = True
+    user.profile.save()
+    if rol == "entrevistador":
+        RelevadorCalleProvincia.objects.create(
+            profile=user.profile, provincia=provincia
+        )
+    elif rol == "coordinador":
+        user.profile.territorial_scopes.create(provincia=provincia)
+    return user
+
+
 def _cliente(user):
     token, _ = Token.objects.get_or_create(user=user)
     client = APIClient()
@@ -602,3 +621,57 @@ def test_qa_0012_la_senal_no_se_separa_del_rechazo_real(provincia):
     assert listado.data["results"][0]["puede_iniciar"] is False
     assert carga.status_code == 409
     assert carga.data["codigo"] == "relevamiento_no_iniciado"
+
+
+@pytest.mark.django_db
+def test_el_coordinador_ve_los_operativos_de_su_provincia_sin_estar_en_el_equipo(
+    provincia,
+):
+    entrevistador = _entrevistador(provincia, "entrev_jer")
+    coordinador = _con_rol(provincia, "coord_jer", "coordinador")
+    _relevamiento(provincia, equipo=[entrevistador], denominacion="De su provincia")
+
+    respuesta = _cliente(coordinador).get("/api/datacalle/relevamientos/")
+
+    assert respuesta.status_code == 200
+    assert [r["denominacion"] for r in respuesta.data["results"]] == ["De su provincia"]
+
+
+@pytest.mark.django_db
+def test_el_coordinador_no_ve_operativos_de_otra_provincia(provincia):
+    salta = Provincia.objects.create(nombre="Salta")
+    ajeno = _entrevistador(salta, "entrev_salta")
+    coordinador = _con_rol(provincia, "coord_acotado", "coordinador")
+    _relevamiento(salta, equipo=[ajeno], denominacion="De Salta")
+
+    respuesta = _cliente(coordinador).get("/api/datacalle/relevamientos/")
+
+    assert respuesta.data["results"] == []
+
+
+@pytest.mark.django_db
+def test_el_administrador_ve_todas_las_provincias(provincia):
+    salta = Provincia.objects.create(nombre="Salta")
+    _relevamiento(provincia, denominacion="De Cordoba")
+    _relevamiento(salta, denominacion="De Salta")
+    administrador = _con_rol(provincia, "admin_api", "administrador")
+
+    respuesta = _cliente(administrador).get("/api/datacalle/relevamientos/")
+
+    nombres = sorted(r["denominacion"] for r in respuesta.data["results"])
+    assert nombres == ["De Cordoba", "De Salta"]
+
+
+@pytest.mark.django_db
+def test_el_coordinador_si_puede_cerrar_desde_la_app(provincia):
+    """QA-0020 prohibe al relevador, no al coordinador."""
+    coordinador = _con_rol(provincia, "coord_cierra", "coordinador")
+    relevamiento = _relevamiento(provincia, denominacion="Para cerrar por app")
+
+    respuesta = _cliente(coordinador).post(
+        f"/api/datacalle/relevamientos/{relevamiento.id}/cerrar/", {}, format="json"
+    )
+
+    assert respuesta.status_code == 200
+    relevamiento.refresh_from_db()
+    assert relevamiento.estado == Relevamiento.Estado.FINALIZADO
