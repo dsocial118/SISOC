@@ -23,6 +23,10 @@ SISOC sólo lo copia (ver `datacalle/instrumento/README.md`).
   usuario y DNI de los integrantes.
 - **QA-0015.** El alta de usuarios explica dónde se define cada rol de
   DataCalle.
+- **Instrumento 2.1.0.** Se sincroniza `datacalle/instrumento/` con el contrato
+  que la app publicó el 2026-09-16 (`Desktop/DataCalle-SISOC/contrato/`).
+  `GET /api/datacalle/catalogos/` pasa a devolver `version: "2.1.0"`; la copia
+  llevaba dos días vieja y la app comparaba contra ella.
 
 ## Decisiones
 

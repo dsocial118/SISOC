@@ -76,7 +76,7 @@
     "pagina": "identificacion",
     "tipo": "enum",
     "catalogo": "varianteCuestionario",
-    "calculado": false,
+    "calculado": true,
     "soloExportacion": true,
     "requerido": false,
     "visibleSi": null,
@@ -116,7 +116,7 @@
     "soloExportacion": false,
     "requerido": true,
     "visibleSi": null,
-    "etiqueta": "¿Dónde se encuentra la persona o el grupo?",
+    "etiqueta": "Tipo de operativo",
     "matriz": null
   },
   {
@@ -128,7 +128,7 @@
     "soloExportacion": false,
     "requerido": true,
     "visibleSi": null,
-    "etiqueta": "Ubicación del punto observado",
+    "etiqueta": "Ubicación del grupo",
     "matriz": null
   },
   {
@@ -265,28 +265,11 @@
     "soloExportacion": false,
     "requerido": true,
     "visibleSi": null,
-    "etiqueta": "¿A quién le estás pidiendo el consentimiento?",
+    "etiqueta": "¿A qué persona del grupo le vas a pedir el consentimiento ahora?",
     "matriz": {
       "filas": "rangoEtario2026",
       "columnas": "generoObservado"
     }
-  },
-  {
-    "campo": "esMayorDeEdad",
-    "pagina": "consentimiento",
-    "tipo": "siNo",
-    "catalogo": null,
-    "calculado": false,
-    "soloExportacion": false,
-    "requerido": true,
-    "visibleSi": {
-      "campo": "personaEntrevistada",
-      "prefijoEn": [
-        "r15a18"
-      ]
-    },
-    "etiqueta": "¿La persona tiene 18 años o más?",
-    "matriz": null
   },
   {
     "campo": "esMenorDeEdad",
@@ -297,7 +280,7 @@
     "soloExportacion": true,
     "requerido": false,
     "visibleSi": null,
-    "etiqueta": "Persona menor de edad",
+    "etiqueta": "Persona menor de 15 años",
     "matriz": null
   },
   {
@@ -309,31 +292,15 @@
     "soloExportacion": false,
     "requerido": true,
     "visibleSi": {
-      "alguna": [
-        {
-          "campo": "personaEntrevistada",
-          "prefijoEn": [
-            "r19a59",
-            "r60mas"
-          ]
-        },
-        {
-          "todas": [
-            {
-              "campo": "personaEntrevistada",
-              "prefijoEn": [
-                "r15a18"
-              ]
-            },
-            {
-              "campo": "esMayorDeEdad",
-              "es": "si"
-            }
-          ]
-        }
+      "campo": "personaEntrevistada",
+      "prefijoEn": [
+        "r15a18",
+        "r19a59",
+        "r60mas",
+        "noSeObserva"
       ]
     },
-    "etiqueta": "1. ¿La persona realiza la entrevista?",
+    "etiqueta": "1. ¿La persona acepta realizar la entrevista?",
     "matriz": null
   },
   {
@@ -367,15 +334,39 @@
     "matriz": null
   },
   {
-    "campo": "inicialesNombre",
+    "campo": "nombre",
     "pagina": "codigoIdentificacion",
-    "tipo": "iniciales",
+    "tipo": "texto",
     "catalogo": null,
     "calculado": false,
     "soloExportacion": false,
     "requerido": true,
     "visibleSi": null,
-    "etiqueta": "2 primeras iniciales del nombre",
+    "etiqueta": "Nombre",
+    "matriz": null
+  },
+  {
+    "campo": "apellido",
+    "pagina": "codigoIdentificacion",
+    "tipo": "texto",
+    "catalogo": null,
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": true,
+    "visibleSi": null,
+    "etiqueta": "Apellido",
+    "matriz": null
+  },
+  {
+    "campo": "inicialesNombre",
+    "pagina": "codigoIdentificacion",
+    "tipo": "iniciales",
+    "catalogo": null,
+    "calculado": true,
+    "soloExportacion": true,
+    "requerido": false,
+    "visibleSi": null,
+    "etiqueta": null,
     "matriz": null
   },
   {
@@ -383,11 +374,11 @@
     "pagina": "codigoIdentificacion",
     "tipo": "iniciales",
     "catalogo": null,
-    "calculado": false,
-    "soloExportacion": false,
-    "requerido": true,
+    "calculado": true,
+    "soloExportacion": true,
+    "requerido": false,
     "visibleSi": null,
-    "etiqueta": "2 primeras iniciales del apellido",
+    "etiqueta": null,
     "matriz": null
   },
   {
@@ -423,7 +414,7 @@
     "soloExportacion": false,
     "requerido": false,
     "visibleSi": null,
-    "etiqueta": "Grupo familiar presente en este momento",
+    "etiqueta": "Vínculos con las demás personas del grupo",
     "matriz": null
   },
   {
@@ -441,8 +432,8 @@
   {
     "campo": "paisEmisor",
     "pagina": "datosPersonales",
-    "tipo": "texto",
-    "catalogo": null,
+    "tipo": "enum",
+    "catalogo": "pais",
     "calculado": false,
     "soloExportacion": false,
     "requerido": false,
@@ -450,7 +441,22 @@
       "campo": "documentoTipo",
       "es": "documentoExtranjero"
     },
-    "etiqueta": "4. País emisor",
+    "etiqueta": "4. País emisor del documento",
+    "matriz": null
+  },
+  {
+    "campo": "paisEmisorOtro",
+    "pagina": "datosPersonales",
+    "tipo": "texto",
+    "catalogo": null,
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "visibleSi": {
+      "campo": "paisEmisor",
+      "es": "otroPais"
+    },
+    "etiqueta": "¿Qué país?",
     "matriz": null
   },
   {
@@ -461,8 +467,17 @@
     "calculado": false,
     "soloExportacion": false,
     "requerido": false,
-    "visibleSi": null,
-    "etiqueta": "5. ¿Desea compartirnos el número de documento?",
+    "visibleSi": {
+      "campo": "documentoTipo",
+      "en": [
+        "dniArgentino",
+        "dniSinTarjeta",
+        "documentoExtranjero",
+        "residenciaPrecaria",
+        "otro"
+      ]
+    },
+    "etiqueta": "5. Número de documento, si desea compartirlo",
     "matriz": null
   },
   {
@@ -505,6 +520,66 @@
     "matriz": null
   },
   {
+    "campo": "dondeNacioLocalidad",
+    "pagina": "datosPersonales",
+    "tipo": "localidad",
+    "catalogo": null,
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "visibleSi": {
+      "campo": "dondeNacio",
+      "es": "otraLocalidadProvincia"
+    },
+    "etiqueta": "¿En qué localidad?",
+    "matriz": null
+  },
+  {
+    "campo": "dondeNacioProvincia",
+    "pagina": "datosPersonales",
+    "tipo": "enum",
+    "catalogo": "provincia",
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "visibleSi": {
+      "campo": "dondeNacio",
+      "es": "otraProvincia"
+    },
+    "etiqueta": "¿En qué provincia?",
+    "matriz": null
+  },
+  {
+    "campo": "dondeNacioPais",
+    "pagina": "datosPersonales",
+    "tipo": "enum",
+    "catalogo": "pais",
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "visibleSi": {
+      "campo": "dondeNacio",
+      "es": "otroPais"
+    },
+    "etiqueta": "¿En qué país?",
+    "matriz": null
+  },
+  {
+    "campo": "dondeNacioPaisOtro",
+    "pagina": "datosPersonales",
+    "tipo": "texto",
+    "catalogo": null,
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "visibleSi": {
+      "campo": "dondeNacioPais",
+      "es": "otroPais"
+    },
+    "etiqueta": "¿Cuál?",
+    "matriz": null
+  },
+  {
     "campo": "dondeViviaAntes",
     "pagina": "datosPersonales",
     "tipo": "enum",
@@ -514,6 +589,66 @@
     "requerido": false,
     "visibleSi": null,
     "etiqueta": "9. ¿Dónde vivía antes de estar en situación de calle por primera vez?",
+    "matriz": null
+  },
+  {
+    "campo": "dondeViviaAntesLocalidad",
+    "pagina": "datosPersonales",
+    "tipo": "localidad",
+    "catalogo": null,
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "visibleSi": {
+      "campo": "dondeViviaAntes",
+      "es": "otraLocalidadProvincia"
+    },
+    "etiqueta": "¿Cuál?",
+    "matriz": null
+  },
+  {
+    "campo": "dondeViviaAntesProvincia",
+    "pagina": "datosPersonales",
+    "tipo": "enum",
+    "catalogo": "provincia",
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "visibleSi": {
+      "campo": "dondeViviaAntes",
+      "es": "otraProvincia"
+    },
+    "etiqueta": "¿Cuál?",
+    "matriz": null
+  },
+  {
+    "campo": "dondeViviaAntesPais",
+    "pagina": "datosPersonales",
+    "tipo": "enum",
+    "catalogo": "pais",
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "visibleSi": {
+      "campo": "dondeViviaAntes",
+      "es": "otroPais"
+    },
+    "etiqueta": "¿Cuál?",
+    "matriz": null
+  },
+  {
+    "campo": "dondeViviaAntesPaisOtro",
+    "pagina": "datosPersonales",
+    "tipo": "texto",
+    "catalogo": null,
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "visibleSi": {
+      "campo": "dondeViviaAntesPais",
+      "es": "otroPais"
+    },
+    "etiqueta": "¿Qué país?",
     "matriz": null
   },
   {
@@ -596,50 +731,7 @@
     "calculado": false,
     "soloExportacion": false,
     "requerido": false,
-    "visibleSi": {
-      "alguna": [
-        {
-          "campo": "dificultadVer",
-          "en": [
-            "cierta",
-            "mucha",
-            "noPuede"
-          ]
-        },
-        {
-          "campo": "dificultadOir",
-          "en": [
-            "cierta",
-            "mucha",
-            "noPuede"
-          ]
-        },
-        {
-          "campo": "dificultadCaminar",
-          "en": [
-            "cierta",
-            "mucha",
-            "noPuede"
-          ]
-        },
-        {
-          "campo": "dificultadCuidadoPersonal",
-          "en": [
-            "cierta",
-            "mucha",
-            "noPuede"
-          ]
-        },
-        {
-          "campo": "dificultadComunicarse",
-          "en": [
-            "cierta",
-            "mucha",
-            "noPuede"
-          ]
-        }
-      ]
-    },
+    "visibleSi": null,
     "etiqueta": "12. ¿Tiene certificado de discapacidad vigente?",
     "matriz": null
   },
@@ -704,18 +796,6 @@
     "matriz": null
   },
   {
-    "campo": "desdeQueNacioEnCalle",
-    "pagina": "trayectoriaCalle",
-    "tipo": "siNo",
-    "catalogo": null,
-    "calculado": false,
-    "soloExportacion": false,
-    "requerido": false,
-    "visibleSi": null,
-    "etiqueta": "18. ¿Está en situación de calle desde que nació?",
-    "matriz": null
-  },
-  {
     "campo": "edadPrimeraVezCalle",
     "pagina": "trayectoriaCalle",
     "tipo": "numero",
@@ -723,11 +803,8 @@
     "calculado": false,
     "soloExportacion": false,
     "requerido": false,
-    "visibleSi": {
-      "campo": "desdeQueNacioEnCalle",
-      "es": "no"
-    },
-    "etiqueta": "18.b ¿Qué edad tenía la primera vez que estuvo en situación de calle? (años)",
+    "visibleSi": null,
+    "etiqueta": "18. ¿Qué edad tenía la primera vez que estuvo en situación de calle? (años)",
     "matriz": null
   },
   {
@@ -809,21 +886,6 @@
     "matriz": null
   },
   {
-    "campo": "otraActividad",
-    "pagina": "actividadEconomica",
-    "tipo": "texto",
-    "catalogo": null,
-    "calculado": false,
-    "soloExportacion": false,
-    "requerido": false,
-    "visibleSi": {
-      "campo": "queActividad",
-      "incluye": "otra"
-    },
-    "etiqueta": "Especificar otra actividad",
-    "matriz": null
-  },
-  {
     "campo": "ingresosUltimoMes",
     "pagina": "actividadEconomica",
     "tipo": "enumMulti",
@@ -833,6 +895,21 @@
     "requerido": false,
     "visibleSi": null,
     "etiqueta": "24. En el último mes, ¿recibió ingresos por…?",
+    "matriz": null
+  },
+  {
+    "campo": "programaProvincialCual",
+    "pagina": "actividadEconomica",
+    "tipo": "texto",
+    "catalogo": null,
+    "calculado": false,
+    "soloExportacion": false,
+    "requerido": false,
+    "visibleSi": {
+      "campo": "ingresosUltimoMes",
+      "incluye": "programasProvinciales"
+    },
+    "etiqueta": "¿Cuál es el programa provincial o local?",
     "matriz": null
   },
   {
