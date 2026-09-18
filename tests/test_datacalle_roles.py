@@ -151,3 +151,15 @@ def test_las_provincias_del_api_salen_de_donde_corresponde_segun_el_rol(provinci
         {"id": provincia.id, "nombre": provincia.nombre},
         {"id": otra_provincia.id, "nombre": otra_provincia.nombre},
     ]
+
+
+def test_la_semilla_define_el_grupo_de_administrador():
+    from users.bootstrap.groups_seed import BOOTSTRAP_GROUPS
+
+    por_nombre = {seed.name: seed for seed in BOOTSTRAP_GROUPS}
+
+    assert "Administrador DataCalle" in por_nombre
+    admin = set(por_nombre["Administrador DataCalle"].permission_codes)
+    coord = set(por_nombre["Coordinador DataCalle"].permission_codes)
+    # La jerarquia es decreciente: el administrador puede todo lo del coordinador.
+    assert coord <= admin

@@ -1142,6 +1142,27 @@ LISTADO_DEFINED_GROUPS = (
             "auth.change_user",
         ),
     ),
+    BootstrapGroupSeed(
+        "Administrador DataCalle",
+        (
+            # Administrador Nacional: lo mismo que el coordinador provincial,
+            # pero sin restriccion territorial. El alcance nacional no sale de
+            # los permisos sino de no tener `territorial_scopes` (ver
+            # docs/registro/decisiones/2026-09-18-datacalle-roles-y-permisos.md).
+            "datacalle.view_relevamiento",
+            "datacalle.add_relevamiento",
+            "datacalle.change_relevamiento",
+            "datacalle.delete_relevamiento",
+            "datacalle.view_encuesta",
+            "datacalle.add_encuesta",
+            "datacalle.change_encuesta",
+            "datacalle.delete_encuesta",
+            # Da de alta coordinadores y relevadores de cualquier provincia.
+            "auth.view_user",
+            "auth.add_user",
+            "auth.change_user",
+        ),
+    ),
 )
 
 BOOTSTRAP_GROUPS = LISTADO_DEFINED_GROUPS
