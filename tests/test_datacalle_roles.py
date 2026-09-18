@@ -294,3 +294,29 @@ def test_el_flag_sin_rol_no_alcanza_para_entrar_a_la_app(provincia):
 
     assert respuesta.status_code == 401
     assert respuesta.data["detail"] == "Este usuario no tiene acceso PWA activo."
+
+
+@pytest.mark.django_db
+def test_las_modificaciones_del_operativo_quedan_registradas(provincia):
+    """8.6: quien modifico que y cuando, mas alla de creado_por/cerrado_por."""
+    import datetime
+
+    from auditlog.models import LogEntry
+
+    from datacalle.models import Relevamiento
+
+    relevamiento = Relevamiento.objects.create(
+        denominacion="Operativo auditado",
+        provincia=provincia,
+        fase=Relevamiento.Fase.ESPACIO_PUBLICO,
+        area_operativa="Plaza",
+        fecha_inicio=datetime.date(2026, 9, 20),
+        fecha_fin=datetime.date(2026, 9, 21),
+    )
+    relevamiento.denominacion = "Operativo auditado y renombrado"
+    relevamiento.save()
+
+    entradas = LogEntry.objects.get_for_object(relevamiento)
+
+    assert entradas.count() >= 2  # alta + modificacion
+    assert "denominacion" in entradas.first().changes
