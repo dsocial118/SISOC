@@ -2,6 +2,7 @@
 
 import pytest
 from django.contrib.auth import get_user_model
+from django.test import Client
 
 from core.models import Provincia
 from users.models import Profile, RelevadorCalleProvincia
@@ -179,3 +180,85 @@ def test_un_relevador_no_puede_tener_dos_provincias(provincia):
             RelevadorCalleProvincia.objects.create(
                 profile=relevador.profile, provincia=salta
             )
+
+
+@pytest.mark.django_db
+def test_solo_el_relevador_queda_afuera_del_backoffice(client, provincia):
+    """RN05: el relevador no entra a SISOC; coordinador y admin si.
+
+    Este cambio (``confirm_login_allowed`` usa ``es_solo_app``) ya estaba
+    aplicado antes de esta tarea, para no dejar a los coordinadores afuera
+    del backoffice durante el resto del plan. El test se agrega igual, para
+    documentar la invariante y protegerla de una regresion.
+    """
+    _usuario("coord_login", "coordinador", provincia, staff=True)
+    _usuario("relev_login", "entrevistador", provincia)
+
+    # Dos clientes distintos: con el mismo `client` para ambos posts, la
+    # sesion ya autenticada del coordinador sobrevive al intento rechazado
+    # del relevador (la validacion falla antes de tocar la sesion) y el
+    # segundo response queda con el usuario equivocado.
+    entra = client.post(
+        "/login/",
+        {"username": "coord_login", "password": "Sisoc12345!"},
+        follow=True,
+    )
+    rebota = Client().post(
+        "/login/",
+        {"username": "relev_login", "password": "Sisoc12345!"},
+        follow=True,
+    )
+
+    assert entra.context["user"].is_authenticated is True
+    assert rebota.context["user"].is_authenticated is False
+    assert "SISOC - Mobile DataCalle" in rebota.content.decode()
+
+
+@pytest.mark.django_db
+def test_los_tres_roles_obtienen_token_de_la_app(provincia):
+    """Matriz punto 5: los tres acceden a DataCalle."""
+    from rest_framework.test import APIClient
+
+    _usuario("admin_token", "administrador", staff=True)
+    _usuario("coord_token", "coordinador", provincia, staff=True)
+    _usuario("relev_token", "entrevistador", provincia)
+
+    for username in ("admin_token", "coord_token", "relev_token"):
+        respuesta = APIClient().post(
+            "/api/users/login/",
+            {"username": username, "password": "Sisoc12345!"},
+            format="json",
+        )
+        assert respuesta.status_code == 200, username
+        assert respuesta.data["token"]
+
+
+@pytest.mark.django_db
+def test_el_flag_sin_rol_no_alcanza_para_entrar_a_la_app(provincia):
+    """RN05: el gate de la API mira el rol, no el flag.
+
+    ``es_relevador_calle`` hoy siempre viaja junto al rol (ver ``_usuario``),
+    asi que probar solo los tres roles no distingue si el gate quedo mirando
+    el flag o el rol: con ``is_relevador_calle_user`` tambien hubiera pasado.
+    Este test arma a mano un usuario con el flag prendido pero sin rol -algo
+    que hoy no ocurre por los caminos normales de alta, pero que el gate debe
+    igual rechazar- para que la asercion dependa realmente del criterio nuevo.
+    """
+    from rest_framework.test import APIClient
+
+    ajeno = _usuario("flag_sin_rol", "", provincia)
+    perfil = ajeno.profile
+    perfil.datacalle_rol = ""
+    perfil.es_relevador_calle = True
+    perfil.save()
+
+    assert tiene_acceso_datacalle(ajeno) is False
+
+    respuesta = APIClient().post(
+        "/api/users/login/",
+        {"username": "flag_sin_rol", "password": "Sisoc12345!"},
+        format="json",
+    )
+
+    assert respuesta.status_code == 401
+    assert respuesta.data["detail"] == "Este usuario no tiene acceso PWA activo."
