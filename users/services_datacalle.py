@@ -17,42 +17,6 @@ from users.profile_utils import get_profile_or_none
 from users.territorial_scope import get_full_province_scope_ids
 
 
-def is_relevador_calle_user(user) -> bool:
-    """Indica si el usuario accede a DataCalle (SISOC - Mobile).
-
-    Pese al nombre, hoy lo llevan los tres roles (administrador, coordinador y
-    entrevistador): no depende de ``AccesoComedorPWA`` ni de
-    ``es_usuario_provincial``, habilita el login mobile.
-    """
-    if not user or not getattr(user, "is_authenticated", False):
-        return False
-    profile = get_profile_or_none(user)
-    return bool(getattr(profile, "es_relevador_calle", False))
-
-
-def get_relevador_calle_rol(user) -> str:
-    """Rol con el que el usuario opera en DataCalle (``""`` si no tiene ninguno).
-
-    Devuelve rol para los tres (administrador, coordinador y entrevistador).
-    """
-    if not is_relevador_calle_user(user):
-        return ""
-    profile = get_profile_or_none(user)
-    return getattr(profile, "datacalle_rol", "") or ""
-
-
-def get_relevador_calle_provincia_ids(user) -> list[int]:
-    """IDs de provincias de alcance de un relevador de DataCalle."""
-    if not is_relevador_calle_user(user):
-        return []
-    profile = get_profile_or_none(user)
-    if not profile:
-        return []
-    return list(
-        profile.relevador_calle_provincias.values_list("provincia_id", flat=True)
-    )
-
-
 def get_datacalle_rol(user) -> str:
     """Rol DataCalle del usuario, o ``""`` si no tiene ninguno."""
     if not user or not getattr(user, "is_authenticated", False):

@@ -772,3 +772,23 @@ def test_un_usuario_provincial_no_puede_cambiarse_la_provincia(provincia):
     assert list(
         coord.profile.territorial_scopes.values_list("provincia__nombre", flat=True)
     ) == [provincia.nombre]
+
+
+@pytest.mark.django_db
+def test_el_rol_del_perfil_llega_a_la_api_sin_el_flag(provincia):
+    """``/api/users/me/`` leía el rol detrás de ``es_relevador_calle``.
+
+    Un perfil con rol y sin flag entra a la API por ``TieneAccesoDataCalle``
+    -que mira el rol- y después ``/me/`` le contestaba que no tenía ninguno.
+    """
+    from users.api_serializers import UserContextSerializer
+
+    coord = _usuario("coord_api_rol", "coordinador", provincia, staff=True)
+    perfil = coord.profile
+    perfil.es_relevador_calle = False
+    perfil.save(update_fields=["es_relevador_calle"])
+
+    datos = UserContextSerializer(coord).data
+
+    assert datos["profile"]["es_relevador_calle"] is False
+    assert datos["profile"]["datacalle_rol"] == "coordinador"
