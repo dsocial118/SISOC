@@ -7,8 +7,10 @@ def asignar_rol_a_coordinadores_existentes(apps, schema_editor):
     """Los coordinadores que ya existen tienen el grupo pero no el rol.
 
     Sin esto, el dia del despliegue quedan fuera de la app y del gate nuevo.
-    Coordinador si tiene alcance provincial; administrador si no tiene ninguno
-    (que es como se venia representando al nacional).
+    Minimo privilegio: solo quien no tiene ningun alcance territorial es
+    nacional. Quien tiene alcance -aunque sea municipal- queda provincial:
+    equivocarse para este lado cuesta un coordinador de mas, y para el otro,
+    un administrador nacional que nadie decidio crear.
     """
     Group = apps.get_model("auth", "Group")
     Profile = apps.get_model("users", "Profile")
@@ -21,27 +23,14 @@ def asignar_rol_a_coordinadores_existentes(apps, schema_editor):
     for perfil in perfiles:
         if perfil.datacalle_rol:
             continue
-        tiene_alcance = perfil.territorial_scopes.filter(
-            municipio__isnull=True
-        ).exists()
-        perfil.datacalle_rol = "coordinador" if tiene_alcance else "administrador"
+        # Minimo privilegio: solo quien no tiene ningun alcance territorial es
+        # nacional. Quien tiene alcance -aunque sea municipal- queda provincial:
+        # equivocarse para este lado cuesta un coordinador de mas, y para el
+        # otro, un administrador nacional que nadie decidio crear.
+        tiene_algun_alcance = perfil.territorial_scopes.exists()
+        perfil.datacalle_rol = "coordinador" if tiene_algun_alcance else "administrador"
         perfil.es_relevador_calle = True
         perfil.save(update_fields=["datacalle_rol", "es_relevador_calle"])
-
-
-def revertir_rol_de_coordinadores(apps, schema_editor):
-    """Reversa: limpia solo a los que esta migracion pudo haber tocado."""
-    Group = apps.get_model("auth", "Group")
-    Profile = apps.get_model("users", "Profile")
-
-    grupo = Group.objects.filter(name="Coordinador DataCalle").first()
-    if grupo is None:
-        return
-
-    Profile.objects.filter(
-        user__groups=grupo,
-        datacalle_rol__in=["coordinador", "administrador"],
-    ).update(datacalle_rol="", es_relevador_calle=False)
 
 
 class Migration(migrations.Migration):
@@ -69,6 +58,11 @@ class Migration(migrations.Migration):
         ),
         migrations.RunPython(
             asignar_rol_a_coordinadores_existentes,
-            revertir_rol_de_coordinadores,
+            # Sin reversa de datos a proposito: no hay forma de distinguir un rol
+            # que escribio esta migracion de uno que escribio un alta legitima
+            # posterior, asi que revertir borraria roles que nadie pidio borrar.
+            # El forward es idempotente (saltea los perfiles que ya tienen rol),
+            # asi que volver a aplicar despues de un rollback sigue andando.
+            migrations.RunPython.noop,
         ),
     ]
