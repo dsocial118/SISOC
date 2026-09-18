@@ -126,14 +126,28 @@ def get_tracked_model_definitions():
         TrackedModelDefinition(
             label="Caso DataCalle",
             model_getter=_model_getter("datacalle.models.Encuesta"),
-            # `respuestas` guarda el instrumento completo relevado a una
-            # persona en situación de calle. El log de auditoría es
-            # exportable (audittrail/views.py) y sobrevive al borrado del
-            # caso, así que copiar ese JSON ahí sería una fuga de datos
-            # sensibles que ni siquiera el soft delete del caso podría
-            # tapar. Lo que 8.6 pide auditar es que el caso cambió y quién
-            # lo cambió, no el contenido de las respuestas.
-            excluded_fields=("respuestas",),
+            # El log de auditoría es exportable (audittrail/views.py) y
+            # sobrevive al borrado (soft delete) del caso, así que no puede
+            # llevar ni el instrumento completo ni los datos que identifican
+            # o ubican a una persona en situación de calle: ni `respuestas`
+            # (el JSON crudo del cuestionario), ni las columnas indexadas
+            # que `_copiar_columnas_indexadas` saca de ese mismo instrumento
+            # y que son igual de sensibles (`lat`/`lon`: ubicación exacta
+            # donde se la encontró; `codigo_entrevistado`: su identificador;
+            # `persona_entrevistada`: franja etaria y de género;
+            # `es_menor_de_edad`). Lo que 8.6 pide auditar es que el caso
+            # cambió, cuándo y quién lo cambió — para eso alcanza con
+            # `estado`, `relevamiento`, `origen`, `variante`, `grupo_id`,
+            # `es_cabecera_grupo`, `lugar_hallazgo`, `realiza_entrevista`,
+            # `personas_observadas` y los timestamps, que sí quedan.
+            excluded_fields=(
+                "respuestas",
+                "lat",
+                "lon",
+                "codigo_entrevistado",
+                "persona_entrevistada",
+                "es_menor_de_edad",
+            ),
         ),
     )
 

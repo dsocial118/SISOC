@@ -335,6 +335,11 @@ def test_el_contenido_de_las_respuestas_no_queda_en_el_log_de_auditoria(provinci
     `respuestas` guarda lo relevado a una persona en situacion de calle. El
     log de auditoria es exportable (audittrail) y sobrevive al borrado del
     caso, asi que copiar ese JSON ahi seria una fuga de datos sensibles.
+
+    Lo mismo vale para las columnas indexadas que `_copiar_columnas_indexadas`
+    saca de ese instrumento (`lat`/`lon`, `codigo_entrevistado`,
+    `persona_entrevistada`, `es_menor_de_edad`): excluir solo `respuestas` y
+    dejar pasar estas columnas deja el mismo agujero abierto por otra puerta.
     """
     import datetime
 
@@ -351,20 +356,54 @@ def test_el_contenido_de_las_respuestas_no_queda_en_el_log_de_auditoria(provinci
         fecha_fin=datetime.date(2026, 9, 21),
     )
     dato_sensible = "Juan Secreto Perez"
+    lat_sensible = -34.603722
+    lon_sensible = -58.381592
+    codigo_sensible = "COD-DISTINTIVO-2026"
+    persona_sensible = "mujer_adulta_mayor_distintiva"
     encuesta = Encuesta.objects.create(
         relevamiento=relevamiento,
         estado=Encuesta.Estado.COMPLETA,
         respuestas={"nombre": dato_sensible},
+        lat=lat_sensible,
+        lon=lon_sensible,
+        codigo_entrevistado=codigo_sensible,
+        persona_entrevistada=persona_sensible,
+        es_menor_de_edad=True,
     )
     encuesta.estado = Encuesta.Estado.RECHAZADA
     encuesta.respuestas = {"nombre": dato_sensible, "edad": 40}
+    encuesta.lat = lat_sensible + 1
+    encuesta.lon = lon_sensible + 1
+    encuesta.codigo_entrevistado = codigo_sensible + "-MOD"
+    encuesta.persona_entrevistada = persona_sensible + "-mod"
+    encuesta.es_menor_de_edad = False
     encuesta.save()
 
     entradas = LogEntry.objects.get_for_object(encuesta)
 
     assert entradas.count() >= 2  # alta + modificacion
+
+    campos_excluidos = (
+        "respuestas",
+        "lat",
+        "lon",
+        "codigo_entrevistado",
+        "persona_entrevistada",
+        "es_menor_de_edad",
+    )
+    valores_sensibles = (
+        dato_sensible,
+        codigo_sensible,
+        persona_sensible,
+        str(lat_sensible),
+        str(lon_sensible),
+    )
     for entrada in entradas:
-        assert "respuestas" not in entrada.changes
-        # Aserto sobre el contenido, no solo sobre la clave: aunque el campo
-        # se llamara distinto, el dato sensible no debe aparecer en el log.
-        assert dato_sensible not in str(entrada.changes)
+        for campo in campos_excluidos:
+            assert campo not in entrada.changes
+        # Aserto sobre el contenido, no solo sobre la clave: si mañana
+        # alguien saca un campo de `excluded_fields` en audittrail/constants
+        # pero deja el nombre del campo intacto, este assert lo detecta
+        # igual porque compara contra los valores, no contra las claves.
+        for valor in valores_sensibles:
+            assert valor not in str(entrada.changes)
