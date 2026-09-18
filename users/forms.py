@@ -1089,10 +1089,16 @@ class RelevadorCalleFormMixin:
                 "datacalle_rol",
                 "Seleccione el rol del relevador de DataCalle.",
             )
+        # RN01: exactamente una. El mensaje dice el porque, no solo el limite.
         if not provincias:
             self.add_error(
                 "provincias_datacalle",
-                "Seleccione al menos una provincia para el relevador de DataCalle.",
+                "Seleccione la provincia del usuario de DataCalle.",
+            )
+        elif len(provincias) > 1:
+            self.add_error(
+                "provincias_datacalle",
+                "Un usuario de DataCalle pertenece a una sola provincia.",
             )
         return cleaned
 

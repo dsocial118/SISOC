@@ -163,3 +163,19 @@ def test_la_semilla_define_el_grupo_de_administrador():
     coord = set(por_nombre["Coordinador DataCalle"].permission_codes)
     # La jerarquia es decreciente: el administrador puede todo lo del coordinador.
     assert coord <= admin
+
+
+from django.db import IntegrityError, transaction
+
+
+@pytest.mark.django_db
+def test_un_relevador_no_puede_tener_dos_provincias(provincia):
+    """RN01: provincia unica, garantizada por la base y no solo por el form."""
+    salta = Provincia.objects.create(nombre="Salta")
+    relevador = _usuario("relev_unica", "entrevistador", provincia)
+
+    with pytest.raises(IntegrityError):
+        with transaction.atomic():
+            RelevadorCalleProvincia.objects.create(
+                profile=relevador.profile, provincia=salta
+            )

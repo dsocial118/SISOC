@@ -406,9 +406,12 @@ class RelevadorCalleProvincia(models.Model):
         verbose_name = "Provincia de relevador DataCalle"
         verbose_name_plural = "Provincias de relevador DataCalle"
         constraints = [
+            # RN01: provincia unica por usuario. La constraint anterior
+            # (profile, provincia) solo evitaba duplicados de la misma fila y
+            # permitia N provincias distintas.
             models.UniqueConstraint(
-                fields=["profile", "provincia"],
-                name="uniq_relevador_calle_provincia",
+                fields=["profile"],
+                name="uniq_relevador_calle_una_provincia",
             ),
         ]
         indexes = [
