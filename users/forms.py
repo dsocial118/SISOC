@@ -136,6 +136,25 @@ def _validation_error_messages(error):
 
 
 class TerritorialScopeFormMixin:
+    def _es_autoedicion_provincial(self, profile=None):
+        """RN02: nadie provincial se cambia su propia provincia.
+
+        El único campo que estaba ``disabled`` era ``provincias_datacalle``, que
+        es la tabla del entrevistador; la provincia del coordinador vive en
+        ``ProfileTerritorialScope``, así que un coordinador editándose a sí
+        mismo podía mudarse de provincia (por pantalla o por POST) y llevarse
+        el alcance de los operativos con él.
+        """
+        actor = getattr(self, "actor", None)
+        instance = getattr(self, "instance", None)
+        if actor is None or instance is None or not getattr(instance, "pk", None):
+            return False
+        if getattr(actor, "pk", None) != instance.pk:
+            return False
+        if profile is None:
+            profile = get_profile_or_none(instance)
+        return bool(getattr(profile, "es_usuario_provincial", False))
+
     def _setup_territorial_scope_fields(self, profile=None):
         initial_scopes = serialize_profile_scopes(profile)
         self.initial_territorial_scopes = initial_scopes
@@ -143,6 +162,16 @@ class TerritorialScopeFormMixin:
         self.fields["territorial_scopes"].initial = initial_json
         if not self.is_bound:
             self.initial["territorial_scopes"] = initial_json
+        if self._es_autoedicion_provincial(profile):
+            # ``disabled`` no es sólo cosmético: Django ignora lo que llegue por
+            # POST y usa el initial, así que la guarda vale también contra un
+            # payload armado a mano.
+            for nombre in ("territorial_scopes", "es_usuario_provincial"):
+                self.fields[nombre].disabled = True
+            self.fields["es_usuario_provincial"].initial = True
+            self.fields["territorial_scopes"].help_text = (
+                "No podés cambiar tu propia provincia."
+            )
 
     def _clean_territorial_scope_fields(self, cleaned):
         if not cleaned.get("es_usuario_provincial"):

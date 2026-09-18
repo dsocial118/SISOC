@@ -729,3 +729,46 @@ def test_el_coordinador_del_formulario_recibe_su_grupo(provincia):
     )
 
     assert coord.groups.filter(name="Coordinador DataCalle").exists()
+
+
+@pytest.mark.django_db
+def test_un_usuario_provincial_no_puede_cambiarse_la_provincia(provincia):
+    """RN02, también por POST: lo único ``disabled`` era el campo equivocado.
+
+    ``provincias_datacalle`` es la tabla del entrevistador; la provincia del
+    coordinador vive en ``ProfileTerritorialScope``, y por ahí se mudaba solo.
+    """
+    import json
+
+    from users.forms import CustomUserChangeForm
+
+    salta = Provincia.objects.create(nombre="Salta")
+    coord = _usuario("coord_se_muda", "coordinador", provincia, staff=True)
+
+    form = CustomUserChangeForm(
+        instance=coord,
+        actor=coord,
+        data=_datos_edicion(
+            coord,
+            es_relevador_calle="on",
+            datacalle_rol="coordinador",
+            provincias_datacalle=[salta.id],
+            es_usuario_provincial="on",
+            territorial_scopes=json.dumps(
+                [
+                    {
+                        "provincia_id": salta.id,
+                        "municipio_id": None,
+                        "localidad_id": None,
+                    }
+                ]
+            ),
+        ),
+    )
+
+    assert form.is_valid(), form.errors
+    form.save()
+    coord.profile.refresh_from_db()
+    assert list(
+        coord.profile.territorial_scopes.values_list("provincia__nombre", flat=True)
+    ) == [provincia.nombre]
