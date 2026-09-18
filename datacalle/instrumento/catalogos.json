@@ -273,18 +273,32 @@
     ]
   },
   "lugarProviene": {
+    "$comentario": "QA-0038 (2026-09-17): se agrega 'En esta localidad' y las opciones pasan de 'De…' a 'En…'. Los textos viejos quedan en legacy.",
     "opciones": [
       {
+        "codigo": "enEstaLocalidad",
+        "etiqueta": "En esta localidad"
+      },
+      {
         "codigo": "otraLocalidadProvincia",
-        "etiqueta": "De otra localidad de esta provincia"
+        "etiqueta": "En otra localidad de esta provincia",
+        "legacy": [
+          "De otra localidad de esta provincia"
+        ]
       },
       {
         "codigo": "otraProvincia",
-        "etiqueta": "De otra provincia"
+        "etiqueta": "En otra provincia",
+        "legacy": [
+          "De otra provincia"
+        ]
       },
       {
         "codigo": "otroPais",
-        "etiqueta": "De otro país"
+        "etiqueta": "En otro país",
+        "legacy": [
+          "De otro país"
+        ]
       }
     ]
   },
@@ -1193,15 +1207,23 @@
     ]
   },
   "rangoEtario2026": {
-    "$comentario": "Instrumento 2026 - categorias etarias de CABA. QA-0021 (2026-09-16): fila no-se-observa para cuando la edad no se puede distinguir; en el consentimiento se trata como 15-18 (se entrevista con el formulario abreviado).",
+    "$comentario": "Instrumento 2026 - categorias etarias de CABA. QA-0021 (2026-09-16): fila no-se-observa para cuando la edad no se puede distinguir; en el consentimiento se trata como el rango adolescente. QA-0022 modificado (2026-09-17): el piso de la entrevista abreviada baja de 15 a 14 años, asi que las filas pasan a 0-13 y 14-18 (codigos r0a13 / r14a18; los viejos r0a14 / r15a18 quedan en legacy).",
     "opciones": [
       {
-        "codigo": "r0a14",
-        "etiqueta": "Entre 0 y 14 años"
+        "codigo": "r0a13",
+        "etiqueta": "Entre 0 y 13 años",
+        "legacy": [
+          "Entre 0 y 14 años",
+          "r0a14"
+        ]
       },
       {
-        "codigo": "r15a18",
-        "etiqueta": "Entre 15 y 18 años"
+        "codigo": "r14a18",
+        "etiqueta": "Entre 14 y 18 años",
+        "legacy": [
+          "Entre 15 y 18 años",
+          "r15a18"
+        ]
       },
       {
         "codigo": "r19a59",
@@ -1272,15 +1294,15 @@
     ]
   },
   "tipoDocumento": {
-    "$comentario": "Instrumento 2026, IV.3 (formato CABA sc25b). 'DNI en trámite' confirmado por negocio (2026-09-01). QA-0025 (2026-09-16): se separan tres situaciones que antes se mezclaban: no tener documento (indocumentación, abre la pregunta 6), tener DNI pero no la tarjeta consigo, y no querer informar (negativa, NO es indocumentación).",
+    "$comentario": "Instrumento 2026, IV.3 (formato CABA sc25b). 'DNI en trámite' confirmado por negocio (2026-09-01). QA-0025 (2026-09-16): se separan tres situaciones que antes se mezclaban: no tener documento (indocumentación, abre la pregunta 6), tener DNI pero no la tarjeta consigo, y no querer informar (negativa, NO es indocumentación). QA-0044 (2026-09-17): se retira dniSinTarjeta — tener el DNI sin la tarjeta encima es estar documentado; la indocumentación real la resuelve la pregunta 6. El código viejo queda en legacy de dniArgentino.",
     "opciones": [
       {
         "codigo": "dniArgentino",
-        "etiqueta": "Tiene DNI/CI argentino"
-      },
-      {
-        "codigo": "dniSinTarjeta",
-        "etiqueta": "Tiene DNI pero no tiene la tarjeta consigo"
+        "etiqueta": "Tiene DNI/CI argentino",
+        "legacy": [
+          "Tiene DNI pero no tiene la tarjeta consigo",
+          "dniSinTarjeta"
+        ]
       },
       {
         "codigo": "dniEnTramite",
@@ -1630,6 +1652,60 @@
       {
         "codigo": "italia",
         "etiqueta": "Italia"
+      },
+      {
+        "codigo": "otroPais",
+        "etiqueta": "Otro país",
+        "otro": true
+      }
+    ]
+  },
+  "paisSudamerica": {
+    "$comentario": "QA-0043 (2026-09-17): país emisor del documento extranjero. Lista EMBEBIDA en el instrumento (no catálogo de SISOC): es chica, estable, tiene que funcionar offline y no depende de N9. América del Sur más 'Otro país' con texto libre.",
+    "opciones": [
+      {
+        "codigo": "bolivia",
+        "etiqueta": "Bolivia"
+      },
+      {
+        "codigo": "brasil",
+        "etiqueta": "Brasil"
+      },
+      {
+        "codigo": "chile",
+        "etiqueta": "Chile"
+      },
+      {
+        "codigo": "colombia",
+        "etiqueta": "Colombia"
+      },
+      {
+        "codigo": "ecuador",
+        "etiqueta": "Ecuador"
+      },
+      {
+        "codigo": "guyana",
+        "etiqueta": "Guyana"
+      },
+      {
+        "codigo": "paraguay",
+        "etiqueta": "Paraguay"
+      },
+      {
+        "codigo": "peru",
+        "etiqueta": "Perú"
+      },
+      {
+        "codigo": "surinam",
+        "etiqueta": "Surinam"
+      },
+      {
+        "codigo": "uruguay",
+        "etiqueta": "Uruguay"
+      },
+      {
+        "codigo": "venezuela",
+        "etiqueta": "Venezuela"
       },
       {
         "codigo": "otroPais",

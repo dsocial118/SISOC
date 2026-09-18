@@ -1,7 +1,7 @@
 {
   "id": "datacalle-encuesta",
-  "version": "2.1.0",
-  "origen": "Instrumento de recolección de datos — Propuesta 2026 (Nación + CABA) + revisión QA 2026-09-16",
+  "version": "2.2.0",
+  "origen": "Instrumento de recolección de datos — Propuesta 2026 (Nación + CABA) + revisiones QA 2026-09-16 y 2026-09-17",
   "entidad": "encuesta",
   "paginas": [
     {
@@ -210,8 +210,8 @@
       "id": "consentimiento",
       "titulo": "Consentimiento",
       "legacy": "Bloque III",
-      "descripcion": "El consentimiento es individual: se le pide a UNA persona por vez, la que vas a entrevistar ahora. Cada persona adulta del grupo tiene su propio caso y su propio consentimiento; las que todavía no entrevistaste quedan pendientes en el grupo. A los niños y niñas de 0 a 14 años no se les hacen preguntas: solo quedan registrados como observados.",
-      "nota": "QA-0001: redacción sin ambigüedad sobre a quién se le pide. QA-0022: 15–18 se entrevista con el formulario abreviado.",
+      "descripcion": "El consentimiento es individual: se le pide a UNA persona por vez, la que vas a entrevistar ahora. Cada persona adulta del grupo tiene su propio caso y su propio consentimiento; las que todavía no entrevistaste quedan pendientes en el grupo. A los niños y niñas de 0 a 13 años no se les hacen preguntas: solo quedan registrados como observados.",
+      "nota": "QA-0001: redacción sin ambigüedad sobre a quién se le pide. QA-0022 (mod. 17/9): 14–18 se entrevista con el formulario abreviado; 0–13 no.",
       "campos": [
         {
           "id": "personaEntrevistada",
@@ -231,11 +231,11 @@
           "tipo": "aviso",
           "tono": "alerta",
           "icono": "shield-outline",
-          "texto": "Tiene entre 0 y 14 años: queda registrada como persona observada, sin entrevista. Si está sola, o ves una situación de riesgo, dar aviso a la línea de niñez (102) o al 911 e informarlo a tu coordinación.",
+          "texto": "Tiene entre 0 y 13 años: queda registrada como persona observada, sin entrevista. Si está sola, o ves una situación de riesgo, dar aviso a la línea de niñez (102) o al 911 e informarlo a tu coordinación.",
           "visibleSi": {
             "campo": "personaEntrevistada",
             "prefijoEn": [
-              "r0a14"
+              "r0a13"
             ]
           }
         },
@@ -245,24 +245,24 @@
           "tipo": "aviso",
           "tono": "info",
           "icono": "school-outline",
-          "texto": "Persona de 15 a 18 años (o edad que no se pudo determinar): si acepta, se le hace el formulario abreviado de autonomía progresiva, sin las preguntas de número de documento ni de ingresos.",
+          "texto": "Persona de 14 a 18 años (o edad que no se pudo determinar): si acepta, se le hace el formulario abreviado de autonomía progresiva, sin las preguntas de número de documento ni de ingresos.",
           "visibleSi": {
             "campo": "personaEntrevistada",
             "prefijoEn": [
-              "r15a18",
+              "r14a18",
               "noSeObserva"
             ]
           }
         },
         {
           "id": "esMenorDeEdad",
-          "etiqueta": "Persona menor de 15 años",
+          "etiqueta": "Persona menor de 14 años",
           "tipo": "siNo",
           "soloExportacion": true,
           "calculo": {
             "tipo": "esMenorDeEdad"
           },
-          "nota": "'si' solo para el rango 0–14 (caso observado sin entrevista). Explica por qué el caso quedó 'rechazada' sin `realizaEntrevista`."
+          "nota": "'si' solo para el rango 0–13 (caso observado sin entrevista; QA-0022 mod. 17/9, antes 0–14). La clave no cambia: sigue siendo `esMenorDeEdad`. Explica por qué el caso quedó 'rechazada' sin `realizaEntrevista`."
         },
         {
           "id": "realizaEntrevista",
@@ -273,7 +273,7 @@
           "visibleSi": {
             "campo": "personaEntrevistada",
             "prefijoEn": [
-              "r15a18",
+              "r14a18",
               "r19a59",
               "r60mas",
               "noSeObserva"
@@ -385,14 +385,13 @@
           "tipo": "enum",
           "catalogo": "tipoDocumento",
           "requerido": true,
-          "nota": "QA-0025: distingue indocumentación (abre la 6), tener DNI sin la tarjeta consigo, y negativa a informar."
+          "nota": "QA-0025 (16/9) había separado indocumentación / DNI sin tarjeta / negativa. QA-0044 (17/9) retira 'DNI sin tarjeta': tener el DNI sin la tarjeta encima es estar documentado, y la indocumentación real la resuelve la 6. Queda: documentado (abre la 5), indocumentado (abre la 6), negativa (no abre nada)."
         },
         {
           "id": "paisEmisor",
           "etiqueta": "4. País emisor del documento",
           "tipo": "enum",
-          "catalogo": "pais",
-          "selector": true,
+          "catalogo": "paisSudamerica",
           "visibleSi": {
             "campo": "documentoTipo",
             "es": "documentoExtranjero"
@@ -416,7 +415,6 @@
             "campo": "documentoTipo",
             "en": [
               "dniArgentino",
-              "dniSinTarjeta",
               "documentoExtranjero",
               "residenciaPrecaria",
               "otro"
@@ -494,8 +492,7 @@
           "etiqueta": "9. ¿Dónde vivía antes de estar en situación de calle por primera vez?",
           "tipo": "enum",
           "catalogo": "lugarProviene",
-          "ayuda": "Solo si no vivió siempre en la localidad actual; si vivió siempre acá, dejar sin responder.",
-          "nota": "QA-0004: cada opción abre su pregunta '¿cuál?'. Decisión 2026-09-01: sin condición automática, la guía se muestra al encuestador como en el papel."
+          "nota": "QA-0038 (17/9): sin la aclaración '(solo si no vivió siempre en la localidad actual)'; se agrega 'En esta localidad' y las opciones dicen 'En…'. QA-0004: cada opción abre su pregunta '¿cuál?'."
         },
         {
           "id": "dondeViviaAntesLocalidad",
@@ -599,7 +596,31 @@
           "etiqueta": "12. ¿Tiene certificado de discapacidad vigente?",
           "tipo": "enum",
           "catalogo": "siNoNsnc",
-          "nota": "QA-0028 (2026-09-16): se pregunta SIEMPRE, como en el papel. Antes dependía de haber declarado alguna dificultad y la condición resultaba confusa en campo."
+          "visibleSi": {
+            "alguna": [
+              {
+                "campo": "dificultadVer",
+                "noEs": "ninguna"
+              },
+              {
+                "campo": "dificultadOir",
+                "noEs": "ninguna"
+              },
+              {
+                "campo": "dificultadCaminar",
+                "noEs": "ninguna"
+              },
+              {
+                "campo": "dificultadCuidadoPersonal",
+                "noEs": "ninguna"
+              },
+              {
+                "campo": "dificultadComunicarse",
+                "noEs": "ninguna"
+              }
+            ]
+          },
+          "nota": "QA-0045 (17/9): si las cinco dificultades son 'ninguna', se saltan la 12 y la 13 (el papel dice 'pasar a la 14', que no existe: la siguiente es la 15). Matiza QA-0028 (16/9, 'siempre'): se pregunta siempre SALVO ese caso. Con alguna fila sin responder se sigue preguntando."
         },
         {
           "id": "motivoNoTieneCertificado",
@@ -607,9 +628,38 @@
           "tipo": "enum",
           "catalogo": "motivoNoTieneCertificado",
           "visibleSi": {
-            "campo": "certificadoDiscapacidad",
-            "es": "no"
-          }
+            "todas": [
+              {
+                "campo": "certificadoDiscapacidad",
+                "es": "no"
+              },
+              {
+                "alguna": [
+                  {
+                    "campo": "dificultadVer",
+                    "noEs": "ninguna"
+                  },
+                  {
+                    "campo": "dificultadOir",
+                    "noEs": "ninguna"
+                  },
+                  {
+                    "campo": "dificultadCaminar",
+                    "noEs": "ninguna"
+                  },
+                  {
+                    "campo": "dificultadCuidadoPersonal",
+                    "noEs": "ninguna"
+                  },
+                  {
+                    "campo": "dificultadComunicarse",
+                    "noEs": "ninguna"
+                  }
+                ]
+              }
+            ]
+          },
+          "nota": "QA-0045: sigue el mismo salto que la 12."
         }
       ]
     },
@@ -769,13 +819,13 @@
     }
   ],
   "variantes": {
-    "$comentario": "QA-0022 (2026-09-16): formulario abreviado para 15–18 (autonomía progresiva). El conjunto de preguntas es una PROPUESTA de la app — QA pidió 'aplicar el formulario abreviado previamente definido' pero ese formulario no existe todavía. Se excluyen las preguntas de número de documento e ingresos; el resto del instrumento se mantiene. Cambiar el conjunto es editar la lista `campos` de `adolescente`, sin tocar código.",
+    "$comentario": "QA-0022 (2026-09-16, modificado el 17/9: piso 14): formulario abreviado para 14–18 (autonomía progresiva). El conjunto de preguntas es una PROPUESTA de la app — QA pidió 'aplicar el formulario abreviado previamente definido' pero ese formulario no existe todavía. Se excluyen las preguntas de número de documento e ingresos; el resto del instrumento se mantiene. Cambiar el conjunto es editar la lista `campos` de `adolescente`, sin tocar código.",
     "reglas": [
       {
         "cuando": {
           "campo": "personaEntrevistada",
           "prefijoEn": [
-            "r15a18",
+            "r14a18",
             "noSeObserva"
           ]
         },
@@ -786,7 +836,7 @@
       "todos": true
     },
     "adolescente": {
-      "descripcion": "Formulario abreviado (15 a 18 años / edad no observada).",
+      "descripcion": "Formulario abreviado (14 a 18 años / edad no observada).",
       "campos": [
         "nombre",
         "apellido",
@@ -825,7 +875,7 @@
     }
   },
   "estados": {
-    "$comentario": "Se evalúan en orden: 'rechazada' primero. Un caso de 0–14 años se cierra sin entrevista y cuenta como observado, no como respondido.",
+    "$comentario": "Se evalúan en orden: 'rechazada' primero. Un caso de 0–13 años se cierra sin entrevista y cuenta como observado, no como respondido.",
     "rechazada": {
       "alguna": [
         {
@@ -843,7 +893,7 @@
         {
           "campo": "personaEntrevistada",
           "prefijoEn": [
-            "r0a14"
+            "r0a13"
           ]
         }
       ]

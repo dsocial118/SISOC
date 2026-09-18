@@ -320,7 +320,7 @@ def test_catalogos_sirven_el_instrumento_vigente(provincia):
     # Pinneada a propósito: al sincronizar `datacalle/instrumento/` con el
     # contrato hay que subirla acá, así la copia no queda vieja sin que nadie
     # lo note (pasó con 2.1.0, publicado el 16/9 y tomado el 18/9).
-    assert respuesta.data["version"] == "2.1.0"
+    assert respuesta.data["version"] == "2.2.0"
     assert "faseRelevamiento" in respuesta.data["catalogos"]
     assert respuesta.data["cuestionario"]["paginas"]
 

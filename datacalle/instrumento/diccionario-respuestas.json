@@ -280,7 +280,7 @@
     "soloExportacion": true,
     "requerido": false,
     "visibleSi": null,
-    "etiqueta": "Persona menor de 15 años",
+    "etiqueta": "Persona menor de 14 años",
     "matriz": null
   },
   {
@@ -294,7 +294,7 @@
     "visibleSi": {
       "campo": "personaEntrevistada",
       "prefijoEn": [
-        "r15a18",
+        "r14a18",
         "r19a59",
         "r60mas",
         "noSeObserva"
@@ -433,7 +433,7 @@
     "campo": "paisEmisor",
     "pagina": "datosPersonales",
     "tipo": "enum",
-    "catalogo": "pais",
+    "catalogo": "paisSudamerica",
     "calculado": false,
     "soloExportacion": false,
     "requerido": false,
@@ -471,7 +471,6 @@
       "campo": "documentoTipo",
       "en": [
         "dniArgentino",
-        "dniSinTarjeta",
         "documentoExtranjero",
         "residenciaPrecaria",
         "otro"
@@ -731,7 +730,30 @@
     "calculado": false,
     "soloExportacion": false,
     "requerido": false,
-    "visibleSi": null,
+    "visibleSi": {
+      "alguna": [
+        {
+          "campo": "dificultadVer",
+          "noEs": "ninguna"
+        },
+        {
+          "campo": "dificultadOir",
+          "noEs": "ninguna"
+        },
+        {
+          "campo": "dificultadCaminar",
+          "noEs": "ninguna"
+        },
+        {
+          "campo": "dificultadCuidadoPersonal",
+          "noEs": "ninguna"
+        },
+        {
+          "campo": "dificultadComunicarse",
+          "noEs": "ninguna"
+        }
+      ]
+    },
     "etiqueta": "12. ¿Tiene certificado de discapacidad vigente?",
     "matriz": null
   },
@@ -744,8 +766,36 @@
     "soloExportacion": false,
     "requerido": false,
     "visibleSi": {
-      "campo": "certificadoDiscapacidad",
-      "es": "no"
+      "todas": [
+        {
+          "campo": "certificadoDiscapacidad",
+          "es": "no"
+        },
+        {
+          "alguna": [
+            {
+              "campo": "dificultadVer",
+              "noEs": "ninguna"
+            },
+            {
+              "campo": "dificultadOir",
+              "noEs": "ninguna"
+            },
+            {
+              "campo": "dificultadCaminar",
+              "noEs": "ninguna"
+            },
+            {
+              "campo": "dificultadCuidadoPersonal",
+              "noEs": "ninguna"
+            },
+            {
+              "campo": "dificultadComunicarse",
+              "noEs": "ninguna"
+            }
+          ]
+        }
+      ]
     },
     "etiqueta": "13. ¿Por qué no lo tiene? (certificado de discapacidad)",
     "matriz": null
