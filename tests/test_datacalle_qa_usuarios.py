@@ -312,25 +312,35 @@ def test_editar_no_le_borra_la_provincia_al_relevador(provincia):
 
 @pytest.mark.django_db
 def test_qa_0015_el_alta_explica_donde_se_define_cada_rol():
-    """QA-0015: los tres roles no se eligen en el mismo lugar.
+    """QA-0015: el rol se elige en un solo lugar y el sistema arma el resto.
 
-    El entrevistador sale del flag (usuario sólo de la app); el coordinador y
-    el administrador salen del grupo y del alcance territorial. La pantalla
-    tiene que decirlo, que era lo que QA no podía deducir.
+    El texto viejo de la casilla decía que para dar de alta a un coordinador o
+    a un administrador "no se usa esta casilla: se les asigna el grupo", lo
+    contrario de lo que dice la ayuda del selector de rol. Y si el operador le
+    hacía caso, ``_clean_relevador_calle_fields`` le vaciaba el rol y el
+    coordinador quedaba sin app y sin sidebar. Ahora los dos textos dicen lo
+    mismo: se elige el rol y el sistema asigna grupo y alcance.
+
+    El actor es superusuario porque el selector pasó a ser fail-closed: sin
+    actor sólo ofrece "Relevador" (ver ``_roles_datacalle_para_el_actor``).
     """
     from users.forms import UserCreationForm
 
-    form = UserCreationForm()
+    superusuario = get_user_model().objects.create_superuser(
+        username="super_ayuda", email="super_ayuda@example.com", password="Sisoc12345!"
+    )
+    form = UserCreationForm(actor=superusuario)
 
     ayuda_flag = form.fields["es_relevador_calle"].help_text
     ayuda_rol = form.fields["datacalle_rol"].help_text
 
-    assert "entrevistador" in ayuda_flag.lower()
-    assert "Coordinador DataCalle" in ayuda_flag
+    # La casilla ya no manda a asignar el grupo a mano: lo hace el sistema.
+    assert "no se usa esta casilla" not in ayuda_flag
+    assert "el sistema arma el resto" in ayuda_flag
+    assert "alcance" in ayuda_flag.lower()
     assert "coordinador" in ayuda_rol.lower()
     assert "administrador" in ayuda_rol.lower()
-    # Los tres roles del documento funcional del 2026-09-18. La ayuda explica
-    # dónde se define cada uno, que es lo que QA-0015 no podía deducir.
+    # Los tres roles del documento funcional del 2026-09-18.
     assert [c[0] for c in form.fields["datacalle_rol"].choices] == [
         "",
         "administrador",

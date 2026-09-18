@@ -980,11 +980,11 @@ class RelevadorCalleFormMixin:
             required=False,
             label="Habilitar acceso a SISOC - Mobile DataCalle",
             help_text=(
-                "Marca al entrevistador, que trabaja sólo en la app y no entra "
-                "al backoffice. Para dar de alta a un coordinador o a un "
-                "administrador de DataCalle no se usa esta casilla: se les "
-                "asigna el grupo 'Coordinador DataCalle' o 'Administrador "
-                "DataCalle', según corresponda."
+                "Habilita el acceso a DataCalle para los tres roles. Elegí el "
+                "rol acá abajo y el sistema arma el resto: le asigna el grupo "
+                "('Coordinador DataCalle' o 'Administrador DataCalle') y el "
+                "alcance territorial. Sólo el relevador queda fuera del "
+                "backoffice."
             ),
         )
         self.fields["datacalle_rol"] = forms.ChoiceField(
