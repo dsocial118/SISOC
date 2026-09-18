@@ -274,25 +274,27 @@ def test_el_coordinador_puede_habilitar_a_un_usuario_existente(provincia):
 
 
 @pytest.mark.django_db
-def test_editar_no_borra_provincias_fuera_del_alcance_del_actor(provincia):
+def test_editar_no_le_borra_la_provincia_al_relevador(provincia):
     """El campo fijo no puede convertirse en una baja silenciosa.
 
-    ``_sync_relevador_calle_provincias`` borra las provincias que no lleguen en
-    cleaned_data, así que fijar el campo al alcance del actor le sacaría al
-    relevador las provincias que ese actor no administra.
+    Antes probaba que la edición no le borrara a un relevador una provincia
+    fuera del alcance del actor, escenario que asumía que un relevador podía
+    tener varias provincias a la vez. RN01 lo prohíbe (una sola por usuario),
+    así que lo que queda por proteger es más chico pero sigue siendo real:
+    que editar a un relevador de la propia provincia no le pierda esa única
+    provincia en el camino.
     """
     from users.forms import CustomUserChangeForm
 
-    otra = Provincia.objects.create(nombre="Salta")
     coordinador = _coordinador_datacalle(provincia, "coord_preserva")
-    entrevistador = _entrevistador(provincia, "entrev_dos_prov")
-    entrevistador.profile.relevador_calle_provincias.create(provincia=otra)
+    entrevistador = _entrevistador(provincia, "entrev_preserva")
 
     form = CustomUserChangeForm(
         instance=entrevistador,
         actor=coordinador,
         data=_datos_edicion(
             entrevistador,
+            first_name="Nombre Editado",
             es_relevador_calle="on",
             datacalle_rol="entrevistador",
         ),
@@ -301,11 +303,11 @@ def test_editar_no_borra_provincias_fuera_del_alcance_del_actor(provincia):
     assert form.is_valid(), form.errors
     form.save()
     entrevistador.profile.refresh_from_db()
-    assert sorted(
+    assert list(
         entrevistador.profile.relevador_calle_provincias.values_list(
             "provincia__nombre", flat=True
         )
-    ) == sorted([provincia.nombre, otra.nombre])
+    ) == [provincia.nombre]
 
 
 @pytest.mark.django_db

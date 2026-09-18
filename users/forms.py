@@ -1045,20 +1045,16 @@ class RelevadorCalleFormMixin:
             self.fields["provincias_datacalle"].initial = actuales
             return
 
-        # El campo quedó fijo al alcance del actor. Pisar el initial con lo que
-        # el perfil tiene hoy dejaría el formulario sin salida al habilitar a un
-        # usuario que todavía no es relevador: el initial sería vacío, el campo
-        # está deshabilitado y clean exige al menos una provincia.
-        # Se unen ambas para poder habilitarlo y, a la vez, no borrarle las
-        # provincias que el actor no administra (``_sync_relevador_calle_provincias``
-        # borra las que no lleguen en cleaned_data).
-        union = sorted(set(actuales) | set(fijas))
-        self.fields["provincias_datacalle"].initial = union
-        # El queryset tiene que contener todo el initial o ``clean`` lo rechaza
-        # por "opción no válida". Ampliarlo no habilita a elegir fuera de
-        # alcance: el campo es ``disabled``, así que Django ignora el POST.
+        # El campo quedó fijo al alcance del actor, así que el initial es esa
+        # provincia y nada más. Antes se unía con las que el perfil ya tuviera,
+        # para no borrarle a un relevador una provincia que el actor no
+        # administra; con RN01 —una sola provincia por usuario— esa unión daría
+        # dos y bloquearía la edición. El caso que protegía tampoco deberia
+        # existir: la RN03 limita al coordinador a su provincia y
+        # `get_relevadores_administrables` ya se lo impone.
+        self.fields["provincias_datacalle"].initial = fijas
         self.fields["provincias_datacalle"].queryset = Provincia.objects.filter(
-            id__in=union
+            id__in=fijas
         ).order_by("nombre")
 
     def _clean_relevador_calle_fields(self, cleaned):

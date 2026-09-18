@@ -183,6 +183,38 @@ def test_un_relevador_no_puede_tener_dos_provincias(provincia):
 
 
 @pytest.mark.django_db
+def test_el_form_rechaza_dos_provincias_para_un_relevador(provincia):
+    """RN01 tambien en el form: ``elif len(provincias) > 1`` de
+    ``_clean_relevador_calle_fields``, que la constraint de base no ejercita.
+
+    El actor es superusuario porque es quien ve el campo completo y puede
+    mandar dos provincias: un coordinador provincial tiene el campo fijo y
+    deshabilitado a su unica provincia (QA-0016), asi que nunca llegaria a
+    disparar esta rama.
+    """
+    salta = Provincia.objects.create(nombre="Salta")
+    superusuario = get_user_model().objects.create_superuser(
+        username="super_alta", email="super_alta@example.com", password="Sisoc12345!"
+    )
+
+    form = UserCreationForm(
+        actor=superusuario,
+        data={
+            "username": "relev_dos_prov",
+            "tipo_usuario": "interno",
+            "email": "",
+            "password": "Sisoc12345!",
+            "es_relevador_calle": "on",
+            "datacalle_rol": "entrevistador",
+            "provincias_datacalle": [provincia.id, salta.id],
+        },
+    )
+
+    assert form.is_valid() is False
+    assert "provincias_datacalle" in form.errors
+
+
+@pytest.mark.django_db
 def test_solo_el_relevador_queda_afuera_del_backoffice(client, provincia):
     """RN05: el relevador no entra a SISOC; coordinador y admin si.
 
