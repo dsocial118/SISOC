@@ -3,14 +3,35 @@
 from django.db import migrations, models
 
 
+def _tiene_provincia_completa(perfil):
+    """Replica de ``users.territorial_scope.get_full_province_scope_ids``.
+
+    En una migracion no se puede importar codigo de la app (el modelo historico
+    sale de ``apps.get_model``), asi que la logica se repite a mano. Tiene que
+    ser *la misma* que leen los servicios en runtime: la version anterior
+    clasificaba con ``territorial_scopes.exists()``, y un perfil con scopes pero
+    sin ``es_usuario_provincial`` -o con alcance solo municipal- quedaba marcado
+    ``coordinador`` mientras que los lectores lo trataban como nacional. Peor
+    aun: `_provincia_ids_del_usuario` le devolvia el pais entero.
+    """
+    if not perfil.es_usuario_provincial:
+        return False
+    scopes = perfil.territorial_scopes.all()
+    if not scopes.exists():
+        # Fallback legacy de ``get_effective_scopes``: sin filas, vale
+        # ``Profile.provincia`` y cuenta como provincia completa.
+        return perfil.provincia_id is not None
+    return scopes.filter(municipio__isnull=True, localidad__isnull=True).exists()
+
+
 def asignar_rol_a_coordinadores_existentes(apps, schema_editor):
     """Los coordinadores que ya existen tienen el grupo pero no el rol.
 
     Sin esto, el dia del despliegue quedan fuera de la app y del gate nuevo.
-    Minimo privilegio: solo quien no tiene ningun alcance territorial es
-    nacional. Quien tiene alcance -aunque sea municipal- queda provincial:
-    equivocarse para este lado cuesta un coordinador de mas, y para el otro,
-    un administrador nacional que nadie decidio crear.
+    Minimo privilegio: solo quien no tiene ningun alcance provincial efectivo
+    es nacional. Quien si lo tiene queda provincial: equivocarse para este lado
+    cuesta un coordinador de mas, y para el otro, un administrador nacional que
+    nadie decidio crear.
     """
     Group = apps.get_model("auth", "Group")
     Profile = apps.get_model("users", "Profile")
@@ -23,14 +44,33 @@ def asignar_rol_a_coordinadores_existentes(apps, schema_editor):
     for perfil in perfiles:
         if perfil.datacalle_rol:
             continue
-        # Minimo privilegio: solo quien no tiene ningun alcance territorial es
-        # nacional. Quien tiene alcance -aunque sea municipal- queda provincial:
-        # equivocarse para este lado cuesta un coordinador de mas, y para el
-        # otro, un administrador nacional que nadie decidio crear.
-        tiene_algun_alcance = perfil.territorial_scopes.exists()
-        perfil.datacalle_rol = "coordinador" if tiene_algun_alcance else "administrador"
+        rol = "coordinador" if _tiene_provincia_completa(perfil) else "administrador"
+        perfil.datacalle_rol = rol
         perfil.es_relevador_calle = True
         perfil.save(update_fields=["datacalle_rol", "es_relevador_calle"])
+
+
+def asignar_rol_a_relevadores_existentes(apps, schema_editor):
+    """Los relevadores que ya existen tienen el flag pero todavia no el rol.
+
+    Sin esto quedan con ``es_relevador_calle=True`` y ``datacalle_rol=""``, que
+    con la semantica nueva no es "relevador" sino "nadie": pierden el acceso a
+    la app, dejan de ser ``es_solo_app`` (o sea que ganan el backoffice),
+    desaparecen del selector de equipo -que filtra por
+    ``datacalle_rol="entrevistador"``- y bloquean la edicion de cualquier
+    operativo que los tenga en el equipo.
+
+    Se excluye a los del grupo ``Coordinador DataCalle``: esos ya los clasifico
+    la funcion de arriba. Idempotente: solo toca los que tienen el rol vacio.
+    """
+    Group = apps.get_model("auth", "Group")
+    Profile = apps.get_model("users", "Profile")
+
+    perfiles = Profile.objects.filter(es_relevador_calle=True, datacalle_rol="")
+    grupo = Group.objects.filter(name="Coordinador DataCalle").first()
+    if grupo is not None:
+        perfiles = perfiles.exclude(user__groups=grupo)
+    perfiles.update(datacalle_rol="entrevistador")
 
 
 class Migration(migrations.Migration):
@@ -63,6 +103,11 @@ class Migration(migrations.Migration):
             # posterior, asi que revertir borraria roles que nadie pidio borrar.
             # El forward es idempotente (saltea los perfiles que ya tienen rol),
             # asi que volver a aplicar despues de un rollback sigue andando.
+            migrations.RunPython.noop,
+        ),
+        migrations.RunPython(
+            asignar_rol_a_relevadores_existentes,
+            # Misma razon que arriba para no revertir datos.
             migrations.RunPython.noop,
         ),
     ]

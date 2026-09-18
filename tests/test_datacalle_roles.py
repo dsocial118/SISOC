@@ -792,3 +792,95 @@ def test_el_rol_del_perfil_llega_a_la_api_sin_el_flag(provincia):
 
     assert datos["profile"]["es_relevador_calle"] is False
     assert datos["profile"]["datacalle_rol"] == "coordinador"
+
+
+@pytest.mark.django_db
+def test_la_migracion_0053_clasifica_con_el_predicado_de_los_servicios(provincia):
+    """E: la migración usaba ``territorial_scopes.exists()``.
+
+    Los lectores en runtime usan ``get_full_province_scope_ids``, que además
+    exige ``es_usuario_provincial=True`` y provincia **completa**. Un perfil
+    con scopes pero sin el flag quedaba marcado ``coordinador`` y en la
+    práctica era un administrador nacional.
+    """
+    import importlib
+
+    from django.apps import apps as global_apps
+    from django.contrib.auth.models import Group
+
+    from core.models import Municipio
+
+    migracion = importlib.import_module("users.migrations.0053_datacalle_tres_roles")
+    grupo, _ = Group.objects.get_or_create(name="Coordinador DataCalle")
+
+    def _con_grupo(username):
+        user = get_user_model().objects.create_user(
+            username=username, email=f"{username}@example.com", password="Sisoc12345!"
+        )
+        user.groups.add(grupo)
+        return user
+
+    # Scopes pero sin el flag: los servicios lo leen como nacional.
+    sin_flag = _con_grupo("mig_sin_flag")
+    sin_flag.profile.territorial_scopes.create(provincia=provincia)
+    # Provincial con provincia completa: coordinador de verdad.
+    completo = _con_grupo("mig_completo")
+    completo.profile.es_usuario_provincial = True
+    completo.profile.save()
+    completo.profile.territorial_scopes.create(provincia=provincia)
+    # Provincial pero sólo con alcance municipal: get_full_province_scope_ids
+    # devuelve [], así que en runtime tampoco tiene provincia.
+    municipal = _con_grupo("mig_municipal")
+    municipal.profile.es_usuario_provincial = True
+    municipal.profile.save()
+    municipio = Municipio.objects.create(nombre="Capital", provincia=provincia)
+    municipal.profile.territorial_scopes.create(
+        provincia=provincia, municipio=municipio
+    )
+
+    migracion.asignar_rol_a_coordinadores_existentes(global_apps, None)
+
+    for user, esperado in (
+        (sin_flag, "administrador"),
+        (completo, "coordinador"),
+        (municipal, "administrador"),
+    ):
+        user.profile.refresh_from_db()
+        assert user.profile.datacalle_rol == esperado, user.username
+
+
+@pytest.mark.django_db
+def test_la_migracion_0053_tambien_migra_a_los_relevadores(provincia):
+    """F: un perfil con el flag y sin rol perdía la app y ganaba el backoffice."""
+    import importlib
+
+    from django.apps import apps as global_apps
+    from django.contrib.auth.models import Group
+
+    migracion = importlib.import_module("users.migrations.0053_datacalle_tres_roles")
+    grupo, _ = Group.objects.get_or_create(name="Coordinador DataCalle")
+
+    relevador = get_user_model().objects.create_user(
+        username="mig_relevador", email="mr@example.com", password="Sisoc12345!"
+    )
+    relevador.profile.es_relevador_calle = True
+    relevador.profile.save()
+
+    coordinador = get_user_model().objects.create_user(
+        username="mig_coord_flag", email="mc@example.com", password="Sisoc12345!"
+    )
+    coordinador.groups.add(grupo)
+    coordinador.profile.es_relevador_calle = True
+    coordinador.profile.es_usuario_provincial = True
+    coordinador.profile.save()
+    coordinador.profile.territorial_scopes.create(provincia=provincia)
+
+    migracion.asignar_rol_a_coordinadores_existentes(global_apps, None)
+    migracion.asignar_rol_a_relevadores_existentes(global_apps, None)
+    # Idempotente: volver a correrla no pisa nada.
+    migracion.asignar_rol_a_relevadores_existentes(global_apps, None)
+
+    relevador.profile.refresh_from_db()
+    coordinador.profile.refresh_from_db()
+    assert relevador.profile.datacalle_rol == "entrevistador"
+    assert coordinador.profile.datacalle_rol == "coordinador"
