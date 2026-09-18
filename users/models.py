@@ -98,11 +98,15 @@ class Profile(models.Model):
     class DataCalleRol(models.TextChoices):
         """Roles del relevamiento de situacion de calle (SISOC - Mobile DataCalle).
 
-        Por ahora solo existe el entrevistador; coordinador y administrador se
-        agregaran cuando se definan sus reglas de alcance.
+        Jerarquia decreciente: administrador > coordinador > entrevistador.
+        Cada rol superior puede lo del inferior. Definidos en el documento
+        funcional del area del 2026-09-18; ver
+        docs/registro/decisiones/2026-09-18-datacalle-roles-y-permisos.md
         """
 
-        ENTREVISTADOR = "entrevistador", "Entrevistador"
+        ADMINISTRADOR = "administrador", "Administrador Nacional"
+        COORDINADOR = "coordinador", "Coordinador Provincial"
+        ENTREVISTADOR = "entrevistador", "Relevador"
 
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     dni = models.CharField(max_length=16, blank=True)
