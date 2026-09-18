@@ -31,7 +31,19 @@ segundo bloque de QA (`2026-09-17-datacalle-qa-segundo-bloque.md`).
   validada en formulario y servicio.
 - **Sólo el administrador crea coordinadores y elige provincia (RN02).** La
   regla se aplica en servidor —formulario y servicio de guardado—, no sólo
-  ocultando el selector en la plantilla (RN08).
+  ocultando el selector en la plantilla (RN08). El selector de rol siempre
+  incluye el rol que el perfil editado **ya tiene**, para que reenviarlo sin
+  cambios no sea una escalada; y la validación RN08 rechaza sólo cuando el rol
+  *cambia* a uno que el actor no puede asignar.
+- **El formulario arma el alcance a partir del rol (D1).** Al guardar un
+  usuario con rol `coordinador`, el sistema fuerza `es_usuario_provincial` y
+  crea el `ProfileTerritorialScope` de provincia completa de la provincia
+  elegida; con rol `administrador` no escribe alcance alguno (nacional);
+  `RelevadorCalleProvincia` se escribe sólo para el `entrevistador`. En ambos
+  casos el sistema asigna además el grupo Django que corresponde al rol.
+- **Nadie provincial puede cambiar su propia provincia (RN02).** En la
+  autoedición, `territorial_scopes` y `es_usuario_provincial` llegan
+  `disabled`, así que Django ignora lo que llegue por POST.
 - **Nuevo grupo `Administrador DataCalle` en la semilla**, con el mismo
   conjunto de permisos de datacalle y auth que el coordinador; el alcance
   nacional surge de no tener `territorial_scopes`, no de un permiso especial.
@@ -40,7 +52,9 @@ segundo bloque de QA (`2026-09-17-datacalle-qa-segundo-bloque.md`).
 - **`/api/users/me/` deja de mentir al coordinador y al administrador.** Antes
   devolvía una lista de provincias vacía para ambos roles aunque sí tuvieran
   alcance; ahora refleja la provincia real del coordinador y la ausencia de
-  recorte territorial del administrador.
+  recorte territorial del administrador. El rol que expone sale de
+  `get_datacalle_rol`: ya no queda gateado detrás de `es_relevador_calle`, que
+  con la semántica nueva no decide nada.
 
 ## Decisiones
 
@@ -77,12 +91,29 @@ segundo bloque de QA (`2026-09-17-datacalle-qa-segundo-bloque.md`).
    borrar. El forward es idempotente, así que puede correrse más de una vez
    sin efecto adicional.
 
-5. **La clasificación de la migración usa mínimo privilegio.** Sólo un usuario
-   sin ningún alcance territorial queda como administrador nacional
-   (alcance total); cualquier alcance existente, aunque sea sólo municipal,
-   lo deja como coordinador. Ante la duda, se asigna el rol más acotado.
+5. **La clasificación de la migración usa el mismo predicado que los
+   lectores.** La primera versión miraba `territorial_scopes.exists()` y
+   buscaba mínimo privilegio: cualquier alcance, aunque fuera municipal,
+   dejaba al usuario como coordinador. El problema es que los lectores en
+   runtime usan `get_full_province_scope_ids`, que además exige
+   `es_usuario_provincial=True` y alcance de provincia **completa**: un perfil
+   con scopes pero sin ese flag quedaba marcado `coordinador` mientras el
+   backoffice lo trataba como nacional y le mostraba el país entero. La
+   migración replica ahora ese predicado exacto —incluido el fallback legacy a
+   `Profile.provincia`— sin importar código de la app, como corresponde en una
+   migración. Queda como administrador quien en runtime no tiene provincia
+   efectiva, que es lo que el sistema ya hacía de hecho.
 
-6. **La auditoría de casos excluye todo lo que identifica o ubica a la
+6. **La migración `0053` también migra a los relevadores.** Un perfil con
+   `es_relevador_calle=True` y `datacalle_rol=""` no es "relevador" con la
+   semántica nueva sino "nadie": pierde el acceso a la app, deja de ser
+   `es_solo_app` (o sea que gana el backoffice), desaparece del selector de
+   equipo —que filtra por `datacalle_rol="entrevistador"`— y bloquea la
+   edición de cualquier operativo que lo tenga en el equipo. El backfill les
+   asigna `entrevistador` salvo que estén en el grupo `Coordinador DataCalle`,
+   que ya clasificó el paso anterior. Es idempotente como el resto de `0053`.
+
+7. **La auditoría de casos excluye todo lo que identifica o ubica a la
    persona:** `respuestas`, `lat`, `lon`, `codigo_entrevistado`,
    `persona_entrevistada` y `es_menor_de_edad` quedan fuera del log. El log de
    auditoría es exportable y sobrevive al borrado del caso, así que copiar ahí
@@ -91,7 +122,7 @@ segundo bloque de QA (`2026-09-17-datacalle-qa-segundo-bloque.md`).
    sistema. Lo que sí queda —estado, operativo, origen, variante, grupo y
    timestamps— alcanza para lo que pide el punto 8.6 del documento funcional.
 
-7. **El mismo criterio se aplicó al operativo y a `object_repr`.** Excluir los
+8. **El mismo criterio se aplicó al operativo y a `object_repr`.** Excluir los
    campos del caso no alcanzaba, por dos puertas que quedaban abiertas. La
    primera: `Relevamiento` guarda en cada cierre `lat`, `lon`,
    `observacion_asentamiento` y `otra_observacion`, que describen la ubicación
@@ -116,11 +147,10 @@ segundo bloque de QA (`2026-09-17-datacalle-qa-segundo-bloque.md`).
    tanto excede esta rama. No hay pérdida de dato: la fila borrada conserva
    `deleted_by` y `deleted_at`.
 
-2. **`_roles_datacalle_para_el_actor` es fail-open cuando no hay actor:**
-   devuelve los tres roles en lugar de ninguno. Hoy no es alcanzable porque
-   las dos vistas que la usan siempre inyectan `actor=request.user`, pero un
-   script o management command futuro que arme el formulario sin actor
-   obtendría de entrada el permiso más amplio.
+~~2. `_roles_datacalle_para_el_actor` es fail-open cuando no hay actor.~~
+**Resuelto en la revisión final de la rama (2026-09-19):** sin actor ofrece
+sólo `entrevistador`. El superusuario y el administrador siguen viendo los
+tres roles.
 
 3. **La migración `0054` puede fallar en producción** si existe algún
    relevador con más de una provincia cargada. Falla temprano, antes de

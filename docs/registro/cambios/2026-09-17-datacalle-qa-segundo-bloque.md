@@ -50,11 +50,20 @@ SISOC sólo lo copia (ver `datacalle/instrumento/README.md`).
   intenta enfocar un `<select>` que `select2` mantiene escondido y aborta el
   submit sin mostrar nada. La validación puntual en el submit es más chica y no
   arrastra ese riesgo. El servidor sigue siendo la fuente de verdad.
-- **No se agregan coordinador ni administrador a `Profile.DataCalleRol`.** No
-  son roles de la app: el coordinador y el administrador son usuarios del
-  backoffice y salen del grupo `Coordinador DataCalle` y del alcance
-  territorial. Sumarlos al selector habría reforzado justo la confusión que
-  QA-0015 reporta. Lo que se cambió es que la pantalla lo explique.
+- **SUPERADA (2026-09-18).** ~~No se agregan coordinador ni administrador a
+  `Profile.DataCalleRol`.~~ El texto original se conserva abajo porque explica
+  por qué se decidió así en su momento, pero la decisión del 2026-09-18
+  (`docs/registro/decisiones/2026-09-18-datacalle-roles-y-permisos.md`, D1)
+  hace exactamente lo contrario: el documento funcional del área define los
+  tres roles como jerárquicos y con acceso a la app, así que `DataCalleRol`
+  pasa a tener los tres y `datacalle_rol` es la única fuente de verdad. El
+  grupo Django y el alcance territorial se derivan del rol, no al revés.
+
+  > No se agregan coordinador ni administrador a `Profile.DataCalleRol`. No
+  > son roles de la app: el coordinador y el administrador son usuarios del
+  > backoffice y salen del grupo `Coordinador DataCalle` y del alcance
+  > territorial. Sumarlos al selector habría reforzado justo la confusión que
+  > QA-0015 reporta. Lo que se cambió es que la pantalla lo explique.
 
 ## Pendiente
 
