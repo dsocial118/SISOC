@@ -852,3 +852,32 @@ def test_qa_0007_la_busqueda_no_duplica_por_el_join_del_equipo(client, provincia
     respuesta = client.get("/datacalle/relevamientos/?busqueda=Pérez")
 
     assert respuesta.content.decode().count("Operativo compartido") == 1
+
+
+@pytest.mark.django_db
+def test_qa_0042_el_listado_filtra_por_fase(client, provincias):
+    """QA-0042: el mismo filtro por tipo de operativo que tiene la app."""
+    cordoba, _ = provincias
+    _crear_relevamiento(cordoba, "Plaza del centro")
+    refugio = _crear_relevamiento(cordoba, "Refugio municipal")
+    refugio.fase = Relevamiento.Fase.DISPOSITIVO_ALOJAMIENTO
+    refugio.area_operativa = ""
+    refugio.save()
+    coordinador = _dar_permisos(_crear_coordinador(cordoba), ["view_relevamiento"])
+    client.force_login(coordinador)
+
+    publico = client.get(
+        "/datacalle/relevamientos/?fase=espacio_publico"
+    ).content.decode()
+    assert "Plaza del centro" in publico
+    assert "Refugio municipal" not in publico
+
+    dispositivo = client.get(
+        "/datacalle/relevamientos/?fase=dispositivo_alojamiento"
+    ).content.decode()
+    assert "Refugio municipal" in dispositivo
+    assert "Plaza del centro" not in dispositivo
+
+    # Un valor inventado no filtra nada ni rompe: se ignora.
+    todos = client.get("/datacalle/relevamientos/?fase=cualquiera").content.decode()
+    assert "Plaza del centro" in todos and "Refugio municipal" in todos

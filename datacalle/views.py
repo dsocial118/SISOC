@@ -53,6 +53,12 @@ class RelevamientoListView(RelevamientoScopeMixin, ListView):
         if estado in Relevamiento.Estado.values:
             queryset = queryset.filter(estado=estado)
 
+        # QA-0042: la app filtra por tipo de operativo; que las dos listas se
+        # lean igual le ahorra explicaciones al coordinador.
+        fase = (self.request.GET.get("fase") or "").strip()
+        if fase in Relevamiento.Fase.values:
+            queryset = queryset.filter(fase=fase)
+
         busqueda = (self.request.GET.get("busqueda") or "").strip()
         if busqueda:
             # QA-0007: con varios encuestadores y localidades en juego, buscar
@@ -81,6 +87,8 @@ class RelevamientoListView(RelevamientoScopeMixin, ListView):
         )
         context["estados"] = Relevamiento.Estado.choices
         context["estado_actual"] = self.request.GET.get("estado") or ""
+        context["fases"] = Relevamiento.Fase.choices
+        context["fase_actual"] = self.request.GET.get("fase") or ""
         context["busqueda_actual"] = self.request.GET.get("busqueda") or ""
         context["resumen"] = resumen_por_estado(self.request.user)
         return context

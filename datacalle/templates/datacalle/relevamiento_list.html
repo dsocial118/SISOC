@@ -39,19 +39,29 @@
 
         <form method="get" class="dc-filtros">
             <div class="row g-2">
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <input type="text"
                            name="busqueda"
                            value="{{ busqueda_actual }}"
                            class="form-control"
                            placeholder="Buscar por denominación, área, provincia, localidad, encuestador o DNI" />
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <select name="estado" class="form-select">
                         <option value="">Todos los estados</option>
                         {% for valor, etiqueta in estados %}
                             <option value="{{ valor }}"
                                     {% if valor == estado_actual %}selected{% endif %}>{{ etiqueta }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    {# QA-0042: mismo filtro que la app, para que las dos listas se lean igual. #}
+                    <select name="fase" class="form-select">
+                        <option value="">Ambos tipos de operativo</option>
+                        {% for valor, etiqueta in fases %}
+                            <option value="{{ valor }}"
+                                    {% if valor == fase_actual %}selected{% endif %}>{{ etiqueta }}</option>
                         {% endfor %}
                     </select>
                 </div>

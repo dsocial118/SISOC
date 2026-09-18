@@ -27,6 +27,10 @@ SISOC sólo lo copia (ver `datacalle/instrumento/README.md`).
   que la app publicó el 2026-09-16 (`Desktop/DataCalle-SISOC/contrato/`).
   `GET /api/datacalle/catalogos/` pasa a devolver `version: "2.1.0"`; la copia
   llevaba dos días vieja y la app comparaba contra ella.
+- **Instrumento 2.2.0 y QA-0042 (2026-09-18).** Nueva sincronización con la
+  tanda del 17/9 de la app. El listado de relevamientos suma el filtro por tipo
+  de operativo (espacio público / dispositivo), el mismo que tiene la app, a
+  pedido de DataCalle en el canal de coordinación.
 
 ## Decisiones
 
