@@ -17,10 +17,11 @@ from users.territorial_scope import get_full_province_scope_ids
 
 
 def is_relevador_calle_user(user) -> bool:
-    """Indica si el usuario es relevador de DataCalle (SISOC - Mobile).
+    """Indica si el usuario accede a DataCalle (SISOC - Mobile).
 
-    No depende de ``AccesoComedorPWA`` ni de ``es_usuario_provincial``: habilita
-    el login mobile del relevador de situacion de calle.
+    Pese al nombre, hoy lo llevan los tres roles (administrador, coordinador y
+    entrevistador): no depende de ``AccesoComedorPWA`` ni de
+    ``es_usuario_provincial``, habilita el login mobile.
     """
     if not user or not getattr(user, "is_authenticated", False):
         return False
@@ -29,7 +30,10 @@ def is_relevador_calle_user(user) -> bool:
 
 
 def get_relevador_calle_rol(user) -> str:
-    """Rol con el que el usuario opera en DataCalle (``""`` si no es relevador)."""
+    """Rol con el que el usuario opera en DataCalle (``""`` si no tiene ninguno).
+
+    Devuelve rol para los tres (administrador, coordinador y entrevistador).
+    """
     if not is_relevador_calle_user(user):
         return ""
     profile = get_profile_or_none(user)
@@ -73,8 +77,13 @@ def es_administrador_datacalle(user) -> bool:
 def es_coordinador_datacalle(user) -> bool:
     """Gestiona operativos: coordinador provincial **o** administrador.
 
-    La jerarquia es decreciente, asi que el superior incluye al inferior.
+    La jerarquia es decreciente, asi que el superior incluye al inferior. El
+    superusuario entra por arriba de todo: la version anterior de esta regla
+    preguntaba por un permiso, y Django se lo concede siempre, asi que sin este
+    bypass un superusuario sin grupo DataCalle perderia el cierre de operativos.
     """
+    if getattr(user, "is_superuser", False):
+        return True
     return get_datacalle_rol(user) in {"administrador", "coordinador"}
 
 
@@ -105,15 +114,25 @@ def get_datacalle_provincia_ids(user):
 
 
 def get_relevador_calle_provincias(user) -> list[dict]:
-    """Provincias de alcance del relevador como ``[{id, nombre}]`` (por nombre)."""
-    provincia_ids = get_relevador_calle_provincia_ids(user)
-    if not provincia_ids:
+    """Provincias de alcance del usuario en DataCalle, como ``[{id, nombre}]``.
+
+    Sale de ``get_datacalle_provincia_ids``, que sabe de donde leer segun el rol:
+    el entrevistador las tiene en ``relevador_calle_provincias`` y el coordinador
+    en ``territorial_scopes``. Para el administrador devuelve el pais entero en
+    vez de una lista vacia, que es lo que hacia antes y era falso.
+
+    La forma no cambia (contrato D1.2), asi que la app no se entera.
+    """
+    provincia_ids = get_datacalle_provincia_ids(user)
+    if provincia_ids is None:
+        queryset = Provincia.objects.all()
+    elif provincia_ids:
+        queryset = Provincia.objects.filter(id__in=provincia_ids)
+    else:
         return []
     return [
         {"id": provincia.id, "nombre": provincia.nombre}
-        for provincia in Provincia.objects.filter(id__in=provincia_ids).order_by(
-            "nombre"
-        )
+        for provincia in queryset.order_by("nombre")
     ]
 
 
@@ -150,9 +169,9 @@ def get_relevadores_administrables(actor):
     QA-0016 y QA-0018: el coordinador da de alta y de baja a los entrevistadores
     de su provincia, así que tiene que verlos en el listado de usuarios. La
     delegación genérica (``grupos_asignables``) no sirve acá: el entrevistador
-    no se marca con un grupo sino con un flag, así que delegar un grupo le
-    mostraría a todos los usuarios sin grupo del país. Esta regla es más
-    angosta: sólo relevadores de DataCalle de sus provincias.
+    no se marca con un grupo sino con ``datacalle_rol``, así que delegar un
+    grupo le mostraría a todos los usuarios sin grupo del país. Esta regla es
+    más angosta: sólo relevadores de DataCalle de sus provincias.
 
     El objetivo legítimo es un usuario *solo de la app*, que no entra al
     backoffice: ambos caminos de guardado fuerzan ``is_staff=False`` al marcar

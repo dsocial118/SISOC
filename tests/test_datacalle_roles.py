@@ -11,6 +11,7 @@ from users.services_datacalle import (
     es_solo_app,
     get_datacalle_provincia_ids,
     get_datacalle_rol,
+    get_relevador_calle_provincias,
     get_relevador_calle_users_for_provincia,
     tiene_acceso_datacalle,
 )
@@ -108,3 +109,27 @@ def test_el_equipo_del_operativo_solo_ofrece_relevadores(provincia):
     disponibles = get_relevador_calle_users_for_provincia(provincia.id)
 
     assert [u.username for u in disponibles] == [relevador.username]
+
+
+@pytest.mark.django_db
+def test_las_provincias_del_api_salen_de_donde_corresponde_segun_el_rol(provincia):
+    """QA D1.2 (/api/users/me/): el administrador no puede devolver ``[]``.
+
+    Dos provincias para que "todas" (administrador) se distinga de "una sola"
+    (coordinador y entrevistador, cada uno con su propio alcance).
+    """
+    otra_provincia = Provincia.objects.create(nombre="Salta")
+    admin = _usuario("admin_prov_api", "administrador", staff=True)
+    coord = _usuario("coord_prov_api", "coordinador", provincia, staff=True)
+    relevador = _usuario("relev_prov_api", "entrevistador", provincia)
+
+    assert get_relevador_calle_provincias(relevador) == [
+        {"id": provincia.id, "nombre": provincia.nombre}
+    ]
+    assert get_relevador_calle_provincias(coord) == [
+        {"id": provincia.id, "nombre": provincia.nombre}
+    ]
+    assert get_relevador_calle_provincias(admin) == [
+        {"id": provincia.id, "nombre": provincia.nombre},
+        {"id": otra_provincia.id, "nombre": otra_provincia.nombre},
+    ]

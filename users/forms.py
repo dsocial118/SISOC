@@ -25,7 +25,7 @@ from users.models import (
     TerritorialComedorProvincia,
 )
 from users.profile_utils import get_profile_or_none
-from users.services_datacalle import is_relevador_calle_user
+from users.services_datacalle import es_solo_app
 from users.services_delegation import effective_delegatable_groups_qs
 from users.services_pwa import (
     PWA_ASSIGNABLE_PERMISSION_CODES,
@@ -248,7 +248,9 @@ class BackofficeAuthenticationForm(AuthenticationForm):
                 "Este usuario solo puede ingresar desde la PWA.",
                 code="pwa_only",
             )
-        if is_relevador_calle_user(user):
+        # RN05: solo el relevador queda afuera. El coordinador y el
+        # administrador usan la app y tambien el backoffice.
+        if es_solo_app(user):
             raise forms.ValidationError(
                 "Este usuario solo puede ingresar desde SISOC - Mobile DataCalle.",
                 code="datacalle_only",
