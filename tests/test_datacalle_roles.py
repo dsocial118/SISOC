@@ -111,6 +111,24 @@ def test_el_equipo_del_operativo_solo_ofrece_relevadores(provincia):
     assert [u.username for u in disponibles] == [relevador.username]
 
 
+from users.forms import UserCreationForm
+
+
+@pytest.mark.django_db
+def test_el_coordinador_creado_conserva_el_acceso_al_backoffice(provincia):
+    """El flag ya no degrada a no-staff: eso vale solo para el relevador."""
+    from users.services_datacalle import es_solo_app
+
+    coord = _usuario("coord_staff", "coordinador", provincia, staff=True)
+    relevador = _usuario("relev_staff", "entrevistador", provincia)
+
+    assert es_solo_app(coord) is False
+    assert es_solo_app(relevador) is True
+    # El coordinador es de backoffice; el relevador no.
+    assert coord.is_staff is True
+    assert relevador.is_staff is False
+
+
 @pytest.mark.django_db
 def test_las_provincias_del_api_salen_de_donde_corresponde_segun_el_rol(provincia):
     """QA D1.2 (/api/users/me/): el administrador no puede devolver ``[]``.

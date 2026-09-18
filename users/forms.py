@@ -1264,7 +1264,10 @@ class UserCreationForm(
         user.set_password(self.cleaned_data["password"])
         self.generated_password = None
         self.password_was_auto_generated = False
-        if self.cleaned_data.get("es_relevador_calle", False):
+        # Solo el relevador es usuario sin backoffice (RN05). El coordinador y
+        # el administrador tambien llevan `es_relevador_calle` —les habilita la
+        # app— pero entran a SISOC.
+        if self.cleaned_data.get("datacalle_rol") == "entrevistador":
             user.is_staff = False
             return
         if self.cleaned_data.get("es_coordinador", False):
@@ -1526,7 +1529,7 @@ class CustomUserChangeForm(
             or is_pwa_read_only_coordinator
         ):
             user.is_staff = False
-        elif self.cleaned_data.get("es_relevador_calle", False):
+        elif self.cleaned_data.get("datacalle_rol") == "entrevistador":
             user.is_staff = False
         elif self.cleaned_data.get("es_coordinador", False):
             user.is_staff = True
