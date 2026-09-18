@@ -319,4 +319,52 @@ def test_las_modificaciones_del_operativo_quedan_registradas(provincia):
     entradas = LogEntry.objects.get_for_object(relevamiento)
 
     assert entradas.count() >= 2  # alta + modificacion
-    assert "denominacion" in entradas.first().changes
+    # No alcanza con que la clave este: si auditlog quedara mal cableado y
+    # registrara el campo con valores basura, `"denominacion" in changes`
+    # pasaria igual. `changes` tiene la forma {campo: [viejo, nuevo]}.
+    assert entradas.first().changes["denominacion"] == [
+        "Operativo auditado",
+        "Operativo auditado y renombrado",
+    ]
+
+
+@pytest.mark.django_db
+def test_el_contenido_de_las_respuestas_no_queda_en_el_log_de_auditoria(provincia):
+    """8.6 + privacidad: se audita que el caso cambio, no el instrumento.
+
+    `respuestas` guarda lo relevado a una persona en situacion de calle. El
+    log de auditoria es exportable (audittrail) y sobrevive al borrado del
+    caso, asi que copiar ese JSON ahi seria una fuga de datos sensibles.
+    """
+    import datetime
+
+    from auditlog.models import LogEntry
+
+    from datacalle.models import Encuesta, Relevamiento
+
+    relevamiento = Relevamiento.objects.create(
+        denominacion="Operativo con casos auditados",
+        provincia=provincia,
+        fase=Relevamiento.Fase.ESPACIO_PUBLICO,
+        area_operativa="Plaza",
+        fecha_inicio=datetime.date(2026, 9, 20),
+        fecha_fin=datetime.date(2026, 9, 21),
+    )
+    dato_sensible = "Juan Secreto Perez"
+    encuesta = Encuesta.objects.create(
+        relevamiento=relevamiento,
+        estado=Encuesta.Estado.COMPLETA,
+        respuestas={"nombre": dato_sensible},
+    )
+    encuesta.estado = Encuesta.Estado.RECHAZADA
+    encuesta.respuestas = {"nombre": dato_sensible, "edad": 40}
+    encuesta.save()
+
+    entradas = LogEntry.objects.get_for_object(encuesta)
+
+    assert entradas.count() >= 2  # alta + modificacion
+    for entrada in entradas:
+        assert "respuestas" not in entrada.changes
+        # Aserto sobre el contenido, no solo sobre la clave: aunque el campo
+        # se llamara distinto, el dato sensible no debe aparecer en el log.
+        assert dato_sensible not in str(entrada.changes)

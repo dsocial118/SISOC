@@ -119,6 +119,22 @@ def get_tracked_model_definitions():
             label="Ronda de encuesta",
             model_getter=_model_getter("encuestas.models.RondaEncuesta"),
         ),
+        TrackedModelDefinition(
+            label="Relevamiento DataCalle",
+            model_getter=_model_getter("datacalle.models.Relevamiento"),
+        ),
+        TrackedModelDefinition(
+            label="Caso DataCalle",
+            model_getter=_model_getter("datacalle.models.Encuesta"),
+            # `respuestas` guarda el instrumento completo relevado a una
+            # persona en situación de calle. El log de auditoría es
+            # exportable (audittrail/views.py) y sobrevive al borrado del
+            # caso, así que copiar ese JSON ahí sería una fuga de datos
+            # sensibles que ni siquiera el soft delete del caso podría
+            # tapar. Lo que 8.6 pide auditar es que el caso cambió y quién
+            # lo cambió, no el contenido de las respuestas.
+            excluded_fields=("respuestas",),
+        ),
     )
 
 
