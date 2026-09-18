@@ -25,7 +25,7 @@ from users.models import (
     TerritorialComedorProvincia,
 )
 from users.profile_utils import get_profile_or_none
-from users.services_datacalle import es_solo_app
+from users.services_datacalle import es_administrador_datacalle, es_solo_app
 from users.services_delegation import effective_delegatable_groups_qs
 from users.services_pwa import (
     PWA_ASSIGNABLE_PERMISSION_CODES,
@@ -982,22 +982,21 @@ class RelevadorCalleFormMixin:
             help_text=(
                 "Marca al entrevistador, que trabaja sólo en la app y no entra "
                 "al backoffice. Para dar de alta a un coordinador o a un "
-                "administrador de DataCalle no se usa esta casilla: se le "
-                "asigna el grupo 'Coordinador DataCalle'."
+                "administrador de DataCalle no se usa esta casilla: se les "
+                "asigna el grupo 'Coordinador DataCalle' o 'Administrador "
+                "DataCalle', según corresponda."
             ),
         )
         self.fields["datacalle_rol"] = forms.ChoiceField(
-            choices=[("", "---------")] + list(Profile.DataCalleRol.choices),
+            choices=[("", "---------")] + self._roles_datacalle_para_el_actor(),
             required=False,
             widget=forms.Select(attrs={"class": "select2"}),
             label="Rol en DataCalle",
             help_text=(
-                "Rol con el que opera dentro de la app: hoy sólo entrevistador, "
-                "que releva en campo. Coordinador (planifica los operativos de "
-                "su provincia) y administrador (ve todo el país) son roles del "
-                "backoffice y se otorgan por grupo y alcance territorial, no "
-                "acá. No se mezcla con 'Tipo de usuario', que clasifica al "
-                "usuario dentro de SISOC."
+                "Administrador Nacional (todo el país), Coordinador Provincial "
+                "(su provincia, entra al backoffice y a la app) o Relevador "
+                "(sólo la app). Crear coordinadores y elegir provincia es "
+                "exclusivo del Administrador Nacional."
             ),
         )
         self.fields["provincias_datacalle"] = forms.ModelMultipleChoiceField(
@@ -1008,6 +1007,23 @@ class RelevadorCalleFormMixin:
             help_text="Provincias que releva este usuario en DataCalle.",
         )
         self._acotar_provincias_datacalle_al_actor()
+
+    def _roles_datacalle_para_el_actor(self):
+        """RN02: solo el Administrador Nacional crea roles superiores.
+
+        Un coordinador da de alta relevadores de su provincia y nada mas.
+        """
+        actor = getattr(self, "actor", None)
+        todos = list(Profile.DataCalleRol.choices)
+        if actor is None or getattr(actor, "is_superuser", False):
+            return todos
+        if es_administrador_datacalle(actor):
+            return todos
+        return [
+            (codigo, etiqueta)
+            for codigo, etiqueta in todos
+            if codigo == Profile.DataCalleRol.ENTREVISTADOR
+        ]
 
     def _acotar_provincias_datacalle_al_actor(self):
         """QA-0016: la provincia del entrevistador sale del coordinador.
@@ -1095,6 +1111,15 @@ class RelevadorCalleFormMixin:
             self.add_error(
                 "provincias_datacalle",
                 "Un usuario de DataCalle pertenece a una sola provincia.",
+            )
+
+        # RN08: no alcanza con no ofrecer la opcion en el selector.
+        rol = cleaned.get("datacalle_rol")
+        permitidos = {codigo for codigo, _ in self._roles_datacalle_para_el_actor()}
+        if rol and rol not in permitidos:
+            self.add_error(
+                "datacalle_rol",
+                "No tenes permiso para asignar ese rol de DataCalle.",
             )
         return cleaned
 

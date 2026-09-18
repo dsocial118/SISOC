@@ -337,3 +337,58 @@ def test_qa_0015_el_alta_explica_donde_se_define_cada_rol():
         "coordinador",
         "entrevistador",
     ]
+
+
+@pytest.mark.django_db
+def test_rn02_el_coordinador_solo_puede_crear_relevadores(provincia):
+    """RN02: crear coordinadores es exclusivo del Administrador Nacional."""
+    from users.forms import UserCreationForm
+
+    actor = _coordinador_datacalle(provincia, "coord_rn02")
+    actor.profile.datacalle_rol = "coordinador"
+    actor.profile.save()
+
+    form = UserCreationForm(actor=actor)
+    ofrecidos = [codigo for codigo, _ in form.fields["datacalle_rol"].choices if codigo]
+
+    assert ofrecidos == ["entrevistador"]
+
+
+@pytest.mark.django_db
+def test_rn02_el_coordinador_no_puede_forzar_el_rol_por_post(provincia):
+    """RN08: no alcanza con no mostrar la opcion; el servidor la rechaza."""
+    from users.forms import UserCreationForm
+
+    actor = _coordinador_datacalle(provincia, "coord_post")
+    actor.profile.datacalle_rol = "coordinador"
+    actor.profile.save()
+
+    form = UserCreationForm(
+        data={
+            "username": "colado",
+            "email": "colado@example.com",
+            "password": "Sisoc12345!",
+            "es_relevador_calle": True,
+            "datacalle_rol": "coordinador",
+            "provincias_datacalle": [provincia.id],
+        },
+        actor=actor,
+    )
+
+    assert form.is_valid() is False
+    assert "datacalle_rol" in form.errors
+
+
+@pytest.mark.django_db
+def test_rn02_el_administrador_si_puede_crear_coordinadores(provincia):
+    from users.forms import UserCreationForm
+
+    actor = _coordinador_datacalle(provincia, "admin_rn02")
+    actor.profile.datacalle_rol = "administrador"
+    actor.profile.territorial_scopes.all().delete()
+    actor.profile.save()
+
+    form = UserCreationForm(actor=actor)
+    ofrecidos = [codigo for codigo, _ in form.fields["datacalle_rol"].choices if codigo]
+
+    assert ofrecidos == ["administrador", "coordinador", "entrevistador"]
