@@ -1008,21 +1008,39 @@ class RelevadorCalleFormMixin:
         )
         self._acotar_provincias_datacalle_al_actor()
 
+    def _rol_datacalle_actual(self) -> str:
+        """Rol que el perfil editado ya tiene (``""`` en un alta)."""
+        instance = getattr(self, "instance", None)
+        if instance is None or not getattr(instance, "pk", None):
+            return ""
+        profile = get_profile_or_none(instance)
+        return getattr(profile, "datacalle_rol", "") or ""
+
     def _roles_datacalle_para_el_actor(self):
         """RN02: solo el Administrador Nacional crea roles superiores.
 
         Un coordinador da de alta relevadores de su provincia y nada mas.
+
+        Dos matices que costaron caro:
+
+        - El rol que el perfil **ya tiene** siempre viaja en las choices. Si no,
+          el ``<select>`` no contiene el valor actual, el browser postea ``""``
+          y el formulario se rechaza con "Seleccione una opción válida": un
+          coordinador no podía ni corregirse el mail, y la única opción que la
+          pantalla le ofrecía ("Relevador") lo degradaba a no-staff y lo dejaba
+          fuera de SISOC sin vuelta atrás.
+        - Sin actor es **fail-closed**. Antes devolvía los tres roles, de modo
+          que cualquier camino que instanciara el formulario sin actor podía
+          asignar el rol más alto. El superusuario y el administrador siguen
+          viendo los tres.
         """
         actor = getattr(self, "actor", None)
         todos = list(Profile.DataCalleRol.choices)
-        if actor is None or getattr(actor, "is_superuser", False):
+        if getattr(actor, "is_superuser", False) or es_administrador_datacalle(actor):
             return todos
-        if es_administrador_datacalle(actor):
-            return todos
+        permitidos = {Profile.DataCalleRol.ENTREVISTADOR, self._rol_datacalle_actual()}
         return [
-            (codigo, etiqueta)
-            for codigo, etiqueta in todos
-            if codigo == Profile.DataCalleRol.ENTREVISTADOR
+            (codigo, etiqueta) for codigo, etiqueta in todos if codigo in permitidos
         ]
 
     def _acotar_provincias_datacalle_al_actor(self):
@@ -1096,7 +1114,8 @@ class RelevadorCalleFormMixin:
                 "a la vez.",
             )
 
-        if not cleaned.get("datacalle_rol"):
+        rol = cleaned.get("datacalle_rol")
+        if not rol:
             self.add_error(
                 "datacalle_rol",
                 "Seleccione el rol del relevador de DataCalle.",
@@ -1113,10 +1132,14 @@ class RelevadorCalleFormMixin:
                 "Un usuario de DataCalle pertenece a una sola provincia.",
             )
 
-        # RN08: no alcanza con no ofrecer la opcion en el selector.
-        rol = cleaned.get("datacalle_rol")
+        # RN08: no alcanza con no ofrecer la opcion en el selector. Se rechaza
+        # sólo cuando el rol *cambia* a uno que el actor no puede asignar:
+        # reenviar el rol que el perfil ya tenía no es una escalada, y tratarlo
+        # como tal dejaba a los coordinadores sin poder guardar su propio
+        # registro.
+        rol_actual = self._rol_datacalle_actual()
         permitidos = {codigo for codigo, _ in self._roles_datacalle_para_el_actor()}
-        if rol and rol not in permitidos:
+        if rol and rol != rol_actual and rol not in permitidos:
             self.add_error(
                 "datacalle_rol",
                 "No tenes permiso para asignar ese rol de DataCalle.",

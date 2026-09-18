@@ -517,3 +517,104 @@ def test_object_repr_de_una_encuesta_no_lleva_el_codigo_del_entrevistado(provinc
     assert entradas.count() >= 1
     for entrada in entradas:
         assert codigo_sensible not in entrada.object_repr
+
+
+# ---------------------------------------------------------------------------
+# Revisión final de la rama (2026-09-19): el rol de DataCalle y el alcance
+# territorial del backoffice eran dos mundos desconectados.
+# ---------------------------------------------------------------------------
+
+
+def _superusuario(username="super_fix"):
+    return get_user_model().objects.create_superuser(
+        username=username, email=f"{username}@example.com", password="Sisoc12345!"
+    )
+
+
+def _datos_edicion(user, **extra):
+    datos = {
+        "username": user.username,
+        "tipo_usuario": "interno",
+        "email": "",
+        "password": "",
+    }
+    datos.update(extra)
+    return datos
+
+
+def _crear_por_formulario(actor, username, rol, provincia=None, **extra):
+    """Alta por el formulario real: es el camino que dejaba el alcance roto."""
+    from users.forms import UserCreationForm
+
+    datos = {
+        "username": username,
+        "email": f"{username}@example.com",
+        "password": "Sisoc12345!",
+        "tipo_usuario": "interno",
+        "es_relevador_calle": "on",
+        "datacalle_rol": rol,
+    }
+    if provincia is not None:
+        datos["provincias_datacalle"] = [provincia.id]
+    datos.update(extra)
+    form = UserCreationForm(actor=actor, data=datos)
+    assert form.is_valid(), form.errors
+    return form.save()
+
+
+@pytest.mark.django_db
+def test_el_coordinador_puede_guardar_su_propio_registro(provincia):
+    """BLOQUEANTE: el rol propio tiene que estar en las choices del select.
+
+    ``initial`` decía "coordinador" pero las choices del actor no lo incluían,
+    así que el ``<select>`` no contenía el valor actual, el browser posteaba
+    ``""`` y el formulario se rechazaba con "Seleccione una opción válida". Un
+    coordinador no podía ni corregirse el mail, y lo único que la pantalla le
+    ofrecía era "Relevador", que lo degradaba a no-staff y lo expulsaba de
+    SISOC en el próximo login.
+    """
+    from users.forms import CustomUserChangeForm
+
+    coord = _usuario("coord_autoedita", "coordinador", provincia, staff=True)
+
+    form = CustomUserChangeForm(instance=coord, actor=coord)
+    ofrecidos = [codigo for codigo, _ in form.fields["datacalle_rol"].choices if codigo]
+    assert "coordinador" in ofrecidos
+
+    form = CustomUserChangeForm(
+        instance=coord,
+        actor=coord,
+        data=_datos_edicion(
+            coord,
+            first_name="Nombre Corregido",
+            es_relevador_calle="on",
+            datacalle_rol="coordinador",
+            provincias_datacalle=[provincia.id],
+        ),
+    )
+
+    assert form.is_valid(), form.errors
+    form.save()
+    coord.refresh_from_db()
+    coord.profile.refresh_from_db()
+    assert coord.first_name == "Nombre Corregido"
+    # No se autodegradó: sigue siendo coordinador y sigue entrando a SISOC.
+    assert coord.profile.datacalle_rol == "coordinador"
+    assert coord.is_staff is True
+
+
+@pytest.mark.django_db
+def test_sin_actor_el_selector_de_rol_es_fail_closed(provincia):
+    """Sin actor sólo se puede asignar "Relevador".
+
+    Antes devolvía los tres roles (fail-open), así que cualquier camino que
+    instanciara el formulario sin actor podía asignar el rol más alto.
+    """
+    from users.forms import UserCreationForm
+
+    form = UserCreationForm()
+    ofrecidos = [codigo for codigo, _ in form.fields["datacalle_rol"].choices if codigo]
+
+    assert ofrecidos == ["entrevistador"]
+
+
