@@ -323,6 +323,11 @@ def test_qa_0015_el_alta_explica_donde_se_define_cada_rol():
     assert "Coordinador DataCalle" in ayuda_flag
     assert "coordinador" in ayuda_rol.lower()
     assert "administrador" in ayuda_rol.lower()
-    # Y el rol de la app sigue teniendo una sola opción real: no se inventan
-    # coordinador ni administrador como roles de DataCalle.
-    assert [c[0] for c in form.fields["datacalle_rol"].choices] == ["", "entrevistador"]
+    # Los tres roles del documento funcional del 2026-09-18. La ayuda explica
+    # dónde se define cada uno, que es lo que QA-0015 no podía deducir.
+    assert [c[0] for c in form.fields["datacalle_rol"].choices] == [
+        "",
+        "administrador",
+        "coordinador",
+        "entrevistador",
+    ]
