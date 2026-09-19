@@ -1406,12 +1406,23 @@ class RelevadorCalleFormMixin:
         La ayuda del formulario promete que el sistema lo asigna solo; antes
         había que acordarse de tildar el grupo a mano y, si el operador no lo
         hacía, el coordinador entraba a SISOC sin permisos de DataCalle.
+
+        La automatización tiene que ser simétrica: sólo agregaba, así que
+        degradar un coordinador a relevador le dejaba puesto "Coordinador
+        DataCalle", y destildar el acceso a DataCalle lo dejaba con el grupo y
+        el rol vacío, o sea viendo y editando operativos en el backoffice sin
+        tener ningún rol. Se tocan únicamente los dos grupos de DataCalle: el
+        resto de los grupos los administra el operador.
         """
         grupos_por_rol = {
             Profile.DataCalleRol.COORDINADOR: "Coordinador DataCalle",
             Profile.DataCalleRol.ADMINISTRADOR: "Administrador DataCalle",
         }
         nombre = grupos_por_rol.get(self.cleaned_data.get("datacalle_rol"))
+        sobrantes = [valor for valor in grupos_por_rol.values() if valor != nombre]
+        a_quitar = Group.objects.filter(name__in=sobrantes)
+        if a_quitar:
+            user.groups.remove(*a_quitar)
         if not nombre:
             return
         grupo = Group.objects.filter(name=nombre).first()

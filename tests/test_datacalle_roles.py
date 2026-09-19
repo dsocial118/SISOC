@@ -1028,3 +1028,61 @@ def test_el_alta_sin_alcance_previo_si_deriva_la_provincia(provincia):
     assert list(perfil.territorial_scopes.values_list("provincia_id", flat=True)) == [
         provincia.id
     ]
+
+
+@pytest.mark.django_db
+def test_bajar_de_coordinador_a_relevador_saca_el_grupo_de_coordinador(provincia):
+    """``_sync_grupo_datacalle`` sólo agregaba: el grupo viejo sobrevivía al
+    cambio de rol y el degradado seguía con permisos de coordinador."""
+    from django.contrib.auth.models import Group
+
+    from users.forms import CustomUserChangeForm
+
+    grupo, _ = Group.objects.get_or_create(name="Coordinador DataCalle")
+    coord = _usuario("baja_a_relevador", "coordinador", provincia, staff=True)
+    coord.groups.add(grupo)
+
+    form = CustomUserChangeForm(
+        instance=coord,
+        actor=_superusuario("super_degrada"),
+        data=_datos_edicion(
+            coord,
+            es_relevador_calle="on",
+            datacalle_rol="entrevistador",
+            provincias_datacalle=[provincia.id],
+        ),
+    )
+
+    assert form.is_valid(), form.errors
+    form.save()
+    coord.refresh_from_db()
+    assert coord.groups.filter(name="Coordinador DataCalle").exists() is False
+    assert coord.profile.datacalle_rol == "entrevistador"
+
+
+@pytest.mark.django_db
+def test_destildar_datacalle_deja_el_perfil_sin_grupo_ni_rol(provincia):
+    """Sin rol pero con grupo, el usuario seguía viendo y editando operativos
+    en el backoffice."""
+    from django.contrib.auth.models import Group
+
+    from users.forms import CustomUserChangeForm
+
+    grupo, _ = Group.objects.get_or_create(name="Coordinador DataCalle")
+    coord = _usuario("pierde_datacalle", "coordinador", provincia, staff=True)
+    coord.groups.add(grupo)
+
+    form = CustomUserChangeForm(
+        instance=coord,
+        actor=_superusuario("super_destilda"),
+        data=_datos_edicion(coord),
+    )
+
+    assert form.is_valid(), form.errors
+    form.save()
+    coord.refresh_from_db()
+    coord.profile.refresh_from_db()
+    assert coord.groups.filter(name="Coordinador DataCalle").exists() is False
+    assert coord.profile.datacalle_rol == ""
+    assert coord.profile.es_relevador_calle is False
+    assert coord.profile.relevador_calle_provincias.exists() is False
