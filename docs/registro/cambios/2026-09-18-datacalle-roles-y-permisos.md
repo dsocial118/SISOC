@@ -41,6 +41,33 @@ segundo bloque de QA (`2026-09-17-datacalle-qa-segundo-bloque.md`).
   elegida; con rol `administrador` no escribe alcance alguno (nacional);
   `RelevadorCalleProvincia` se escribe sólo para el `entrevistador`. En ambos
   casos el sistema asigna además el grupo Django que corresponde al rol.
+- **Convertir en usuario de DataCalle a alguien que ya tiene alcance
+  territorial cargado se rechaza en pantalla (2026-09-19).**
+  `es_usuario_provincial` y `ProfileTerritorialScope` son el panel territorial
+  genérico del backoffice, compartido con comedores, admisiones y SIMEPI. La
+  derivación del punto anterior los reescribe, así que asignar un rol de
+  DataCalle a un usuario que ya tenía alcance propio le cambiaba el acceso en
+  esos módulos sin avisar. Ahora el formulario no guarda: muestra un error en
+  el selector de rol que dice cuántas provincias tiene hoy, qué le pasaría y
+  que hay que resolver ese alcance antes. Los casos son:
+  - rol `coordinador` con una sola provincia completa, la misma que la elegida
+    en DataCalle: **sin conflicto**, se deriva como hasta ahora (es el
+    coordinador que se reedita);
+  - rol `coordinador` con dos o más provincias, o con una distinta a la
+    elegida: **se rechaza** (perdería el acceso a las demás);
+  - rol `coordinador` con alcance sólo municipal: **se rechaza** (derivarlo a
+    provincia completa se lo ensancharía);
+  - rol `administrador` con cualquier alcance cargado: **se rechaza** (quitarle
+    el alcance lo dejaría irrestricto en todo el backoffice, no sólo en
+    DataCalle);
+  - usuario sin alcance cargado: **sin conflicto**, se deriva. Es el caso común
+    del alta.
+- **El grupo de DataCalle se sincroniza en los dos sentidos (2026-09-19).** La
+  automatización sólo agregaba el grupo del rol: bajar a un coordinador a
+  relevador le dejaba puesto `Coordinador DataCalle`, y destildar el acceso a
+  DataCalle lo dejaba con el grupo y sin rol, o sea viendo y editando
+  operativos en el backoffice. Ahora también se quita el grupo de DataCalle que
+  no corresponde al rol actual. No se tocan otros grupos.
 - **Nadie provincial puede cambiar su propia provincia (RN02).** En la
   autoedición, `territorial_scopes` y `es_usuario_provincial` llegan
   `disabled`, así que Django ignora lo que llegue por POST.
@@ -91,18 +118,23 @@ segundo bloque de QA (`2026-09-17-datacalle-qa-segundo-bloque.md`).
    borrar. El forward es idempotente, así que puede correrse más de una vez
    sin efecto adicional.
 
-5. **La clasificación de la migración usa el mismo predicado que los
-   lectores.** La primera versión miraba `territorial_scopes.exists()` y
-   buscaba mínimo privilegio: cualquier alcance, aunque fuera municipal,
-   dejaba al usuario como coordinador. El problema es que los lectores en
-   runtime usan `get_full_province_scope_ids`, que además exige
-   `es_usuario_provincial=True` y alcance de provincia **completa**: un perfil
-   con scopes pero sin ese flag quedaba marcado `coordinador` mientras el
-   backoffice lo trataba como nacional y le mostraba el país entero. La
-   migración replica ahora ese predicado exacto —incluido el fallback legacy a
-   `Profile.provincia`— sin importar código de la app, como corresponde en una
-   migración. Queda como administrador quien en runtime no tiene provincia
-   efectiva, que es lo que el sistema ya hacía de hecho.
+5. **La clasificación de la migración pregunta por la restricción
+   territorial, no por la forma del alcance.** Pasó por tres versiones. La
+   primera miraba `territorial_scopes.exists()`: un perfil con scopes pero sin
+   `es_usuario_provincial` quedaba `coordinador` mientras los lectores en
+   runtime lo trataban como nacional. La segunda replicó
+   `get_full_province_scope_ids`, el predicado de los lectores, y arregló ese
+   caso pero introdujo otro peor: ese predicado devuelve `False` tanto para
+   quien no tiene la restricción activa —hoy irrestricto en el backoffice—
+   como para quien la tiene con alcance **sólo municipal**, que hoy no ve nada
+   (`apply_relevamientos_scope` le devuelve `.none()`). Al segundo lo ascendía
+   a Administrador Nacional, o sea le regalaba el país entero en la app y el
+   cierre de cualquier operativo. La versión actual separa los dos casos:
+   `administrador` sólo para quien **no** tiene `es_usuario_provincial`;
+   cualquier perfil con la restricción activa queda `coordinador`, tenga
+   provincia completa o un único municipio. Para decidir un rol, "sin
+   restricción" y "restricción municipal" no son lo mismo, y el predicado de
+   alcance efectivo no los distingue.
 
 6. **La migración `0053` también migra a los relevadores.** Un perfil con
    `es_relevador_calle=True` y `datacalle_rol=""` no es "relevador" con la
@@ -138,6 +170,21 @@ segundo bloque de QA (`2026-09-17-datacalle-qa-segundo-bloque.md`).
    devolver sólo el id; las dos pantallas que mostraban el código lo piden
    ahora de forma explícita, así que la UI no cambia.
 
+9. **Ante un alcance territorial preexistente se rechaza, no se pisa.** La
+   alternativa era derivar igual y avisar, o fusionar el alcance del rol con el
+   que el usuario ya tenía. Las dos dejan al operador que asigna un rol de
+   DataCalle decidiendo —sin saberlo— el acceso de ese usuario a comedores,
+   admisiones y SIMEPI. Rechazar cuesta un guardado más (resolver el alcance
+   aparte, a la vista) y no puede producir una ampliación ni una baja de
+   acceso silenciosa en módulos ajenos.
+
+10. **La validación de SIMEPI - EGP pasó a correr al final del `clean()`.**
+    Corría antes que la de DataCalle, así que miraba los scopes del panel y no
+    los que el rol deriva: a un coordinador nuevo con el grupo SIMEPI le
+    reclamaba una provincia completa que la derivación iba a darle en el mismo
+    guardado. Con el orden nuevo valida el alcance efectivo, que es el que se
+    guarda.
+
 ## Pendiente
 
 1. **El borrado lógico no queda auditado.** `SoftDeleteModelMixin` hace el
@@ -156,6 +203,15 @@ tres roles.
    relevador con más de una provincia cargada. Falla temprano, antes de
    aplicar la constraint, y nombra los perfiles en conflicto en el mensaje de
    error; hay que resolverlos a mano antes de desplegar.
+
+4. **En un entorno donde `0053` ya se aplicó, la reclasificación no vuelve a
+   correr.** El forward es idempotente por diseño: saltea los perfiles que ya
+   tienen rol. Un perfil provincial con alcance municipal que la versión
+   anterior de la migración dejó como `administrador` sigue así hasta que
+   alguien le vacíe el rol o se lo corrija a mano. En la base local hay un
+   perfil en esa situación (`coord.nacional`, provincial y sin ningún scope
+   cargado); en producción, donde la rama todavía no se desplegó, la migración
+   corre por primera vez con el criterio corregido.
 
 La reapertura de operativos (punto 8.3 del documento funcional) no se
 implementó: el propio documento la deja "a definir".
