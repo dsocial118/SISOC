@@ -1,7 +1,8 @@
 """API que consume la app DataCalle (contrato D2.5).
 
 El alcance lo resuelve el servidor: la app no manda filtros de usuario ni de
-provincia. Un entrevistador sólo ve los relevamientos donde está en el equipo.
+provincia. El entrevistador sólo ve los relevamientos donde está en el
+equipo; el coordinador y el administrador ven más (ver ``mis_relevamientos``).
 """
 
 import logging
@@ -13,7 +14,7 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from datacalle.api_permissions import EsRelevadorCalle
+from datacalle.api_permissions import TieneAccesoDataCalle
 from datacalle.api_serializers import (
     CierreRelevamientoSerializer,
     EncuestaSerializer,
@@ -31,6 +32,10 @@ from datacalle.services import (
     get_encuestas_queryset,
     get_relevamientos_queryset,
     upsert_encuesta,
+)
+from users.services_datacalle import (
+    es_coordinador_datacalle,
+    get_datacalle_provincia_ids,
 )
 
 logger = logging.getLogger("django")
@@ -50,11 +55,33 @@ ERROR_NO_INICIADO = {
     "codigo": "relevamiento_no_iniciado",
     "reintentable": True,
 }
+# QA-0020: el cierre alcanza a todo el equipo, así que no es del relevador en
+# campo sino del coordinador desde el backoffice. No es reintentable: la app
+# no destraba esto esperando, tiene que dejar de ofrecer la acción.
+ERROR_CIERRE_NO_AUTORIZADO = {
+    "detail": "Sólo el coordinador cierra el relevamiento, desde SISOC.",
+    "codigo": "cierre_no_autorizado",
+    "reintentable": False,
+}
 
 
 def mis_relevamientos(user):
-    """Relevamientos donde el usuario está en el equipo (D2.2)."""
-    return get_relevamientos_queryset().filter(equipo=user).distinct()
+    """Operativos que el usuario ve en la app, segun su rol (D2.2).
+
+    La jerarquia es decreciente: el entrevistador ve los suyos, el coordinador
+    todos los de su provincia —asi puede relevar sin estar en el equipo— y el
+    administrador todos.
+    """
+    queryset = get_relevamientos_queryset()
+    if not es_coordinador_datacalle(user):
+        return queryset.filter(equipo=user).distinct()
+
+    provincia_ids = get_datacalle_provincia_ids(user)
+    if provincia_ids is None:
+        return queryset.distinct()
+    if not provincia_ids:
+        return queryset.none()
+    return queryset.filter(provincia_id__in=provincia_ids).distinct()
 
 
 @extend_schema(tags=["DataCalle"])
@@ -62,7 +89,7 @@ class RelevamientoViewSet(viewsets.ReadOnlyModelViewSet):
     """Mis tareas: sólo lectura, más el cierre en campo."""
 
     authentication_classes = [TokenAuthentication]
-    permission_classes = [EsRelevadorCalle]
+    permission_classes = [TieneAccesoDataCalle]
     serializer_class = RelevamientoTareaSerializer
 
     def get_queryset(self):
@@ -90,7 +117,22 @@ class RelevamientoViewSet(viewsets.ReadOnlyModelViewSet):
     @extend_schema(request=CierreRelevamientoSerializer)
     @action(detail=True, methods=["post"], url_path="cerrar")
     def cerrar(self, request, pk=None):
-        """Cierre desde la app. Idempotente: cerrar dos veces no es error."""
+        """Cierre del operativo. Idempotente: cerrar dos veces no es error.
+
+        QA-0020: queda reservado al coordinador. El relevador comparte el
+        operativo con el resto del equipo, así que cerrarlo desde campo le
+        corta la jornada a los demás.
+        """
+        if not es_coordinador_datacalle(request.user):
+            logger.warning(
+                "Intento de cierre sin rol de coordinador: relevamiento=%s user_id=%s",
+                pk,
+                request.user.id,
+            )
+            return Response(
+                ERROR_CIERRE_NO_AUTORIZADO, status=status.HTTP_403_FORBIDDEN
+            )
+
         relevamiento = self.get_object()
         serializer = CierreRelevamientoSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -117,7 +159,7 @@ class EncuestaViewSet(viewsets.GenericViewSet):
     """Escritura de casos: upsert idempotente por UUID del dispositivo."""
 
     authentication_classes = [TokenAuthentication]
-    permission_classes = [EsRelevadorCalle]
+    permission_classes = [TieneAccesoDataCalle]
     serializer_class = EncuestaSerializer
 
     def get_queryset(self):
@@ -170,7 +212,7 @@ class CatalogoViewSet(viewsets.ViewSet):
     """
 
     authentication_classes = [TokenAuthentication]
-    permission_classes = [EsRelevadorCalle]
+    permission_classes = [TieneAccesoDataCalle]
 
     @extend_schema(responses=None)
     def list(self, request):

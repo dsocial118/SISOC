@@ -119,6 +119,53 @@ def get_tracked_model_definitions():
             label="Ronda de encuesta",
             model_getter=_model_getter("encuestas.models.RondaEncuesta"),
         ),
+        TrackedModelDefinition(
+            label="Relevamiento DataCalle",
+            model_getter=_model_getter("datacalle.models.Relevamiento"),
+            # Mismo motivo que en "Caso DataCalle": el log es exportable y
+            # sobrevive al borrado. `cerrar_relevamiento` completa estos
+            # campos en cada cierre de operativo, y son más sensibles que un
+            # caso individual porque describen a todo un grupo en un punto
+            # exacto: `lat`/`lon` (coordenadas GPS del cierre) y
+            # `observacion_asentamiento`/`otra_observacion` (cómo vive el
+            # grupo ahí, la segunda en texto libre). `area_operativa` no se
+            # excluye a propósito: es dato de planificación que escribe el
+            # coordinador, es la identidad del operativo (la property
+            # `lugar` la expone) y es justo uno de los campos cuyos cambios
+            # tiene sentido rastrear.
+            excluded_fields=(
+                "lat",
+                "lon",
+                "observacion_asentamiento",
+                "otra_observacion",
+            ),
+        ),
+        TrackedModelDefinition(
+            label="Caso DataCalle",
+            model_getter=_model_getter("datacalle.models.Encuesta"),
+            # El log de auditoría es exportable (audittrail/views.py) y
+            # sobrevive al borrado (soft delete) del caso, así que no puede
+            # llevar ni el instrumento completo ni los datos que identifican
+            # o ubican a una persona en situación de calle: ni `respuestas`
+            # (el JSON crudo del cuestionario), ni las columnas indexadas
+            # que `_copiar_columnas_indexadas` saca de ese mismo instrumento
+            # y que son igual de sensibles (`lat`/`lon`: ubicación exacta
+            # donde se la encontró; `codigo_entrevistado`: su identificador;
+            # `persona_entrevistada`: franja etaria y de género;
+            # `es_menor_de_edad`). Lo que 8.6 pide auditar es que el caso
+            # cambió, cuándo y quién lo cambió — para eso alcanza con
+            # `estado`, `relevamiento`, `origen`, `variante`, `grupo_id`,
+            # `es_cabecera_grupo`, `lugar_hallazgo`, `realiza_entrevista`,
+            # `personas_observadas` y los timestamps, que sí quedan.
+            excluded_fields=(
+                "respuestas",
+                "lat",
+                "lon",
+                "codigo_entrevistado",
+                "persona_entrevistada",
+                "es_menor_de_edad",
+            ),
+        ),
     )
 
 

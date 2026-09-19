@@ -116,23 +116,103 @@
     }
     const inputArea = document.getElementById('id_area_operativa');
     const selectDispositivo = document.getElementById('id_dispositivo');
+    const formulario = fase.closest('form');
+
+    // QA-0009: el formulario es `novalidate` (los select2 múltiples de equipo y
+    // localidades rompen la validación nativa: el navegador intenta enfocar un
+    // <select> que select2 esconde y aborta el submit sin decir nada). Así que
+    // `required` no alcanza y el campo se valida acá, en el momento.
+    const marcarObligatorio = (contenedor, obligatorio) => {
+      const label = contenedor && contenedor.querySelector('label');
+      if (!label) {
+        return;
+      }
+      const asterisco = label.querySelector('.asteriskField');
+      if (obligatorio && !asterisco) {
+        const marca = document.createElement('span');
+        marca.className = 'asteriskField';
+        marca.textContent = '*';
+        label.appendChild(marca);
+      } else if (!obligatorio && asterisco) {
+        asterisco.remove();
+      }
+    };
+
+    const limpiarError = (control) => {
+      if (!control) {
+        return;
+      }
+      control.classList.remove('is-invalid');
+      const aviso = control.parentElement
+        && control.parentElement.querySelector('.dc-error-inline');
+      if (aviso) {
+        aviso.remove();
+      }
+    };
+
+    const marcarError = (control, mensaje) => {
+      if (!control) {
+        return;
+      }
+      limpiarError(control);
+      control.classList.add('is-invalid');
+      const aviso = document.createElement('div');
+      aviso.className = 'invalid-feedback d-block dc-error-inline';
+      aviso.textContent = mensaje;
+      control.parentElement.appendChild(aviso);
+      control.focus();
+    };
 
     const sincronizarFase = () => {
       const esEspacioPublico = fase.value === 'espacio_publico';
+      const esDispositivo = fase.value === 'dispositivo_alojamiento';
       if (campoArea) {
         campoArea.style.display = esEspacioPublico ? '' : 'none';
       }
       if (campoDispositivo) {
         campoDispositivo.style.display = esEspacioPublico ? 'none' : '';
       }
-      // QA-0009: se pide en el momento de elegir la fase, no recién al guardar.
+      // Se pide en el momento de elegir la fase, no recién al guardar.
       if (inputArea) {
         inputArea.required = esEspacioPublico;
+        if (!esEspacioPublico) {
+          limpiarError(inputArea);
+        }
       }
       if (selectDispositivo) {
-        selectDispositivo.required = !esEspacioPublico && fase.value !== '';
+        selectDispositivo.required = esDispositivo;
+        if (!esDispositivo) {
+          limpiarError(selectDispositivo);
+        }
       }
+      marcarObligatorio(campoArea, esEspacioPublico);
+      marcarObligatorio(campoDispositivo, esDispositivo);
     };
+
+    if (inputArea) {
+      inputArea.addEventListener('input', () => limpiarError(inputArea));
+    }
+    if (selectDispositivo) {
+      selectDispositivo.addEventListener('change', () =>
+        limpiarError(selectDispositivo));
+    }
+
+    if (formulario) {
+      formulario.addEventListener('submit', (evento) => {
+        if (fase.value === 'espacio_publico'
+            && inputArea && !inputArea.value.trim()) {
+          evento.preventDefault();
+          marcarError(inputArea, 'Indicá el área operativa del espacio público.');
+          return;
+        }
+        if (fase.value === 'dispositivo_alojamiento'
+            && selectDispositivo && !selectDispositivo.value) {
+          evento.preventDefault();
+          marcarError(selectDispositivo, 'Elegí el dispositivo de alojamiento.');
+        }
+      });
+    }
+
     fase.addEventListener('change', sincronizarFase);
     sincronizarFase();
   })();
