@@ -35,6 +35,7 @@
 
 - Empezar por `docs/registro/prs/PR-2542.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
+- `CHANGELOG.md`
 - `audittrail/constants.py`
 - `datacalle/api_permissions.py`
 - `datacalle/api_serializers.py`
@@ -52,10 +53,9 @@
 - `datacalle/templates/datacalle/relevamiento_list.html`
 - `datacalle/urls.py`
 - `datacalle/views.py`
+- `docs/contexto/features/pr-2542-fix-datacalle-revision-qa-del-backoffice-tres-roles-con-provincia-unica.md`
 - `docs/registro/cambios/2026-09-17-datacalle-qa-segundo-bloque.md`
-- `docs/registro/cambios/2026-09-18-datacalle-roles-y-permisos.md`
-- `docs/registro/decisiones/2026-09-18-datacalle-roles-y-permisos.md`
-- ... y 13 archivo(s) adicional(es) relacionados.
+- ... y 17 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
