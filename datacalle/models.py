@@ -253,7 +253,13 @@ class Encuesta(SoftDeleteModelMixin, models.Model):
         ]
 
     def __str__(self):
-        return self.codigo_entrevistado or str(self.id)
+        # OJO: `__str__` termina en `LogEntry.object_repr` (django-auditlog
+        # llama `smart_str(instance)` sin pasar por `excluded_fields`), y ese
+        # log es exportable y sobrevive al borrado del caso. Por eso no puede
+        # llevar `codigo_entrevistado`, el mismo identificador que ya
+        # excluimos de `changes` en audittrail/constants.py. Donde la UI
+        # necesite mostrar el código, que lo pida explícitamente.
+        return str(self.id)
 
     @property
     def sin_entrevista_por_menor(self) -> bool:

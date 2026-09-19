@@ -210,6 +210,40 @@ def test_coordinador_solo_arma_equipo_con_los_suyos(provincias):
 
 
 @pytest.mark.django_db
+def test_el_administrador_no_ve_coordinadores_entre_los_entrevistadores(provincias):
+    """``es_relevador_calle`` ya no distingue el rol: lo llevan los tres.
+
+    Antes el filtro era ``profile__es_relevador_calle=True``, y ese flag hoy
+    lo tiene tambien el coordinador (y el administrador). Para un
+    administrador, ``_provincia_ids_del_usuario`` devuelve ``None`` (sin
+    restriccion), asi que no hay filtro de provincia que lo salve: si el
+    filtro sigue siendo por el flag viejo, un coordinador se cuela en una
+    lista pensada solo para entrevistadores.
+    """
+    cordoba, _ = provincias
+    entrevistador = _crear_entrevistador(cordoba, "entrev_para_admin")
+    coordinador = get_user_model().objects.create_user(
+        username="coord_para_admin",
+        email="coord_para_admin@example.com",
+        password="Sisoc12345!",
+    )
+    coordinador.profile.es_relevador_calle = True
+    coordinador.profile.datacalle_rol = "coordinador"
+    coordinador.profile.es_usuario_provincial = True
+    coordinador.profile.save()
+    coordinador.profile.territorial_scopes.create(provincia=cordoba)
+    admin = get_user_model().objects.create_superuser(
+        username="admin_sin_coordinadores",
+        email="admin_sin_coordinadores@example.com",
+        password="Sisoc12345!",
+    )
+
+    disponibles = get_entrevistadores_para_usuario(admin)
+
+    assert [u.username for u in disponibles] == [entrevistador.username]
+
+
+@pytest.mark.django_db
 def test_baja_es_logica(provincias):
     cordoba, _ = provincias
     relevamiento = _crear_relevamiento(cordoba, "Para borrar")
@@ -703,3 +737,181 @@ def test_municipios_sin_provincia_no_carga_el_pais(provincias):
     )
 
     assert get_municipios_para_usuario(admin, None).count() == 0
+
+
+@pytest.mark.django_db
+def test_qa_0020_el_coordinador_cierra_desde_el_backoffice(client, provincias):
+    """QA-0020: contraparte de haberle sacado el cierre a la app."""
+    cordoba, _ = provincias
+    coordinador = _dar_permisos(
+        _crear_coordinador(cordoba), ["change_relevamiento", "view_relevamiento"]
+    )
+    relevamiento = _crear_relevamiento(cordoba, "Para cerrar")
+    client.force_login(coordinador)
+
+    respuesta = client.post(f"/datacalle/relevamientos/{relevamiento.pk}/cerrar/")
+
+    assert respuesta.status_code == 302
+    relevamiento.refresh_from_db()
+    assert relevamiento.estado == Relevamiento.Estado.FINALIZADO
+    assert relevamiento.cerrado_por == coordinador
+
+
+@pytest.mark.django_db
+def test_qa_0020_cerrar_por_get_no_cierra_nada(client, provincias):
+    """Un link no puede cerrar un operativo: sólo POST."""
+    cordoba, _ = provincias
+    coordinador = _dar_permisos(
+        _crear_coordinador(cordoba), ["change_relevamiento", "view_relevamiento"]
+    )
+    relevamiento = _crear_relevamiento(cordoba, "No cerrar por GET")
+    client.force_login(coordinador)
+
+    respuesta = client.get(f"/datacalle/relevamientos/{relevamiento.pk}/cerrar/")
+
+    assert respuesta.status_code == 405
+    relevamiento.refresh_from_db()
+    assert relevamiento.estado != Relevamiento.Estado.FINALIZADO
+
+
+@pytest.mark.django_db
+def test_qa_0020_sin_permiso_de_cambio_no_se_cierra(client, provincias):
+    cordoba, _ = provincias
+    mirón = _dar_permisos(
+        _crear_coordinador(cordoba, "solo_lectura"), ["view_relevamiento"]
+    )
+    relevamiento = _crear_relevamiento(cordoba, "Ajeno al cierre")
+    client.force_login(mirón)
+
+    respuesta = client.post(f"/datacalle/relevamientos/{relevamiento.pk}/cerrar/")
+
+    assert respuesta.status_code in (302, 403)
+    relevamiento.refresh_from_db()
+    assert relevamiento.estado != Relevamiento.Estado.FINALIZADO
+
+
+@pytest.mark.django_db
+def test_qa_0009_el_alta_valida_el_area_operativa_en_el_cliente(client, provincias):
+    """QA-0009: el campo no puede limitarse a `required`.
+
+    El formulario es `novalidate`, así que el navegador ignora el atributo: sin
+    un guard propio en el submit, el área operativa vacía se descubre recién
+    cuando contesta el servidor.
+    """
+    cordoba, _ = provincias
+    coordinador = _dar_permisos(
+        _crear_coordinador(cordoba), ["add_relevamiento", "view_relevamiento"]
+    )
+    client.force_login(coordinador)
+
+    respuesta = client.get("/datacalle/relevamientos/crear/")
+
+    assert respuesta.status_code == 200
+    html = respuesta.content.decode()
+    assert "addEventListener('submit'" in html
+    assert "Indicá el área operativa del espacio público." in html
+    assert "Elegí el dispositivo de alojamiento." in html
+    # Y el campo tiene que verse obligatorio apenas se elige la fase: el
+    # asterisco lo pone el JS, porque el field es opcional a nivel form.
+    assert "marcarObligatorio" in html
+
+
+@pytest.mark.django_db
+def test_qa_0009_el_servidor_sigue_siendo_la_fuente_de_verdad(client, provincias):
+    """El guard del cliente no reemplaza la validación: la agrega."""
+    cordoba, _ = provincias
+    entrevistador = _crear_entrevistador(cordoba, "entrev_sin_area")
+    coordinador = _dar_permisos(
+        _crear_coordinador(cordoba), ["add_relevamiento", "view_relevamiento"]
+    )
+    client.force_login(coordinador)
+    datos = _datos_form(cordoba, [entrevistador])
+    datos["area_operativa"] = ""
+
+    respuesta = client.post("/datacalle/relevamientos/crear/", data=datos)
+
+    assert respuesta.status_code == 200
+    assert not Relevamiento.objects.filter(denominacion=datos["denominacion"]).exists()
+
+
+@pytest.mark.django_db
+def test_qa_0007_el_listado_busca_por_encuestador_y_dni(client, provincias):
+    """QA-0007: encontrar el archivo de trabajo entre varios encuestadores."""
+    cordoba, _ = provincias
+    ramirez = _crear_entrevistador(cordoba, "ramirez")
+    ramirez.first_name = "Lucía"
+    ramirez.last_name = "Ramírez"
+    ramirez.save()
+    ramirez.profile.dni = "30123456"
+    ramirez.profile.save()
+
+    otro = _crear_entrevistador(cordoba, "gomez")
+    otro.first_name = "Pedro"
+    otro.last_name = "Gómez"
+    otro.save()
+    otro.profile.dni = "28999111"
+    otro.profile.save()
+
+    suyo = _crear_relevamiento(cordoba, "Operativo centro")
+    suyo.equipo.add(ramirez)
+    ajeno = _crear_relevamiento(cordoba, "Operativo norte")
+    ajeno.equipo.add(otro)
+
+    coordinador = _dar_permisos(_crear_coordinador(cordoba), ["view_relevamiento"])
+    client.force_login(coordinador)
+
+    por_apellido = client.get("/datacalle/relevamientos/?busqueda=Ramírez")
+    assert "Operativo centro" in por_apellido.content.decode()
+    assert "Operativo norte" not in por_apellido.content.decode()
+
+    por_dni = client.get("/datacalle/relevamientos/?busqueda=30123456")
+    assert "Operativo centro" in por_dni.content.decode()
+    assert "Operativo norte" not in por_dni.content.decode()
+
+
+@pytest.mark.django_db
+def test_qa_0007_la_busqueda_no_duplica_por_el_join_del_equipo(client, provincias):
+    """Varios integrantes que matchean no pueden repetir el renglón."""
+    cordoba, _ = provincias
+    relevamiento = _crear_relevamiento(cordoba, "Operativo compartido")
+    for indice in range(3):
+        integrante = _crear_entrevistador(cordoba, f"perez{indice}")
+        integrante.last_name = "Pérez"
+        integrante.save()
+        relevamiento.equipo.add(integrante)
+
+    coordinador = _dar_permisos(_crear_coordinador(cordoba), ["view_relevamiento"])
+    client.force_login(coordinador)
+
+    respuesta = client.get("/datacalle/relevamientos/?busqueda=Pérez")
+
+    assert respuesta.content.decode().count("Operativo compartido") == 1
+
+
+@pytest.mark.django_db
+def test_qa_0042_el_listado_filtra_por_fase(client, provincias):
+    """QA-0042: el mismo filtro por tipo de operativo que tiene la app."""
+    cordoba, _ = provincias
+    _crear_relevamiento(cordoba, "Plaza del centro")
+    refugio = _crear_relevamiento(cordoba, "Refugio municipal")
+    refugio.fase = Relevamiento.Fase.DISPOSITIVO_ALOJAMIENTO
+    refugio.area_operativa = ""
+    refugio.save()
+    coordinador = _dar_permisos(_crear_coordinador(cordoba), ["view_relevamiento"])
+    client.force_login(coordinador)
+
+    publico = client.get(
+        "/datacalle/relevamientos/?fase=espacio_publico"
+    ).content.decode()
+    assert "Plaza del centro" in publico
+    assert "Refugio municipal" not in publico
+
+    dispositivo = client.get(
+        "/datacalle/relevamientos/?fase=dispositivo_alojamiento"
+    ).content.decode()
+    assert "Refugio municipal" in dispositivo
+    assert "Plaza del centro" not in dispositivo
+
+    # Un valor inventado no filtra nada ni rompe: se ignora.
+    todos = client.get("/datacalle/relevamientos/?fase=cualquiera").content.decode()
+    assert "Plaza del centro" in todos and "Refugio municipal" in todos

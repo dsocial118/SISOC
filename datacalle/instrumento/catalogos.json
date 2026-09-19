@@ -241,6 +241,10 @@
         "etiqueta": "Mujer trans"
       },
       {
+        "codigo": "travesti",
+        "etiqueta": "Travesti"
+      },
+      {
         "codigo": "noBinarie",
         "etiqueta": "No binario",
         "legacy": [
@@ -269,18 +273,32 @@
     ]
   },
   "lugarProviene": {
+    "$comentario": "QA-0038 (2026-09-17): se agrega 'En esta localidad' y las opciones pasan de 'De…' a 'En…'. Los textos viejos quedan en legacy.",
     "opciones": [
       {
+        "codigo": "enEstaLocalidad",
+        "etiqueta": "En esta localidad"
+      },
+      {
         "codigo": "otraLocalidadProvincia",
-        "etiqueta": "De otra localidad de esta provincia"
+        "etiqueta": "En otra localidad de esta provincia",
+        "legacy": [
+          "De otra localidad de esta provincia"
+        ]
       },
       {
         "codigo": "otraProvincia",
-        "etiqueta": "De otra provincia"
+        "etiqueta": "En otra provincia",
+        "legacy": [
+          "De otra provincia"
+        ]
       },
       {
         "codigo": "otroPais",
-        "etiqueta": "De otro país"
+        "etiqueta": "En otro país",
+        "legacy": [
+          "De otro país"
+        ]
       }
     ]
   },
@@ -699,6 +717,7 @@
     ]
   },
   "actividadEconomica": {
+    "$comentario": "QA-0030 (2026-09-16): conjunto reducido y sin 'Otra (especificar)'. PROPUESTA de la app: QA pidió un conjunto reducido y definido sin listarlo; quedan las 9 con más frecuencia en el histórico AppSheet. Las quitadas van en legacy de la más cercana, para la migración.",
     "fragmentosIgnorar": [
       "etc.)"
     ],
@@ -725,26 +744,18 @@
       },
       {
         "codigo": "construccion",
-        "etiqueta": "Actividades vinculadas con la construcción"
-      },
-      {
-        "codigo": "relacionDependencia",
-        "etiqueta": "Trabajo en relación de dependencia"
-      },
-      {
-        "codigo": "arteCallejero",
-        "etiqueta": "Arte callejero (malabares, etc.)",
+        "etiqueta": "Construcción / oficios",
         "legacy": [
-          "Arte callejero (malabares"
+          "Actividades vinculadas con la construcción"
         ]
       },
       {
-        "codigo": "agricultura",
-        "etiqueta": "Actividades vinculadas con la agricultura"
-      },
-      {
-        "codigo": "casasParticulares",
-        "etiqueta": "Trabajo en casas particulares"
+        "codigo": "relacionDependencia",
+        "etiqueta": "Trabajo en relación de dependencia",
+        "legacy": [
+          "Trabajo en casas particulares",
+          "Actividades vinculadas con la agricultura"
+        ]
       },
       {
         "codigo": "trabajoSexual",
@@ -752,17 +763,16 @@
       },
       {
         "codigo": "cuidadoPersonas",
-        "etiqueta": "Actividades vinculadas con el cuidado de personas"
-      },
-      {
-        "codigo": "ninguna",
-        "etiqueta": "Ninguna"
-      },
-      {
-        "codigo": "otra",
-        "etiqueta": "Otra (especificar)",
-        "otro": true,
+        "etiqueta": "Cuidado de personas",
         "legacy": [
+          "Actividades vinculadas con el cuidado de personas"
+        ]
+      },
+      {
+        "codigo": "arteCallejero",
+        "etiqueta": "Arte callejero",
+        "legacy": [
+          "Arte callejero (malabares",
           "Otra (especiﬁcar):"
         ]
       },
@@ -929,6 +939,10 @@
         "legacy": [
           "FIN"
         ]
+      },
+      {
+        "codigo": "adolescente",
+        "etiqueta": "Formulario abreviado (15 a 18 años, autonomía progresiva)"
       }
     ]
   },
@@ -1193,15 +1207,23 @@
     ]
   },
   "rangoEtario2026": {
-    "$comentario": "Instrumento 2026 - categorias etarias de CABA.",
+    "$comentario": "Instrumento 2026 - categorias etarias de CABA. QA-0021 (2026-09-16): fila no-se-observa para cuando la edad no se puede distinguir; en el consentimiento se trata como el rango adolescente. QA-0022 modificado (2026-09-17): el piso de la entrevista abreviada baja de 15 a 14 años, asi que las filas pasan a 0-13 y 14-18 (codigos r0a13 / r14a18; los viejos r0a14 / r15a18 quedan en legacy).",
     "opciones": [
       {
-        "codigo": "r0a14",
-        "etiqueta": "Entre 0 y 14 años"
+        "codigo": "r0a13",
+        "etiqueta": "Entre 0 y 13 años",
+        "legacy": [
+          "Entre 0 y 14 años",
+          "r0a14"
+        ]
       },
       {
-        "codigo": "r15a18",
-        "etiqueta": "Entre 15 y 18 años"
+        "codigo": "r14a18",
+        "etiqueta": "Entre 14 y 18 años",
+        "legacy": [
+          "Entre 15 y 18 años",
+          "r15a18"
+        ]
       },
       {
         "codigo": "r19a59",
@@ -1210,6 +1232,10 @@
       {
         "codigo": "r60mas",
         "etiqueta": "60 años y más"
+      },
+      {
+        "codigo": "noSeObserva",
+        "etiqueta": "Edad no se observa"
       }
     ]
   },
@@ -1268,11 +1294,15 @@
     ]
   },
   "tipoDocumento": {
-    "$comentario": "Instrumento 2026, IV.3 (formato CABA sc25b). 'DNI en trámite' confirmado por negocio (2026-09-01): figura en la nota del instrumento, se incluye como opción.",
+    "$comentario": "Instrumento 2026, IV.3 (formato CABA sc25b). 'DNI en trámite' confirmado por negocio (2026-09-01). QA-0025 (2026-09-16): se separan tres situaciones que antes se mezclaban: no tener documento (indocumentación, abre la pregunta 6), tener DNI pero no la tarjeta consigo, y no querer informar (negativa, NO es indocumentación). QA-0044 (2026-09-17): se retira dniSinTarjeta — tener el DNI sin la tarjeta encima es estar documentado; la indocumentación real la resuelve la pregunta 6. El código viejo queda en legacy de dniArgentino.",
     "opciones": [
       {
         "codigo": "dniArgentino",
-        "etiqueta": "DNI/CI argentino"
+        "etiqueta": "Tiene DNI/CI argentino",
+        "legacy": [
+          "Tiene DNI pero no tiene la tarjeta consigo",
+          "dniSinTarjeta"
+        ]
       },
       {
         "codigo": "dniEnTramite",
@@ -1288,7 +1318,7 @@
       },
       {
         "codigo": "noTiene",
-        "etiqueta": "No tiene documento"
+        "etiqueta": "No tiene documento (indocumentado/a)"
       },
       {
         "codigo": "otro",
@@ -1301,19 +1331,23 @@
       },
       {
         "codigo": "noContesta",
-        "etiqueta": "No contesta"
+        "etiqueta": "Prefiere no informar"
       }
     ]
   },
   "dondeNacio": {
+    "$comentario": "QA-0027 (2026-09-16): se quita 'Provincia de Buenos Aires' (opción del instrumento de CABA) y cada nivel abre un selector: localidad de la provincia del operativo, provincia, o país.",
     "opciones": [
       {
-        "codigo": "enEstaCiudad",
-        "etiqueta": "En esta ciudad"
+        "codigo": "enEstaLocalidad",
+        "etiqueta": "En esta localidad",
+        "legacy": [
+          "En esta ciudad"
+        ]
       },
       {
-        "codigo": "provinciaBuenosAires",
-        "etiqueta": "En la Provincia de Buenos Aires"
+        "codigo": "otraLocalidadProvincia",
+        "etiqueta": "En otra localidad de esta provincia"
       },
       {
         "codigo": "otraProvincia",
@@ -1478,19 +1512,28 @@
     ]
   },
   "frecuenciaContactoFamiliar": {
-    "$comentario": "Instrumento 2026, V.20 (pregunta propia de CABA).",
+    "$comentario": "Instrumento 2026, V.20. QA-0005 (2026-09-16): categorías de frecuencia en lugar de cantidades de veces; los legacy mapean las opciones viejas para no perder lo ya cargado.",
     "opciones": [
       {
-        "codigo": "de1a5",
-        "etiqueta": "De 1 a 5 veces"
+        "codigo": "ocasional",
+        "etiqueta": "Ocasional",
+        "legacy": [
+          "De 1 a 5 veces"
+        ]
       },
       {
-        "codigo": "de6a10",
-        "etiqueta": "De 6 a 10 veces"
+        "codigo": "frecuente",
+        "etiqueta": "Frecuente",
+        "legacy": [
+          "De 6 a 10 veces"
+        ]
       },
       {
-        "codigo": "mas10",
-        "etiqueta": "Más de 10 veces"
+        "codigo": "permanente",
+        "etiqueta": "Permanente",
+        "legacy": [
+          "Más de 10 veces"
+        ]
       },
       {
         "codigo": "ninguno",
@@ -1536,6 +1579,138 @@
       {
         "codigo": "nsnc",
         "etiqueta": "No sabe / no contesta"
+      }
+    ]
+  },
+  "pais": {
+    "$comentario": "QA-0004 / QA-0027 (2026-09-16): país de nacimiento o de procedencia. Los de más presencia en el histórico primero; 'Otro país' abre texto libre.",
+    "opciones": [
+      {
+        "codigo": "bolivia",
+        "etiqueta": "Bolivia"
+      },
+      {
+        "codigo": "paraguay",
+        "etiqueta": "Paraguay"
+      },
+      {
+        "codigo": "peru",
+        "etiqueta": "Perú"
+      },
+      {
+        "codigo": "chile",
+        "etiqueta": "Chile"
+      },
+      {
+        "codigo": "uruguay",
+        "etiqueta": "Uruguay"
+      },
+      {
+        "codigo": "brasil",
+        "etiqueta": "Brasil"
+      },
+      {
+        "codigo": "venezuela",
+        "etiqueta": "Venezuela"
+      },
+      {
+        "codigo": "colombia",
+        "etiqueta": "Colombia"
+      },
+      {
+        "codigo": "ecuador",
+        "etiqueta": "Ecuador"
+      },
+      {
+        "codigo": "republicaDominicana",
+        "etiqueta": "República Dominicana"
+      },
+      {
+        "codigo": "haiti",
+        "etiqueta": "Haití"
+      },
+      {
+        "codigo": "cuba",
+        "etiqueta": "Cuba"
+      },
+      {
+        "codigo": "mexico",
+        "etiqueta": "México"
+      },
+      {
+        "codigo": "senegal",
+        "etiqueta": "Senegal"
+      },
+      {
+        "codigo": "china",
+        "etiqueta": "China"
+      },
+      {
+        "codigo": "espana",
+        "etiqueta": "España"
+      },
+      {
+        "codigo": "italia",
+        "etiqueta": "Italia"
+      },
+      {
+        "codigo": "otroPais",
+        "etiqueta": "Otro país",
+        "otro": true
+      }
+    ]
+  },
+  "paisSudamerica": {
+    "$comentario": "QA-0043 (2026-09-17): país emisor del documento extranjero. Lista EMBEBIDA en el instrumento (no catálogo de SISOC): es chica, estable, tiene que funcionar offline y no depende de N9. América del Sur más 'Otro país' con texto libre.",
+    "opciones": [
+      {
+        "codigo": "bolivia",
+        "etiqueta": "Bolivia"
+      },
+      {
+        "codigo": "brasil",
+        "etiqueta": "Brasil"
+      },
+      {
+        "codigo": "chile",
+        "etiqueta": "Chile"
+      },
+      {
+        "codigo": "colombia",
+        "etiqueta": "Colombia"
+      },
+      {
+        "codigo": "ecuador",
+        "etiqueta": "Ecuador"
+      },
+      {
+        "codigo": "guyana",
+        "etiqueta": "Guyana"
+      },
+      {
+        "codigo": "paraguay",
+        "etiqueta": "Paraguay"
+      },
+      {
+        "codigo": "peru",
+        "etiqueta": "Perú"
+      },
+      {
+        "codigo": "surinam",
+        "etiqueta": "Surinam"
+      },
+      {
+        "codigo": "uruguay",
+        "etiqueta": "Uruguay"
+      },
+      {
+        "codigo": "venezuela",
+        "etiqueta": "Venezuela"
+      },
+      {
+        "codigo": "otroPais",
+        "etiqueta": "Otro país",
+        "otro": true
       }
     ]
   },
