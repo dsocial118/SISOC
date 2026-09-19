@@ -60,8 +60,7 @@
                     <select name="fase" class="form-select">
                         <option value="">Ambos tipos de operativo</option>
                         {% for valor, etiqueta in fases %}
-                            <option value="{{ valor }}"
-                                    {% if valor == fase_actual %}selected{% endif %}>{{ etiqueta }}</option>
+                            <option value="{{ valor }}" {% if valor == fase_actual %}selected{% endif %}>{{ etiqueta }}</option>
                         {% endfor %}
                     </select>
                 </div>
