@@ -10,6 +10,7 @@ from rest_framework.test import APIClient
 
 from core.models import Provincia
 from datacalle.models import Encuesta, Relevamiento
+from datacalle.services import cerrar_relevamiento
 from users.models import RelevadorCalleProvincia
 
 
@@ -26,6 +27,25 @@ def _entrevistador(provincia, username="entrev_api"):
     user.profile.datacalle_rol = "entrevistador"
     user.profile.save()
     RelevadorCalleProvincia.objects.create(profile=user.profile, provincia=provincia)
+    return user
+
+
+def _con_rol(provincia, username, rol):
+    """Usuario DataCalle con rol explicito, para los tests de jerarquia."""
+    user = get_user_model().objects.create_user(
+        username=username, email=f"{username}@example.com", password="Sisoc12345!"
+    )
+    user.profile.es_relevador_calle = True
+    user.profile.datacalle_rol = rol
+    if rol == "coordinador":
+        user.profile.es_usuario_provincial = True
+    user.profile.save()
+    if rol == "entrevistador":
+        RelevadorCalleProvincia.objects.create(
+            profile=user.profile, provincia=provincia
+        )
+    elif rol == "coordinador":
+        user.profile.territorial_scopes.create(provincia=provincia)
     return user
 
 
@@ -213,25 +233,31 @@ def test_operativo_cerrado_rechaza_casos_con_409(provincia):
 
 @pytest.mark.django_db
 def test_cierre_guarda_los_datos_de_campo(provincia):
-    entrevistador = _entrevistador(provincia)
-    relevamiento = _relevamiento(provincia, equipo=[entrevistador])
+    """Los datos de campo del cierre se guardan tal como llegan.
 
-    respuesta = _cliente(entrevistador).post(
-        f"/api/datacalle/relevamientos/{relevamiento.id}/cerrar/",
-        {
-            "fecha_cierre": "2026-09-19T23:45:00Z",
+    QA-0020 le sacó el cierre a la app, así que esto ya no se ejerce por la
+    API: se prueba contra el servicio, que es lo que usa el backoffice.
+    """
+    coordinador = _entrevistador(provincia, "coord_cierre")
+    relevamiento = _relevamiento(provincia, equipo=[coordinador])
+
+    cerrar_relevamiento(
+        relevamiento=relevamiento,
+        user=coordinador,
+        datos={
+            "fecha_cierre": datetime.datetime(
+                2026, 9, 19, 23, 45, tzinfo=datetime.timezone.utc
+            ),
             "lat": -31.416668,
             "lon": -64.183334,
             "observacion_asentamiento": ["consumoProblematico", "mueblesEnseres"],
             "otra_observacion": None,
         },
-        format="json",
     )
 
-    assert respuesta.status_code == 200
     relevamiento.refresh_from_db()
     assert relevamiento.estado == Relevamiento.Estado.FINALIZADO
-    assert relevamiento.cerrado_por == entrevistador
+    assert relevamiento.cerrado_por == coordinador
     assert relevamiento.lat == pytest.approx(-31.416668)
     assert relevamiento.observacion_asentamiento == [
         "consumoProblematico",
@@ -241,16 +267,15 @@ def test_cierre_guarda_los_datos_de_campo(provincia):
 
 @pytest.mark.django_db
 def test_cerrar_dos_veces_no_es_error(provincia):
-    entrevistador = _entrevistador(provincia)
-    relevamiento = _relevamiento(provincia, equipo=[entrevistador])
-    client = _cliente(entrevistador)
-    url = f"/api/datacalle/relevamientos/{relevamiento.id}/cerrar/"
+    """La idempotencia sigue importando: el backoffice puede reintentar."""
+    coordinador = _entrevistador(provincia, "coord_idem")
+    relevamiento = _relevamiento(provincia, equipo=[coordinador])
 
-    primera = client.post(url, {}, format="json")
-    segunda = client.post(url, {}, format="json")
+    _, primera = cerrar_relevamiento(relevamiento=relevamiento, user=coordinador)
+    _, segunda = cerrar_relevamiento(relevamiento=relevamiento, user=coordinador)
 
-    assert primera.status_code == 200
-    assert segunda.status_code == 200
+    assert primera is True
+    assert segunda is False
 
 
 @pytest.mark.django_db
@@ -311,7 +336,10 @@ def test_catalogos_sirven_el_instrumento_vigente(provincia):
     respuesta = _cliente(entrevistador).get("/api/datacalle/catalogos/")
 
     assert respuesta.status_code == 200
-    assert respuesta.data["version"] == "2.0.0"
+    # Pinneada a propósito: al sincronizar `datacalle/instrumento/` con el
+    # contrato hay que subirla acá, así la copia no queda vieja sin que nadie
+    # lo note (pasó con 2.1.0, publicado el 16/9 y tomado el 18/9).
+    assert respuesta.data["version"] == "2.2.0"
     assert "faseRelevamiento" in respuesta.data["catalogos"]
     assert respuesta.data["cuestionario"]["paginas"]
 
@@ -505,3 +533,145 @@ def test_los_dos_409_se_distinguen_por_reintentable(provincia):
     assert tarde.status_code == 409
     assert tarde.data["codigo"] == "relevamiento_cerrado"
     assert tarde.data["reintentable"] is False
+
+
+@pytest.mark.django_db
+def test_qa_0020_el_entrevistador_no_puede_cerrar_el_operativo(provincia):
+    """QA-0020: el cierre es del coordinador, no del relevador en campo.
+
+    El relevador comparte el operativo con el resto del equipo: si cierra,
+    deja afuera a los demás.
+    """
+    entrevistador = _entrevistador(provincia)
+    relevamiento = _relevamiento(provincia, equipo=[entrevistador])
+
+    respuesta = _cliente(entrevistador).post(
+        f"/api/datacalle/relevamientos/{relevamiento.id}/cerrar/",
+        {},
+        format="json",
+    )
+
+    assert respuesta.status_code == 403
+    assert respuesta.data["codigo"] == "cierre_no_autorizado"
+    relevamiento.refresh_from_db()
+    assert relevamiento.estado == Relevamiento.Estado.PLANIFICADO
+    assert relevamiento.fecha_cierre is None
+
+
+@pytest.mark.django_db
+def test_qa_0012_la_tarea_futura_viaja_marcada_como_no_iniciable(provincia):
+    """QA-0012: el operativo futuro se baja igual, pero avisa que no arrancó.
+
+    No se oculta: la app es offline-first y necesita tenerlo antes de salir.
+    """
+    entrevistador = _entrevistador(provincia)
+    futuro = datetime.date.today() + datetime.timedelta(days=5)
+    _relevamiento(
+        provincia,
+        equipo=[entrevistador],
+        denominacion="Arranca la semana que viene",
+        fecha_inicio=futuro,
+        fecha_fin=futuro + datetime.timedelta(days=2),
+    )
+
+    respuesta = _cliente(entrevistador).get("/api/datacalle/relevamientos/")
+
+    assert respuesta.status_code == 200
+    tarea = respuesta.data["results"][0]
+    assert tarea["denominacion"] == "Arranca la semana que viene"
+    assert tarea["puede_iniciar"] is False
+
+
+@pytest.mark.django_db
+def test_qa_0012_la_tarea_de_hoy_viaja_iniciable(provincia):
+    entrevistador = _entrevistador(provincia)
+    hoy = datetime.date.today()
+    _relevamiento(
+        provincia,
+        equipo=[entrevistador],
+        fecha_inicio=hoy,
+        fecha_fin=hoy + datetime.timedelta(days=2),
+    )
+
+    respuesta = _cliente(entrevistador).get("/api/datacalle/relevamientos/")
+
+    assert respuesta.data["results"][0]["puede_iniciar"] is True
+
+
+@pytest.mark.django_db
+def test_qa_0012_la_senal_no_se_separa_del_rechazo_real(provincia):
+    """``puede_iniciar`` y el 409 salen de la misma regla: no pueden divergir."""
+    entrevistador = _entrevistador(provincia)
+    futuro = datetime.date.today() + datetime.timedelta(days=3)
+    relevamiento = _relevamiento(
+        provincia,
+        equipo=[entrevistador],
+        fecha_inicio=futuro,
+        fecha_fin=futuro + datetime.timedelta(days=1),
+    )
+    client = _cliente(entrevistador)
+
+    listado = client.get("/api/datacalle/relevamientos/")
+    carga = client.put(
+        f"/api/datacalle/encuestas/{uuid.uuid4()}/",
+        _cuerpo(relevamiento),
+        format="json",
+    )
+
+    assert listado.data["results"][0]["puede_iniciar"] is False
+    assert carga.status_code == 409
+    assert carga.data["codigo"] == "relevamiento_no_iniciado"
+
+
+@pytest.mark.django_db
+def test_el_coordinador_ve_los_operativos_de_su_provincia_sin_estar_en_el_equipo(
+    provincia,
+):
+    entrevistador = _entrevistador(provincia, "entrev_jer")
+    coordinador = _con_rol(provincia, "coord_jer", "coordinador")
+    _relevamiento(provincia, equipo=[entrevistador], denominacion="De su provincia")
+
+    respuesta = _cliente(coordinador).get("/api/datacalle/relevamientos/")
+
+    assert respuesta.status_code == 200
+    assert [r["denominacion"] for r in respuesta.data["results"]] == ["De su provincia"]
+
+
+@pytest.mark.django_db
+def test_el_coordinador_no_ve_operativos_de_otra_provincia(provincia):
+    salta = Provincia.objects.create(nombre="Salta")
+    ajeno = _entrevistador(salta, "entrev_salta")
+    coordinador = _con_rol(provincia, "coord_acotado", "coordinador")
+    _relevamiento(salta, equipo=[ajeno], denominacion="De Salta")
+
+    respuesta = _cliente(coordinador).get("/api/datacalle/relevamientos/")
+
+    assert respuesta.data["results"] == []
+
+
+@pytest.mark.django_db
+def test_el_administrador_ve_todas_las_provincias(provincia):
+    salta = Provincia.objects.create(nombre="Salta")
+    _relevamiento(provincia, denominacion="De Cordoba")
+    _relevamiento(salta, denominacion="De Salta")
+    administrador = _con_rol(provincia, "admin_api", "administrador")
+
+    respuesta = _cliente(administrador).get("/api/datacalle/relevamientos/")
+
+    nombres = sorted(r["denominacion"] for r in respuesta.data["results"])
+    assert nombres == ["De Cordoba", "De Salta"]
+
+
+@pytest.mark.django_db
+def test_el_coordinador_si_puede_cerrar_desde_la_app(provincia):
+    """QA-0020 prohibe al relevador, no al coordinador."""
+    coordinador = _con_rol(provincia, "coord_cierra", "coordinador")
+    relevamiento = _relevamiento(provincia, denominacion="Para cerrar por app")
+
+    respuesta = _cliente(coordinador).post(
+        f"/api/datacalle/relevamientos/{relevamiento.id}/cerrar/", {}, format="json"
+    )
+
+    assert respuesta.status_code == 200
+    relevamiento.refresh_from_db()
+    assert relevamiento.estado == Relevamiento.Estado.FINALIZADO

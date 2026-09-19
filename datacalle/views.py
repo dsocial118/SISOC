@@ -1,8 +1,11 @@
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q
 from django.http import HttpResponseRedirect, JsonResponse
 from django.urls import reverse, reverse_lazy
+from django.views import View
+from django.views.generic.detail import SingleObjectMixin
 from django.views.generic import (
     CreateView,
     DeleteView,
@@ -15,6 +18,7 @@ from datacalle.forms import RelevamientoForm
 from datacalle.models import Encuesta, Relevamiento
 from datacalle.services import (
     apply_relevamientos_scope,
+    cerrar_relevamiento,
     get_dispositivos_para_provincia,
     get_entrevistadores_para_provincia,
     delete_relevamiento,
@@ -49,13 +53,26 @@ class RelevamientoListView(RelevamientoScopeMixin, ListView):
         if estado in Relevamiento.Estado.values:
             queryset = queryset.filter(estado=estado)
 
+        # QA-0042: la app filtra por tipo de operativo; que las dos listas se
+        # lean igual le ahorra explicaciones al coordinador.
+        fase = (self.request.GET.get("fase") or "").strip()
+        if fase in Relevamiento.Fase.values:
+            queryset = queryset.filter(fase=fase)
+
         busqueda = (self.request.GET.get("busqueda") or "").strip()
         if busqueda:
+            # QA-0007: con varios encuestadores y localidades en juego, buscar
+            # sólo por denominación no alcanza para dar con un archivo de
+            # trabajo. Se suma el equipo: nombre, usuario y DNI.
             queryset = queryset.filter(
                 Q(denominacion__icontains=busqueda)
                 | Q(area_operativa__icontains=busqueda)
                 | Q(provincia__nombre__icontains=busqueda)
                 | Q(localidades__nombre__icontains=busqueda)
+                | Q(equipo__first_name__icontains=busqueda)
+                | Q(equipo__last_name__icontains=busqueda)
+                | Q(equipo__username__icontains=busqueda)
+                | Q(equipo__profile__dni__icontains=busqueda)
             ).distinct()
         return queryset
 
@@ -70,6 +87,8 @@ class RelevamientoListView(RelevamientoScopeMixin, ListView):
         )
         context["estados"] = Relevamiento.Estado.choices
         context["estado_actual"] = self.request.GET.get("estado") or ""
+        context["fases"] = Relevamiento.Fase.choices
+        context["fase_actual"] = self.request.GET.get("fase") or ""
         context["busqueda_actual"] = self.request.GET.get("busqueda") or ""
         context["resumen"] = resumen_por_estado(self.request.user)
         return context
@@ -134,6 +153,30 @@ class RelevamientoDeleteView(RelevamientoScopeMixin, DeleteView):
         return HttpResponseRedirect(self.success_url)
 
 
+class RelevamientoCerrarView(RelevamientoScopeMixin, SingleObjectMixin, View):
+    """Cierre del operativo por el coordinador (QA-0020).
+
+    Es la contraparte de haberle sacado el cierre a la app: alguien tiene que
+    poder cerrar, y es quien planificó. Sólo POST, para que no se cierre un
+    operativo por abrir un link.
+    """
+
+    model = Relevamiento
+
+    def post(self, request, *args, **kwargs):
+        relevamiento = self.get_object()
+        _, cerrado_ahora = cerrar_relevamiento(
+            relevamiento=relevamiento, user=request.user
+        )
+        if cerrado_ahora:
+            messages.success(request, "El relevamiento quedó cerrado.")
+        else:
+            messages.info(request, "El relevamiento ya estaba cerrado.")
+        return HttpResponseRedirect(
+            reverse("datacalle_relevamientos_detalle", args=[relevamiento.pk])
+        )
+
+
 class EncuestaDetailView(LoginRequiredMixin, DetailView):
     """Detalle de un caso: el instrumento se muestra tal como llegó."""
 
@@ -158,7 +201,10 @@ class EncuestaDetailView(LoginRequiredMixin, DetailView):
                     "datacalle_relevamientos_detalle", kwargs={"pk": relevamiento.pk}
                 ),
             },
-            {"text": str(self.object)},
+            # No usar str(self.object): desde el fix de object_repr,
+            # Encuesta.__str__ devuelve sólo el id y perdería el código
+            # que se mostraba acá.
+            {"text": self.object.codigo_entrevistado or str(self.object.id)},
         ]
         context["respuestas"] = respuestas_legibles(self.object)
         return context

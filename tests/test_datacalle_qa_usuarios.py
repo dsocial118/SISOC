@@ -29,6 +29,10 @@ def _coordinador_datacalle(provincia, username="coord_dc"):
     )
     user.groups.add(grupo)
     user.profile.es_usuario_provincial = True
+    # datacalle_rol es la unica fuente de verdad que miran los helpers de rol
+    # (es_coordinador_calle es alias de es_coordinador_datacalle): sin esto el
+    # fixture arma un coordinador que el modulo ya no reconoce como tal.
+    user.profile.datacalle_rol = "coordinador"
     user.profile.save()
     user.profile.territorial_scopes.create(provincia=provincia)
     return user
@@ -270,25 +274,27 @@ def test_el_coordinador_puede_habilitar_a_un_usuario_existente(provincia):
 
 
 @pytest.mark.django_db
-def test_editar_no_borra_provincias_fuera_del_alcance_del_actor(provincia):
+def test_editar_no_le_borra_la_provincia_al_relevador(provincia):
     """El campo fijo no puede convertirse en una baja silenciosa.
 
-    ``_sync_relevador_calle_provincias`` borra las provincias que no lleguen en
-    cleaned_data, así que fijar el campo al alcance del actor le sacaría al
-    relevador las provincias que ese actor no administra.
+    Antes probaba que la edición no le borrara a un relevador una provincia
+    fuera del alcance del actor, escenario que asumía que un relevador podía
+    tener varias provincias a la vez. RN01 lo prohíbe (una sola por usuario),
+    así que lo que queda por proteger es más chico pero sigue siendo real:
+    que editar a un relevador de la propia provincia no le pierda esa única
+    provincia en el camino.
     """
     from users.forms import CustomUserChangeForm
 
-    otra = Provincia.objects.create(nombre="Salta")
     coordinador = _coordinador_datacalle(provincia, "coord_preserva")
-    entrevistador = _entrevistador(provincia, "entrev_dos_prov")
-    entrevistador.profile.relevador_calle_provincias.create(provincia=otra)
+    entrevistador = _entrevistador(provincia, "entrev_preserva")
 
     form = CustomUserChangeForm(
         instance=entrevistador,
         actor=coordinador,
         data=_datos_edicion(
             entrevistador,
+            first_name="Nombre Editado",
             es_relevador_calle="on",
             datacalle_rol="entrevistador",
         ),
@@ -297,8 +303,139 @@ def test_editar_no_borra_provincias_fuera_del_alcance_del_actor(provincia):
     assert form.is_valid(), form.errors
     form.save()
     entrevistador.profile.refresh_from_db()
-    assert sorted(
+    assert list(
         entrevistador.profile.relevador_calle_provincias.values_list(
             "provincia__nombre", flat=True
         )
-    ) == sorted([provincia.nombre, otra.nombre])
+    ) == [provincia.nombre]
+
+
+@pytest.mark.django_db
+def test_qa_0015_el_alta_explica_donde_se_define_cada_rol():
+    """QA-0015: el rol se elige en un solo lugar y el sistema arma el resto.
+
+    El texto viejo de la casilla decía que para dar de alta a un coordinador o
+    a un administrador "no se usa esta casilla: se les asigna el grupo", lo
+    contrario de lo que dice la ayuda del selector de rol. Y si el operador le
+    hacía caso, ``_clean_relevador_calle_fields`` le vaciaba el rol y el
+    coordinador quedaba sin app y sin sidebar. Ahora los dos textos dicen lo
+    mismo: se elige el rol y el sistema asigna grupo y alcance.
+
+    El actor es superusuario porque el selector pasó a ser fail-closed: sin
+    actor sólo ofrece "Relevador" (ver ``_roles_datacalle_para_el_actor``).
+    """
+    from users.forms import UserCreationForm
+
+    superusuario = get_user_model().objects.create_superuser(
+        username="super_ayuda", email="super_ayuda@example.com", password="Sisoc12345!"
+    )
+    form = UserCreationForm(actor=superusuario)
+
+    ayuda_flag = form.fields["es_relevador_calle"].help_text
+    ayuda_rol = form.fields["datacalle_rol"].help_text
+
+    # La casilla ya no manda a asignar el grupo a mano: lo hace el sistema.
+    assert "no se usa esta casilla" not in ayuda_flag
+    assert "el sistema arma el resto" in ayuda_flag
+    assert "alcance" in ayuda_flag.lower()
+    assert "coordinador" in ayuda_rol.lower()
+    assert "administrador" in ayuda_rol.lower()
+    # Los tres roles del documento funcional del 2026-09-18.
+    assert [c[0] for c in form.fields["datacalle_rol"].choices] == [
+        "",
+        "administrador",
+        "coordinador",
+        "entrevistador",
+    ]
+
+
+@pytest.mark.django_db
+def test_rn02_el_coordinador_solo_puede_crear_relevadores(provincia):
+    """RN02: crear coordinadores es exclusivo del Administrador Nacional."""
+    from users.forms import UserCreationForm
+
+    actor = _coordinador_datacalle(provincia, "coord_rn02")
+    actor.profile.datacalle_rol = "coordinador"
+    actor.profile.save()
+
+    form = UserCreationForm(actor=actor)
+    ofrecidos = [codigo for codigo, _ in form.fields["datacalle_rol"].choices if codigo]
+
+    assert ofrecidos == ["entrevistador"]
+
+
+@pytest.mark.django_db
+def test_rn02_el_coordinador_no_puede_forzar_el_rol_por_post(provincia):
+    """RN08: no alcanza con no mostrar la opcion; el servidor la rechaza."""
+    from users.forms import UserCreationForm
+
+    actor = _coordinador_datacalle(provincia, "coord_post")
+    actor.profile.datacalle_rol = "coordinador"
+    actor.profile.save()
+
+    form = UserCreationForm(
+        data={
+            "username": "colado",
+            "email": "colado@example.com",
+            "password": "Sisoc12345!",
+            "es_relevador_calle": True,
+            "datacalle_rol": "coordinador",
+            "provincias_datacalle": [provincia.id],
+        },
+        actor=actor,
+    )
+
+    assert form.is_valid() is False
+    assert "datacalle_rol" in form.errors
+
+
+@pytest.mark.django_db
+def test_rn02_el_administrador_si_puede_crear_coordinadores(provincia):
+    from users.forms import UserCreationForm
+
+    actor = _coordinador_datacalle(provincia, "admin_rn02")
+    actor.profile.datacalle_rol = "administrador"
+    actor.profile.territorial_scopes.all().delete()
+    actor.profile.save()
+
+    form = UserCreationForm(actor=actor)
+    ofrecidos = [codigo for codigo, _ in form.fields["datacalle_rol"].choices if codigo]
+
+    assert ofrecidos == ["administrador", "coordinador", "entrevistador"]
+
+
+def _administrador_datacalle(username="admin_dc"):
+    """Administrador Nacional: rol + grupo, sin alcance territorial (es nacional)."""
+    user = get_user_model().objects.create_user(
+        username=username, email=f"{username}@example.com", password="Sisoc12345!"
+    )
+    user.is_staff = True
+    user.save()
+    user.groups.add(Group.objects.get_or_create(name="Administrador DataCalle")[0])
+    user.profile.datacalle_rol = "administrador"
+    user.profile.es_relevador_calle = True
+    user.profile.save()
+    return user
+
+
+@pytest.mark.django_db
+def test_rn02_el_administrador_ve_a_todos_los_usuarios_de_datacalle(rf, provincia):
+    """Matriz punto 5: el Administrador Nacional visualiza usuarios de todas las
+    provincias. Sin esto no puede crear coordinadores, que es lo unico que RN02
+    le reserva en exclusiva."""
+    salta = Provincia.objects.create(nombre="Salta")
+    admin = _administrador_datacalle()
+    coord = _coordinador_datacalle(provincia, "coord_cba")
+    coord.profile.datacalle_rol = "coordinador"
+    coord.profile.save()
+    relev_salta = _entrevistador(salta, "entrev_salta")
+    superusuario = get_user_model().objects.create_superuser(
+        "root_dc", "root@example.com", "Sisoc12345!"
+    )
+
+    visibles = _visibles(admin, rf)
+
+    assert coord.username in visibles
+    assert relev_salta.username in visibles
+    # El alcance no salta la guarda que ya protege al resto de los roles.
+    assert superusuario.username not in visibles

@@ -78,6 +78,27 @@ class RelevamientoNoIniciado(Exception):
     """
 
 
+def puede_recibir_casos(relevamiento) -> bool:
+    """Si el operativo está en condiciones de recibir casos hoy (QA-0012).
+
+    Ninguna de las dos fechas le gana al estado. La de fin no corta porque un
+    operativo puede estirarse. La de inicio sólo corta mientras sigue
+    ``planificado``: cargar antes de empezar es un error de la app. Una vez que
+    arrancó, adelantar la fecha de inicio no puede volver a rechazar los casos
+    de un operativo que ya está en curso.
+
+    Es la misma regla que aplica ``upsert_encuesta`` y que la API publica como
+    ``puede_iniciar``: viven juntas para que no se separen.
+    """
+    if relevamiento.estado == Relevamiento.Estado.FINALIZADO:
+        return False
+    return not (
+        relevamiento.estado == Relevamiento.Estado.PLANIFICADO
+        and relevamiento.fecha_inicio
+        and timezone.localdate() < relevamiento.fecha_inicio
+    )
+
+
 @transaction.atomic
 def upsert_encuesta(*, encuesta_id, relevamiento, datos, user, origen=None):
     """Alta o actualización idempotente de un caso por UUID.
@@ -87,16 +108,7 @@ def upsert_encuesta(*, encuesta_id, relevamiento, datos, user, origen=None):
     """
     if relevamiento.estado == Relevamiento.Estado.FINALIZADO:
         raise RelevamientoCerrado()
-    # Ninguna de las dos fechas le gana al estado. La de fin no corta porque un
-    # operativo puede estirarse. La de inicio sólo corta mientras sigue
-    # ``planificado``: cargar antes de empezar es un error de la app. Una vez
-    # que arrancó, adelantar la fecha de inicio no puede volver a rechazar los
-    # casos de un operativo que ya está en curso.
-    if (
-        relevamiento.estado == Relevamiento.Estado.PLANIFICADO
-        and relevamiento.fecha_inicio
-        and timezone.localdate() < relevamiento.fecha_inicio
-    ):
+    if not puede_recibir_casos(relevamiento):
         raise RelevamientoNoIniciado()
 
     encuesta = Encuesta.all_objects.filter(pk=encuesta_id).first()
