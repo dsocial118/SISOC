@@ -17,6 +17,7 @@ from datacalle.services.encuestas import (  # noqa: F401
     RelevamientoNoIniciado,
     aplicar_columnas_indexadas,
     cerrar_relevamiento,
+    puede_recibir_casos,
     get_encuestas_para_listado,
     get_encuestas_queryset,
     resumen_de_casos,

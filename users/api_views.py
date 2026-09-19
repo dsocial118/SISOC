@@ -33,7 +33,7 @@ from users.services_auth import (
     confirm_password_reset,
     request_password_reset_for_identity,
 )
-from users.services_datacalle import is_relevador_calle_user
+from users.services_datacalle import tiene_acceso_datacalle
 from users.services_pwa import (
     get_pwa_context,
     is_pwa_user,
@@ -96,10 +96,13 @@ class UserLoginViewSet(viewsets.ViewSet):
             )
             return response
         user = serializer.validated_data["user"]
+        # RN05: el criterio de acceso a la app es el rol, no el flag. El flag
+        # (es_relevador_calle) lo llevan los tres roles por contrato con la
+        # app, pero si algun dia queda seteado sin rol, no debe alcanzar.
         if (
             not is_pwa_user(user)
             and not is_territorial_comedor_user(user)
-            and not is_relevador_calle_user(user)
+            and not tiene_acceso_datacalle(user)
         ):
             detail = "Este usuario no tiene acceso PWA activo."
             response = Response(
