@@ -1004,6 +1004,11 @@ class RelevadorCalleFormMixin:
     excluyente con los otros roles de SISOC - Mobile.
     """
 
+    # Se enciende cuando el rol elegido chocaría con el alcance territorial que
+    # el usuario ya tiene cargado: apaga la derivación y las validaciones que
+    # dependen de ella, para que el operador lea un solo error y no tres.
+    _conflicto_alcance_datacalle = False
+
     def _setup_relevador_calle_fields(self):
         # QA-0015: los tres roles de DataCalle no se eligen en el mismo lugar, y
         # eso es lo que confundía. El entrevistador se marca acá porque es un
@@ -1199,7 +1204,140 @@ class RelevadorCalleFormMixin:
                 "datacalle_rol",
                 "No tenes permiso para asignar ese rol de DataCalle.",
             )
+        cleaned = self._validar_conflicto_alcance_datacalle(cleaned)
+        if self._conflicto_alcance_datacalle:
+            # Se rechaza el guardado entero: derivar acá sería justamente lo
+            # que el error está impidiendo.
+            return cleaned
         return self._derivar_alcance_datacalle(cleaned)
+
+    def _alcance_territorial_guardado(self):
+        """Alcance que el usuario **ya tiene** en el panel territorial.
+
+        Se lee de la base y no del POST: la pantalla puede mandar el panel
+        vacío (campos ``disabled``, un formulario parcial) y ese silencio no
+        puede valer como "no tenía nada", porque es justo el caso en el que la
+        derivación borraba provincias sin que nadie se enterara.
+
+        Con ``es_usuario_provincial`` apagado las filas no restringen nada, así
+        que no cuentan como alcance cargado.
+        """
+        instance = getattr(self, "instance", None)
+        if instance is None or not getattr(instance, "pk", None):
+            return []
+        profile = get_profile_or_none(instance)
+        if profile is None or not profile.es_usuario_provincial:
+            return []
+        return [
+            (scope.provincia_id, scope.municipio_id, scope.localidad_id)
+            for scope in profile.territorial_scopes.all()
+        ]
+
+    @staticmethod
+    def _alcance_territorial_del_panel(cleaned):
+        """Alcance que viene en este mismo POST desde el panel territorial."""
+        if not cleaned.get("es_usuario_provincial"):
+            return []
+        return [
+            (
+                scope.get("provincia_id"),
+                scope.get("municipio_id"),
+                scope.get("localidad_id"),
+            )
+            for scope in cleaned.get("territorial_scopes_data") or []
+        ]
+
+    def _validar_conflicto_alcance_datacalle(self, cleaned):
+        """Asignar un rol de DataCalle no puede pisar el alcance de los demás módulos.
+
+        ``es_usuario_provincial`` y ``ProfileTerritorialScope`` son el panel
+        territorial **genérico** del backoffice: lo comparten comedores,
+        admisiones y SIMEPI. ``_derivar_alcance_datacalle`` los reescribe según
+        el rol, así que un usuario con tres provincias al que se le asigna
+        ``coordinador`` de Córdoba perdía Salta y Jujuy en todos esos módulos
+        sin un solo mensaje, y uno al que se le asignaba ``administrador``
+        quedaba irrestricto en todo el backoffice, no sólo en DataCalle.
+
+        La decisión es rechazar, no pisar: el alcance existente se resuelve en
+        una edición aparte, a la vista del operador. No hay conflicto cuando el
+        alcance actual ya es exactamente el que el rol derivaría (el caso del
+        coordinador que se reedita) ni cuando el usuario no tiene ninguno (el
+        caso común del alta).
+        """
+        rol = cleaned.get("datacalle_rol")
+        if rol not in (
+            Profile.DataCalleRol.COORDINADOR,
+            Profile.DataCalleRol.ADMINISTRADOR,
+        ):
+            return cleaned
+
+        actuales = set(self._alcance_territorial_guardado()) | set(
+            self._alcance_territorial_del_panel(cleaned)
+        )
+        if not actuales:
+            return cleaned
+
+        if rol == Profile.DataCalleRol.COORDINADOR:
+            provincias = list(cleaned.get("provincias_datacalle") or [])
+            elegida = provincias[0].pk if len(provincias) == 1 else None
+            if elegida is not None and actuales == {(elegida, None, None)}:
+                return cleaned
+
+        self._conflicto_alcance_datacalle = True
+        self.add_error("datacalle_rol", self._mensaje_conflicto_alcance(rol, actuales))
+        return cleaned
+
+    @staticmethod
+    def _mensaje_conflicto_alcance(rol, actuales):
+        """Mensaje accionable: qué tiene hoy, qué le pasaría y qué hacer."""
+        provincia_ids = sorted({provincia_id for provincia_id, _m, _l in actuales})
+        nombres = ", ".join(
+            Provincia.objects.filter(id__in=provincia_ids)
+            .order_by("nombre")
+            .values_list("nombre", flat=True)
+        )
+        cantidad = len(provincia_ids)
+        tiene = (
+            f"Este usuario ya tiene alcance territorial propio en el backoffice: "
+            f"{cantidad} "
+            f"{'provincia' if cantidad == 1 else 'provincias'} ({nombres}), "
+            "que también usan comedores, admisiones y SIMEPI."
+        )
+        if rol == Profile.DataCalleRol.ADMINISTRADOR:
+            consecuencia = (
+                " El Administrador Nacional de DataCalle no tiene alcance, así "
+                "que asignarle ese rol se lo borraría y lo dejaría sin "
+                "restricción territorial en todo el backoffice, no sólo en "
+                "DataCalle."
+            )
+            arreglo = (
+                " Quitale primero el alcance en el panel de alcance territorial, "
+                "guardá ese cambio, y recién después convertilo en usuario de "
+                "DataCalle."
+            )
+        else:
+            solo_municipal = all(
+                municipio_id or localidad_id
+                for _p, municipio_id, localidad_id in actuales
+            )
+            if solo_municipal:
+                consecuencia = (
+                    " Su alcance actual es municipal y el Coordinador Provincial "
+                    "de DataCalle necesita la provincia completa, así que "
+                    "asignarle ese rol le ensancharía el acceso en esos módulos."
+                )
+            else:
+                consecuencia = (
+                    " Convertirlo en Coordinador Provincial de DataCalle le "
+                    "dejaría una sola provincia y le sacaría el acceso a las "
+                    "demás en esos módulos."
+                )
+            arreglo = (
+                " Dejá su alcance en la provincia que va a coordinar (o vacío) "
+                "en el panel de alcance territorial, guardá ese cambio, y recién "
+                "después convertilo en usuario de DataCalle."
+            )
+        return tiene + consecuencia + arreglo
 
     def _derivar_alcance_datacalle(self, cleaned):
         """D1: el operador elige un rol y el sistema arma el alcance.
@@ -1243,6 +1381,10 @@ class RelevadorCalleFormMixin:
         acá el error se muestra en el campo en vez de reventar la transacción.
         """
         if cleaned.get("datacalle_rol") != Profile.DataCalleRol.COORDINADOR:
+            return cleaned
+        if self._conflicto_alcance_datacalle:
+            # El alcance no se derivó a propósito; repetir acá "le falta una
+            # provincia completa" sólo taparía el error que explica por qué.
             return cleaned
         scopes = cleaned.get("territorial_scopes_data") or []
         completos = [
@@ -1426,14 +1568,17 @@ class UserCreationForm(
         ):
             self.add_error("password", "Este campo es obligatorio.")
         cleaned = self._clean_territorial_scope_fields(cleaned)
-        cleaned = self._validate_simepi_egp_scope(cleaned)
         if cleaned.get("es_coordinador") and not cleaned.get("duplas_asignadas"):
             self.add_error("duplas_asignadas", "Seleccione al menos una dupla.")
         self._validate_selected_within_allowed(cleaned)
         cleaned = self._clean_pwa_fields(cleaned)
         cleaned = self._clean_territorial_comedor_fields(cleaned)
         cleaned = self._clean_relevador_calle_fields(cleaned)
-        return self._validar_provincia_unica_coordinador(cleaned)
+        cleaned = self._validar_provincia_unica_coordinador(cleaned)
+        # SIMEPI - EGP se valida al final, después de DataCalle: el alcance
+        # efectivo de un usuario de DataCalle lo decide el rol, así que correr
+        # antes miraba el panel y no lo que realmente se va a guardar.
+        return self._validate_simepi_egp_scope(cleaned)
 
     def save(self, commit=True):
         with transaction.atomic():
@@ -1685,14 +1830,17 @@ class CustomUserChangeForm(
         cleaned = super().clean()
         cleaned = self._clean_optional_email(cleaned)
         cleaned = self._clean_territorial_scope_fields(cleaned)
-        cleaned = self._validate_simepi_egp_scope(cleaned)
         if cleaned.get("es_coordinador") and not cleaned.get("duplas_asignadas"):
             self.add_error("duplas_asignadas", "Seleccione al menos una dupla.")
         self._validate_selected_within_allowed(cleaned)
         cleaned = self._clean_pwa_fields(cleaned)
         cleaned = self._clean_territorial_comedor_fields(cleaned)
         cleaned = self._clean_relevador_calle_fields(cleaned)
-        return self._validar_provincia_unica_coordinador(cleaned)
+        cleaned = self._validar_provincia_unica_coordinador(cleaned)
+        # SIMEPI - EGP se valida al final, después de DataCalle: el alcance
+        # efectivo de un usuario de DataCalle lo decide el rol, así que correr
+        # antes miraba el panel y no lo que realmente se va a guardar.
+        return self._validate_simepi_egp_scope(cleaned)
 
     def save(self, commit=True):
         with transaction.atomic():

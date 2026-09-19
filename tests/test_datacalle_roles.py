@@ -892,3 +892,139 @@ def test_la_migracion_0053_tambien_migra_a_los_relevadores(provincia):
     coordinador.profile.refresh_from_db()
     assert relevador.profile.datacalle_rol == "entrevistador"
     assert coordinador.profile.datacalle_rol == "coordinador"
+
+
+# ---------------------------------------------------------------------------
+# Segunda revisión (2026-09-19): el rol de DataCalle no puede reescribir el
+# panel territorial genérico del backoffice.
+# ---------------------------------------------------------------------------
+
+
+def _con_alcance(username, provincias, municipio=None):
+    """Usuario del backoffice con alcance territorial ya cargado."""
+    user = get_user_model().objects.create_user(
+        username=username, email=f"{username}@example.com", password="Sisoc12345!"
+    )
+    user.is_staff = True
+    user.save()
+    perfil = user.profile
+    perfil.es_usuario_provincial = True
+    perfil.save()
+    for prov in provincias:
+        perfil.territorial_scopes.create(provincia=prov, municipio=municipio)
+    return user
+
+
+@pytest.mark.django_db
+def test_el_rol_coordinador_no_le_borra_las_otras_provincias(provincia):
+    """BLOQUEANTE: ``es_usuario_provincial`` y ``ProfileTerritorialScope`` no son
+    de DataCalle, son el panel territorial que comparten comedores, admisiones
+    y SIMEPI.
+
+    ``_derivar_alcance_datacalle`` los reescribía según el rol, así que un
+    usuario con tres provincias al que se le asignaba ``coordinador`` de
+    Córdoba perdía Salta y Jujuy en todos esos módulos, sin error y sin aviso.
+    La decisión es rechazar, no pisar.
+    """
+    from users.forms import CustomUserChangeForm
+
+    salta = Provincia.objects.create(nombre="Salta")
+    jujuy = Provincia.objects.create(nombre="Jujuy")
+    usuario = _con_alcance("tres_provincias", [provincia, salta, jujuy])
+
+    form = CustomUserChangeForm(
+        instance=usuario,
+        actor=_superusuario("super_conflicto"),
+        data=_datos_edicion(
+            usuario,
+            es_relevador_calle="on",
+            datacalle_rol="coordinador",
+            provincias_datacalle=[provincia.id],
+        ),
+    )
+
+    assert form.is_valid() is False
+    mensaje = " ".join(form.errors["datacalle_rol"])
+    # Accionable: cuántas tiene hoy, cuáles, qué perdería y qué hacer antes.
+    assert "3 provincias" in mensaje
+    assert "Salta" in mensaje
+    assert "comedores" in mensaje
+    assert "alcance territorial" in mensaje
+    # Y no se guardó nada a medias.
+    usuario.profile.refresh_from_db()
+    assert usuario.profile.territorial_scopes.count() == 3
+    assert usuario.profile.datacalle_rol == ""
+
+
+@pytest.mark.django_db
+def test_el_rol_administrador_no_deja_irrestricto_al_que_tenia_alcance(provincia):
+    """El administrador nacional no tiene alcance: quitárselo a un usuario que
+    sí lo tenía lo vuelve irrestricto en **todo** el backoffice, no sólo en
+    DataCalle."""
+    from users.forms import CustomUserChangeForm
+
+    usuario = _con_alcance("una_provincia", [provincia])
+
+    form = CustomUserChangeForm(
+        instance=usuario,
+        actor=_superusuario("super_conflicto_admin"),
+        data=_datos_edicion(
+            usuario,
+            es_relevador_calle="on",
+            datacalle_rol="administrador",
+        ),
+    )
+
+    assert form.is_valid() is False
+    mensaje = " ".join(form.errors["datacalle_rol"])
+    assert "1 provincia" in mensaje
+    assert "sin restricción territorial en todo el backoffice" in mensaje
+    usuario.profile.refresh_from_db()
+    assert usuario.profile.es_usuario_provincial is True
+    assert usuario.profile.territorial_scopes.count() == 1
+
+
+@pytest.mark.django_db
+def test_un_alcance_municipal_no_se_ensancha_al_hacerlo_coordinador(provincia):
+    """Derivar a provincia completa a quien hoy sólo ve un municipio le
+    **ensancha** el acceso en los otros módulos: también es conflicto."""
+    from core.models import Municipio
+    from users.forms import CustomUserChangeForm
+
+    municipio = Municipio.objects.create(nombre="Capital", provincia=provincia)
+    usuario = _con_alcance("solo_municipio", [provincia], municipio=municipio)
+
+    form = CustomUserChangeForm(
+        instance=usuario,
+        actor=_superusuario("super_conflicto_muni"),
+        data=_datos_edicion(
+            usuario,
+            es_relevador_calle="on",
+            datacalle_rol="coordinador",
+            provincias_datacalle=[provincia.id],
+        ),
+    )
+
+    assert form.is_valid() is False
+    mensaje = " ".join(form.errors["datacalle_rol"])
+    assert "municipal" in mensaje
+    # Un solo error: no se repite "le falta una provincia completa".
+    assert "provincias_datacalle" not in form.errors
+
+
+@pytest.mark.django_db
+def test_el_alta_sin_alcance_previo_si_deriva_la_provincia(provincia):
+    """El caso común del alta sigue andando: sin alcance cargado no hay
+    conflicto y el sistema arma el alcance solo (D1)."""
+    coord = _crear_por_formulario(
+        _superusuario("super_sin_alcance"),
+        "coord_sin_alcance",
+        "coordinador",
+        provincia,
+    )
+
+    perfil = coord.profile
+    assert perfil.es_usuario_provincial is True
+    assert list(perfil.territorial_scopes.values_list("provincia_id", flat=True)) == [
+        provincia.id
+    ]
