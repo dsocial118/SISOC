@@ -402,3 +402,40 @@ def test_rn02_el_administrador_si_puede_crear_coordinadores(provincia):
     ofrecidos = [codigo for codigo, _ in form.fields["datacalle_rol"].choices if codigo]
 
     assert ofrecidos == ["administrador", "coordinador", "entrevistador"]
+
+
+def _administrador_datacalle(username="admin_dc"):
+    """Administrador Nacional: rol + grupo, sin alcance territorial (es nacional)."""
+    user = get_user_model().objects.create_user(
+        username=username, email=f"{username}@example.com", password="Sisoc12345!"
+    )
+    user.is_staff = True
+    user.save()
+    user.groups.add(Group.objects.get_or_create(name="Administrador DataCalle")[0])
+    user.profile.datacalle_rol = "administrador"
+    user.profile.es_relevador_calle = True
+    user.profile.save()
+    return user
+
+
+@pytest.mark.django_db
+def test_rn02_el_administrador_ve_a_todos_los_usuarios_de_datacalle(rf, provincia):
+    """Matriz punto 5: el Administrador Nacional visualiza usuarios de todas las
+    provincias. Sin esto no puede crear coordinadores, que es lo unico que RN02
+    le reserva en exclusiva."""
+    salta = Provincia.objects.create(nombre="Salta")
+    admin = _administrador_datacalle()
+    coord = _coordinador_datacalle(provincia, "coord_cba")
+    coord.profile.datacalle_rol = "coordinador"
+    coord.profile.save()
+    relev_salta = _entrevistador(salta, "entrev_salta")
+    superusuario = get_user_model().objects.create_superuser(
+        "root_dc", "root@example.com", "Sisoc12345!"
+    )
+
+    visibles = _visibles(admin, rf)
+
+    assert coord.username in visibles
+    assert relev_salta.username in visibles
+    # El alcance no salta la guarda que ya protege al resto de los roles.
+    assert superusuario.username not in visibles

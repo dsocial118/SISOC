@@ -129,7 +129,7 @@ def es_coordinador_calle(user) -> bool:
 
 
 def get_relevadores_administrables(actor):
-    """Entrevistadores que un coordinador de DataCalle puede administrar.
+    """Usuarios de DataCalle que el actor puede administrar, segun su rol.
 
     QA-0016 y QA-0018: el coordinador da de alta y de baja a los entrevistadores
     de su provincia, así que tiene que verlos en el listado de usuarios. La
@@ -148,9 +148,25 @@ def get_relevadores_administrables(actor):
     usuario permite fijar contraseña—. Marcar el flag degrada a no-staff, así
     que el filtro no puede dejar afuera a un entrevistador real.
 
-    Devuelve ``None`` cuando el actor no es coordinador, para que quien llame
-    no altere el alcance de los demás roles.
+    El Administrador Nacional es el caso un nivel arriba: RN02 dice que es el
+    unico que crea coordinadores y el documento funcional le pide "visualizar
+    usuarios de todas las provincias". Sin esta rama no tenia alcance extra
+    —no tiene scopes provinciales— y el listado lo dejaba viendose solo a si
+    mismo, con lo que el flujo "Administrador -> Crear usuario -> Rol
+    Coordinador" no arrancaba sin una delegacion aparte.
+
+    Devuelve ``None`` cuando el actor no es coordinador ni administrador, para
+    que quien llame no altere el alcance de los demás roles.
     """
+    if es_administrador_datacalle(actor):
+        return User.objects.filter(
+            profile__datacalle_rol__in=[
+                "administrador",
+                "coordinador",
+                "entrevistador",
+            ],
+            is_superuser=False,
+        )
     if not es_coordinador_calle(actor):
         return None
     provincia_ids = get_full_province_scope_ids(actor)

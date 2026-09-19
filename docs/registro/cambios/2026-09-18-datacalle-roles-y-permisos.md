@@ -83,6 +83,13 @@ segundo bloque de QA (`2026-09-17-datacalle-qa-segundo-bloque.md`).
   `get_datacalle_rol`: ya no queda gateado detrás de `es_relevador_calle`, que
   con la semántica nueva no decide nada.
 
+- **El Administrador Nacional ve y administra a todos los usuarios de
+  DataCalle del país** (coordinadores, relevadores y otros administradores, sin
+  superusuarios). Sin esto no tenía alcance en el listado —no tiene scopes
+  provinciales— y se veía sólo a sí mismo, con lo que el flujo "Administrador →
+  Crear usuario → Rol Coordinador" que RN02 le reserva no arrancaba sin una
+  delegación aparte. Es el análogo un nivel arriba de la regla del coordinador.
+
 ## Decisiones
 
 1. **`es_relevador_calle` cambia de significado en vez de renombrarse.** Un
