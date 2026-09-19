@@ -29,6 +29,8 @@
 {% block content %}
     <link rel="stylesheet"
           href="{% static 'custom/css/numeroExpedienteModal.css' %}" />
+    <link rel="stylesheet"
+          href="{% static 'custom/css/informeTecnicoSecciones.css' %}" />
     <div class="row justify-content-between d-print-none mx-1 mb-3">
         <div class="col-auto">
             <a href="{% url 'admisiones_tecnicos_listar' %}"
@@ -36,7 +38,15 @@
         </div>
         <div class="col-auto">
             {% for boton in botones_disponibles %}
-                {% render_boton_tecnicos boton admision informe_tecnico %}
+                {% if informe_form and boton == "caratular_expediente" %}
+                    <a href="#informe-tecnico-seccion" class="btn btn-primary mr-1">Caratular expediente</a>
+                {% elif informe_form and boton == "crear_informe_tecnico" %}
+                    <a href="#informe-tecnico-seccion" class="btn btn-primary mr-1">Crear Informe Técnico</a>
+                {% elif informe_form and boton == "editar_informe_tecnico" %}
+                    <a href="#informe-tecnico-seccion" class="btn btn-primary mr-1">Editar Informe Técnico</a>
+                {% else %}
+                    {% render_boton_tecnicos boton admision informe_tecnico %}
+                {% endif %}
             {% endfor %}
         </div>
     </div>
@@ -230,7 +240,9 @@
                                 </div>
                                 <div class="mt-3">
                                     <label for="informeComplementarioPrestacionesInicial"
-                                           class="form-label fw-bold">¿Se realizó Informe Complementario para modificar prestaciones?</label>
+                                           class="form-label fw-bold">
+                                        ¿Se realizó Informe Complementario para modificar prestaciones?
+                                    </label>
                                     <select class="form-select"
                                             id="informeComplementarioPrestacionesInicial"
                                             name="informe_complementario_modifica_prestaciones"
@@ -251,65 +263,6 @@
                                     {% if not tipo_convenio_precargado %}disabled{% endif %}>Continuar</button>
                         </div>
                     </form>
-                </div>
-            </div>
-        </div>
-    {% endif %}
-    {% if admision.tipo_convenio %}
-        <div class="row mb-3">
-            <div class="col-12">
-                <div class="card card-primary card-outline">
-                    <div class="card-header">
-                        <h2 class="card-title fw-bold">Validaciones para templates</h2>
-                    </div>
-                    <div class="card-body">
-                        <p class="text-muted">Estas validaciones no modifican la documentación requerida por el tipo de convenio.</p>
-                        {% if puede_editar_validaciones_template %}
-                            <form method="post">
-                                {% csrf_token %}
-                                <input type="hidden" name="guardar_validaciones_template" value="1" />
-                                <div class="row">
-                                    {% if admision.tipo == "incorporacion" %}
-                                        <div class="col-md-6">{{ validaciones_template_form.es_ex_pnud|as_crispy_field }}</div>
-                                        <div class="col-md-6" id="estadoConvenioPnudEdicionContainer">
-                                            {{ validaciones_template_form.estado_convenio_pnud|as_crispy_field }}
-                                        </div>
-                                    {% elif admision.tipo == "renovacion" %}
-                                        <div class="col-md-6">{{ validaciones_template_form.tipo_renovacion|as_crispy_field }}</div>
-                                        <div class="col-md-6">{{ validaciones_template_form.estado_financiamiento|as_crispy_field }}</div>
-                                        <div class="col-md-6">{{ validaciones_template_form.informe_complementario_modifica_prestaciones|as_crispy_field }}</div>
-                                    {% endif %}
-                                </div>
-                                <button type="submit" class="btn btn-primary">Guardar validaciones</button>
-                            </form>
-                        {% elif admision.tipo == "incorporacion" %}
-                            <dl class="row mb-0">
-                                <dt class="col-sm-4">¿Es Ex PNUD?</dt>
-                                <dd class="col-sm-8">
-                                    {{ admision.get_es_ex_pnud_display|default:"-" }}
-                                </dd>
-                                <dt class="col-sm-4">Estado del convenio PNUD</dt>
-                                <dd class="col-sm-8">
-                                    {{ admision.get_estado_convenio_pnud_display|default:"No aplica" }}
-                                </dd>
-                            </dl>
-                        {% elif admision.tipo == "renovacion" %}
-                            <dl class="row mb-0">
-                                <dt class="col-sm-4">Renovación que tramita</dt>
-                                <dd class="col-sm-8">
-                                    {{ admision.get_tipo_renovacion_display|default:"-" }}
-                                </dd>
-                                <dt class="col-sm-4">Estado del financiamiento</dt>
-                                <dd class="col-sm-8">
-                                    {{ admision.get_estado_financiamiento_display|default:"-" }}
-                                </dd>
-                                <dt class="col-sm-4">Informe Complementario - Modificación de Prestaciones</dt>
-                                <dd class="col-sm-8">
-                                    {{ admision.get_informe_complementario_modifica_prestaciones_display|default:"-" }}
-                                </dd>
-                            </dl>
-                        {% endif %}
-                    </div>
                 </div>
             </div>
         </div>
@@ -643,6 +596,67 @@
         </div>
     </div>
     </div>
+{% if admision.tipo_convenio %}
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="card card-primary card-outline">
+                <div class="card-header">
+                    <h2 class="card-title fw-bold">Validaciones para templates</h2>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">Estas validaciones no modifican la documentación requerida por el tipo de convenio.</p>
+                    {% if puede_editar_validaciones_template %}
+                        <form method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="guardar_validaciones_template" value="1" />
+                            <div class="row">
+                                {% if admision.tipo == "incorporacion" %}
+                                    <div class="col-md-6">{{ validaciones_template_form.es_ex_pnud|as_crispy_field }}</div>
+                                    <div class="col-md-6" id="estadoConvenioPnudEdicionContainer">
+                                        {{ validaciones_template_form.estado_convenio_pnud|as_crispy_field }}
+                                    </div>
+                                {% elif admision.tipo == "renovacion" %}
+                                    <div class="col-md-6">{{ validaciones_template_form.tipo_renovacion|as_crispy_field }}</div>
+                                    <div class="col-md-6">{{ validaciones_template_form.estado_financiamiento|as_crispy_field }}</div>
+                                    <div class="col-md-6">
+                                        {{ validaciones_template_form.informe_complementario_modifica_prestaciones|as_crispy_field }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <button type="submit" class="btn btn-primary">Guardar validaciones</button>
+                        </form>
+                    {% elif admision.tipo == "incorporacion" %}
+                        <dl class="row mb-0">
+                            <dt class="col-sm-4">¿Es Ex PNUD?</dt>
+                            <dd class="col-sm-8">
+                                {{ admision.get_es_ex_pnud_display|default:"-" }}
+                            </dd>
+                            <dt class="col-sm-4">Estado del convenio PNUD</dt>
+                            <dd class="col-sm-8">
+                                {{ admision.get_estado_convenio_pnud_display|default:"No aplica" }}
+                            </dd>
+                        </dl>
+                    {% elif admision.tipo == "renovacion" %}
+                        <dl class="row mb-0">
+                            <dt class="col-sm-4">Renovación que tramita</dt>
+                            <dd class="col-sm-8">
+                                {{ admision.get_tipo_renovacion_display|default:"-" }}
+                            </dd>
+                            <dt class="col-sm-4">Estado del financiamiento</dt>
+                            <dd class="col-sm-8">
+                                {{ admision.get_estado_financiamiento_display|default:"-" }}
+                            </dd>
+                            <dt class="col-sm-4">Informe Complementario - Modificación de Prestaciones</dt>
+                            <dd class="col-sm-8">
+                                {{ admision.get_informe_complementario_modifica_prestaciones_display|default:"-" }}
+                            </dd>
+                        </dl>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+{% endif %}
 {% if admision.estado_legales == "A Rectificar" %}
     <div class="row mb-3">
         <div class="col-12">
@@ -746,6 +760,52 @@
         </div>
     </div>
     </div>
+{% if informe_form %}
+    <!-- INFORME TECNICO + CARATULACION -->
+    <div class="row" id="informe-tecnico-seccion">
+        <div class="col-12">
+            <div class="card card-primary card-outline">
+                <div class="card-header">
+                    <h2 class="card-title fw-bold fs-3 mb-0">Informe Técnico y Carátula del Expediente</h2>
+                </div>
+                <div class="card-body pb-0">
+                    <p class="text-muted mb-0">
+                        <i class="fas fa-info-circle me-1" aria-hidden="true"></i>
+                        <strong>Finalizar</strong> resuelve en un solo paso la caratulación del
+                        expediente y el informe técnico, aplicando las validaciones de cada uno.
+                        <strong>Guardar Borrador</strong> guarda el avance de ambos sin exigir los campos
+                        obligatorios, incluida una carátula a medio cargar.
+                    </p>
+                </div>
+                <div class="card-body">
+                    <form method="POST"
+                          action=""
+                          enctype="multipart/form-data"
+                          data-localidades-url="{% url 'ajax_load_localidades' %}"
+                          data-avisar-cambios-sin-guardar="1">
+                        {% csrf_token %}
+                        <input type="hidden" name="btnInformeTecnicoCaratula" value="1" />
+                        {% include "admisiones/caratula_expediente_form.html" with caratular_form=caratular_form_informe %}
+                        {% include "admisiones/partials/informe_tecnico_campos.html" with form=informe_form tipo=informe_tipo campos_a_subsanar=informe_campos_a_subsanar observacion=informe_observacion %}
+                        <div class="d-flex justify-content-end gap-2">
+                            <button type="submit"
+                                    name="action"
+                                    value="draft"
+                                    formnovalidate
+                                    class="btn btn-primary">
+                                <i class="fas fa-save"></i> Guardar Borrador
+                            </button>
+                            <button type="submit" name="action" value="submit" class="btn btn-success">
+                                <i class="fas fa-paper-plane"></i> Finalizar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% include "admisiones/partials/confirmar_salir_sin_guardar.html" %}
+{% endif %}
 <!-- MODAL OBSERVACIONES RECTIFICAR -->
 <div class="modal fade"
      id="modalObservacionRectificar"
@@ -1244,6 +1304,16 @@
             });
         </script>
     {% endif %}
+    {% if informe_form_con_errores %}
+        <script nonce="{{ request.csp_nonce }}">
+            document.addEventListener("DOMContentLoaded", function() {
+                var seccion = document.getElementById("informe-tecnico-seccion");
+                if (seccion) {
+                    seccion.scrollIntoView({ behavior: "smooth", block: "start" });
+                }
+            });
+        </script>
+    {% endif %}
     <div id="admisiones-tecnicos-config"
          data-csrf-token="{{ csrf_token }}"
          data-url-actualizar-estado="{% url 'actualizar_estado_archivo' %}"
@@ -1304,6 +1374,9 @@
     <script src="{% static 'custom/js/admisionesactualizarestado.js' %}"></script>
     <script src="{% static 'custom/js/admisionesTecnicoCrear.js' %}"></script>
     <script src="{% static 'custom/js/admisionResyncConvenio.js' %}"></script>
+    <script src="{% static 'custom/js/informeTecnicoSecciones.js' %}"></script>
+    <script src="{% static 'custom/js/geografiaProvinciaLocalidad.js' %}"></script>
+    <script src="{% static 'custom/js/informeTecnicoCambiosSinGuardar.js' %}"></script>
     <script nonce="{{ request.csp_nonce }}">
                         document.addEventListener('DOMContentLoaded', function() {
                             const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));

@@ -69,7 +69,7 @@ QUERY_PARAM_LABELS = {
     "fecha_desde": "Desde",
     "fecha_hasta": "Hasta",
     "expediente_numero": "Expediente",
-    "documento_persona": "Documento",
+    "documento_persona": "CUIL",
     "revision_tecnico": "Validacion tecnica",
     "resultado_sintys": "Cruce SINTYS",
     "estado_cupo": "Estado de cupo",
