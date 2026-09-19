@@ -1,3 +1,11 @@
+<!-- AUTO-GENERATED RELEASE START: 2026-09-23 -->
+# Versión SISOC 23.09.2026
+
+## Actualizaciones
+
+- [sin-area] fix(datacalle): revisión QA del backoffice + tres roles con provincia única. (PR #2542)
+<!-- AUTO-GENERATED RELEASE END: 2026-09-23 -->
+
 <!-- AUTO-GENERATED RELEASE START: 2026-09-16 -->
 # Versión SISOC 16.09.2026
 
