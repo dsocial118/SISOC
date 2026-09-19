@@ -795,13 +795,18 @@ def test_el_rol_del_perfil_llega_a_la_api_sin_el_flag(provincia):
 
 
 @pytest.mark.django_db
-def test_la_migracion_0053_clasifica_con_el_predicado_de_los_servicios(provincia):
-    """E: la migración usaba ``territorial_scopes.exists()``.
+def test_la_migracion_0053_clasifica_por_la_restriccion_territorial(provincia):
+    """E: la migración clasificaba con el predicado equivocado, dos veces.
 
-    Los lectores en runtime usan ``get_full_province_scope_ids``, que además
-    exige ``es_usuario_provincial=True`` y provincia **completa**. Un perfil
-    con scopes pero sin el flag quedaba marcado ``coordinador`` y en la
-    práctica era un administrador nacional.
+    Primero usaba ``territorial_scopes.exists()``: un perfil con scopes pero
+    sin ``es_usuario_provincial`` quedaba ``coordinador`` cuando en runtime los
+    lectores lo tratan como nacional. Después pasó a
+    ``get_full_province_scope_ids``, que arregla ese caso pero mete en la misma
+    bolsa al provincial con alcance **sólo municipal**: el predicado de alcance
+    efectivo no distingue "sin restricción" de "restricción municipal", y para
+    decidir un rol esa diferencia es todo. Ahora la pregunta es la restricción:
+    quien la tiene activa queda ``coordinador``, tenga provincia completa o un
+    único municipio.
     """
     import importlib
 
@@ -828,8 +833,10 @@ def test_la_migracion_0053_clasifica_con_el_predicado_de_los_servicios(provincia
     completo.profile.es_usuario_provincial = True
     completo.profile.save()
     completo.profile.territorial_scopes.create(provincia=provincia)
-    # Provincial pero sólo con alcance municipal: get_full_province_scope_ids
-    # devuelve [], así que en runtime tampoco tiene provincia.
+    # Provincial pero sólo con alcance municipal: hoy en el backoffice
+    # ``apply_relevamientos_scope`` le devuelve ``.none()``, o sea que no ve
+    # nada. Ascenderlo a ``administrador`` -que es lo que hacía clasificar por
+    # ``get_full_province_scope_ids``- le regalaba el país entero.
     municipal = _con_grupo("mig_municipal")
     municipal.profile.es_usuario_provincial = True
     municipal.profile.save()
@@ -843,7 +850,8 @@ def test_la_migracion_0053_clasifica_con_el_predicado_de_los_servicios(provincia
     for user, esperado in (
         (sin_flag, "administrador"),
         (completo, "coordinador"),
-        (municipal, "administrador"),
+        # Mínimo privilegio: con la restricción activa va a ``coordinador``.
+        (municipal, "coordinador"),
     ):
         user.profile.refresh_from_db()
         assert user.profile.datacalle_rol == esperado, user.username

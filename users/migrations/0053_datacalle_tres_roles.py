@@ -3,35 +3,38 @@
 from django.db import migrations, models
 
 
-def _tiene_provincia_completa(perfil):
-    """Replica de ``users.territorial_scope.get_full_province_scope_ids``.
+def _tiene_restriccion_territorial(perfil):
+    """True si el backoffice ya le limita el alcance a este perfil.
 
-    En una migracion no se puede importar codigo de la app (el modelo historico
-    sale de ``apps.get_model``), asi que la logica se repite a mano. Tiene que
-    ser *la misma* que leen los servicios en runtime: la version anterior
-    clasificaba con ``territorial_scopes.exists()``, y un perfil con scopes pero
-    sin ``es_usuario_provincial`` -o con alcance solo municipal- quedaba marcado
-    ``coordinador`` mientras que los lectores lo trataban como nacional. Peor
-    aun: `_provincia_ids_del_usuario` le devolvia el pais entero.
+    Antes se preguntaba por "provincia completa" replicando
+    ``get_full_province_scope_ids``, y ese predicado mete en la misma bolsa dos
+    situaciones que no son equivalentes:
+
+    - el perfil **no** tiene ``es_usuario_provincial``: hoy es irrestricto en el
+      backoffice, asi que ascenderlo a Administrador Nacional no le agrega nada
+      que no tuviera;
+    - el perfil **si** lo tiene pero su alcance es solo municipal: hoy
+      ``apply_relevamientos_scope`` le devuelve ``.none()``, o sea no ve nada.
+      Clasificarlo ``administrador`` le regalaba el pais entero en la app y el
+      cierre de cualquier operativo.
+
+    Para decidir un rol la diferencia es todo, asi que la pregunta correcta es
+    la restriccion, no la forma del alcance: cualquier perfil con la restriccion
+    territorial activa queda ``coordinador``, tenga provincia completa o solo un
+    municipio.
     """
-    if not perfil.es_usuario_provincial:
-        return False
-    scopes = perfil.territorial_scopes.all()
-    if not scopes.exists():
-        # Fallback legacy de ``get_effective_scopes``: sin filas, vale
-        # ``Profile.provincia`` y cuenta como provincia completa.
-        return perfil.provincia_id is not None
-    return scopes.filter(municipio__isnull=True, localidad__isnull=True).exists()
+    return bool(perfil.es_usuario_provincial)
 
 
 def asignar_rol_a_coordinadores_existentes(apps, schema_editor):
     """Los coordinadores que ya existen tienen el grupo pero no el rol.
 
     Sin esto, el dia del despliegue quedan fuera de la app y del gate nuevo.
-    Minimo privilegio: solo quien no tiene ningun alcance provincial efectivo
-    es nacional. Quien si lo tiene queda provincial: equivocarse para este lado
-    cuesta un coordinador de mas, y para el otro, un administrador nacional que
-    nadie decidio crear.
+    Minimo privilegio: solo quien hoy es irrestricto en el backoffice -o sea,
+    quien no tiene ``es_usuario_provincial``- queda ``administrador``. Cualquier
+    perfil con la restriccion territorial activa queda ``coordinador``, aunque su
+    alcance sea solo municipal: equivocarse para este lado cuesta un coordinador
+    de mas, y para el otro, un administrador nacional que nadie decidio crear.
     """
     Group = apps.get_model("auth", "Group")
     Profile = apps.get_model("users", "Profile")
@@ -44,7 +47,9 @@ def asignar_rol_a_coordinadores_existentes(apps, schema_editor):
     for perfil in perfiles:
         if perfil.datacalle_rol:
             continue
-        rol = "coordinador" if _tiene_provincia_completa(perfil) else "administrador"
+        rol = (
+            "coordinador" if _tiene_restriccion_territorial(perfil) else "administrador"
+        )
         perfil.datacalle_rol = rol
         perfil.es_relevador_calle = True
         perfil.save(update_fields=["datacalle_rol", "es_relevador_calle"])
