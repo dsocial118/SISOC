@@ -687,7 +687,7 @@ def test_actualizar_registro_erroneo_permite_mayor_con_responsable_incompleto(cl
         datos_raw={
             "apellido": "Perez",
             "nombre": "Ana",
-            "documento": "12345678",
+            "documento": "20123456783",
             "fecha_nacimiento": "01/01/1990",
             "sexo": str(sexo.pk),
             "nacionalidad": str(argentina.pk),
@@ -743,7 +743,7 @@ def test_actualizar_registro_erroneo_conserva_nacionalidad_elegida_y_corrige_mun
         datos_raw={
             "apellido": "Perez",
             "nombre": "Ana",
-            "documento": "12345678",
+            "documento": "20123456783",
             "fecha_nacimiento": "01/01/1990",
             "sexo": "1",
             "nacionalidad": str(otra_nacionalidad.pk),
@@ -792,7 +792,7 @@ def test_actualizar_registro_erroneo_permite_corregir_nacionalidad_invalida(clie
         datos_raw={
             "apellido": "Perez",
             "nombre": "Ana",
-            "documento": "12345678",
+            "documento": "20123456783",
             "fecha_nacimiento": "01/01/1990",
             "sexo": str(sexo.pk),
             "nacionalidad": "Narnia",
