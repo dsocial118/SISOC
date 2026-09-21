@@ -14,6 +14,8 @@
     --reporter-danger: #ff7c78;
     --reporter-danger-soft: rgba(255, 124, 120, 0.18);
     --reporter-neutral: rgba(255, 255, 255, 0.08);
+    --reporter-primary: #a0b2ff;
+    --reporter-primary-soft: rgba(160, 178, 255, 0.16);
     color: var(--reporter-copy);
     display: grid;
     gap: 1.5rem;
@@ -439,6 +441,14 @@
     border-color: rgba(242, 183, 102, 0.22);
 }
 
+.status-chip--primary {
+    border-color: rgba(160, 178, 255, 0.2);
+}
+
+.status-chip--primary .status-chip__bar span {
+    background: linear-gradient(90deg, var(--reporter-primary), #cfd8ff);
+}
+
 .status-chip--success .status-chip__bar span {
     background: linear-gradient(90deg, var(--reporter-success), #77f2ca);
 }
@@ -529,6 +539,70 @@
     background: var(--reporter-accent-soft);
     border-color: rgba(242, 183, 102, 0.28);
     color: #ffe4be;
+}
+
+.reporter-badge--primary {
+    background: var(--reporter-primary-soft);
+    border-color: rgba(160, 178, 255, 0.28);
+    color: #dbe2ff;
+}
+
+/* Subtotales transversales del panel de aprobados: totales de legajos y de
+   personas frente a las duplas, que son unidades y no personas adicionales. */
+.reporter-subtotals {
+    border-top: 1px solid var(--reporter-line);
+    display: grid;
+    gap: 0.75rem;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    margin-top: 1.1rem;
+    padding-top: 1.1rem;
+}
+
+.reporter-subtotal {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 18px;
+    display: grid;
+    gap: 0.2rem;
+    padding: 0.9rem 1rem;
+}
+
+.reporter-subtotal--primary {
+    border-color: rgba(160, 178, 255, 0.22);
+}
+
+.reporter-subtotal--success {
+    border-color: rgba(44, 207, 157, 0.22);
+}
+
+.reporter-subtotal--accent {
+    border-color: rgba(242, 183, 102, 0.26);
+}
+
+.reporter-subtotal--warning {
+    background: var(--reporter-warning-soft);
+    border-color: rgba(123, 199, 255, 0.34);
+}
+
+.reporter-subtotal__label {
+    color: var(--reporter-muted);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    margin: 0;
+    text-transform: uppercase;
+}
+
+.reporter-subtotal__value {
+    font-size: 1.6rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+}
+
+.reporter-subtotal__support {
+    color: var(--reporter-muted);
+    font-size: 0.76rem;
 }
 
 .reporter-pagination {
