@@ -48,14 +48,14 @@
 - `VAT/test_inscripcion_rapida_documento.py`
 - `VAT/tests.py`
 - `VAT/views/reporte.py`
+- `ciudadanos/admin.py`
 - `ciudadanos/api_views.py`
 - `ciudadanos/forms.py`
+- `ciudadanos/management/commands/backfill_identidad.py`
 - `ciudadanos/migrations/0032_ciudadano_documento_pasaporte_ciudadano_pais_emisor.py`
 - `ciudadanos/models.py`
 - `ciudadanos/templates/ciudadanos/ciudadano_detail.html`
-- `docs/contexto/features/pr-2512-feat-vat-baja-de-modalidad-en-el-legajo-y-tipo-de-documento-en-carg.md`
-- `docs/registro/cambios/2026-09-14-inet-modalidad-oculta-y-tipo-documento.md`
-- ... y 2 archivo(s) adicional(es) relacionados.
+- ... y 6 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
