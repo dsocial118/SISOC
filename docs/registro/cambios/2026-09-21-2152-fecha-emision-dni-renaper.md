@@ -44,13 +44,27 @@ Decisiones:
   ejemplar B · vence el dd/mm/aaaa. Los datos de arriba corresponden a este
   ejemplar."
 - **Si el servicio no informa ninguno de los tres, el bloque no se muestra.** Es
-  un dato de referencia, no debe ocupar lugar vacío. Los placeholders que ya usa
-  el resto de la integración (`""`, `"0"`, `"-"`, `"N/A"`, `"null"`) se tratan
-  como ausencia.
+  un dato de referencia, no debe ocupar lugar vacío. Se tratan como ausencia
+  `""`, `"0"`, `"-"`, `"N/A"`, `"NA"`, `"S/D"`, `"SD"`, `"null"` y `"none"`, sin
+  distinguir mayúsculas. Es un criterio propio de esta vista y más amplio que el
+  único filtro equivalente que hay en `core`: `_mapear_datos_renaper` descarta
+  `{"0", "", None}` y sólo para `barrio`. Si un tercer módulo necesita el mismo
+  criterio, conviene subirlo a `core` antes que volver a copiarlo.
 - **Ante un formato de fecha no reconocido se muestra el valor crudo.** Se reusa
   `_formatear_fecha_renaper`, que convierte `YYYY-MM-DD` a `dd/mm/aaaa` y deja
   pasar cualquier otra cosa. No se conoce el contrato exacto del servicio, así
   que ocultar el dato por no poder parsearlo sería peor que mostrarlo tal cual.
+- **Un DNI vencido se destaca.** Es la señal más fuerte de que el domicilio que
+  informa RENAPER puede estar desactualizado, que es exactamente la inferencia
+  que el técnico tenía que hacer a mano. `_ejemplar_esta_vencido` compara el
+  vencimiento contra la fecha de hoy y la franja pasa de `alert-info` a
+  `alert-warning`, con el texto "DNI ... vencido el dd/mm/aaaa. Los datos de
+  arriba corresponden a este ejemplar, que ya está vencido."
+- **`vencido` distingue False de None.** False es "se pudo interpretar la fecha y
+  está vigente"; None es "no se pudo interpretar". Ante un formato desconocido la
+  UI muestra la fecha sin adjetivarla, en lugar de afirmar que el documento está
+  vigente. La comparación vive en Python y no en el JS para que sea testeable y
+  para no duplicar el parseo de `dd/mm/aaaa` en el front.
 
 ## Medición en producción (2026-09-21)
 
@@ -81,9 +95,15 @@ ejemplar igual.
 ## Medición continua
 
 El log `renaper.validation.result_ready` ahora incluye `ejemplar_disponible`
-(booleano) y `campos_ejemplar` (qué claves vinieron con valor), **sin registrar
-los valores**. Con eso se puede medir sobre consultas reales de celiaquía con
-qué frecuencia RENAPER informa el ejemplar.
+(booleano), `campos_ejemplar` (qué claves vinieron con valor) y
+`ejemplar_vencido` (`True`/`False`/`None`), **sin registrar los valores**. Con
+eso se puede medir sobre consultas reales de celiaquía con qué frecuencia
+RENAPER informa el ejemplar y qué proporción de los documentos validados está
+vencida.
+
+`campos_ejemplar` cuenta sólo los tres campos que informa el servicio
+(`EJEMPLAR_CAMPOS_DATO`). `vencido` es un derivado nuestro y queda afuera a
+propósito, para no inflar la medición de cobertura; hay un test que lo fija.
 
 Como referencia cruzada, sobre la tabla que llena centrodefamilia:
 
@@ -100,16 +120,20 @@ producción diga que en la práctica no se va a activar.
 
 ## Archivos
 
-- `celiaquia/views/validacion_renaper.py`: `_extraer_datos_ejemplar_dni` y
-  `_valor_ejemplar` nuevos; `datos_ejemplar` en la respuesta JSON y las dos
+- `celiaquia/views/validacion_renaper.py`: `_extraer_datos_ejemplar_dni`,
+  `_valor_ejemplar`, `_parsear_fecha_ejemplar`, `_ejemplar_esta_vencido` y
+  `_log_datos_ejemplar` nuevos; `datos_ejemplar` en la respuesta JSON y las tres
   claves nuevas en el log `result_ready`.
 - `celiaquia/templates/celiaquia/expediente_detail.html`: contenedor
   `#renaper-ejemplar` en la tarjeta de RENAPER del modal.
-- `static/custom/js/expediente_detail.js`: render de la franja y reseteo al
-  reabrir el modal.
-- `celiaquia/tests/test_validacion_renaper_ejemplar.py`: 14 casos (payload
-  completo, parcial, placeholders, formato inesperado y payload ausente o de
-  tipo inválido).
+- `static/custom/js/expediente_detail.js`: render de la franja, destacado del
+  caso vencido y reseteo al reabrir el modal (incluida la clase del `alert`, para
+  que el ámbar de un legajo vencido no quede pegado en el siguiente).
+- `celiaquia/tests/test_validacion_renaper_ejemplar.py`: 28 casos. Funciones
+  puras (payload completo, parcial, placeholders, formato inesperado, payload
+  ausente o de tipo inválido, vencido/vigente/ilegible, claves de log) y dos
+  tests de `ValidacionRenaperView` con DB que fijan el contrato JSON y las claves
+  de observabilidad, que son las que habilitan la medición en producción.
 
 ## Alcance
 

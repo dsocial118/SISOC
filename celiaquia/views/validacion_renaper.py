@@ -1,10 +1,13 @@
 import logging
 import time
+from datetime import datetime
+
 from django.conf import settings
 from django.shortcuts import get_object_or_404
 from django.views import View
 from django.http import JsonResponse
 from django.core.exceptions import PermissionDenied
+from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_protect
 
@@ -233,8 +236,6 @@ def _formatear_fecha_renaper(fecha_renaper):
         return fecha_renaper
 
     try:
-        from datetime import datetime
-
         if "-" in fecha_renaper and len(fecha_renaper) == 10:
             fecha_obj = datetime.strptime(fecha_renaper, "%Y-%m-%d")
             return fecha_obj.strftime("%d/%m/%Y")
@@ -249,7 +250,46 @@ def _formatear_fecha_renaper(fecha_renaper):
 # que hasta ahora llegaban en cada consulta y se descartaban. Sirven como
 # referencia para saber a qué versión del documento corresponde el domicilio
 # informado, que es la duda que motiva el pedido.
+EJEMPLAR_CAMPOS_DATO = ("emision", "vencimiento", "ejemplar")
+
+# Criterio propio de esta vista, más amplio que el único filtro equivalente que
+# hay en core (`_mapear_datos_renaper` descarta {"0", "", None} y sólo para
+# `barrio`). Si un tercer módulo necesita el mismo criterio, conviene subirlo a
+# core antes que volver a copiarlo.
 EJEMPLAR_PLACEHOLDERS = {"", "0", "-", "n/a", "na", "s/d", "sd", "null", "none"}
+
+# Formatos en los que puede llegar la fecha. El real, medido en producción, es
+# dd/mm/aaaa; el ISO se contempla porque es el que _formatear_fecha_renaper ya
+# venía convirtiendo para el resto de los campos.
+EJEMPLAR_FORMATOS_FECHA = ("%d/%m/%Y", "%Y-%m-%d")
+
+
+def _parsear_fecha_ejemplar(fecha):
+    """Interpreta la fecha del ejemplar. None si el formato no se reconoce."""
+    if not fecha:
+        return None
+
+    for formato in EJEMPLAR_FORMATOS_FECHA:
+        try:
+            return datetime.strptime(fecha, formato).date()
+        except ValueError:
+            continue
+
+    return None
+
+
+def _ejemplar_esta_vencido(vencimiento, hoy=None):
+    """True/False si la fecha se pudo interpretar; None si no.
+
+    El None es deliberado y distinto de False: ante un formato desconocido no
+    hay que afirmar que el documento está vigente. La UI sólo destaca el caso
+    True, así que una fecha ilegible se muestra sin adjetivar.
+    """
+    fecha = _parsear_fecha_ejemplar(vencimiento)
+    if fecha is None:
+        return None
+
+    return fecha < (hoy or timezone.localdate())
 
 
 def _valor_ejemplar(datos_api, clave):
@@ -283,6 +323,20 @@ def _extraer_datos_ejemplar_dni(resultado_renaper):
         "emision": _formatear_fecha_renaper(emision),
         "vencimiento": _formatear_fecha_renaper(vencimiento),
         "ejemplar": ejemplar.upper() if ejemplar else None,
+        "vencido": _ejemplar_esta_vencido(vencimiento),
+    }
+
+
+def _log_datos_ejemplar(datos_ejemplar):
+    """Claves para medir cobertura en producción, sin registrar los valores."""
+    datos = datos_ejemplar or {}
+
+    return {
+        "ejemplar_disponible": bool(datos_ejemplar),
+        "campos_ejemplar": sorted(
+            clave for clave in EJEMPLAR_CAMPOS_DATO if datos.get(clave)
+        ),
+        "ejemplar_vencido": datos.get("vencido"),
     }
 
 
@@ -682,14 +736,7 @@ class ValidacionRenaperView(View):
                         "stage": "result",
                         "campos_provincia": list(datos_provincia.keys()),
                         "campos_renaper": list(datos_renaper_formateados.keys()),
-                        # Permite medir en produccion con que frecuencia RENAPER
-                        # informa el ejemplar, sin registrar los valores.
-                        "ejemplar_disponible": bool(datos_ejemplar),
-                        "campos_ejemplar": sorted(
-                            clave
-                            for clave, valor in (datos_ejemplar or {}).items()
-                            if valor
-                        ),
+                        **_log_datos_ejemplar(datos_ejemplar),
                     }
                 },
             )
