@@ -54,8 +54,8 @@
 - `datacalle/urls.py`
 - `datacalle/views.py`
 - `docs/contexto/features/pr-2542-fix-datacalle-revision-qa-del-backoffice-tres-roles-con-provincia-unica.md`
-- `docs/registro/cambios/2026-09-17-datacalle-qa-segundo-bloque.md`
-- ... y 17 archivo(s) adicional(es) relacionados.
+- `docs/contexto/features/pr-2543-chore-sync-integrar-main-en-development.md`
+- ... y 19 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
