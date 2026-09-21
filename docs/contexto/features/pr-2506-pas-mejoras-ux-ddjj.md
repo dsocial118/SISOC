@@ -28,7 +28,7 @@
 ## Design system y UI
 
 - El PR toca piezas de UI y conviene revisar consistencia visual con el patrón existente.
-- Archivos visuales relevantes: pas/templates/pas/ddjj_formulario.html, pas/templates/pas/persona_detail.html, pas/templates/pas/titulares_import.html, static/custom/css/pas_ddjj.css, static/custom/img/formando_capital_humano_marca.png, static/custom/js/pas_ddjj.js
+- Archivos visuales relevantes: pas/templates/pas/ddjj_formulario.html, pas/templates/pas/persona_detail.html, pas/templates/pas/persona_form.html, pas/templates/pas/titulares_import.html, static/custom/css/pas_ddjj.css, static/custom/img/formando_capital_humano_marca.png, static/custom/js/pas_ddjj.js
 
 ## Memoria operativa para agentes
 
@@ -49,12 +49,12 @@
 - `pas/services/titulares_import_service.py`
 - `pas/templates/pas/ddjj_formulario.html`
 - `pas/templates/pas/persona_detail.html`
+- `pas/templates/pas/persona_form.html`
 - `pas/templates/pas/titulares_import.html`
 - `pas/tests/test_cruces.py`
 - `pas/tests/test_ddjj.py`
-- `pas/tests/test_supervivencia_jobs.py`
-- `pas/tests/test_supervivencia_service.py`
-- ... y 5 archivo(s) adicional(es) relacionados.
+- `pas/tests/test_pas_persona_service.py`
+- ... y 7 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
