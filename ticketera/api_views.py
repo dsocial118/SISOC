@@ -20,8 +20,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from audittrail.context import audit_context
-from centrodeinfancia.access import ids_centros_referente, ids_centros_trabajador
-from centrodeinfancia.models import CentroDeInfancia
+from centrodeinfancia.public_api import centros_cdi_de_usuario
 from core.api_auth import HasAPIKey
 from ticketera.api_serializers import (
     TicketeraAuthCambiarPasswordResponseSerializer,
@@ -46,37 +45,6 @@ from users.services_auth import (
 
 
 AUDIT_SOURCE = "ticketera"
-
-
-def _centros_cdi_payload(user):
-    """Snapshot de CDIs vigentes del usuario, agrupado por tipo de vínculo.
-
-    Los helpers de alcance CDI conservan las reglas del dominio: referentes con
-    acceso activo y trabajadores no eliminados lógicamente. La consulta final
-    usa el manager normal de CentroDeInfancia, por lo que tampoco expone CDIs
-    eliminados lógicamente. Se resuelven todos los centros en bloque.
-    """
-    centros_por_vinculo = (
-        ("referente", set(ids_centros_referente(user) or [])),
-        ("trabajador", set(ids_centros_trabajador(user) or [])),
-    )
-    centros_por_id = CentroDeInfancia.objects.only(
-        "id", "nombre", "codigo_cdi"
-    ).in_bulk(
-        {centro_id for _, centro_ids in centros_por_vinculo for centro_id in centro_ids}
-    )
-
-    return [
-        {
-            "id": centro.id,
-            "nombre": centro.nombre,
-            "codigo_cdi": centro.codigo_cdi,
-            "vinculo": vinculo,
-        }
-        for vinculo, centro_ids in centros_por_vinculo
-        for centro_id in sorted(centro_ids)
-        if (centro := centros_por_id.get(centro_id)) is not None
-    ]
 
 
 def _is_ticketera_source(source: str) -> bool:
@@ -307,7 +275,7 @@ class TicketeraAuthVerificarView(APIView):
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 
-        centros_cdi = _centros_cdi_payload(user)
+        centros_cdi = centros_cdi_de_usuario(user)
 
         with audit_context(
             source=AUDIT_SOURCE,
