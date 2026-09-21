@@ -34,7 +34,9 @@
 - `celiaquia/templates/celiaquia/reporter_provincias.html`
 - `celiaquia/tests/test_reporter_provincias.py`
 - `celiaquia/views/reporter_provincias.py`
+- `docs/contexto/features/pr-2546-celiaquia-tk-2362.md`
 - `docs/registro/cambios/2026-09-21-2362-duplas-hijo-responsable-reporter.md`
+- `docs/registro/prs/PR-2546.md`
 - `static/custom/css/reporter_provincias.css`
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
