@@ -575,13 +575,15 @@
     border-color: rgba(44, 207, 157, 0.22);
 }
 
+/* La tarjeta de duplas va resaltada y en el mismo tono que el badge "Dupla" del
+   detalle, para que las dos lecturas del dato se reconozcan como la misma. */
 .reporter-subtotal--accent {
-    border-color: rgba(242, 183, 102, 0.26);
+    background: var(--reporter-accent-soft);
+    border-color: rgba(242, 183, 102, 0.34);
 }
 
 .reporter-subtotal--warning {
-    background: var(--reporter-warning-soft);
-    border-color: rgba(123, 199, 255, 0.34);
+    border-color: rgba(123, 199, 255, 0.26);
 }
 
 .reporter-subtotal__label {

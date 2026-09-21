@@ -15,6 +15,10 @@ from celiaquia.models import (
     Expediente,
     ExpedienteCiudadano,
 )
+from celiaquia.views.reporter_provincias import (
+    _anotar_clasificacion_pagina,
+    _build_clasificacion_aprobados,
+)
 
 
 def _permiso(codename):
@@ -359,3 +363,187 @@ def test_reporter_provincias_marca_dupla_en_el_detalle(client):
     # una sola vez, del lado del hijo.
     assert filas[legajo_responsable.pk].clasificacion_label == "Responsable"
     assert filas[legajo_responsable.pk].integra_dupla is False
+
+
+def _expediente(user, estado_expediente, numero):
+    return Expediente.objects.create(
+        usuario_provincia=user,
+        estado=estado_expediente,
+        numero_expediente=numero,
+    )
+
+
+def _legajo(expediente, ciudadano, estado_legajo, rol, revision="APROBADO"):
+    return ExpedienteCiudadano.objects.create(
+        expediente=expediente,
+        ciudadano=ciudadano,
+        estado=estado_legajo,
+        rol=rol,
+        revision_tecnico=revision,
+    )
+
+
+@pytest.mark.django_db
+def test_reporter_provincias_cuenta_beneficiarios_en_personas_no_en_legajos(client):
+    """`ExpedienteCiudadano` es unico por (expediente, ciudadano), asi que un
+    ciudadano puede tener legajos aprobados en mas de un expediente. "Personas
+    unicas" y "Beneficiarios alcanzados" se cuentan en personas; solo "Legajos
+    aprobados" cuenta legajos."""
+    provincia = Provincia.objects.create(nombre="Jujuy Personas")
+    user = _create_user_with_permission("reporter-personas", provincia=provincia)
+    estado_expediente = EstadoExpediente.objects.create(nombre="CRUCE_FINALIZADO")
+    estado_legajo = EstadoLegajo.objects.create(nombre="ARCHIVO_CARGADO_PERSONAS")
+    exp_a = _expediente(user, estado_expediente, "EXP-PERSONAS-A")
+    exp_b = _expediente(user, estado_expediente, "EXP-PERSONAS-B")
+
+    def _ciudadano(documento, nombre):
+        return Ciudadano.objects.create(
+            apellido="Personas",
+            nombre=nombre,
+            documento=documento,
+            fecha_nacimiento=date(1985, 1, 1),
+            provincia=provincia,
+        )
+
+    # Mismo beneficiario en dos expedientes: 2 legajos, 1 persona.
+    repetido = _ciudadano(44000001, "Repetido")
+    _legajo(exp_a, repetido, estado_legajo, ExpedienteCiudadano.ROLE_BENEFICIARIO)
+    _legajo(exp_b, repetido, estado_legajo, ExpedienteCiudadano.ROLE_BENEFICIARIO)
+
+    # Responsable puro en un expediente y beneficiario en el otro: es
+    # beneficiario alcanzado, no se lo puede descontar por el legajo de rol
+    # responsable.
+    mixto = _ciudadano(44000002, "Mixto")
+    _legajo(exp_a, mixto, estado_legajo, ExpedienteCiudadano.ROLE_RESPONSABLE)
+    _legajo(exp_b, mixto, estado_legajo, ExpedienteCiudadano.ROLE_BENEFICIARIO)
+
+    # Responsable puro y nada mas: no es beneficiario alcanzado.
+    responsable = _ciudadano(44000003, "Responsable")
+    _legajo(exp_a, responsable, estado_legajo, ExpedienteCiudadano.ROLE_RESPONSABLE)
+
+    client.force_login(user)
+    response = client.get(reverse("reporter_provincias"))
+
+    assert response.status_code == 200
+    clasificacion = response.context["clasificacion_aprobados"]
+
+    assert clasificacion["total"] == 5  # legajos
+    assert clasificacion["personas_unicas"] == 3  # personas
+    # Solo `responsable` queda afuera. Contado en legajos daria 3 (5 - 2), que es
+    # mas que las personas unicas de la misma franja.
+    assert clasificacion["beneficiarios"] == 2
+    assert clasificacion["beneficiarios"] <= clasificacion["personas_unicas"]
+
+
+@pytest.mark.django_db
+def test_reporter_provincias_subtotales_respetan_el_filtro_activo(client):
+    """Los subtotales y las duplas se recalculan sobre la lectura filtrada."""
+    provincia_a = Provincia.objects.create(nombre="Formosa Filtro")
+    provincia_b = Provincia.objects.create(nombre="Misiones Filtro")
+    user = _create_user_with_permission("reporter-filtro", provincia=provincia_a)
+    estado_expediente = EstadoExpediente.objects.create(nombre="CRUCE_FINALIZADO")
+    estado_legajo = EstadoLegajo.objects.create(nombre="ARCHIVO_CARGADO_FILTRO")
+    expediente = _expediente(user, estado_expediente, "EXP-FILTRO-001")
+
+    def _dupla(provincia, documento_base):
+        responsable = Ciudadano.objects.create(
+            apellido="Filtro",
+            nombre="Responsable",
+            documento=documento_base,
+            fecha_nacimiento=date(1980, 1, 1),
+            provincia=provincia,
+        )
+        hijo = Ciudadano.objects.create(
+            apellido="Filtro",
+            nombre="Hijo",
+            documento=documento_base + 1,
+            fecha_nacimiento=date(2015, 1, 1),
+            provincia=provincia,
+        )
+        _legajo(
+            expediente,
+            responsable,
+            estado_legajo,
+            ExpedienteCiudadano.ROLE_RESPONSABLE,
+        )
+        _legajo(expediente, hijo, estado_legajo, ExpedienteCiudadano.ROLE_BENEFICIARIO)
+        GrupoFamiliar.objects.create(
+            ciudadano_1=responsable,
+            ciudadano_2=hijo,
+            vinculo=GrupoFamiliar.RELACION_PADRE,
+            conviven=True,
+            cuidador_principal=True,
+        )
+
+    _dupla(provincia_a, 45000001)
+    _dupla(provincia_b, 45000003)
+
+    client.force_login(user)
+
+    sin_filtro = client.get(reverse("reporter_provincias")).context[
+        "clasificacion_aprobados"
+    ]
+    assert sin_filtro["total"] == 4
+    assert sin_filtro["duplas"] == 2
+
+    con_filtro = client.get(
+        reverse("reporter_provincias"), {"provincia": provincia_a.id}
+    ).context["clasificacion_aprobados"]
+    assert con_filtro["total"] == 2
+    assert con_filtro["personas_unicas"] == 2
+    assert con_filtro["duplas"] == 1
+
+
+@pytest.mark.django_db
+def test_reporter_provincias_clasificacion_no_agrega_consultas(
+    django_assert_num_queries,
+):
+    """El panel cuesta 2 consultas (legajos + vinculos) y la anotacion de la
+    pagina otras 2 acotadas. Fija el costo que declara el cambio y protege del
+    N+1 en `caso.ciudadano` si alguien saca el `select_related`."""
+    provincia = Provincia.objects.create(nombre="Salta Consultas")
+    user = _create_user_with_permission("reporter-consultas", provincia=provincia)
+    estado_expediente = EstadoExpediente.objects.create(nombre="CRUCE_FINALIZADO")
+    estado_legajo = EstadoLegajo.objects.create(nombre="ARCHIVO_CARGADO_CONSULTAS")
+    expediente = _expediente(user, estado_expediente, "EXP-CONSULTAS-001")
+
+    for indice in range(6):
+        responsable = Ciudadano.objects.create(
+            apellido="Consultas",
+            nombre=f"Responsable{indice}",
+            documento=46000000 + indice * 2,
+            fecha_nacimiento=date(1980, 1, 1),
+            provincia=provincia,
+        )
+        hijo = Ciudadano.objects.create(
+            apellido="Consultas",
+            nombre=f"Hijo{indice}",
+            documento=46000001 + indice * 2,
+            fecha_nacimiento=date(2015, 1, 1),
+            provincia=provincia,
+        )
+        _legajo(
+            expediente,
+            responsable,
+            estado_legajo,
+            ExpedienteCiudadano.ROLE_RESPONSABLE,
+        )
+        _legajo(expediente, hijo, estado_legajo, ExpedienteCiudadano.ROLE_BENEFICIARIO)
+        GrupoFamiliar.objects.create(
+            ciudadano_1=responsable,
+            ciudadano_2=hijo,
+            vinculo=GrupoFamiliar.RELACION_PADRE,
+            conviven=True,
+            cuidador_principal=True,
+        )
+
+    queryset = ExpedienteCiudadano.objects.select_related("ciudadano")
+
+    with django_assert_num_queries(2):
+        clasificacion = _build_clasificacion_aprobados(queryset)
+    assert clasificacion["duplas"] == 6
+
+    pagina = list(queryset.order_by("id")[:12])
+    with django_assert_num_queries(2):
+        anotados = _anotar_clasificacion_pagina(pagina, queryset)
+    assert sum(1 for caso in anotados if caso.integra_dupla) == 6

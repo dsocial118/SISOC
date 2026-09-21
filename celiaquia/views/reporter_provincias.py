@@ -416,14 +416,14 @@ def _build_subtotales_aprobados(total, personas_unicas, beneficiarios, duplas):
         {
             "label": "Beneficiarios alcanzados",
             "value": beneficiarios,
-            "support": "Excluye a los responsables únicamente",
-            "tone": "accent",
+            "support": "Personas únicas, excluidos los responsables únicamente",
+            "tone": "warning",
         },
         {
             "label": "Duplas hijo-responsable",
             "value": duplas,
             "support": "Cada dupla cuenta como una unidad, no como dos personas",
-            "tone": "warning",
+            "tone": "accent",
         },
     ]
 
@@ -440,14 +440,18 @@ def _build_clasificacion_aprobados(queryset):
             "ciudadano_id", "rol", "ciudadano__fecha_nacimiento"
         )
     )
-    ciudadano_ids = [ciudadano_id for ciudadano_id, _, _ in filas]
-    aprobados_ids = set(ciudadano_ids)
+    aprobados_ids = {ciudadano_id for ciudadano_id, _, _ in filas}
     # Relaciones familiares de los ciudadanos aprobados que figuran como hijo con
     # cuidador principal. Una sola consulta batch que sirve para dos cosas: marcar
     # a los responsables que además son beneficiarios y armar las duplas.
+    # No se filtra por `vinculo`: `FamiliaService` siempre escribe PADRE/MADRE
+    # junto con cuidador_principal=True, pero la ficha del ciudadano permite
+    # cargar cualquier vínculo con esa marca. Si aparecieran vínculos no
+    # parentales marcados como cuidador principal habría que acotarlo acá y en
+    # `_anotar_clasificacion_pagina` (ver el registro del cambio).
     relaciones = list(
         GrupoFamiliar.objects.filter(
-            ciudadano_2_id__in=ciudadano_ids,
+            ciudadano_2_id__in=aprobados_ids,
             cuidador_principal=True,
         ).values_list("ciudadano_1_id", "ciudadano_2_id")
     )
@@ -456,18 +460,28 @@ def _build_clasificacion_aprobados(queryset):
     # aprobado en la lectura actual. Se cuenta por hijo (una unidad aunque la
     # conformen dos legajos, y una sola aunque tuviera más de un responsable),
     # para no duplicar el conteo de personas.
-    duplas = {
-        hijo_id
-        for responsable_id, hijo_id in relaciones
-        if responsable_id in aprobados_ids
-    }
+    duplas = len(
+        {
+            hijo_id
+            for responsable_id, hijo_id in relaciones
+            if responsable_id in aprobados_ids
+        }
+    )
 
-    counts = Counter(
-        _clasificar_legajo_aprobado(
-            rol, fecha_nacimiento, hoy, ciudadano_id in beneficiarios_familia
+    # La clasificación se guarda junto al ciudadano para poder contar tanto en
+    # legajos (los subtotales por categoría) como en personas. No es lo mismo:
+    # `ExpedienteCiudadano` es único por (expediente, ciudadano), así que un
+    # ciudadano puede tener legajos aprobados en más de un expediente.
+    clasificados = [
+        (
+            ciudadano_id,
+            _clasificar_legajo_aprobado(
+                rol, fecha_nacimiento, hoy, ciudadano_id in beneficiarios_familia
+            ),
         )
         for ciudadano_id, rol, fecha_nacimiento in filas
-    )
+    ]
+    counts = Counter(codigo for _, codigo in clasificados)
     total = sum(counts.values())
     max_count = max(counts.values(), default=0)
 
@@ -485,20 +499,29 @@ def _build_clasificacion_aprobados(queryset):
         for item in CLASIFICACION_APROBADOS_ITEMS
     ]
 
-    # Beneficiarios alcanzados: todas las categorías menos el responsable puro,
-    # que valida a sus dependientes pero no es beneficiario del programa.
-    beneficiarios = total - counts.get("responsable", 0)
+    # Beneficiarios alcanzados: personas distintas que no son responsable puro,
+    # porque el responsable puro valida a sus dependientes pero no es
+    # beneficiario del programa. Se cuenta en personas —igual que "Personas
+    # únicas" y que las duplas— para que las tres cifras de la franja sean
+    # comparables entre sí. Un ciudadano que es responsable puro en un
+    # expediente y beneficiario en otro cuenta como beneficiario.
+    beneficiarios = len(
+        {
+            ciudadano_id
+            for ciudadano_id, codigo in clasificados
+            if codigo != "responsable"
+        }
+    )
     personas_unicas = len(aprobados_ids)
-    duplas_total = len(duplas)
 
     return {
         "total": total,
         "items": items,
         "personas_unicas": personas_unicas,
         "beneficiarios": beneficiarios,
-        "duplas": duplas_total,
+        "duplas": duplas,
         "subtotales": _build_subtotales_aprobados(
-            total, personas_unicas, beneficiarios, duplas_total
+            total, personas_unicas, beneficiarios, duplas
         ),
     }
 
@@ -506,9 +529,15 @@ def _build_clasificacion_aprobados(queryset):
 def _anotar_clasificacion_pagina(casos, queryset):
     """Anota las filas visibles con su categoría de rol y la marca de dupla.
 
-    La marca de dupla se pone sobre el legajo del hijo (la unidad que se cuenta
-    en el subtotal), no sobre el del responsable, para que una fila marcada
-    equivalga siempre a una dupla del panel de aprobados."""
+    La categoría se calcula para todos los legajos de la página, no sólo los
+    aprobados: es una propiedad de la persona y de su rol, no del resultado de
+    la revisión. Por eso la columna del detalle no es sumable contra el panel,
+    que cuenta únicamente aprobados.
+
+    La marca de dupla sí exige legajo aprobado y se pone sobre el del hijo (la
+    unidad que se cuenta en el subtotal), no sobre el del responsable. El panel
+    cuenta duplas por persona, así que un hijo con legajos aprobados en dos
+    expedientes marca dos filas para una sola dupla."""
     casos = list(casos)
     if not casos:
         return casos
@@ -665,11 +694,14 @@ def _build_report_context(request):
     )
     provincias = _get_provincias_disponibles(user, es_usuario_provincial)
     paginator, page_obj, current_querystring = _build_pagination(queryset, request)
+    # Se reemplaza la lista de la página en el propio `page_obj` para que las
+    # anotaciones estén tanto en `ultimos_casos` como al iterar la paginación.
+    page_obj.object_list = _anotar_clasificacion_pagina(page_obj.object_list, queryset)
 
     return {
         "total_casos": total_casos,
         **report_context,
-        "ultimos_casos": _anotar_clasificacion_pagina(page_obj.object_list, queryset),
+        "ultimos_casos": page_obj.object_list,
         "page_obj": page_obj,
         "page_range": paginator.get_elided_page_range(page_obj.number),
         "current_querystring": current_querystring,
