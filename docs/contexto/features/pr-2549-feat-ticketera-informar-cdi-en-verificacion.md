@@ -32,8 +32,11 @@
 - Empezar por `docs/registro/prs/PR-2549.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
 - `centrodeinfancia/access.py`
+- `centrodeinfancia/public_api.py`
+- `docs/contexto/features/pr-2549-feat-ticketera-informar-cdi-en-verificacion.md`
 - `docs/integraciones/ticketera_api.md`
 - `docs/registro/cambios/2026-09-21-ticketera-centros-cdi-auth-verificar.md`
+- `docs/registro/prs/PR-2549.md`
 - `tests/test_ticketera.py`
 - `ticketera/api_serializers.py`
 - `ticketera/api_views.py`
@@ -42,8 +45,10 @@
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`
+- `docs/contexto/features/pr-2549-feat-ticketera-informar-cdi-en-verificacion.md`
 - `docs/integraciones/ticketera_api.md`
 - `docs/registro/cambios/2026-09-21-ticketera-centros-cdi-auth-verificar.md`
+- `docs/registro/prs/PR-2549.md`
 
 ## Trazabilidad
 
