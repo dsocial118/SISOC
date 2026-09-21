@@ -2,6 +2,7 @@
 
 import calendar
 import logging
+import re
 import subprocess
 from datetime import date, time
 
@@ -2038,6 +2039,18 @@ class ComedorDetailViewSet(
                 {"detail": "El periodo debe ser un mes calendario en formato YYYY-MM."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+        dni_certificador = None
+        if is_alimentar_comunidad_program(comedor):
+            dni_certificador = str(request.data.get("dni_certificador") or "").strip()
+            if not re.fullmatch(r"\d{7,8}", dni_certificador):
+                return Response(
+                    {
+                        "dni_certificador": [
+                            "El DNI del certificador es obligatorio y debe tener 7 u 8 dígitos."
+                        ]
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
         usa_convenio_pnud = usa_datos_convenio_pnud(comedor)
         informe = (
             None
@@ -2051,16 +2064,17 @@ class ComedorDetailViewSet(
         )
         if source is None:
             source = FUENTE_PRESTACIONES_SIN_DATOS
-        conformidad = PrestacionAlimentariaConformidad.objects.create(
-            comedor=comedor,
-            informe_tecnico=informe,
-            periodo=periodo,
-            conforme=conforme,
-            observaciones=observaciones,
-            usuario=request.user,
-        )
-        if source is not None:
-            try:
+        try:
+            with transaction.atomic():
+                conformidad = PrestacionAlimentariaConformidad.objects.create(
+                    comedor=comedor,
+                    informe_tecnico=informe,
+                    periodo=periodo,
+                    conforme=conforme,
+                    observaciones=observaciones,
+                    usuario=request.user,
+                    dni_certificador=dni_certificador,
+                )
                 acceso = (
                     AccesoComedorPWA.objects.filter(
                         user=request.user,
@@ -2085,6 +2099,7 @@ class ComedorDetailViewSet(
                     comedor=comedor,
                     periodo=periodo,
                     usuario=request.user,
+                    dni_certificador=dni_certificador,
                     source=source,
                     conforme=conforme,
                     observaciones=observaciones,
@@ -2095,19 +2110,18 @@ class ComedorDetailViewSet(
                     ContentFile(pdf_bytes),
                     save=True,
                 )
-            except (OSError, RuntimeError, subprocess.SubprocessError):
-                logger.exception(
-                    "No se pudo generar la certificación PDF del comedor %s para %s",
-                    comedor.id,
-                    periodo,
-                )
-                conformidad.delete()
-                return Response(
-                    {
-                        "detail": "No se pudo generar la certificación PDF. Intente nuevamente."
-                    },
-                    status=status.HTTP_503_SERVICE_UNAVAILABLE,
-                )
+        except (OSError, RuntimeError, subprocess.SubprocessError):
+            logger.exception(
+                "No se pudo generar la certificación PDF del comedor %s para %s",
+                comedor.id,
+                periodo,
+            )
+            return Response(
+                {
+                    "detail": "No se pudo generar la certificación PDF. Intente nuevamente."
+                },
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
         return Response(
             PrestacionAlimentariaConformidadSerializer(conformidad).data,
             status=status.HTTP_201_CREATED,

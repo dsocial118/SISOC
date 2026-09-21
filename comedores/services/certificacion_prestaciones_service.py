@@ -68,6 +68,7 @@ def _completar_plantilla(
     comedor,
     periodo,
     usuario,
+    dni_certificador=None,
     usuario_principal=None,
     observaciones="",
     source,
@@ -98,7 +99,7 @@ def _completar_plantilla(
         signer_values = (
             usuario.username,
             usuario.get_full_name() or usuario.username,
-            _user_dni(usuario),
+            dni_certificador or _user_dni(usuario),
         )
         for label, value in zip(signer_labels, signer_values):
             paragraph = _paragraph_by_label(paragraphs, label)
@@ -193,6 +194,7 @@ def generar_certificacion_prestaciones_pdf(
     comedor,
     periodo,
     usuario,
+    dni_certificador=None,
     source,
     conforme,
     observaciones="",
@@ -216,6 +218,7 @@ def generar_certificacion_prestaciones_pdf(
             comedor=comedor,
             periodo=periodo,
             usuario=usuario,
+            dni_certificador=dni_certificador,
             usuario_principal=usuario_principal,
             observaciones=observaciones,
             source=source,
