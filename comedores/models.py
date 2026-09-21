@@ -1034,6 +1034,7 @@ class PrestacionAlimentariaConformidad(models.Model):
         related_name="conformidades_prestacion_alimentaria",
     )
     creado = models.DateTimeField(auto_now_add=True)
+    dni_certificador = models.CharField(max_length=8, blank=True, null=True)
     certificacion_pdf = models.FileField(
         upload_to="comedores/certificaciones_prestaciones/",
         null=True,
