@@ -4,5 +4,5 @@
 {% block title %}Usuario{% endblock %}
 {% block titulo-pagina %}Activar Usuario{% endblock %}
 {% block content %}
-    {% include 'components/delete_confirm.html' with object_name=object.username title='Activar Usuario' cancel_url='usuarios' confirm_text='Activar' cancel_text='Cancelar' message='¿Estás seguro que deseas activar el usuario' %}
+    {% include 'components/delete_confirm.html' with object_name=object.username title='Activar Usuario' cancel_url='usuarios' confirm_text='Activar' confirm_class='btn-success' cancel_text='Cancelar' message='¿Estás seguro que deseas activar el usuario' %}
 {% endblock content %}
