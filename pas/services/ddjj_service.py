@@ -41,7 +41,8 @@ ETIQUETAS = {
     "datos_mi_argentina_confirmados": "Datos de Mi Argentina confirmados",
     "provincia": "Provincia",
     "municipio": "Municipio / Localidad",
-    "domicilio": "Domicilio",
+    "calle": "Calle",
+    "altura": "Altura",
     "correo_electronico": "Correo electrónico",
     "telefono_celular": "Teléfono celular",
     "embarazada": "Embarazada",
@@ -51,7 +52,6 @@ ETIQUETAS = {
     "regularidad_escolar_acreditada": "Regularidad escolar acreditada",
     "gastos_bajo_limite_smvm": "Gastos bajo el límite de un SMVM",
     "no_accedio_mercado_cambios": "No accedió al Mercado de Cambios para ahorro",
-    "firma_nombre_completo": "Firma con nombre completo",
 }
 
 
@@ -360,6 +360,8 @@ def presentar_ddjj(invitacion, form):
 
     persona.provincia = data["provincia"]
     persona.municipio = data["municipio"]
+    persona.calle = data["calle"]
+    persona.altura = data["altura"]
     persona.domicilio = data["domicilio"]
     persona.correo_electronico = data["correo_electronico"]
     persona.telefono_celular = data["telefono_celular"]
@@ -367,6 +369,8 @@ def presentar_ddjj(invitacion, form):
         update_fields=[
             "provincia",
             "municipio",
+            "calle",
+            "altura",
             "domicilio",
             "correo_electronico",
             "telefono_celular",

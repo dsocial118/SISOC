@@ -9,11 +9,20 @@ from django.db.models import Count, Q
 from django.utils import timezone
 
 from core.services.renaper import consultar_datos_renaper
-from pas.models import PasControlRenaper, PasIncompatibilidad, PasPersona
+from pas.models import (
+    PasAviso,
+    PasControlRenaper,
+    PasEstado,
+    PasHistorialEstado,
+    PasIncompatibilidad,
+    PasPersona,
+)
 
 
 logger = logging.getLogger("django")
 ERRORES_DEPENDIENTES_DE_SEXO = {"no_match"}
+CODIGO_AVISO_FALLECIDO = 40
+NOMBRE_ESTADO_BAJA = "Baja"
 
 
 def primer_dia_mes_siguiente(fecha):
@@ -24,7 +33,9 @@ def primer_dia_mes_siguiente(fecha):
 def _consultar_persona(persona, *, client=None):
     ultimo_resultado = None
     ultimo_sexo = ""
-    for sexo in ("M", "F"):
+    genero = (persona.genero or "").upper()
+    sexos = (genero,) if genero in {"M", "F"} else ("M", "F")
+    for sexo in sexos:
         ultimo_sexo = sexo
         resultado = consultar_datos_renaper(
             str(persona.dni), sexo, **({"client": client} if client else {})
@@ -61,18 +72,110 @@ def _guardar_resultado(persona, fecha_consulta, resultado, sexo):
     )
     incompatibilidad = None
     if clasificacion == PasControlRenaper.Resultado.FALLECIDA:
-        incompatibilidad, _ = PasIncompatibilidad.objects.get_or_create(
+        ya_es_baja_fallecida = (
+            persona.estado.nombre.casefold() == NOMBRE_ESTADO_BAJA.casefold()
+            and persona.avisos.filter(codigo=CODIGO_AVISO_FALLECIDO).exists()
+        )
+        ya_fue_detectada = PasIncompatibilidad.objects.filter(
             persona=persona,
             categoria=PasIncompatibilidad.Categoria.SUPERVIVENCIA,
-            periodo_impacto=primer_dia_mes_siguiente(fecha_consulta),
-            defaults={
-                "detalle": (
-                    "RENAPER informó que la persona se encuentra fallecida. "
-                    "Impacta en el período siguiente."
-                )
+            estado=PasIncompatibilidad.Estado.PENDIENTE,
+        ).exists()
+        if not ya_es_baja_fallecida and not ya_fue_detectada:
+            # get_or_create sobre la tupla de la UniqueConstraint: una detección
+            # retroactiva sobre un período ya gestionado no puede romper el lote.
+            incompatibilidad, _ = PasIncompatibilidad.objects.get_or_create(
+                persona=persona,
+                categoria=PasIncompatibilidad.Categoria.SUPERVIVENCIA,
+                periodo_impacto=primer_dia_mes_siguiente(fecha_consulta),
+                defaults={
+                    "detalle": (
+                        "RENAPER informó que la persona se encuentra fallecida. "
+                        "Impacta en el período siguiente."
+                    )
+                },
+            )
+    return control, incompatibilidad
+
+
+@transaction.atomic
+def aplicar_bajas_fallecimiento_pendientes(periodo):
+    """Aplica al iniciar un ciclo las bajas RENAPER cuyo impacto ya corresponde."""
+
+    pendientes = list(
+        PasIncompatibilidad.objects.select_for_update()
+        .select_related("persona__estado")
+        .filter(
+            categoria=PasIncompatibilidad.Categoria.SUPERVIVENCIA,
+            estado=PasIncompatibilidad.Estado.PENDIENTE,
+            periodo_impacto__lte=periodo,
+        )
+        .order_by("pk")
+    )
+    if not pendientes:
+        logger.info(
+            "pas.renaper.bajas_aplicadas",
+            extra={
+                "data": {
+                    "periodo": periodo.isoformat(),
+                    "pendientes": 0,
+                    "actualizadas": 0,
+                    "ya_aplicadas": 0,
+                }
             },
         )
-    return control, incompatibilidad
+        return {"actualizadas": 0, "ya_aplicadas": 0}
+
+    estado_baja = PasEstado.objects.get(nombre__iexact=NOMBRE_ESTADO_BAJA)
+    aviso_fallecido = PasAviso.objects.get(codigo=CODIGO_AVISO_FALLECIDO)
+    actualizadas = 0
+    ya_aplicadas = 0
+    personas_procesadas = set()
+    for incompatibilidad in pendientes:
+        if incompatibilidad.persona_id in personas_procesadas:
+            incompatibilidad.estado = PasIncompatibilidad.Estado.GESTIONADA
+            incompatibilidad.save(update_fields=["estado"])
+            ya_aplicadas += 1
+            continue
+        personas_procesadas.add(incompatibilidad.persona_id)
+        persona = incompatibilidad.persona
+        avisos_anteriores = list(persona.avisos.all())
+        ya_es_baja_fallecida = persona.estado_id == estado_baja.pk and any(
+            aviso.pk == aviso_fallecido.pk for aviso in avisos_anteriores
+        )
+        if ya_es_baja_fallecida:
+            ya_aplicadas += 1
+        else:
+            estado_anterior = persona.estado
+            persona.estado = estado_baja
+            persona.save(update_fields=["estado", "fecha_actualizacion"])
+            persona.avisos.set([aviso_fallecido])
+            historial = PasHistorialEstado.objects.create(
+                persona=persona,
+                estado_anterior=estado_anterior,
+                estado_nuevo=estado_baja,
+            )
+            historial.avisos_anteriores.set(avisos_anteriores)
+            historial.avisos_nuevos.set([aviso_fallecido])
+            actualizadas += 1
+        incompatibilidad.estado = PasIncompatibilidad.Estado.GESTIONADA
+        incompatibilidad.save(update_fields=["estado"])
+
+    resultado = {"actualizadas": actualizadas, "ya_aplicadas": ya_aplicadas}
+    # La baja es automática e irreversible sin intervención manual: el volumen
+    # de cada ciclo tiene que quedar registrado para poder auditarlo después.
+    logger.info(
+        "pas.renaper.bajas_aplicadas",
+        extra={
+            "data": {
+                "periodo": periodo.isoformat(),
+                "pendientes": len(pendientes),
+                "personas": len(personas_procesadas),
+                **resultado,
+            }
+        },
+    )
+    return resultado
 
 
 def sincronizar_supervivencia_pas(*, fecha_consulta=None, forzar=False, limite=None):
