@@ -1997,6 +1997,28 @@ class ComedorDetailViewSet(
             status=status.HTTP_200_OK,
         )
 
+    @staticmethod
+    def _get_usuario_principal_certificacion(comedor, usuario):
+        acceso = (
+            AccesoComedorPWA.objects.filter(
+                user=usuario,
+                comedor=comedor,
+                activo=True,
+                rol=AccesoComedorPWA.ROL_OPERADOR,
+            )
+            .select_related("creado_por")
+            .first()
+        )
+        if not acceso or not acceso.creado_por_id:
+            return None
+        es_representante = AccesoComedorPWA.objects.filter(
+            user_id=acceso.creado_por_id,
+            comedor=comedor,
+            activo=True,
+            rol=AccesoComedorPWA.ROL_REPRESENTANTE,
+        ).exists()
+        return acceso.creado_por if es_representante else None
+
     @extend_schema(
         request=None,
         responses=PrestacionAlimentariaConformidadSerializer,
@@ -2075,26 +2097,9 @@ class ComedorDetailViewSet(
                     usuario=request.user,
                     dni_certificador=dni_certificador,
                 )
-                acceso = (
-                    AccesoComedorPWA.objects.filter(
-                        user=request.user,
-                        comedor=comedor,
-                        activo=True,
-                        rol=AccesoComedorPWA.ROL_OPERADOR,
-                    )
-                    .select_related("creado_por")
-                    .first()
+                usuario_principal = self._get_usuario_principal_certificacion(
+                    comedor, request.user
                 )
-                usuario_principal = None
-                if acceso and acceso.creado_por_id:
-                    es_representante = AccesoComedorPWA.objects.filter(
-                        user_id=acceso.creado_por_id,
-                        comedor=comedor,
-                        activo=True,
-                        rol=AccesoComedorPWA.ROL_REPRESENTANTE,
-                    ).exists()
-                    if es_representante:
-                        usuario_principal = acceso.creado_por
                 pdf_bytes = generar_certificacion_prestaciones_pdf(
                     comedor=comedor,
                     periodo=periodo,
