@@ -34,7 +34,9 @@
 - `celiaquia/templates/celiaquia/expediente_detail.html`
 - `celiaquia/tests/test_validacion_renaper_ejemplar.py`
 - `celiaquia/views/validacion_renaper.py`
+- `docs/contexto/features/pr-2550-celiaquia-tk-2152.md`
 - `docs/registro/cambios/2026-09-21-2152-fecha-emision-dni-renaper.md`
+- `docs/registro/prs/PR-2550.md`
 - `static/custom/js/expediente_detail.js`
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
