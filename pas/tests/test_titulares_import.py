@@ -138,10 +138,10 @@ def test_importacion_acepta_aliases_y_guarda_datos_estado_y_aviso(
     aviso = PasAviso.objects.create(codigo=1, descripcion="COBRANDO 100%")
     aviso.estados.add(estado_activo)
     archivo = archivo_csv(
-        "Apellido;Nombre;DNI;CUIL;Provincia;Municipio;Calle;Altura;Email;"
+        "Apellido;Nombre;DNI;CUIL;Provincia;Municipio;Genero;Calle;Altura;Email;"
         "UltimoEstadoPas;AvisoLiquidacion\n"
         "Perez;Lucia;33444555;27334445550;Buenos Aires;La Plata;"
-        "Calle 7;123;lucia@example.test;ACTIVO;COBRANDO 100% EL 05/08/2026\n"
+        "F;Calle 7;123;lucia@example.test;ACTIVO;COBRANDO 100% EL 05/08/2026\n"
     )
 
     resultado = importar_titulares_csv(archivo)
@@ -150,6 +150,9 @@ def test_importacion_acepta_aliases_y_guarda_datos_estado_y_aviso(
     persona = PasPersona.objects.get(dni=33444555)
     assert persona.apellidos == "Perez"
     assert persona.nombres == "Lucia"
+    assert persona.genero == "F"
+    assert persona.calle == "Calle 7"
+    assert persona.altura == "123"
     assert persona.domicilio == "Calle 7 123"
     assert persona.correo_electronico == "lucia@example.test"
     assert persona.estado == estado_activo
@@ -175,6 +178,35 @@ def test_importacion_deja_opcionales_vacios_si_no_estan_en_csv(
     assert persona.domicilio == ""
     assert persona.correo_electronico == ""
     assert not persona.avisos.exists()
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "encabezado", ["Genero", "ciudadano_genero", "ciudadano_genero_cod"]
+)
+def test_importacion_acepta_aliases_de_genero(catalogo_importacion, encabezado):
+    archivo = archivo_csv(
+        f"Apellidos;Nombres;DNI;CUIT;Provincia;Municipio;{encabezado}\n"
+        "Alias;Genero;35555667;20355556671;Buenos Aires;La Plata;X\n"
+    )
+
+    resultado = importar_titulares_csv(archivo)
+
+    assert resultado["creados"] == 1
+    assert PasPersona.objects.get(dni=35555667).genero == "X"
+
+
+@pytest.mark.django_db
+def test_importacion_rechaza_genero_fuera_del_contrato(catalogo_importacion):
+    archivo = archivo_csv(
+        "Apellidos;Nombres;DNI;CUIT;Provincia;Municipio;Genero\n"
+        "Invalido;Genero;35555668;20355556682;Buenos Aires;La Plata;N\n"
+    )
+
+    resultado = importar_titulares_csv(archivo)
+
+    assert resultado["creados"] == 0
+    assert "género debe ser M, F o X" in resultado["errores"][0]
 
 
 @pytest.mark.django_db
