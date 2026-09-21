@@ -1038,9 +1038,41 @@ def test_user_activate_view_reactivates_user_with_delete_permission(client):
     )
 
     assert get_response.status_code == 200
+    # Regresión #2520: la confirmación debe hablar de activar, no de desactivar.
+    # "activar el usuario" a secas no sirve: es substring de "desactivar el usuario".
+    get_body = get_response.content.decode()
+    assert "deseas activar el usuario" in get_body
+    assert "desactivar" not in get_body.lower()
+    assert "btn-success" in get_body
     assert post_response.status_code in {302, 303}
     inactive_user.refresh_from_db()
     assert inactive_user.is_active is True
+
+
+@pytest.mark.django_db
+def test_user_delete_view_confirmation_mentions_deactivation(client):
+    user = User.objects.create_superuser(
+        username="users_admin_deactivate",
+        email="users_admin_deactivate@example.com",
+        password="Secreta123!",
+    )
+    delete_user_permission = Permission.objects.get(
+        content_type__app_label="auth",
+        codename="delete_user",
+    )
+    user.user_permissions.add(delete_user_permission)
+    active_user = User.objects.create_user(
+        username="active_to_deactivate",
+        email="active_to_deactivate@example.com",
+        password="Secreta123!",
+    )
+
+    client.force_login(user)
+    response = client.get(reverse("usuario_borrar", kwargs={"pk": active_user.pk}))
+
+    # Regresión #2520: la pantalla de baja no debe cambiar al arreglar la de alta.
+    assert response.status_code == 200
+    assert "desactivar el usuario" in response.content.decode()
 
 
 @pytest.mark.django_db
