@@ -2574,7 +2574,7 @@ class CiudadanoInscripcionRapidaForm(forms.ModelForm):
 
         conflicto = (
             Ciudadano.all_objects.filter(documento_unico_key=candidato_key)
-            .only("id", "nombre", "apellido")
+            .only("id", "nombre", "apellido", "deleted_at")
             .first()
         )
         if conflicto is None:
@@ -2583,6 +2583,18 @@ class CiudadanoInscripcionRapidaForm(forms.ModelForm):
         etiqueta = (
             "pasaporte" if tipo_documento == Ciudadano.DOCUMENTO_PASAPORTE else "DNI"
         )
+        if conflicto.is_deleted:
+            # El legajo en conflicto tiene baja lógica: el operador no puede
+            # verlo ni restaurarlo desde acá, así que se le indica a quién
+            # escalar en lugar de dejarlo trabado con un número que no abre.
+            self.add_error(
+                "documento",
+                f"Existe un legajo dado de baja con este {etiqueta} "
+                f"(legajo #{conflicto.pk}). Para reutilizar el número hay que "
+                f"restaurarlo: solicitarlo al área técnica.",
+            )
+            return
+
         self.add_error(
             "documento",
             f"Ya existe un legajo con este {etiqueta} "

@@ -1,3 +1,5 @@
+import logging
+
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
@@ -9,6 +11,8 @@ from django.core.validators import MaxValueValidator as MaxValidator
 
 from core.models import Localidad, Municipio, Nacionalidad, Programa, Provincia, Sexo
 from core.soft_delete import SoftDeleteModelMixin
+
+logger = logging.getLogger("django")
 
 User = get_user_model()
 
@@ -293,6 +297,13 @@ class Ciudadano(SoftDeleteModelMixin, models.Model):
             models.Index(fields=["apellido", "nombre"]),
             models.Index(fields=["documento"]),
             models.Index(fields=["deleted_at", "id"], name="ciud_delid_idx"),
+            # Cubre la búsqueda por pasaporte de buscar_ciudadanos(), que
+            # filtra por tipo + prefijo alfanumérico sobre el manager por
+            # defecto (deleted_at IS NULL). Sin este índice es un full scan.
+            models.Index(
+                fields=["deleted_at", "tipo_documento", "documento_pasaporte"],
+                name="ciud_delpas_idx",
+            ),
             models.Index(
                 fields=["deleted_at", "provincia", "id"],
                 name="ciud_delprov_id_idx",
@@ -422,6 +433,12 @@ class Ciudadano(SoftDeleteModelMixin, models.Model):
             tipo_documento_cargado is not None
             and tipo_documento_cargado != self.tipo_documento
         ):
+            logger.warning(
+                "Intento de modificar tipo_documento en Ciudadano %s: %s -> %s",
+                self.pk,
+                tipo_documento_cargado,
+                self.tipo_documento,
+            )
             raise ValidationError(
                 "El tipo de documento no se puede modificar una vez creado el legajo."
             )
@@ -434,7 +451,11 @@ class Ciudadano(SoftDeleteModelMixin, models.Model):
         # cargar desde DB: sin esto, una misma instancia en memoria (creada y
         # guardada, o recargada y guardada) podía mutar tipo_documento y
         # guardar de nuevo sin que el guard lo detectara.
-        self._tipo_documento_cargado = self.tipo_documento
+        # Si el campo viene diferido por un .only()/defer(), leerlo aquí
+        # dispararía una query extra por guardado: en ese caso no hay valor
+        # cacheado que fijar y el guard queda inactivo, que es el lado seguro.
+        if "tipo_documento" not in self.get_deferred_fields():
+            self._tipo_documento_cargado = self.tipo_documento
         return result
 
     @staticmethod

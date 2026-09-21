@@ -112,6 +112,35 @@ def test_duplicado_detecta_legajos_borrados_logicamente():
 
 
 @pytest.mark.django_db
+def test_duplicado_con_baja_logica_indica_como_destrabarlo():
+    """El operador no puede ver ni restaurar un legajo con baja lógica desde
+    el modal: el mensaje tiene que decirle a quién escalar, en lugar de
+    dejarlo trabado con un número de legajo que no abre."""
+    existente = CiudadanoInscripcionRapidaForm(_datos()).save()
+    existente.delete()
+
+    form = CiudadanoInscripcionRapidaForm(_datos())
+
+    assert not form.is_valid()
+    error = " ".join(form.errors["documento"])
+    assert "dado de baja" in error
+    assert "área técnica" in error
+
+
+@pytest.mark.django_db
+def test_duplicado_activo_mantiene_el_mensaje_con_nombre():
+    """El caso normal no debe quedar tapado por el mensaje de baja lógica."""
+    existente = CiudadanoInscripcionRapidaForm(_datos()).save()
+
+    form = CiudadanoInscripcionRapidaForm(_datos())
+
+    assert not form.is_valid()
+    error = " ".join(form.errors["documento"])
+    assert f"legajo #{existente.pk}" in error
+    assert "dado de baja" not in error
+
+
+@pytest.mark.django_db
 def test_tipo_documento_no_se_puede_modificar_despues_del_alta():
     ciudadano = CiudadanoInscripcionRapidaForm(_datos()).save()
 

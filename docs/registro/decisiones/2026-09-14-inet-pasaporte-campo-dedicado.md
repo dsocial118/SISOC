@@ -83,9 +83,59 @@ directa en base, a cargo del área técnica, como define el ticket.
   esta decisión no lo bloquea: `documento_pasaporte` se migraría al campo
   unificado junto con el resto.
 
+## Correcciones posteriores a la review (2026-09-21)
+
+La review del PR #2512 detectó tres consecuencias de `documento = NULL` que esta
+decisión no había previsto. Se corrigen dentro del mismo PR:
+
+1. **`backfill_identidad` daba los pasaportes por "sin documento".** El comando
+   filtra por `documento IS NULL` y, para esos registros, escribe
+   `tipo_registro_identidad = SIN_DNI`, `documento_unico_key = NULL` y
+   `requiere_revision_manual = True` mediante `.update()` —es decir, sin pasar
+   por `save()` ni por `normalizar_identidad()`—. Re-ejecutarlo habría borrado
+   en silencio la clave única de todo pasaporte cargado desde VAT, que es
+   justamente la defensa contra duplicados que eligió esta decisión.
+
+   Se excluyen los pasaportes de la rama "sin documento" y se los incorpora a la
+   rama con número, agrupando duplicados por `documento_pasaporte` (comparten
+   `documento = NULL`, así que agruparlos por esa columna los daría a todos como
+   un único grupo). La clave pasa a construirse con
+   `Ciudadano.build_documento_unico_key()` en lugar de la f-string
+   `f"{tipo_documento}_{documento}"` que tenía el comando: esa duplicación de
+   lógica es lo que permitió la divergencia.
+
+2. **La búsqueda por pasaporte no tenía índice.** `buscar_ciudadanos()` filtra
+   por `tipo_documento` + `documento_pasaporte__istartswith` desde un typeahead;
+   sin índice es un full scan de `ciudadanos` por búsqueda. Se agrega
+   `ciud_delpas_idx` (`deleted_at`, `tipo_documento`, `documento_pasaporte`) en
+   la misma migración `0032`, siguiendo la convención de los índices existentes,
+   que anteponen `deleted_at` porque el manager por defecto filtra por él.
+
+   Esto no contradice el apartado de unicidad de arriba: aquel se refiere a que
+   no hizo falta un índice *único* nuevo, porque `documento_unico_key` ya lo
+   resolvía. Éste es de búsqueda.
+
+3. **El admin devolvía 500 al editar el tipo de documento.** `Ciudadano.save()`
+   levanta `ValidationError` y `ModelAdmin.save_model()` no la traduce a error
+   de formulario. `CiudadanoAdmin` no acotaba `fields`, así que el campo era
+   editable. Se agrega `get_readonly_fields()` para dejarlo de solo lectura en
+   registros existentes. La decisión de fondo no cambia: las correcciones de
+   tipo de documento se siguen haciendo por intervención directa en base.
+
+También se registra el intento de cambio de tipo con `logger.warning` antes de
+levantar la excepción, que hasta ahora fallaba en silencio desde el punto de
+vista de observabilidad.
+
 ## Validación
 
 - `pytest VAT/test_inscripcion_rapida_documento.py -v` cubre formatos por tipo,
-  normalización, unicidad (incluidos legajos con baja lógica), inmutabilidad del
-  tipo y conservación de la clave única en pasaportes históricos.
+  normalización, unicidad (incluidos legajos con baja lógica y el mensaje que
+  indica cómo destrabarlos), inmutabilidad del tipo y conservación de la clave
+  única en pasaportes históricos.
+- `pytest tests/test_backfill_identidad_unit.py -v` cubre que el backfill no
+  reclasifique pasaportes, que detecte duplicados por `documento_pasaporte` y
+  que los pasaportes históricos guardados en `documento` sigan tratándose como
+  numéricos.
+- `pytest tests/test_ciudadanos_models_unit.py -v` cubre que el admin deje
+  `tipo_documento` de solo lectura al editar.
 - `pytest VAT/ tests/ -n auto` sin regresiones.

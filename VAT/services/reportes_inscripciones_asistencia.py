@@ -101,6 +101,8 @@ def _apply_filters(queryset, filtros: ReporteFiltros):
     curso_id = _normalize_id(filtros.curso_id)
     programa_id = _normalize_id(filtros.programa_id)
     titulo_id = _normalize_id(filtros.titulo_id)
+    # REQ #2457 quitó el selector de Modalidad de la UI del reporte. El filtro
+    # se conserva porque sigue siendo válido vía query param en URLs guardadas.
     modalidad_id = _normalize_id(filtros.modalidad_id)
 
     if filtros.nivel == "centro" and centro_id:

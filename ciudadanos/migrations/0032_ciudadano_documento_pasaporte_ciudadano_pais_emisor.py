@@ -20,4 +20,11 @@ class Migration(migrations.Migration):
             name="pais_emisor",
             field=models.CharField(blank=True, max_length=100, null=True),
         ),
+        migrations.AddIndex(
+            model_name="ciudadano",
+            index=models.Index(
+                fields=["deleted_at", "tipo_documento", "documento_pasaporte"],
+                name="ciud_delpas_idx",
+            ),
+        ),
     ]
