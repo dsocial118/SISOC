@@ -17,7 +17,7 @@ on:
                     - deploy
                     - inspect-cdi-talla-blockers
 
-permissions: { contents: read }
+permissions: { actions: write, contents: write, pull-requests: write }
 
 concurrency: { group: "deploy-${{ github.ref }}", cancel-in-progress: false }
 
@@ -141,19 +141,8 @@ jobs:
                   [[ "$(git -C "$APP_ROOT" branch --show-current)" == "homologacion" ]]
                   git -C "$APP_ROOT" diff --quiet
                   git -C "$APP_ROOT" diff --cached --quiet
-                  umask 077
-                  mkdir -p "$APP_ROOT/.deploy/pwa"
-                  PWA_STATE="$(mktemp -d "$APP_ROOT/.deploy/pwa/hml.XXXXXXXX")"
-                  git -C "$APP_ROOT" show "$EXPECTED_SHA:scripts/operacion/deploy_pwas.py" > "$PWA_STATE/deploy_pwas.py"
-                  git -C "$APP_ROOT" show "$EXPECTED_SHA:scripts/operacion/pwas.json" > "$PWA_STATE/pwas.json"
-                  git -C "$APP_ROOT" show "$EXPECTED_SHA:scripts/operacion/deploy_refresh.sh" > "$PWA_STATE/backend.sh"
-                  echo "Estado PWA para recuperacion: $PWA_STATE" >> "$GITHUB_STEP_SUMMARY"
-                  python3 "$PWA_STATE/deploy_pwas.py" prepare --config "$PWA_STATE/pwas.json" --root "$APP_ROOT/.." --state "$PWA_STATE" --environment hml
                   echo "Commit previo al deploy para rollback: $(git rev-parse HEAD)"
-                  (
-                      umask 022
-                      SISOC_ROOT_DIR="$APP_ROOT" bash "$PWA_STATE/backend.sh" --yes --expected-revision "$EXPECTED_SHA" --without-mobile
-                  )
+                  SISOC_ROOT_DIR="$APP_ROOT" bash "$APP_ROOT/scripts/operacion/deploy_refresh.sh" --yes --expected-revision "$EXPECTED_SHA" --without-mobile
                   wait_for() {
                       local description="$1"
                       local attempts="$2"
@@ -194,7 +183,6 @@ jobs:
                   wait_for "healthcheck de HML" 30 bash "$APP_ROOT/scripts/infra/healthcheck_hml.sh"
                   deployed_sha="$(git -C "$APP_ROOT" rev-parse HEAD)"
                   [[ "$deployed_sha" == "$EXPECTED_SHA" ]]
-                  python3 "$PWA_STATE/deploy_pwas.py" activate --state "$PWA_STATE" --environment hml
                   {
                       echo "### Deploy HML verificado"
                       echo "- Revision desplegada: \`$deployed_sha\`"
@@ -239,19 +227,8 @@ jobs:
                   [[ "$(git -C "$APP_ROOT" branch --show-current)" == "main" ]]
                   git -C "$APP_ROOT" diff --quiet
                   git -C "$APP_ROOT" diff --cached --quiet
-                  umask 077
-                  mkdir -p "$APP_ROOT/.deploy/pwa"
-                  PWA_STATE="$(mktemp -d "$APP_ROOT/.deploy/pwa/prd.XXXXXXXX")"
-                  git -C "$APP_ROOT" show "$EXPECTED_SHA:scripts/operacion/deploy_pwas.py" > "$PWA_STATE/deploy_pwas.py"
-                  git -C "$APP_ROOT" show "$EXPECTED_SHA:scripts/operacion/pwas.json" > "$PWA_STATE/pwas.json"
-                  git -C "$APP_ROOT" show "$EXPECTED_SHA:scripts/operacion/deploy_refresh.sh" > "$PWA_STATE/backend.sh"
-                  echo "Estado PWA para recuperacion: $PWA_STATE" >> "$GITHUB_STEP_SUMMARY"
-                  python3 "$PWA_STATE/deploy_pwas.py" prepare --config "$PWA_STATE/pwas.json" --root "$APP_ROOT/.." --state "$PWA_STATE" --environment prd
                   echo "Commit previo al deploy para rollback: $(git rev-parse HEAD)"
-                  (
-                      umask 022
-                      SISOC_ROOT_DIR="$APP_ROOT" bash "$PWA_STATE/backend.sh" --yes --expected-revision "$EXPECTED_SHA" --without-mobile
-                  )
+                  SISOC_ROOT_DIR="$APP_ROOT" bash "$APP_ROOT/scripts/operacion/deploy_refresh.sh" --yes --expected-revision "$EXPECTED_SHA" --without-mobile
                   wait_for() {
                       local description="$1"
                       local attempts="$2"
@@ -295,13 +272,46 @@ jobs:
                   fi
                   deployed_sha="$(git -C "$APP_ROOT" rev-parse HEAD)"
                   [[ "$deployed_sha" == "$EXPECTED_SHA" ]]
-                  python3 "$PWA_STATE/deploy_pwas.py" activate --state "$PWA_STATE" --environment prd
                   {
                       echo "### Deploy produccion verificado"
                       echo "- Revision desplegada: \`$deployed_sha\`"
                       echo "- Migraciones: \`migrate --check\` OK"
                       echo "- Health: \`healthcheck_prod.sh\` OK";
                   } >> "$GITHUB_STEP_SUMMARY"
+
+    promover-produccion-a-homologacion:
+        needs: deploy-produccion
+        if: github.ref == 'refs/heads/main' && needs.deploy-produccion.result == 'success'
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/github-script@v8
+              with:
+                script: |
+                    const { owner, repo } = context.repo;
+                    const compare = await github.rest.repos.compareCommits({ owner, repo, base: 'main', head: 'homologacion' });
+                    if (compare.data.behind_by === 0) return;
+                    const open = await github.rest.pulls.list({ owner, repo, state: 'open', base: 'homologacion', head: `${owner}:main` });
+                    const pull = open.data[0] ?? (await github.rest.pulls.create({ owner, repo, base: 'homologacion', head: 'main', title: 'chore(sync): integrar main en homologacion', body: 'Promocion posterior a deploy exitoso de produccion.' })).data;
+                    const merged = await github.rest.pulls.merge({ owner, repo, pull_number: pull.number, sha: pull.head.sha, merge_method: 'merge' });
+                    if (!merged.data.merged) throw new Error(`No se pudo integrar main en homologacion: ${merged.data.message}`);
+                    await github.rest.actions.createWorkflowDispatch({ owner, repo, workflow_id: 'deploy.yml', ref: 'homologacion' });
+
+    promover-homologacion-a-qa:
+        needs: deploy-homologacion
+        if: github.ref == 'refs/heads/homologacion' && needs.deploy-homologacion.result == 'success'
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/github-script@v8
+              with:
+                script: |
+                    const { owner, repo } = context.repo;
+                    const compare = await github.rest.repos.compareCommits({ owner, repo, base: 'homologacion', head: 'development' });
+                    if (compare.data.behind_by === 0) return;
+                    const open = await github.rest.pulls.list({ owner, repo, state: 'open', base: 'development', head: `${owner}:homologacion` });
+                    const pull = open.data[0] ?? (await github.rest.pulls.create({ owner, repo, base: 'development', head: 'homologacion', title: 'chore(sync): integrar homologacion en development', body: 'Promocion posterior a deploy exitoso de homologacion.' })).data;
+                    const merged = await github.rest.pulls.merge({ owner, repo, pull_number: pull.number, sha: pull.head.sha, merge_method: 'merge' });
+                    if (!merged.data.merged) throw new Error(`No se pudo integrar homologacion en development: ${merged.data.message}`);
+                    await github.rest.actions.createWorkflowDispatch({ owner, repo, workflow_id: 'deploy.yml', ref: 'development' });
 
     recuperar-talla-legacy-produccion:
         if: >-
