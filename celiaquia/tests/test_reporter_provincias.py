@@ -5,7 +5,7 @@ from django.contrib.auth.models import Permission, User
 from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
 
-from ciudadanos.models import Ciudadano
+from ciudadanos.models import Ciudadano, GrupoFamiliar
 from core.models import Provincia
 from users.models import Profile
 
@@ -196,3 +196,166 @@ def test_reporter_provincias_renders_redesigned_sections(client):
     assert "Detalle paginado" in content
     assert "reporterQuickSearch" in content
     assert "custom/js/reporter_provincias.js" in content
+
+
+@pytest.mark.django_db
+def test_reporter_provincias_cuenta_duplas_hijo_responsable(client):
+    """Las duplas cuentan una unidad por hijo aprobado asociado a un responsable
+    aprobado, sin duplicar el conteo de personas ni el total de legajos."""
+    provincia = Provincia.objects.create(nombre="Salta Duplas")
+    user = _create_user_with_permission("reporter-duplas", provincia=provincia)
+    estado_expediente = EstadoExpediente.objects.create(nombre="CRUCE_FINALIZADO")
+    estado_legajo = EstadoLegajo.objects.create(nombre="ARCHIVO_CARGADO_DUPLAS")
+    expediente = Expediente.objects.create(
+        usuario_provincia=user,
+        estado=estado_expediente,
+        numero_expediente="EXP-DUPLAS-001",
+    )
+
+    def _crear(documento, rol, fnac, revision):
+        ciudadano = Ciudadano.objects.create(
+            apellido="Dupla",
+            nombre=f"C{documento}",
+            documento=documento,
+            fecha_nacimiento=fnac,
+            provincia=provincia,
+        )
+        ExpedienteCiudadano.objects.create(
+            expediente=expediente,
+            ciudadano=ciudadano,
+            estado=estado_legajo,
+            rol=rol,
+            revision_tecnico=revision,
+        )
+        return ciudadano
+
+    # Dupla completa: responsable aprobado + hijo menor aprobado.
+    resp_ok = _crear(
+        42000001, ExpedienteCiudadano.ROLE_RESPONSABLE, date(1980, 1, 1), "APROBADO"
+    )
+    hijo_ok = _crear(
+        42000002, ExpedienteCiudadano.ROLE_BENEFICIARIO, date(2015, 1, 1), "APROBADO"
+    )
+    # Responsable rechazado: la dupla no está conformada.
+    resp_no = _crear(
+        42000003, ExpedienteCiudadano.ROLE_RESPONSABLE, date(1979, 2, 2), "RECHAZADO"
+    )
+    hijo_sin_resp = _crear(
+        42000004, ExpedienteCiudadano.ROLE_BENEFICIARIO, date(2016, 3, 3), "APROBADO"
+    )
+    # Hijo con dos responsables aprobados: sigue siendo una sola dupla.
+    resp_a = _crear(
+        42000005, ExpedienteCiudadano.ROLE_RESPONSABLE, date(1978, 4, 4), "APROBADO"
+    )
+    resp_b = _crear(
+        42000006, ExpedienteCiudadano.ROLE_RESPONSABLE, date(1977, 5, 5), "APROBADO"
+    )
+    hijo_dos = _crear(
+        42000007, ExpedienteCiudadano.ROLE_BENEFICIARIO, date(2017, 6, 6), "APROBADO"
+    )
+    # Beneficiario adulto suelto, sin vínculo familiar.
+    _crear(
+        42000008, ExpedienteCiudadano.ROLE_BENEFICIARIO, date(1990, 7, 7), "APROBADO"
+    )
+
+    for responsable, hijo in [
+        (resp_ok, hijo_ok),
+        (resp_no, hijo_sin_resp),
+        (resp_a, hijo_dos),
+        (resp_b, hijo_dos),
+    ]:
+        GrupoFamiliar.objects.create(
+            ciudadano_1=responsable,
+            ciudadano_2=hijo,
+            vinculo=GrupoFamiliar.RELACION_PADRE,
+            conviven=True,
+            cuidador_principal=True,
+        )
+
+    client.force_login(user)
+    response = client.get(reverse("reporter_provincias"))
+
+    assert response.status_code == 200
+    clasificacion = response.context["clasificacion_aprobados"]
+
+    # hijo_ok y hijo_dos conforman dupla; hijo_sin_resp no (responsable rechazado).
+    assert clasificacion["duplas"] == 2
+    assert clasificacion["total"] == 7  # los 7 aprobados; el rechazado no cuenta
+    assert clasificacion["personas_unicas"] == 7
+    # Beneficiarios alcanzados: total menos los 3 responsables únicamente.
+    assert clasificacion["beneficiarios"] == 4
+    # Las duplas no se suman al total de legajos ni al de beneficiarios.
+    assert clasificacion["duplas"] < clasificacion["total"]
+
+    subtotales = {item["label"]: item["value"] for item in clasificacion["subtotales"]}
+    assert subtotales["Duplas hijo-responsable"] == 2
+    assert subtotales["Legajos aprobados"] == 7
+    assert subtotales["Beneficiarios alcanzados"] == 4
+
+    content = response.content.decode()
+    assert "Duplas hijo-responsable" in content
+    assert "Personas únicas" in content
+
+
+@pytest.mark.django_db
+def test_reporter_provincias_marca_dupla_en_el_detalle(client):
+    """El detalle paginado muestra el rol de cada legajo y marca como dupla sólo
+    la fila del hijo aprobado con responsable aprobado."""
+    provincia = Provincia.objects.create(nombre="Chaco Detalle")
+    user = _create_user_with_permission("reporter-detalle-dupla", provincia=provincia)
+    estado_expediente = EstadoExpediente.objects.create(nombre="CRUCE_FINALIZADO")
+    estado_legajo = EstadoLegajo.objects.create(nombre="ARCHIVO_CARGADO_DETALLE")
+    expediente = Expediente.objects.create(
+        usuario_provincia=user,
+        estado=estado_expediente,
+        numero_expediente="EXP-DUPLAS-002",
+    )
+
+    responsable = Ciudadano.objects.create(
+        apellido="DetalleDupla",
+        nombre="Responsable",
+        documento=43000001,
+        fecha_nacimiento=date(1980, 1, 1),
+        provincia=provincia,
+    )
+    hijo = Ciudadano.objects.create(
+        apellido="DetalleDupla",
+        nombre="Hijo",
+        documento=43000002,
+        fecha_nacimiento=date(2015, 1, 1),
+        provincia=provincia,
+    )
+    legajo_responsable = ExpedienteCiudadano.objects.create(
+        expediente=expediente,
+        ciudadano=responsable,
+        estado=estado_legajo,
+        rol=ExpedienteCiudadano.ROLE_RESPONSABLE,
+        revision_tecnico="APROBADO",
+    )
+    legajo_hijo = ExpedienteCiudadano.objects.create(
+        expediente=expediente,
+        ciudadano=hijo,
+        estado=estado_legajo,
+        rol=ExpedienteCiudadano.ROLE_BENEFICIARIO,
+        revision_tecnico="APROBADO",
+    )
+    GrupoFamiliar.objects.create(
+        ciudadano_1=responsable,
+        ciudadano_2=hijo,
+        vinculo=GrupoFamiliar.RELACION_PADRE,
+        conviven=True,
+        cuidador_principal=True,
+    )
+
+    client.force_login(user)
+    response = client.get(reverse("reporter_provincias"))
+
+    assert response.status_code == 200
+    filas = {caso.pk: caso for caso in response.context["ultimos_casos"]}
+
+    assert filas[legajo_hijo.pk].clasificacion_label == "Menor de edad"
+    assert filas[legajo_hijo.pk].integra_dupla is True
+    # El responsable integra la misma dupla pero no se marca: la unidad se cuenta
+    # una sola vez, del lado del hijo.
+    assert filas[legajo_responsable.pk].clasificacion_label == "Responsable"
+    assert filas[legajo_responsable.pk].integra_dupla is False
