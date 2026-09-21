@@ -376,6 +376,17 @@
                         </div>
                     {% endfor %}
                 </div>
+
+                <div class="reporter-subtotals"
+                     aria-label="Subtotales de legajos aprobados">
+                    {% for subtotal in clasificacion_aprobados.subtotales %}
+                        <div class="reporter-subtotal reporter-subtotal--{{ subtotal.tone }}">
+                            <p class="reporter-subtotal__label">{{ subtotal.label }}</p>
+                            <strong class="reporter-subtotal__value">{{ subtotal.value }}</strong>
+                            <span class="reporter-subtotal__support">{{ subtotal.support }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
             </article>
         </section>
 
@@ -409,6 +420,7 @@
                             <th>Nombre</th>
                             <th>Expediente</th>
                             <th>Provincia</th>
+                            <th title="Categoría de rol del legajo. El panel de clasificación cuenta sólo los aprobados.">Rol</th>
                             <th>Validación</th>
                             <th>SINTYS</th>
                             <th>Cupo</th>
@@ -426,6 +438,13 @@
                                 <td>{{ caso.ciudadano.nombre }} {{ caso.ciudadano.apellido }}</td>
                                 <td>{{ caso.expediente.numero_expediente|default:"-" }}</td>
                                 <td>{{ caso.ciudadano.provincia.nombre|default:"Sin provincia" }}</td>
+                                <td>
+                                    <span class="reporter-badge reporter-badge--{{ caso.clasificacion_tone }}">{{ caso.clasificacion_label }}</span>
+                                    {% if caso.integra_dupla %}
+                                        <span class="reporter-badge reporter-badge--accent"
+                                              title="Hijo aprobado asociado a un responsable aprobado">Dupla</span>
+                                    {% endif %}
+                                </td>
                                 <td>
                                     <span class="reporter-badge reporter-badge--{% if caso.revision_tecnico == 'APROBADO' %}success{% elif caso.revision_tecnico == 'RECHAZADO' %}danger{% elif caso.revision_tecnico == 'SUBSANAR' %}warning{% elif caso.revision_tecnico == 'SUBSANADO' %}accent{% else %}neutral{% endif %}">
                                         {{ caso.get_revision_tecnico_display }}
@@ -454,7 +473,7 @@
                             </tr>
                         {% empty %}
                             <tr>
-                                <td colspan="9" class="text-center text-muted py-5">No hay casos para mostrar con la selección actual.</td>
+                                <td colspan="10" class="text-center text-muted py-5">No hay casos para mostrar con la selección actual.</td>
                             </tr>
                         {% endfor %}
                     </tbody>
