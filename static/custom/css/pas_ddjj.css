@@ -37,11 +37,12 @@
     align-items: center;
     gap: 8px;
     margin-right: auto;
-    font: 700 13px/1.4 "Lora", serif;
+    font: 400 13px/1.4 "Lora", serif;
 }
 
 .pas-ddjj-logo span:last-child { display: flex; flex-direction: column; }
-.pas-ddjj-logo-mark { width: 32px; height: 32px; border: 2px solid #fff; border-radius: 50%; }
+.pas-ddjj-logo strong { font-weight: 700; }
+.pas-ddjj-logo-mark { width: 32px; height: 32px; object-fit: contain; }
 .pas-ddjj-public-brand > span { font-size: 12px; font-weight: 700; }
 
 .pas-ddjj-shell {
@@ -68,8 +69,10 @@
 }
 .pas-ddjj-header { margin: 0; }
 .pas-ddjj-progress-copy { display: flex; justify-content: space-between; color: var(--pas-blue); font-size: 12px; line-height: 18px; }
-.pas-ddjj-progress { height: 6px; display: flex; gap: 5px; margin-top: 5px; overflow: hidden; border-radius: 10px; background: #d9d9d9; }
-.pas-ddjj-progress span { display: block; height: 100%; border-radius: inherit; background: var(--pas-yellow); transition: width 180ms ease; }
+.pas-ddjj-progress { height: 6px; display: flex; gap: 10px; margin-top: 5px; }
+.pas-ddjj-progress span { display: block; height: 100%; flex: 1; border-radius: 10px; background: #d9d9d9; transition: background 180ms ease; }
+.pas-ddjj-progress span.is-complete { background: var(--pas-blue); }
+.pas-ddjj-progress span.is-current { background: var(--pas-yellow); }
 
 #pas-ddjj-form { display: flex; flex-direction: column; gap: 15px; }
 .pas-ddjj-step { min-height: 0; }
@@ -81,13 +84,11 @@
 .pas-ddjj-field { display: flex; flex-direction: column; gap: 5px; }
 .pas-ddjj-field label,
 .pas-ddjj-question h3,
-.pas-ddjj-contact-data label,
-.pas-ddjj-signature label { margin: 0; font-size: 14px; font-weight: 500; line-height: 150%; }
+.pas-ddjj-contact-data label { margin: 0; font-size: 14px; font-weight: 500; line-height: 150%; }
 
 .pas-ddjj-control input,
 .pas-ddjj-control select,
-.pas-ddjj-contact-data input,
-.pas-ddjj-signature input {
+.pas-ddjj-contact-data input {
     width: 100%;
     height: 30px;
     padding: 5px 10px;
@@ -98,20 +99,20 @@
     font: 400 12px/150% "Montserrat", sans-serif;
 }
 
-.pas-ddjj-control :focus,
-.pas-ddjj-signature input:focus { border-color: var(--pas-blue); outline: 2px solid var(--pas-yellow); outline-offset: 1px; }
+.pas-ddjj-control :focus { border-color: var(--pas-blue); outline: 2px solid var(--pas-yellow); outline-offset: 1px; }
 .pas-ddjj-question { margin-top: 20px; }
+.pas-ddjj-conditional[hidden] { display: none; }
 .pas-ddjj-options > div,
 .pas-ddjj-options ul { display: flex; gap: 20px; margin: 5px 0 0; padding: 0; list-style: none; }
 .pas-ddjj-options > div > div,
 .pas-ddjj-options li { flex: 1; }
 .pas-ddjj-options label {
+    position: relative;
     width: 100%;
     height: 31px;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 10px;
     padding: 5px 10px;
     border: 1px solid #d9d9d9;
     border-radius: 5px;
@@ -121,8 +122,46 @@
     line-height: 150%;
     cursor: pointer;
 }
-.pas-ddjj-options input { width: 16px; height: 16px; accent-color: var(--pas-blue); }
-.pas-ddjj-options label:has(input:checked) { border-color: var(--pas-blue); background: #eef1f6; box-shadow: 0 0 0 2px var(--pas-yellow); }
+.pas-ddjj-options input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+.pas-ddjj-options label:has(input:checked) {
+    border-color: #aeb0b8;
+    background: #cbcdd4;
+    box-shadow: 0 0 0 1px rgba(196, 154, 72, .35);
+}
+.pas-ddjj-options label:has(input:focus-visible) {
+    outline: 2px solid rgba(196, 154, 72, .55);
+    outline-offset: 2px;
+}
+
+/* El radio oculto deja a :has() como único indicador de selección y de foco.
+   Sin soporte (Chrome <105, Firefox <121, WebViews Android viejas) el titular
+   no vería qué opción eligió, así que ahí se restituye el control nativo. */
+@supports not (selector(:has(*))) {
+    .pas-ddjj-options label { gap: 10px; justify-content: center; }
+    .pas-ddjj-options input {
+        position: static;
+        width: 16px;
+        height: 16px;
+        margin: 0;
+        overflow: visible;
+        clip: auto;
+        clip-path: none;
+        accent-color: var(--pas-blue);
+    }
+    .pas-ddjj-options input:focus-visible {
+        outline: 2px solid var(--pas-yellow);
+        outline-offset: 2px;
+    }
+}
 
 .pas-ddjj-notice {
     min-height: 75px;
@@ -168,8 +207,6 @@
 .pas-ddjj-summary div { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 41px; padding: 10px 0; border-bottom: 1px solid #a6a6a6; font-size: 14px; font-weight: 400; line-height: 150%; }
 .pas-ddjj-summary strong { font-weight: 400; }
 .pas-ddjj-summary span { flex: 0 1 55%; text-align: right; overflow-wrap: anywhere; }
-.pas-ddjj-signature { display: flex; flex-direction: column; gap: 5px; margin-top: 10px; }
-.pas-ddjj-signature input::placeholder { color: #a6a6a6; opacity: 1; }
 .errorlist,
 .pas-ddjj-errors { margin: 4px 0 0; padding: 0; color: #b3261e; font-size: 11px; font-weight: 600; list-style: none; }
 
@@ -197,8 +234,34 @@
 .pas-ddjj-modal-card.is-success .pas-ddjj-button { width: 64px; flex: none; padding: 5px 20px; font-size: 16px; font-weight: 500; line-height: 24px; text-decoration: none; }
 
 @media (max-width: 640px) {
-    .pas-ddjj-shell { width: 372px; max-width: calc(100% - 40px); padding-top: 40px; }
+    .pas-ddjj-public {
+        height: 100vh;
+        height: 100dvh;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+    .pas-ddjj-public-brand { position: relative; z-index: 10; flex: 0 0 60px; }
+    .pas-ddjj-shell {
+        width: 372px;
+        max-width: calc(100% - 40px);
+        min-height: 0;
+        flex: 1 1 auto;
+        margin: 0 auto;
+        padding: 40px 0 30px;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
+    }
     .pas-ddjj-actions { width: 100%; }
     .pas-ddjj-summary div { align-items: flex-start; }
-    .pas-ddjj-footer { padding: 0 10px; font-size: clamp(10px, 3vw, 14px); white-space: nowrap; }
+    .pas-ddjj-footer {
+        position: relative;
+        z-index: 10;
+        flex: 0 0 46px;
+        padding: 0 10px;
+        font-size: clamp(10px, 3vw, 14px);
+        white-space: nowrap;
+    }
 }
