@@ -1473,9 +1473,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const comparacionDiv = document.getElementById('renaper-comparacion');
         const alertasDiv = document.getElementById('renaper-alertas');
 
+        const ejemplarDiv = document.getElementById('renaper-ejemplar');
+
         loadingDiv.style.display = 'block';
         comparacionDiv.style.display = 'none';
         alertasDiv.innerHTML = '';
+        if (ejemplarDiv) {
+          ejemplarDiv.innerHTML = '';
+          ejemplarDiv.style.display = 'none';
+        }
 
         try {
           const resp = await fetch(url, {
@@ -1559,6 +1565,29 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
             datosRenaperTable.appendChild(rowRenaper);
           });
+
+          // Ejemplar del DNI: dato informativo de Renaper, sin contraparte
+          // provincial, por eso va aparte y no como fila comparable.
+          if (ejemplarDiv) {
+            const ejemplar = data.datos_ejemplar;
+            const partes = [];
+            if (ejemplar) {
+              if (ejemplar.emision) {
+                partes.push(`emitido el <strong>${escapeHtml(ejemplar.emision)}</strong>`);
+              }
+              if (ejemplar.ejemplar) {
+                partes.push(`ejemplar <strong>${escapeHtml(ejemplar.ejemplar)}</strong>`);
+              }
+              if (ejemplar.vencimiento) {
+                partes.push(`vence el <strong>${escapeHtml(ejemplar.vencimiento)}</strong>`);
+              }
+            }
+            if (partes.length) {
+              ejemplarDiv.innerHTML = `DNI ${partes.join(' · ')}.
+                Los datos de arriba corresponden a este ejemplar.`;
+              ejemplarDiv.style.display = 'block';
+            }
+          }
 
         } catch (err) {
           console.error('Error validación Renaper:', err);
