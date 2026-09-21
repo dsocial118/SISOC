@@ -70,6 +70,14 @@ class RelevamientoCerrado(Exception):
     """El operativo ya está finalizado y no admite más casos (409)."""
 
 
+class RelevamientoNoIniciado(Exception):
+    """El operativo todavía no empezó y no admite casos (409).
+
+    QA-0012: la app ya lo bloquea, pero el servidor no puede confiar en eso.
+    Corrige D2.7, que decía que las fechas eran sólo planificación.
+    """
+
+
 @transaction.atomic
 def upsert_encuesta(*, encuesta_id, relevamiento, datos, user, origen=None):
     """Alta o actualización idempotente de un caso por UUID.
@@ -79,6 +87,17 @@ def upsert_encuesta(*, encuesta_id, relevamiento, datos, user, origen=None):
     """
     if relevamiento.estado == Relevamiento.Estado.FINALIZADO:
         raise RelevamientoCerrado()
+    # Ninguna de las dos fechas le gana al estado. La de fin no corta porque un
+    # operativo puede estirarse. La de inicio sólo corta mientras sigue
+    # ``planificado``: cargar antes de empezar es un error de la app. Una vez
+    # que arrancó, adelantar la fecha de inicio no puede volver a rechazar los
+    # casos de un operativo que ya está en curso.
+    if (
+        relevamiento.estado == Relevamiento.Estado.PLANIFICADO
+        and relevamiento.fecha_inicio
+        and timezone.localdate() < relevamiento.fecha_inicio
+    ):
+        raise RelevamientoNoIniciado()
 
     encuesta = Encuesta.all_objects.filter(pk=encuesta_id).first()
     creada = encuesta is None

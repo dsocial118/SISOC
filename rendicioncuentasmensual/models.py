@@ -58,8 +58,11 @@ class DocumentacionAdjunta(SoftDeleteModelMixin, models.Model):
         (CATEGORIA_FORMULARIO_V_SIPH, "Formulario V - Certificación de SIPH"),
         (CATEGORIA_FORMULARIO_VI, "Formulario VI - Planilla de Pagos"),
         (CATEGORIA_EXTRACTO_BANCARIO, "Extracto Bancario"),
-        (CATEGORIA_COMPROBANTES_ALIMENTARIO, "Comprobantes Prestación Alimentaria"),
-        (CATEGORIA_COMPROBANTES_SIPH, "Comprobantes SIPH"),
+        (
+            CATEGORIA_COMPROBANTES_ALIMENTARIO,
+            "Facturas y Tickets Prestación Alimentaria",
+        ),
+        (CATEGORIA_COMPROBANTES_SIPH, "Facturas y Tickets SIPH"),
         (CATEGORIA_PLANILLA_SEGUROS, "Planilla de Seguros"),
         (CATEGORIA_OTROS, "Documentación Adicional"),
     ]
@@ -138,14 +141,14 @@ class DocumentacionAdjunta(SoftDeleteModelMixin, models.Model):
         },
         {
             "codigo": CATEGORIA_COMPROBANTES_ALIMENTARIO,
-            "label": "Comprobantes Prestación Alimentaria",
+            "label": "Facturas y Tickets Prestación Alimentaria",
             "required": False,
             "multiple": True,
             "order": 10,
         },
         {
             "codigo": CATEGORIA_COMPROBANTES_SIPH,
-            "label": "Comprobantes SIPH",
+            "label": "Facturas y Tickets SIPH",
             "required": False,
             "multiple": True,
             "order": 12,
@@ -156,6 +159,7 @@ class DocumentacionAdjunta(SoftDeleteModelMixin, models.Model):
             "required": False,
             "multiple": False,
             "order": 11,
+            "lineas": (LINEA_TRADICIONAL,),
         },
         {
             "codigo": CATEGORIA_OTROS,
@@ -321,6 +325,26 @@ class DocumentacionAdjunta(SoftDeleteModelMixin, models.Model):
         null=True,
         blank=True,
     )
+    # No usa choices porque las etapas se definen en el modelo siguiente.
+    visualizacion_etapa = models.CharField(
+        max_length=30,
+        blank=True,
+        null=True,
+        verbose_name="Etapa en que se confirmó la visualización",
+    )
+    visualizacion_usuario = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        related_name="documentos_rendicion_visualizados",
+        blank=True,
+        null=True,
+        verbose_name="Confirmó la visualización",
+    )
+    visualizacion_fecha = models.DateTimeField(
+        blank=True,
+        null=True,
+        verbose_name="Fecha de confirmación de visualización",
+    )
 
     class Meta:
         verbose_name = "Documento Adjunto"
@@ -331,6 +355,11 @@ class DocumentacionAdjunta(SoftDeleteModelMixin, models.Model):
         if override:
             return override
         return self.estado
+
+    def visualizacion_confirmada_en(self, etapa_proceso):
+        return bool(self.visualizacion_fecha) and (
+            self.visualizacion_etapa == etapa_proceso
+        )
 
     def get_estado_visual_display(self):
         override = getattr(self, "estado_visual_display_override", None)
@@ -365,7 +394,9 @@ class DocumentacionAdjunta(SoftDeleteModelMixin, models.Model):
         )
 
     @classmethod
-    def categorias_mobile(cls, linea_programatica=None):
+    def categorias_mobile(cls, linea_programatica=None, incluir_codigos=()):
+        linea = cls.normalizar_linea_programatica(linea_programatica)
+        incluir_codigos = set(incluir_codigos)
         modelos = {
             item["codigo"]: item
             for item in cls.modelos_descargables(linea_programatica)
@@ -373,6 +404,9 @@ class DocumentacionAdjunta(SoftDeleteModelMixin, models.Model):
         return [
             {**item, "modelo": modelos.get(item["codigo"])}
             for item in cls.CATEGORIAS_CONFIG
+            if not item.get("lineas")
+            or linea in item["lineas"]
+            or item["codigo"] in incluir_codigos
         ]
 
     @classmethod
@@ -428,7 +462,7 @@ class RendicionCuentaMensual(SoftDeleteModelMixin, models.Model):
     ETAPA_PROCESO_CHOICES = [
         (ETAPA_CARGA_DOCUMENTACION, "Carga de documentación"),
         (ETAPA_REVISION_DOCUMENTACION, "Revisión Territorial"),
-        (ETAPA_REVISION_AUDITORIA, "Revisión de Auditoría"),
+        (ETAPA_REVISION_AUDITORIA, "Revisión para Carga"),
         (ETAPA_AUDITORIA, "Auditoría"),
         (ETAPA_REGULARIZACION, "Regularización"),
     ]
@@ -551,6 +585,25 @@ class RendicionCuentaMensual(SoftDeleteModelMixin, models.Model):
         blank=True,
         null=True,
         verbose_name="Monto rendido",
+    )
+    monto_observado = models.DecimalField(
+        max_digits=15,
+        decimal_places=2,
+        blank=True,
+        null=True,
+        verbose_name="Monto observado",
+    )
+    genera_acta_auditoria = models.BooleanField(
+        blank=True,
+        null=True,
+        verbose_name="¿Se genera acta de auditoría?",
+    )
+    rendiciones_incluidas = models.ManyToManyField(
+        "self",
+        symmetrical=False,
+        blank=True,
+        related_name="incluida_en_actas",
+        verbose_name="Rendiciones incluidas en el acta",
     )
     fecha_validacion_territorial = models.DateTimeField(blank=True, null=True)
     fecha_validacion_auditoria = models.DateTimeField(blank=True, null=True)

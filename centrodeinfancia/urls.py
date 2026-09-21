@@ -45,6 +45,10 @@ from centrodeinfancia.views_export import (
     CentroDeInfanciaExportView,
     NominaNinosPDFView,
 )
+from centrodeinfancia.views_reportes import (
+    ReporteCDIDescargaView,
+    ReportesCDIView,
+)
 from centrodeinfancia.views_usuario_cdi import GenerarUsuarioCDIView
 from centrodeinfancia.views_usuario_egp import GenerarUsuarioEGPView
 
@@ -73,6 +77,18 @@ urlpatterns = [
         "centrodeinfancia/nomina-ninos/descargar/",
         NominaNinosPDFView.as_view(),
         name="centrodeinfancia_nomina_ninos_pdf",
+    ),
+    path(
+        "centrodeinfancia/reportes/",
+        permissions_any_required(["auth.role_reportes_cdi"])(ReportesCDIView.as_view()),
+        name="centrodeinfancia_reportes",
+    ),
+    path(
+        "centrodeinfancia/reportes/descargar/",
+        permissions_any_required(["auth.role_reportes_cdi"])(
+            ReporteCDIDescargaView.as_view()
+        ),
+        name="centrodeinfancia_reportes_descargar",
     ),
     path(
         "centrodeinfancia/crear",

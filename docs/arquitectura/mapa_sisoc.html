@@ -1,0 +1,1360 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Arquitectura de SISOC</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Mapa de arquitectura de SISOC — hoja generada, no editar la copia de static/.
+   Fuente: scripts/arquitectura/plantilla/mapa.css */
+
+html:has(> body > .mapa-app),
+html:has(> body > .mapa-app) > body { margin: 0; padding: 0; height: 100%; }
+
+.mapa-app {
+  --bg: #e9ecea;
+  --lienzo: #f4f6f5;
+  --panel: #fbfcfb;
+  --chip: #ffffff;
+  --ink: #101917;
+  --ink-2: #47534f;
+  --muted: #5a6864;
+  --line: #c7cfcb;
+  --line-suave: #dbe1de;
+  --api: #0b6558;
+  --deuda: #9c5210;
+  --movil: #34438f;
+  --s2s: #6d3268;
+  --neutro: #5a6864;
+  --alerta: #9a2c2c;
+  --sombra: 0 1px 2px rgba(16, 25, 23, .06), 0 8px 24px -16px rgba(16, 25, 23, .25);
+  --pulgar: #8d9a96;
+  --pulgar-activo: #6d7a76;
+  --radio: 5px;
+
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  min-height: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 13.5px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+
+@media (prefers-color-scheme: dark) {
+  .mapa-app:not([data-tema="claro"]) {
+    --bg: #0d1211;
+    --lienzo: #131a19;
+    --panel: #171f1d;
+    --chip: #1d2725;
+    --ink: #e7ecea;
+    --ink-2: #b2bfbb;
+    --muted: #8a9995;
+    --line: #2e3a37;
+    --line-suave: #242f2d;
+    --api: #4cb3a0;
+    --deuda: #d9913f;
+    --movil: #8e9bef;
+    --s2s: #c993c2;
+    --neutro: #8a9995;
+    --alerta: #e58b8b;
+    --sombra: 0 1px 2px rgba(0, 0, 0, .4), 0 10px 30px -18px rgba(0, 0, 0, .8);
+    --pulgar: #55655f;
+    --pulgar-activo: #6f817a;
+  }
+}
+
+.mapa-app[data-tema="oscuro"] {
+  --bg: #0d1211;
+  --lienzo: #131a19;
+  --panel: #171f1d;
+  --chip: #1d2725;
+  --ink: #e7ecea;
+  --ink-2: #b2bfbb;
+  --muted: #8a9995;
+  --line: #2e3a37;
+  --line-suave: #242f2d;
+  --api: #4cb3a0;
+  --deuda: #d9913f;
+  --movil: #8e9bef;
+  --s2s: #c993c2;
+  --neutro: #8a9995;
+  --alerta: #e58b8b;
+  --sombra: 0 1px 2px rgba(0, 0, 0, .4), 0 10px 30px -18px rgba(0, 0, 0, .8);
+  --pulgar: #55655f;
+  --pulgar-activo: #6f817a;
+}
+
+/* Scrollbars discretas y del mismo material que el resto del modulo.
+   Solo aparecen cuando el contenido realmente desborda. */
+
+.mapa-app .lienzo,
+.mapa-app .hoja,
+.mapa-app .ficha {
+  scrollbar-width: thin;
+  scrollbar-color: var(--pulgar) transparent;
+  overscroll-behavior: contain;
+}
+
+.mapa-app ::-webkit-scrollbar { width: 10px; height: 10px; }
+.mapa-app ::-webkit-scrollbar-track { background: transparent; }
+.mapa-app ::-webkit-scrollbar-corner { background: transparent; }
+
+.mapa-app ::-webkit-scrollbar-thumb {
+  background-color: var(--pulgar);
+  border: 3px solid transparent;
+  background-clip: content-box;
+  border-radius: 100px;
+}
+
+.mapa-app ::-webkit-scrollbar-thumb:hover { background-color: var(--pulgar-activo); }
+
+.mapa-app *,
+.mapa-app *::before,
+.mapa-app *::after { box-sizing: border-box; }
+
+.mapa-app .mono,
+.mapa-app code { font-family: "IBM Plex Mono", ui-monospace, "Cascadia Mono", monospace; }
+
+/* ---------- barra superior ---------- */
+
+.mapa-app .barra {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+  position: relative;
+  z-index: 20;
+}
+
+.mapa-app .marca { display: flex; align-items: center; gap: 7px; margin-right: 2px; }
+
+.mapa-app .marca h1 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -.012em;
+  white-space: nowrap;
+}
+
+.mapa-app .ayuda-btn {
+  width: 19px;
+  height: 19px;
+  flex: none;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: var(--chip);
+  color: var(--muted);
+  font: 600 11px/1 "IBM Plex Sans", sans-serif;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  padding: 0;
+}
+
+.mapa-app .ayuda-btn:hover { color: var(--ink); border-color: var(--ink-2); }
+.mapa-app .ayuda-btn[aria-expanded="true"] { background: var(--ink); color: var(--panel); border-color: var(--ink); }
+
+.mapa-app .ficha {
+  position: absolute;
+  top: calc(100% - 2px);
+  left: 12px;
+  z-index: 40;
+  width: min(420px, calc(100vw - 24px));
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  box-shadow: var(--sombra);
+  padding: 13px 14px;
+}
+
+.mapa-app .ficha[hidden] { display: none; }
+.mapa-app .ficha h2 { margin: 0 0 8px; font-size: 11px; text-transform: uppercase; letter-spacing: .09em; color: var(--muted); font-weight: 600; }
+.mapa-app .ficha + .ficha { margin-top: 0; }
+
+.mapa-app .ficha dl {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 2px 14px;
+  margin: 0 0 11px;
+  font-size: 12.5px;
+}
+
+.mapa-app .ficha dt { color: var(--muted); }
+.mapa-app .ficha dd { margin: 0; font-family: "IBM Plex Mono", monospace; font-variant-numeric: tabular-nums; word-break: break-word; }
+.mapa-app .ficha p { margin: 0 0 8px; font-size: 12px; color: var(--ink-2); text-wrap: pretty; }
+.mapa-app .ficha p:last-child { margin-bottom: 0; }
+.mapa-app .ficha code { background: color-mix(in srgb, var(--ink) 8%, transparent); padding: 1px 4px; border-radius: 3px; font-size: 11.5px; }
+
+.mapa-app .buscador {
+  flex: 0 1 230px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--chip);
+  border: 1px solid var(--line);
+  border-radius: var(--radio);
+  padding: 0 8px;
+}
+
+.mapa-app .buscador input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  padding: 5px 0;
+}
+
+.mapa-app .buscador input:focus { outline: none; }
+.mapa-app .buscador:focus-within { border-color: var(--api); box-shadow: 0 0 0 3px color-mix(in srgb, var(--api) 20%, transparent); }
+.mapa-app .buscador .lupa { color: var(--muted); font: 500 11px/1 "IBM Plex Mono", monospace; }
+
+.mapa-app .capas { display: flex; flex-wrap: wrap; gap: 6px; margin-left: auto; }
+
+.mapa-app .capa {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--line);
+  background: var(--chip);
+  color: var(--ink-2);
+  border-radius: 100px;
+  padding: 4px 10px 4px 8px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color .15s, color .15s, background .15s;
+}
+
+.mapa-app .capa:hover { border-color: var(--hue, var(--line)); color: var(--ink); }
+.mapa-app .capa .trazo { width: 16px; height: 0; border-top: 2px solid var(--hue); opacity: .32; }
+.mapa-app .capa[aria-pressed="true"] { color: var(--ink); border-color: var(--hue); background: color-mix(in srgb, var(--hue) 10%, var(--chip)); }
+.mapa-app .capa[aria-pressed="true"] .trazo { opacity: 1; }
+.mapa-app .capa .cuenta { font-family: "IBM Plex Mono", monospace; font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.mapa-app .capa[data-punteado="1"] .trazo { border-top-style: dashed; }
+
+.mapa-app .volver {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--ink-2);
+  text-decoration: none;
+  border: 1px solid var(--line);
+  border-radius: var(--radio);
+  padding: 4px 9px;
+  background: var(--chip);
+  white-space: nowrap;
+}
+
+.mapa-app .volver:hover { color: var(--ink); border-color: var(--ink-2); }
+
+.mapa-app button:focus-visible,
+.mapa-app [tabindex]:focus-visible { outline: 2px solid var(--api); outline-offset: 2px; }
+
+/* ---------- cuerpo ---------- */
+
+.mapa-app .cuerpo {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 328px;
+  gap: 9px;
+  padding: 9px;
+}
+
+.mapa-app .lienzo {
+  position: relative;
+  background: var(--lienzo);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 11px;
+  overflow: auto;
+}
+
+/* Los cables se posicionan contra este wrapper, no contra el area scrolleable:
+   asi miden exactamente el contenido y nunca generan desborde propio. */
+.mapa-app .lienzo-contenido {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.mapa-app .cables { position: absolute; inset: 0; pointer-events: none; z-index: 2; }
+
+.mapa-app .marco {
+  position: relative;
+  z-index: 1;
+  border: 1.5px solid var(--ink);
+  border-radius: 6px;
+  padding: 10px 11px 11px;
+  background: color-mix(in srgb, var(--chip) 45%, transparent);
+}
+
+.mapa-app .marco > header,
+.mapa-app .rail > header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 3px 10px;
+  margin-bottom: 9px;
+}
+
+.mapa-app .marco h2,
+.mapa-app .rail h2 {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+}
+
+.mapa-app .marco header p,
+.mapa-app .rail header p { margin: 0; font-size: 11.5px; color: var(--muted); }
+
+.mapa-app .zonas { display: flex; flex-direction: column; gap: 7px; }
+
+.mapa-app .zona {
+  display: grid;
+  grid-template-columns: 124px minmax(0, 1fr);
+  gap: 10px;
+  padding-top: 7px;
+  border-top: 1px solid var(--line-suave);
+}
+
+.mapa-app .zona:first-child { border-top: 0; padding-top: 0; }
+.mapa-app .zona-nombre { font-size: 11.5px; font-weight: 600; margin: 0; }
+.mapa-app .zona-detalle { font-size: 11px; color: var(--muted); margin: 1px 0 0; text-wrap: pretty; line-height: 1.35; }
+
+.mapa-app .rejilla {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(116px, 1fr));
+  gap: 6px;
+  align-content: start;
+}
+
+/* ---------- nodos ---------- */
+
+.mapa-app .nodo {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  text-align: left;
+  background: var(--chip);
+  border: 1px solid var(--line);
+  border-radius: var(--radio);
+  padding: 6px 7px 5px;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  transition: border-color .12s, box-shadow .12s, opacity .12s;
+}
+
+.mapa-app .nodo:hover { border-color: var(--ink-2); box-shadow: var(--sombra); }
+.mapa-app .nodo[aria-pressed="true"] { border-color: var(--ink); box-shadow: 0 0 0 1px var(--ink); }
+.mapa-app .nodo .titulo { font-size: 12px; font-weight: 600; line-height: 1.2; }
+.mapa-app .nodo .paquete { font-family: "IBM Plex Mono", monospace; font-size: 10.5px; color: var(--muted); word-break: break-all; line-height: 1.25; }
+
+.mapa-app .insignias { display: flex; flex-wrap: wrap; gap: 3px; margin-top: auto; padding-top: 2px; }
+
+.mapa-app .insignia {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+  line-height: 1.45;
+  padding: 0 3px;
+  border-radius: 3px;
+  border: 1px solid color-mix(in srgb, var(--hue) 45%, transparent);
+  color: var(--hue);
+  background: color-mix(in srgb, var(--hue) 10%, transparent);
+  white-space: nowrap;
+}
+
+.mapa-app .barrita { height: 2px; border-radius: 2px; background: var(--line-suave); overflow: hidden; }
+.mapa-app .barrita span { display: block; height: 100%; background: var(--ink-2); opacity: .45; }
+
+.mapa-app .lienzo.enfocado .nodo:not(.foco):not(.vecino) { opacity: .26; }
+.mapa-app .lienzo.enfocado .nodo.vecino { border-color: var(--ink-2); }
+.mapa-app .lienzo.filtrando .nodo.oculto { opacity: .14; }
+
+/* ---------- rails ---------- */
+
+.mapa-app .rails { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 9px; position: relative; z-index: 1; }
+
+.mapa-app .rail {
+  border: 1px dashed var(--line);
+  border-radius: 6px;
+  padding: 10px 11px 11px;
+  background: color-mix(in srgb, var(--chip) 30%, transparent);
+}
+
+.mapa-app .rail .rejilla { grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); }
+
+.mapa-app .async { display: flex; flex-wrap: wrap; gap: 4px; margin: 0; padding: 0; list-style: none; }
+
+.mapa-app .async li {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10.5px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 1px 5px;
+  background: var(--chip);
+  color: var(--ink-2);
+}
+
+.mapa-app .async li.celery { border-color: color-mix(in srgb, var(--s2s) 50%, transparent); color: var(--s2s); }
+.mapa-app .nota { font-size: 11px; color: var(--muted); margin: 7px 0 0; text-wrap: pretty; }
+
+/* ---------- panel ---------- */
+
+.mapa-app .panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  overflow: hidden;
+}
+
+.mapa-app .pestanias { display: flex; border-bottom: 1px solid var(--line); flex: none; }
+
+.mapa-app .pestania {
+  flex: 1;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--muted);
+  font: 500 12px/1 "IBM Plex Sans", sans-serif;
+  padding: 9px 6px;
+  cursor: pointer;
+}
+
+.mapa-app .pestania[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--ink); font-weight: 600; }
+.mapa-app .pestania:hover { color: var(--ink); }
+
+.mapa-app .hoja { flex: 1; min-height: 0; overflow-y: auto; padding: 13px 14px 18px; }
+.mapa-app .hoja[hidden] { display: none; }
+
+.mapa-app .panel h3 { margin: 0; font-size: 16px; font-weight: 600; letter-spacing: -.01em; }
+.mapa-app .panel .sub { font-family: "IBM Plex Mono", monospace; font-size: 11.5px; color: var(--muted); margin: 1px 0 12px; }
+
+.mapa-app .bloque { border-top: 1px solid var(--line-suave); padding-top: 10px; margin-top: 11px; }
+.mapa-app .bloque:first-of-type { border-top: 0; margin-top: 0; padding-top: 0; }
+
+.mapa-app .bloque h4 {
+  margin: 0 0 6px;
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.mapa-app .datos { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 2px 11px; margin: 0; font-size: 12px; }
+.mapa-app .datos dt { color: var(--muted); }
+.mapa-app .datos dd { margin: 0; font-family: "IBM Plex Mono", monospace; font-variant-numeric: tabular-nums; word-break: break-word; }
+
+.mapa-app .lista { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; font-size: 12px; }
+.mapa-app .lista li { display: flex; flex-direction: column; gap: 1px; }
+.mapa-app .lista .meta { font-size: 11px; color: var(--muted); font-family: "IBM Plex Mono", monospace; word-break: break-word; line-height: 1.35; }
+.mapa-app .lista .camino { color: var(--ink-2); font-size: 11px; }
+
+.mapa-app .rel { display: flex; flex-direction: column; gap: 1px; font-size: 12px; padding: 2px 0; }
+.mapa-app .rel-linea { display: flex; align-items: baseline; gap: 6px; }
+
+.mapa-app .rel .meta {
+  margin: 0 0 0 12px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10.5px;
+  color: var(--muted);
+  line-height: 1.3;
+  word-break: break-word;
+}
+
+/* Solo para lectores de pantalla: cambios de seleccion y de filtro. */
+.mapa-app .anuncio {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.mapa-app .rel .pip { width: 6px; height: 6px; border-radius: 2px; background: var(--hue); flex: none; translate: 0 -1px; }
+.mapa-app .rel .n { font-family: "IBM Plex Mono", monospace; font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+.mapa-app .rel button,
+.mapa-app .enlace {
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: var(--line);
+  text-underline-offset: 2px;
+}
+
+.mapa-app .rel button:hover,
+.mapa-app .enlace:hover { text-decoration-color: currentColor; }
+
+.mapa-app .hallazgo { font-size: 12px; margin: 0 0 8px; padding-left: 9px; border-left: 2px solid var(--hue, var(--line)); color: var(--ink-2); text-wrap: pretty; }
+.mapa-app .hallazgo strong { color: var(--ink); font-weight: 600; }
+.mapa-app .hallazgo:last-child { margin-bottom: 0; }
+.mapa-app .pista { font-size: 11.5px; color: var(--muted); margin: 9px 0 0; text-wrap: pretty; }
+
+/* ---------- menu del usuario (pestaña) ---------- */
+
+.mapa-app .grupo { margin-bottom: 14px; }
+.mapa-app .grupo:last-child { margin-bottom: 0; }
+.mapa-app .grupo h4 { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.mapa-app .grupo h4 .cant { font-family: "IBM Plex Mono", monospace; letter-spacing: 0; text-transform: none; }
+.mapa-app .grupo ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1px; }
+
+.mapa-app .grupo li > button {
+  width: 100%;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 12px;
+  color: var(--ink);
+  text-align: left;
+  padding: 2px 5px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.mapa-app .grupo li > button:hover { background: color-mix(in srgb, var(--api) 12%, transparent); }
+.mapa-app .grupo li .destino { font-family: "IBM Plex Mono", monospace; font-size: 10.5px; color: var(--muted); flex: none; }
+.mapa-app .grupo li[data-nivel="2"] > button { padding-left: 13px; }
+.mapa-app .grupo li[data-nivel="3"] > button { padding-left: 24px; }
+.mapa-app .grupo li[data-nivel="2"] .etq::before,
+.mapa-app .grupo li[data-nivel="3"] .etq::before { content: "· "; color: var(--muted); }
+.mapa-app .grupo .rama { font-size: 11px; color: var(--muted); padding: 6px 5px 0; font-weight: 500; }
+
+/* ---------- sin datos ---------- */
+
+.mapa-app .vacio { margin: auto; max-width: 46ch; text-align: center; padding: 40px 20px; }
+.mapa-app .vacio h2 { font-size: 17px; margin: 0 0 8px; }
+.mapa-app .vacio p { color: var(--ink-2); margin: 0 0 8px; text-wrap: pretty; }
+.mapa-app .vacio code { background: color-mix(in srgb, var(--ink) 8%, transparent); padding: 2px 5px; border-radius: 3px; font-size: 12px; }
+
+/* ---------- angosto ---------- */
+
+@media (max-width: 900px) {
+  .mapa-app { height: auto; min-height: 100dvh; }
+  .mapa-app .cuerpo { grid-template-columns: minmax(0, 1fr); }
+  .mapa-app .lienzo { overflow: visible; }
+  .mapa-app .panel { max-height: none; }
+  .mapa-app .hoja { overflow-y: visible; }
+  .mapa-app .zona { grid-template-columns: minmax(0, 1fr); gap: 6px; }
+  .mapa-app .capas { margin-left: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mapa-app * { transition: none !important; animation: none !important; }
+}
+
+</style>
+</head>
+<body>
+<div id="mapa"></div>
+<script>window.__GRAFO_SISOC__ = {"generado":"2026-09-15T11:37:49-03:00","commit":"01b950f01","rama":"juanikitro/docs-sisoc-module-map","zonas":[{"id":"nucleo","nombre":"Nucleo compartido","detalle":"Base transversal. No puede importar dominios (contrato core-no-domains)."},{"id":"personas","nombre":"Personas","detalle":"Identidad ciudadana compartida por todos los dominios."},{"id":"comedores_core","nombre":"Comedores Core","detalle":"Bounded context: ciclo completo de comedor. Afuera solo se consume por *.api."},{"id":"satelites","nombre":"Satelites de dominio","detalle":"Verticales con frontera declarada en .importlinter; extraibles a futuro."},{"id":"transversal","nombre":"Servicios al usuario","detalle":"Atraviesan dominios sin ser dueños de ninguno."},{"id":"integracion","nombre":"Capa de integracion","detalle":"Contratos hacia afuera: PWA y consumidores server-to-server."},{"id":"sin_clasificar","nombre":"Sin clasificar","detalle":"App instalada que todavia no fue ubicada en una zona del mapa."}],"modulos":[{"id":"users","nombre":"Users","zona":"nucleo","instalada":true,"rutas_web":["/ (raiz)"],"rutas_api":["/api/users/"],"planos_api":["sesion","token"],"menu":[{"label":"Usuarios","grupo":"Administración del sistema","ruta":[],"permisos":["auditlog.view_logentry","auth.add_group","auth.add_user","auth.change_group","auth.change_user","auth.delete_user","auth.view_group","auth.view_user","encuestas.ver_resultados","encuestas.view_encuesta","is_superuser"]},{"label":"Grupos","grupo":"Administración del sistema","ruta":[],"permisos":["auditlog.view_logentry","auth.add_group","auth.add_user","auth.change_group","auth.change_user","auth.delete_user","auth.view_group","auth.view_user","encuestas.ver_resultados","encuestas.view_encuesta","is_superuser"]},{"label":"Mi cuenta","grupo":"Mi cuenta","ruta":[],"permisos":[]}],"archivos":48,"lineas":13469,"deps_out":{"api":0,"internal":2},"deps_in":{"api":1,"internal":19},"tiene_fachada":true},{"id":"core","nombre":"Core","zona":"nucleo","instalada":true,"rutas_web":["/ (raiz)"],"rutas_api":["/api/renaper/"],"planos_api":["api_key"],"menu":[{"label":"Inicio","grupo":"Inicio","ruta":[],"permisos":[]},{"label":"Programas","grupo":"Administración del sistema","ruta":[],"permisos":["auditlog.view_logentry","auth.add_group","auth.add_user","auth.change_group","auth.change_user","auth.delete_user","auth.view_group","auth.view_user","encuestas.ver_resultados","encuestas.view_encuesta","is_superuser"]},{"label":"Papelera","grupo":"Administración del sistema","ruta":[],"permisos":["auditlog.view_logentry","auth.add_group","auth.add_user","auth.change_group","auth.change_user","auth.delete_user","auth.view_group","auth.view_user","encuestas.ver_resultados","encuestas.view_encuesta","is_superuser"]},{"label":"Monto de Prestaciones","grupo":"Configuración de Comedores","ruta":[],"permisos":["admisiones.gestionar_templates_informe_tecnico","auth.role_admin","core.view_montoprestacionprograma","insumos.view_insumo","pwa.manage_catalogoactividadpwa","pwa.view_catalogoactividadpwa"]}],"archivos":72,"lineas":8658,"deps_out":{"api":0,"internal":3},"deps_in":{"api":0,"internal":29},"tiene_fachada":false},{"id":"sentry","nombre":"Sentry","zona":"nucleo","instalada":true,"rutas_web":[],"rutas_api":[],"planos_api":[],"menu":[],"archivos":8,"lineas":299,"deps_out":{"api":0,"internal":0},"deps_in":{"api":0,"internal":0},"tiene_fachada":false},{"id":"dashboard","nombre":"Dashboard","zona":"transversal","instalada":true,"rutas_web":["/ (raiz)"],"rutas_api":[],"planos_api":[],"menu":[],"archivos":9,"lineas":574,"deps_out":{"api":3,"internal":1},"deps_in":{"api":0,"internal":0},"tiene_fachada":false},{"id":"comedores","nombre":"Comedores","zona":"comedores_core","instalada":true,"rutas_web":["/ (raiz)"],"rutas_api":["/api/comedores/","/api/territorial/"],"planos_api":["sesion","token"],"menu":[{"label":"Ver Comedores","grupo":"Legajos","ruta":["Comedores"],"permisos":["comedores.view_comedor","importarexpediente.view_archivosimportados"]},{"label":"Cursos App Mobile","grupo":"Configuración de Comedores","ruta":[],"permisos":["admisiones.gestionar_templates_informe_tecnico","auth.role_admin","core.view_montoprestacionprograma","insumos.view_insumo","pwa.manage_catalogoactividadpwa","pwa.view_catalogoactividadpwa"]},{"label":"Actividades PNUD","grupo":"Configuración de Comedores","ruta":[],"permisos":["admisiones.gestionar_templates_informe_tecnico","auth.role_admin","core.view_montoprestacionprograma","insumos.view_insumo","pwa.manage_catalogoactividadpwa","pwa.view_catalogoactividadpwa"]}],"archivos":72,"lineas":21730,"deps_out":{"api":2,"internal":14},"deps_in":{"api":2,"internal":9},"tiene_fachada":true},{"id":"organizaciones","nombre":"Organizaciones","zona":"comedores_core","instalada":true,"rutas_web":["/ (raiz)"],"rutas_api":[],"planos_api":[],"menu":[{"label":"Ver Organizaciones","grupo":"Legajos","ruta":["Organizaciones"],"permisos":["auth.role_abogado_dupla","auth.role_tecnico_comedor","organizaciones.view_organizacion","rendicioncuentasmensual.manage_auditoria_review_stage","rendicioncuentasmensual.manage_auditoria_stage","rendicioncuentasmensual.manage_regularizacion_stage","rendicioncuentasmensual.manage_territorial_stage","rendicioncuentasmensual.view_rendicioncuentamensual"]}],"archivos":9,"lineas":2399,"deps_out":{"api":1,"internal":5},"deps_in":{"api":0,"internal":4},"tiene_fachada":false},{"id":"ciudadanos","nombre":"Ciudadanos","zona":"personas","instalada":true,"rutas_web":["/ (raiz)"],"rutas_api":[],"planos_api":[],"menu":[{"label":"Búsqueda","grupo":"Legajos","ruta":["Historia Social Digital"],"permisos":["ciudadanos.add_ciudadano","ciudadanos.view_ciudadano"]},{"label":"Revision de Identidad","grupo":"Legajos","ruta":["Historia Social Digital"],"permisos":["ciudadanos.add_ciudadano","ciudadanos.revision_identidad","ciudadanos.view_ciudadano"]},{"label":"Importacion masiva","grupo":"Legajos","ruta":["Historia Social Digital"],"permisos":["ciudadanos.add_ciudadano","ciudadanos.view_ciudadano"]}],"archivos":16,"lineas":4349,"deps_out":{"api":1,"internal":1},"deps_in":{"api":2,"internal":6},"tiene_fachada":true},{"id":"duplas","nombre":"Duplas","zona":"comedores_core","instalada":true,"rutas_web":["/ (raiz)"],"rutas_api":[],"planos_api":[],"menu":[{"label":"Equipos Técnicos","grupo":"Configuración de Comedores","ruta":[],"permisos":["admisiones.gestionar_templates_informe_tecnico","auth.role_admin","core.view_montoprestacionprograma","insumos.view_insumo","pwa.manage_catalogoactividadpwa","pwa.view_catalogoactividadpwa"]}],"archivos":13,"lineas":887,"deps_out":{"api":0,"internal":2},"deps_in":{"api":0,"internal":3},"tiene_fachada":false},{"id":"admisiones","nombre":"Admisiones","zona":"comedores_core","instalada":true,"rutas_web":["/ (raiz)"],"rutas_api":[],"planos_api":[],"menu":[{"label":"Técnicos","grupo":"Legajos","ruta":["Comedores","Admisión - Comedores"],"permisos":["admisiones.view_admision","comedores.view_comedor","importarexpediente.view_archivosimportados"]},{"label":"Legales","grupo":"Legajos","ruta":["Comedores","Admisión - Comedores"],"permisos":["admisiones.view_admision","comedores.view_comedor","importarexpediente.view_archivosimportados"]},{"label":"Templates","grupo":"Configuración de Comedores","ruta":["Gestor de templates"],"permisos":["admisiones.gestionar_templates_informe_tecnico","auth.role_admin","core.view_montoprestacionprograma","insumos.view_insumo","pwa.manage_catalogoactividadpwa","pwa.view_catalogoactividadpwa"]},{"label":"Variables documentales","grupo":"Configuración de Comedores","ruta":["Gestor de templates"],"permisos":["admisiones.gestionar_templates_informe_tecnico","auth.role_admin","core.view_montoprestacionprograma","insumos.view_insumo","pwa.manage_catalogoactividadpwa","pwa.view_catalogoactividadpwa"]},{"label":"Incidencias de templates","grupo":"Configuración de Comedores","ruta":["Gestor de templates"],"permisos":["admisiones.gestionar_templates_informe_tecnico","auth.role_admin","core.view_montoprestacionprograma","insumos.view_insumo","pwa.manage_catalogoactividadpwa","pwa.view_catalogoactividadpwa"]}],"archivos":36,"lineas":16865,"deps_out":{"api":1,"internal":11},"deps_in":{"api":0,"internal":5},"tiene_fachada":false},{"id":"intervenciones","nombre":"Intervenciones","zona":"comedores_core","instalada":true,"rutas_web":[],"rutas_api":[],"planos_api":[],"menu":[],"archivos":12,"lineas":1012,"deps_out":{"api":1,"internal":4},"deps_in":{"api":1,"internal":2},"tiene_fachada":true},{"id":"historial","nombre":"Historial","zona":"nucleo","instalada":true,"rutas_web":[],"rutas_api":[],"planos_api":[],"menu":[],"archivos":5,"lineas":200,"deps_out":{"api":1,"internal":0},"deps_in":{"api":0,"internal":3},"tiene_fachada":false},{"id":"acompanamientos","nombre":"Acompanamientos","zona":"comedores_core","instalada":true,"rutas_web":["/acompanamientos/"],"rutas_api":[],"planos_api":[],"menu":[{"label":"Acompañamiento","grupo":"Legajos","ruta":["Comedores"],"permisos":["acompanamientos.view_informacionrelevante","comedores.view_comedor","importarexpediente.view_archivosimportados"]}],"archivos":12,"lineas":1626,"deps_out":{"api":0,"internal":7},"deps_in":{"api":0,"internal":3},"tiene_fachada":false},{"id":"expedientespagos","nombre":"Expedientes de pago","zona":"comedores_core","instalada":true,"rutas_web":["/expedientespagos/"],"rutas_api":[],"planos_api":[],"menu":[],"archivos":7,"lineas":740,"deps_out":{"api":0,"internal":3},"deps_in":{"api":0,"internal":3},"tiene_fachada":false},{"id":"relevamientos","nombre":"Relevamientos","zona":"comedores_core","instalada":true,"rutas_web":["/ (raiz)"],"rutas_api":[],"planos_api":["api_key","token"],"menu":[],"archivos":24,"lineas":7884,"deps_out":{"api":1,"internal":3},"deps_in":{"api":1,"internal":1},"tiene_fachada":true},{"id":"rendicioncuentasfinal","nombre":"Rendicion final","zona":"comedores_core","instalada":true,"rutas_web":["/ (raiz)"],"rutas_api":[],"planos_api":[],"menu":[{"label":"Rendición de Cuentas Final","grupo":"Legajos","ruta":["Comedores"],"permisos":["comedores.view_comedor","importarexpediente.view_archivosimportados","rendicioncuentasfinal.view_rendicioncuentasfinal"]}],"archivos":7,"lineas":682,"deps_out":{"api":0,"internal":5},"deps_in":{"api":1,"internal":2},"tiene_fachada":true},{"id":"rendicioncuentasmensual","nombre":"Rendicion mensual","zona":"comedores_core","instalada":true,"rutas_web":["/rendicioncuentasmensual/"],"rutas_api":[],"planos_api":[],"menu":[{"label":"Rendiciones","grupo":"Legajos","ruta":["Organizaciones"],"permisos":["auth.role_abogado_dupla","auth.role_tecnico_comedor","organizaciones.view_organizacion","rendicioncuentasmensual.manage_auditoria_review_stage","rendicioncuentasmensual.manage_auditoria_stage","rendicioncuentasmensual.manage_regularizacion_stage","rendicioncuentasmensual.manage_territorial_stage","rendicioncuentasmensual.view_rendicioncuentamensual"]}],"archivos":13,"lineas":4167,"deps_out":{"api":0,"internal":6},"deps_in":{"api":0,"internal":4},"tiene_fachada":false},{"id":"centrodefamilia","nombre":"Centro de Familia","zona":"satelites","instalada":true,"rutas_web":["/ (raiz)"],"rutas_api":["/api/centrodefamilia/"],"planos_api":["api_key"],"menu":[{"label":"Centros","grupo":"Legajos","ruta":["Centro de Familia"],"permisos":["centrodefamilia.view_centro"]},{"label":"Nuevo Preinscripto","grupo":"Legajos","ruta":["Centro de Familia"],"permisos":["centrodefamilia.view_centro"]},{"label":"Lista de Preinscriptos","grupo":"Legajos","ruta":["Centro de Familia"],"permisos":["centrodefamilia.view_centro"]},{"label":"Lista Responsables","grupo":"Legajos","ruta":["Centro de Familia"],"permisos":["centrodefamilia.view_centro"]}],"archivos":45,"lineas":6545,"deps_out":{"api":0,"internal":5},"deps_in":{"api":1,"internal":0},"tiene_fachada":true},{"id":"VAT","nombre":"INET / VAT","zona":"satelites","instalada":true,"rutas_web":["/ (raiz)"],"rutas_api":["/api/vat/"],"planos_api":["api_key"],"menu":[{"label":"Centros de Formación Profesional","grupo":"Legajos","ruta":["INET"],"permisos":["VAT.view_centro"]},{"label":"Reporte Inscriptos y Asistencias","grupo":"Legajos","ruta":["INET"],"permisos":["VAT.view_centro"]},{"label":"Buscador por Ciudadano","grupo":"Legajos","ruta":["INET"],"permisos":["VAT.view_centro"]},{"label":"Inscripciones","grupo":"Legajos","ruta":["INET"],"permisos":["VAT.view_centro","VAT.view_inscripcion"]},{"label":"Evaluaciones","grupo":"Legajos","ruta":["INET"],"permisos":["VAT.view_centro","VAT.view_evaluacion"]},{"label":"Resultados de Evaluación","grupo":"Legajos","ruta":["INET"],"permisos":["VAT.view_centro","VAT.view_resultadoevaluacion"]},{"label":"Ofertas Institucionales","grupo":"Legajos","ruta":["INET","Oferta Educativa"],"permisos":["VAT.view_centro","VAT.view_ofertainstitucional"]},{"label":"Comisiones","grupo":"Legajos","ruta":["INET","Oferta Educativa"],"permisos":["VAT.view_centro","VAT.view_comision"]},{"label":"Inscripciones a Oferta","grupo":"Legajos","ruta":["INET","Oferta Educativa"],"permisos":["VAT.view_centro","VAT.view_inscripcionoferta"]},{"label":"Contactos","grupo":"Legajos","ruta":["INET","Datos Institución"],"permisos":["VAT.view_centro","VAT.view_institucioncontacto"]},{"label":"Identificadores","grupo":"Legajos","ruta":["INET","Datos Institución"],"permisos":["VAT.view_centro","VAT.view_institucionidentificadorhist"]},{"label":"Ubicaciones","grupo":"Legajos","ruta":["INET","Datos Institución"],"permisos":["VAT.view_centro","VAT.view_institucionubicacion"]},{"label":"Modalidades de Cursado","grupo":"Legajos","ruta":["INET","Catálogos"],"permisos":["VAT.view_centro","VAT.view_modalidadcursada","VAT.view_planversioncurricular"]},{"label":"Planes Curriculares","grupo":"Legajos","ruta":["INET","Catálogos"],"permisos":["VAT.view_centro","VAT.view_modalidadcursada","VAT.view_planversioncurricular"]},{"label":"Parametrías de Voucher","grupo":"Administración del sistema","ruta":[],"permisos":["auditlog.view_logentry","auth.add_group","auth.add_user","auth.change_group","auth.change_user","auth.delete_user","auth.view_group","auth.view_user","encuestas.ver_resultados","encuestas.view_encuesta","is_superuser"]}],"archivos":58,"lineas":22115,"deps_out":{"api":0,"internal":4},"deps_in":{"api":0,"internal":0},"tiene_fachada":false},{"id":"celiaquia","nombre":"Celiaquia","zona":"satelites","instalada":true,"rutas_web":["/ (raiz)","/celiaquia/"],"rutas_api":[],"planos_api":[],"menu":[{"label":"Expedientes","grupo":"Legajos","ruta":["Celiaquía"],"permisos":["celiaquia.view_cupo_dashboard","celiaquia.view_expediente","celiaquia.view_reporte_provincias","is_superuser"]},{"label":"Dashboard Cupos","grupo":"Legajos","ruta":["Celiaquía"],"permisos":["celiaquia.view_cupo_dashboard","celiaquia.view_expediente","celiaquia.view_reporte_provincias","is_superuser"]},{"label":"Reporte","grupo":"Legajos","ruta":["Celiaquía"],"permisos":["celiaquia.view_cupo_dashboard","celiaquia.view_expediente","celiaquia.view_reporte_provincias","is_superuser"]}],"archivos":66,"lineas":17389,"deps_out":{"api":0,"internal":4},"deps_in":{"api":1,"internal":0},"tiene_fachada":true},{"id":"audittrail","nombre":"Audit trail","zona":"nucleo","instalada":true,"rutas_web":["/ (raiz)"],"rutas_api":[],"planos_api":[],"menu":[{"label":"Auditoría","grupo":"Administración del sistema","ruta":[],"permisos":["auditlog.view_logentry","auth.add_group","auth.add_user","auth.change_group","auth.change_user","auth.delete_user","auth.view_group","auth.view_user","encuestas.ver_resultados","encuestas.view_encuesta","is_superuser"]}],"archivos":17,"lineas":2198,"deps_out":{"api":0,"internal":1},"deps_in":{"api":6,"internal":1},"tiene_fachada":true},{"id":"importarexpediente","nombre":"Importar expediente","zona":"comedores_core","instalada":true,"rutas_web":["/ (raiz)"],"rutas_api":[],"planos_api":[],"menu":[{"label":"Expedientes de Pago","grupo":"Legajos","ruta":["Comedores"],"permisos":["comedores.view_comedor","importarexpediente.view_archivosimportados"]}],"archivos":6,"lineas":1740,"deps_out":{"api":0,"internal":3},"deps_in":{"api":0,"internal":0},"tiene_fachada":false},{"id":"comunicados","nombre":"Comunicados","zona":"transversal","instalada":true,"rutas_web":["/ (raiz)"],"rutas_api":["/api/comunicados/"],"planos_api":["api_key","sesion"],"menu":[{"label":"Ver Comunicados","grupo":"Comunicados","ruta":[],"permisos":[]},{"label":"Crear comunicado","grupo":"Comunicados","ruta":[],"permisos":["auth.role_admin","auth.role_administrador","auth.role_superadmin","comunicados.add_comunicado","comunicados.change_comunicado"]}],"archivos":13,"lineas":2317,"deps_out":{"api":1,"internal":3},"deps_in":{"api":0,"internal":2},"tiene_fachada":false},{"id":"centrodeinfancia","nombre":"Centro de Infancia","zona":"satelites","instalada":true,"rutas_web":["/ (raiz)"],"rutas_api":[],"planos_api":[],"menu":[{"label":"Ver Centros de Infancia","grupo":"Legajos","ruta":["Centro de Infancia"],"permisos":["centrodeinfancia.view_centrodeinfancia"]}],"archivos":25,"lineas":12525,"deps_out":{"api":3,"internal":4},"deps_in":{"api":0,"internal":0},"tiene_fachada":false},{"id":"ver_para_ser_libre","nombre":"Ver para Ser Libre","zona":"satelites","instalada":true,"rutas_web":["/ (raiz)"],"rutas_api":[],"planos_api":[],"menu":[{"label":"Itinerarios","grupo":"Legajos","ruta":["Ver Para Ser Libres"],"permisos":["ver_para_ser_libre.view_itinerariovpsl"]},{"label":"Sedes","grupo":"Legajos","ruta":["Ver Para Ser Libres"],"permisos":["ver_para_ser_libre.view_itinerariovpsl","ver_para_ser_libre.view_sedevpsl"]}],"archivos":8,"lineas":3853,"deps_out":{"api":1,"internal":2},"deps_in":{"api":0,"internal":0},"tiene_fachada":false},{"id":"pas","nombre":"PAS","zona":"satelites","instalada":true,"rutas_web":["/ (raiz)"],"rutas_api":[],"planos_api":[],"menu":[{"label":"Buscador PAS","grupo":"Legajos","ruta":["PAS"],"permisos":["pas.view_paspersona"]},{"label":"Panel de Control","grupo":"Legajos","ruta":["PAS"],"permisos":["pas.view_paspersona"]},{"label":"Informes","grupo":"Legajos","ruta":["PAS"],"permisos":["pas.view_paspersona"]}],"archivos":23,"lineas":4339,"deps_out":{"api":0,"internal":1},"deps_in":{"api":0,"internal":0},"tiene_fachada":true},{"id":"dispositivos","nombre":"Dispositivos","zona":"satelites","instalada":true,"rutas_web":["/ (raiz)"],"rutas_api":[],"planos_api":[],"menu":[{"label":"Ver Dispositivos","grupo":"Legajos","ruta":["Situación de Calle"],"permisos":["datacalle.view_relevamiento","dispositivos.view_dispositivo"]}],"archivos":10,"lineas":1876,"deps_out":{"api":0,"internal":2},"deps_in":{"api":0,"internal":1},"tiene_fachada":false},{"id":"datacalle","nombre":"DataCalle","zona":"satelites","instalada":true,"rutas_web":["/ (raiz)"],"rutas_api":["/api/datacalle/"],"planos_api":["token"],"menu":[{"label":"Relevamientos DataCalle","grupo":"Legajos","ruta":["Situación de Calle"],"permisos":["datacalle.view_relevamiento","dispositivos.view_dispositivo"]}],"archivos":13,"lineas":1473,"deps_out":{"api":0,"internal":3},"deps_in":{"api":0,"internal":0},"tiene_fachada":false},{"id":"insumos","nombre":"Insumos","zona":"transversal","instalada":true,"rutas_web":["/ (raiz)"],"rutas_api":[],"planos_api":[],"menu":[{"label":"Insumos","grupo":"Configuración de Comedores","ruta":[],"permisos":["admisiones.gestionar_templates_informe_tecnico","auth.role_admin","core.view_montoprestacionprograma","insumos.view_insumo","pwa.manage_catalogoactividadpwa","pwa.view_catalogoactividadpwa"]}],"archivos":8,"lineas":637,"deps_out":{"api":0,"internal":1},"deps_in":{"api":0,"internal":0},"tiene_fachada":false},{"id":"pwa","nombre":"PWA (backend)","zona":"integracion","instalada":true,"rutas_web":[],"rutas_api":["/api/pwa/"],"planos_api":["sesion","token"],"menu":[],"archivos":24,"lineas":6260,"deps_out":{"api":0,"internal":8},"deps_in":{"api":0,"internal":2},"tiene_fachada":false},{"id":"ticketera","nombre":"Ticketera","zona":"integracion","instalada":true,"rutas_web":[],"rutas_api":["/api/ticketera/"],"planos_api":["api_key"],"menu":[],"archivos":4,"lineas":874,"deps_out":{"api":0,"internal":3},"deps_in":{"api":0,"internal":0},"tiene_fachada":false},{"id":"ocr","nombre":"OCR","zona":"transversal","instalada":true,"rutas_web":["/ocr/"],"rutas_api":[],"planos_api":[],"menu":[{"label":"OCR","grupo":"OCR","ruta":[],"permisos":["is_superuser","ocr.use_ocr"]}],"archivos":13,"lineas":1438,"deps_out":{"api":0,"internal":1},"deps_in":{"api":0,"internal":0},"tiene_fachada":false},{"id":"encuestas","nombre":"Encuestas","zona":"transversal","instalada":true,"rutas_web":["/ (raiz)"],"rutas_api":[],"planos_api":[],"menu":[{"label":"Encuestas","grupo":"Administración del sistema","ruta":[],"permisos":["auditlog.view_logentry","auth.add_group","auth.add_user","auth.change_group","auth.change_user","auth.delete_user","auth.view_group","auth.view_user","encuestas.ver_resultados","encuestas.view_encuesta","is_superuser"]}],"archivos":12,"lineas":2781,"deps_out":{"api":0,"internal":2},"deps_in":{"api":0,"internal":0},"tiene_fachada":false},{"id":"iam","nombre":"IAM","zona":"nucleo","instalada":false,"rutas_web":[],"rutas_api":[],"planos_api":[],"menu":[],"archivos":1,"lineas":172,"deps_out":{"api":0,"internal":1},"deps_in":{"api":0,"internal":16},"tiene_fachada":false},{"id":"healthcheck","nombre":"Healthcheck","zona":"nucleo","instalada":false,"rutas_web":["/ (raiz)"],"rutas_api":[],"planos_api":[],"menu":[],"archivos":2,"lineas":14,"deps_out":{"api":0,"internal":0},"deps_in":{"api":0,"internal":0},"tiene_fachada":false}],"aristas":[{"src":"comedores","dst":"core","kind":"internal","n":34,"ejemplos":["comedores/admin.py -> core.admin_import_export","comedores/api.py -> core.soft_delete.signals","comedores/api_serializers.py -> core.models","comedores/api_views_territorial.py -> core.utils"]},{"src":"VAT","dst":"core","kind":"internal","n":30,"ejemplos":["VAT/api_views.py -> core.api_auth","VAT/api_views.py -> core.models","VAT/api_views.py -> core.soft_delete.view_helpers","VAT/api_web_views.py -> core.api_auth"]},{"src":"celiaquia","dst":"core","kind":"internal","n":28,"ejemplos":["celiaquia/global_urls.py -> core.decorators","celiaquia/models.py -> core.models","celiaquia/models.py -> core.soft_delete","celiaquia/signals.py -> core.soft_delete.signals"]},{"src":"centrodefamilia","dst":"core","kind":"internal","n":28,"ejemplos":["centrodefamilia/access.py -> core.constants","centrodefamilia/access.py -> core.models","centrodefamilia/api_views.py -> core.api_auth","centrodefamilia/api_views.py -> core.models"]},{"src":"users","dst":"core","kind":"internal","n":25,"ejemplos":["users/favorite_filters.py -> core.services.favorite_filters","users/forms.py -> core.constants","users/forms.py -> core.models","users/forms.py -> core.validators"]},{"src":"centrodeinfancia","dst":"core","kind":"internal","n":24,"ejemplos":["centrodeinfancia/access.py -> core.constants","centrodeinfancia/access.py -> core.models","centrodeinfancia/forms.py -> core.models","centrodeinfancia/forms.py -> core.constants"]},{"src":"admisiones","dst":"core","kind":"internal","n":19,"ejemplos":["admisiones/admin.py -> core.admin_import_export","admisiones/favorite_filters.py -> core.services.favorite_filters","admisiones/forms/admisiones_forms.py -> core.models","admisiones/models/admisiones.py -> core.soft_delete"]},{"src":"comedores","dst":"users","kind":"internal","n":19,"ejemplos":["comedores/api_serializers.py -> users.models","comedores/api_serializers.py -> users.services_pwa","comedores/api_views.py -> users.api_permissions","comedores/api_views.py -> users.api_serializers"]},{"src":"pwa","dst":"comedores","kind":"internal","n":17,"ejemplos":["pwa/api_serializers.py -> comedores.models","pwa/api_views.py -> comedores.models","pwa/api_views.py -> comedores.services.colaborador_espacio_service","pwa/api_views.py -> comedores.services.comedor_service.impl"]},{"src":"ciudadanos","dst":"core","kind":"internal","n":14,"ejemplos":["ciudadanos/api.py -> core.models","ciudadanos/api.py -> core.services.renaper","ciudadanos/forms.py -> core.models","ciudadanos/models.py -> core.models"]},{"src":"celiaquia","dst":"ciudadanos","kind":"internal","n":13,"ejemplos":["celiaquia/models.py -> ciudadanos.models","celiaquia/signals.py -> ciudadanos.models","celiaquia/services/ciudadano_service/impl.py -> ciudadanos.models","celiaquia/services/familia_service/impl.py -> ciudadanos.models"]},{"src":"comedores","dst":"pwa","kind":"internal","n":12,"ejemplos":["comedores/api_views.py -> pwa.models","comedores/forms/actividades_pnud_form.py -> pwa.models","comedores/forms/actividad_espacio_pwa_form.py -> pwa.models","comedores/forms/comedor_form.py -> pwa.models"]},{"src":"pwa","dst":"users","kind":"internal","n":12,"ejemplos":["pwa/api_views.py -> users.api_permissions","pwa/auth_audit.py -> users.auth_audit","pwa/services/auditoria_service.py -> users.services_pwa","pwa/services/mensajes_service.py -> users.models"]},{"src":"acompanamientos","dst":"core","kind":"internal","n":11,"ejemplos":["acompanamientos/acompanamiento_service.py -> core.services.advanced_filters","acompanamientos/acompanamiento_service.py -> core.services.list_ordering","acompanamientos/favorite_filters.py -> core.services.favorite_filters","acompanamientos/urls.py -> core.decorators"]},{"src":"comedores","dst":"relevamientos","kind":"internal","n":11,"ejemplos":["comedores/api_serializers.py -> relevamientos.models","comedores/api_serializers.py -> relevamientos.service","comedores/api_views.py -> relevamientos.models","comedores/api_views_territorial.py -> relevamientos.models"]},{"src":"pas","dst":"core","kind":"internal","n":11,"ejemplos":["pas/favorite_filters.py -> core.services.favorite_filters","pas/forms.py -> core.models","pas/models.py -> core.models","pas/urls.py -> core.decorators"]},{"src":"relevamientos","dst":"core","kind":"internal","n":11,"ejemplos":["relevamientos/api.py -> core.soft_delete.signals","relevamientos/models.py -> core.soft_delete","relevamientos/serializer.py -> core.validators","relevamientos/serializer.py -> core.utils"]},{"src":"VAT","dst":"ciudadanos","kind":"internal","n":10,"ejemplos":["VAT/ciudadano_detail.py -> ciudadanos.detail_contributions","VAT/forms.py -> ciudadanos.models","VAT/models.py -> ciudadanos.models","VAT/serializers.py -> ciudadanos.models"]},{"src":"duplas","dst":"core","kind":"internal","n":10,"ejemplos":["duplas/dupla_column_config.py -> core.services.column_preferences","duplas/favorite_filters.py -> core.services.favorite_filters","duplas/models.py -> core.soft_delete","duplas/urls.py -> core.decorators"]},{"src":"celiaquia","dst":"iam","kind":"internal","n":9,"ejemplos":["celiaquia/permissions.py -> iam.services","celiaquia/templatetags/celiaquia_filters.py -> iam.services","celiaquia/views/comentarios.py -> iam.services","celiaquia/views/expediente.py -> iam.services"]},{"src":"celiaquia","dst":"users","kind":"internal","n":9,"ejemplos":["celiaquia/permissions.py -> users.territorial_scope","celiaquia/services/importacion_service/impl.py -> users.territorial_scope","celiaquia/services/importacion_service/impl.py -> users.models","celiaquia/views/comentarios.py -> users.territorial_scope"]},{"src":"centrodeinfancia","dst":"users","kind":"internal","n":9,"ejemplos":["centrodeinfancia/access.py -> users.models","centrodeinfancia/access.py -> users.services_delegation","centrodeinfancia/access.py -> users.territorial_scope","centrodeinfancia/forms.py -> users.models"]},{"src":"organizaciones","dst":"core","kind":"internal","n":9,"ejemplos":["organizaciones/admin.py -> core.admin_import_export","organizaciones/audit_signals.py -> core.soft_delete.signals","organizaciones/forms.py -> core.models","organizaciones/models.py -> core.models"]},{"src":"relevamientos","dst":"comedores","kind":"internal","n":9,"ejemplos":["relevamientos/form.py -> comedores.models","relevamientos/helpers.py -> comedores.forms.comedor_form","relevamientos/helpers.py -> comedores.models","relevamientos/models.py -> comedores.models"]},{"src":"rendicioncuentasmensual","dst":"core","kind":"internal","n":9,"ejemplos":["rendicioncuentasmensual/favorite_filters.py -> core.services.favorite_filters","rendicioncuentasmensual/models.py -> core.soft_delete","rendicioncuentasmensual/urls.py -> core.decorators","rendicioncuentasmensual/views.py -> core.services.advanced_filters"]},{"src":"admisiones","dst":"comedores","kind":"internal","n":8,"ejemplos":["admisiones/forms/admisiones_forms.py -> comedores.services.comedor_service","admisiones/forms/admisiones_forms.py -> comedores.services.capacitaciones_certificados_service","admisiones/models/admisiones.py -> comedores.models","admisiones/services/informe_tecnico_variables_service.py -> comedores.services.comedor_service"]},{"src":"comedores","dst":"ciudadanos","kind":"internal","n":8,"ejemplos":["comedores/ciudadano_detail.py -> ciudadanos.detail_contributions","comedores/models.py -> ciudadanos.models","comedores/forms/comedor_form.py -> ciudadanos.models","comedores/forms/comedor_form.py -> ciudadanos.forms"]},{"src":"comedores","dst":"admisiones","kind":"internal","n":7,"ejemplos":["comedores/api_serializers.py -> admisiones.models.admisiones","comedores/api_views.py -> admisiones.models.admisiones","comedores/signals.py -> admisiones.models.admisiones","comedores/management/commands/update_comedores_dupla.py -> admisiones.models.admisiones"]},{"src":"comedores","dst":"organizaciones","kind":"internal","n":7,"ejemplos":["comedores/api.py -> organizaciones.models","comedores/api_serializers.py -> organizaciones.models","comedores/api_views.py -> organizaciones.models","comedores/models.py -> organizaciones.models"]},{"src":"comedores","dst":"rendicioncuentasmensual","kind":"internal","n":7,"ejemplos":["comedores/api_serializers.py -> rendicioncuentasmensual.models","comedores/api_serializers.py -> rendicioncuentasmensual.services","comedores/api_views.py -> rendicioncuentasmensual.models","comedores/api_views.py -> rendicioncuentasmensual.services"]},{"src":"ver_para_ser_libre","dst":"core","kind":"internal","n":7,"ejemplos":["ver_para_ser_libre/forms.py -> core.models","ver_para_ser_libre/models.py -> core.models","ver_para_ser_libre/models.py -> core.soft_delete","ver_para_ser_libre/urls.py -> core.decorators"]},{"src":"comedores","dst":"intervenciones","kind":"internal","n":6,"ejemplos":["comedores/api_views.py -> intervenciones.models.intervenciones","comedores/urls.py -> intervenciones.views","comedores/services/capacitaciones_certificados_service.py -> intervenciones.models.intervenciones","comedores/services/comedor_service/impl.py -> intervenciones.models.intervenciones"]},{"src":"dispositivos","dst":"core","kind":"internal","n":6,"ejemplos":["dispositivos/favorite_filters.py -> core.services.favorite_filters","dispositivos/forms.py -> core.models","dispositivos/models.py -> core.models","dispositivos/urls.py -> core.decorators"]},{"src":"users","dst":"iam","kind":"internal","n":6,"ejemplos":["users/api_permissions.py -> iam.services","users/api_serializers.py -> iam.services","users/services.py -> iam.services","users/services_group_permissions.py -> iam.services"]},{"src":"VAT","dst":"users","kind":"internal","n":5,"ejemplos":["VAT/management/commands/bootstrap_vat_referentes_centros.py -> users.management.commands","VAT/services/access_scope.py -> users.services_delegation","VAT/services/access_scope.py -> users.territorial_scope","VAT/views/catalogo.py -> users.territorial_scope"]},{"src":"centrodefamilia","dst":"ciudadanos","kind":"internal","n":5,"ejemplos":["centrodefamilia/ciudadano_detail.py -> ciudadanos.detail_contributions","centrodefamilia/forms.py -> ciudadanos.models","centrodefamilia/models.py -> ciudadanos.models","centrodefamilia/management/commands/cargar_legajos.py -> ciudadanos.models"]},{"src":"comedores","dst":"duplas","kind":"internal","n":5,"ejemplos":["comedores/api_serializers.py -> duplas.models","comedores/models.py -> duplas.models","comedores/management/commands/update_comedores_dupla.py -> duplas.models","comedores/services/comedor_service/impl.py -> duplas.models"]},{"src":"datacalle","dst":"core","kind":"internal","n":5,"ejemplos":["datacalle/forms.py -> core.models","datacalle/models.py -> core.models","datacalle/models.py -> core.soft_delete.base","datacalle/urls.py -> core.decorators"]},{"src":"expedientespagos","dst":"core","kind":"internal","n":5,"ejemplos":["expedientespagos/models.py -> core.soft_delete","expedientespagos/urls.py -> core.decorators","expedientespagos/views.py -> core.soft_delete.view_helpers","expedientespagos/views.py -> core.services.column_preferences"]},{"src":"intervenciones","dst":"core","kind":"internal","n":5,"ejemplos":["intervenciones/admin.py -> core.admin_import_export","intervenciones/fixture_post_load.py -> core.services.fixture_post_load","intervenciones/views.py -> core.security","intervenciones/views.py -> core.soft_delete.view_helpers"]},{"src":"acompanamientos","dst":"comedores","kind":"internal","n":4,"ejemplos":["acompanamientos/acompanamiento_service.py -> comedores.models","acompanamientos/acompanamiento_service.py -> comedores.services.comedor_service","acompanamientos/views.py -> comedores.models","acompanamientos/views.py -> comedores.services.comedor_service"]},{"src":"centrodefamilia","dst":"users","kind":"internal","n":4,"ejemplos":["centrodefamilia/access.py -> users.models","centrodefamilia/access.py -> users.services_delegation","centrodefamilia/access.py -> users.territorial_scope","centrodefamilia/views/generar_usuario.py -> users.services_generate_user"]},{"src":"centrodeinfancia","dst":"ciudadanos","kind":"internal","n":4,"ejemplos":["centrodeinfancia/models.py -> ciudadanos.models","centrodeinfancia/services.py -> ciudadanos.models","centrodeinfancia/services_nomina_ninos_pdf.py -> ciudadanos.models","centrodeinfancia/views.py -> ciudadanos.models"]},{"src":"pwa","dst":"core","kind":"internal","n":4,"ejemplos":["pwa/api_serializers.py -> core.models","pwa/api_views.py -> core.models","pwa/models.py -> core.models","pwa/services/nomina_service.py -> core.models"]},{"src":"rendicioncuentasmensual","dst":"comedores","kind":"internal","n":4,"ejemplos":["rendicioncuentasmensual/models.py -> comedores.models","rendicioncuentasmensual/services.py -> comedores.models","rendicioncuentasmensual/views.py -> comedores.models","rendicioncuentasmensual/management/commands/seed_rendicion_stage_examples.py -> comedores.models"]},{"src":"VAT","dst":"iam","kind":"internal","n":3,"ejemplos":["VAT/forms.py -> iam.services","VAT/services/access_scope.py -> iam.services","VAT/views/catalogo.py -> iam.services"]},{"src":"acompanamientos","dst":"admisiones","kind":"internal","n":3,"ejemplos":["acompanamientos/acompanamiento_service.py -> admisiones.models.admisiones","acompanamientos/views.py -> admisiones.models.admisiones","acompanamientos/services/filter_config.py -> admisiones.models.admisiones"]},{"src":"admisiones","dst":"iam","kind":"internal","n":3,"ejemplos":["admisiones/services/admisiones_service/impl.py -> iam.services","admisiones/views/templates_informe_tecnico.py -> iam.services","admisiones/views/web_views.py -> iam.services"]},{"src":"admisiones","dst":"users","kind":"internal","n":3,"ejemplos":["admisiones/models/admisiones.py -> users.models","admisiones/services/admisiones_service/impl.py -> users.services","admisiones/services/legales_service/impl.py -> users.services"]},{"src":"centrodefamilia","dst":"iam","kind":"internal","n":3,"ejemplos":["centrodefamilia/access.py -> iam.services","centrodefamilia/views/beneficiarios_export.py -> iam.services","centrodefamilia/views/centro.py -> iam.services"]},{"src":"comedores","dst":"iam","kind":"internal","n":3,"ejemplos":["comedores/services/validacion_service/impl.py -> iam.services","comedores/views/comedor.py -> iam.services","comedores/views/export.py -> iam.services"]},{"src":"core","dst":"iam","kind":"internal","n":3,"ejemplos":["core/decorators.py -> iam.services","core/mixins.py -> iam.services","core/templatetags/custom_filters.py -> iam.services"]},{"src":"datacalle","dst":"users","kind":"internal","n":3,"ejemplos":["datacalle/api_permissions.py -> users.services_datacalle","datacalle/forms.py -> users.services_datacalle","datacalle/services/relevamientos.py -> users.territorial_scope"]},{"src":"importarexpediente","dst":"expedientespagos","kind":"internal","n":3,"ejemplos":["importarexpediente/models.py -> expedientespagos.models","importarexpediente/services.py -> expedientespagos.models","importarexpediente/views.py -> expedientespagos.models"]},{"src":"insumos","dst":"core","kind":"internal","n":3,"ejemplos":["insumos/forms.py -> core.models","insumos/models.py -> core.models","insumos/urls.py -> core.decorators"]},{"src":"organizaciones","dst":"admisiones","kind":"internal","n":3,"ejemplos":["organizaciones/views.py -> admisiones.services.admisiones_service.impl","organizaciones/views.py -> admisiones.models.admisiones"]},{"src":"pwa","dst":"ciudadanos","kind":"internal","n":3,"ejemplos":["pwa/api_views.py -> ciudadanos.models","pwa/ciudadano_detail.py -> ciudadanos.detail_contributions","pwa/services/nomina_service.py -> ciudadanos.models"]},{"src":"rendicioncuentasfinal","dst":"core","kind":"internal","n":3,"ejemplos":["rendicioncuentasfinal/urls.py -> core.decorators","rendicioncuentasfinal/views.py -> core.decorators","rendicioncuentasfinal/views.py -> core.security"]},{"src":"ticketera","dst":"users","kind":"internal","n":3,"ejemplos":["ticketera/api_views.py -> users.models","ticketera/api_views.py -> users.rate_limits","ticketera/api_views.py -> users.services_auth"]},{"src":"acompanamientos","dst":"duplas","kind":"internal","n":2,"ejemplos":["acompanamientos/acompanamiento_service.py -> duplas.models","acompanamientos/services/filter_config.py -> duplas.models"]},{"src":"acompanamientos","dst":"iam","kind":"internal","n":2,"ejemplos":["acompanamientos/acompanamiento_service.py -> iam.services","acompanamientos/views.py -> iam.services"]},{"src":"admisiones","dst":"acompanamientos","kind":"internal","n":2,"ejemplos":["admisiones/services/admisiones_service/impl.py -> acompanamientos.acompanamiento_service","admisiones/views/web_views.py -> acompanamientos.acompanamiento_service"]},{"src":"admisiones","dst":"duplas","kind":"internal","n":2,"ejemplos":["admisiones/services/admisiones_filter_config/impl.py -> duplas.models","admisiones/services/legales_filter_config/impl.py -> duplas.models"]},{"src":"admisiones","dst":"organizaciones","kind":"internal","n":2,"ejemplos":["admisiones/services/tipo_convenio_resolver.py -> organizaciones.models","admisiones/services/admisiones_service/impl.py -> organizaciones.models"]},{"src":"admisiones","dst":"rendicioncuentasfinal","kind":"internal","n":2,"ejemplos":["admisiones/views/web_views.py -> rendicioncuentasfinal.models","admisiones/views/web_views.py -> rendicioncuentasfinal.rendicion_cuentas_final_service"]},{"src":"centrodeinfancia","dst":"iam","kind":"internal","n":2,"ejemplos":["centrodeinfancia/apps.py -> iam.services","centrodeinfancia/views.py -> iam.services"]},{"src":"centrodeinfancia","dst":"intervenciones","kind":"api","n":2,"ejemplos":["centrodeinfancia/forms.py -> intervenciones.api","centrodeinfancia/views.py -> intervenciones.api"]},{"src":"comedores","dst":"expedientespagos","kind":"internal","n":2,"ejemplos":["comedores/views/comedor.py -> expedientespagos.models","comedores/views/comedor.py -> expedientespagos.services"]},{"src":"comedores","dst":"rendicioncuentasfinal","kind":"internal","n":2,"ejemplos":["comedores/api_views.py -> rendicioncuentasfinal.models","comedores/signals.py -> rendicioncuentasfinal.models"]},{"src":"comedores","dst":"users","kind":"api","n":2,"ejemplos":["comedores/signals.py -> users.api","comedores/management/commands/sincronizar_accesos_pwa_organizaciones.py -> users.api"]},{"src":"core","dst":"users","kind":"internal","n":2,"ejemplos":["core/views.py -> users.territorial_scope","core/permissions/registry.py -> users.bootstrap.groups_seed"]},{"src":"dashboard","dst":"comedores","kind":"api","n":2,"ejemplos":["dashboard/signals.py -> comedores.api","dashboard/utils.py -> comedores.api"]},{"src":"dashboard","dst":"relevamientos","kind":"api","n":2,"ejemplos":["dashboard/signals.py -> relevamientos.api","dashboard/utils.py -> relevamientos.api"]},{"src":"duplas","dst":"users","kind":"internal","n":2,"ejemplos":["duplas/signals.py -> users.models","duplas/user_form_catalog.py -> users.form_catalogs"]},{"src":"encuestas","dst":"core","kind":"internal","n":2,"ejemplos":["encuestas/urls.py -> core.decorators","encuestas/views.py -> core.services.csv_export"]},{"src":"encuestas","dst":"users","kind":"internal","n":2,"ejemplos":["encuestas/context_processors.py -> users.profile_utils","encuestas/middleware.py -> users.middleware"]},{"src":"expedientespagos","dst":"comedores","kind":"internal","n":2,"ejemplos":["expedientespagos/models.py -> comedores.models","expedientespagos/views.py -> comedores.models"]},{"src":"importarexpediente","dst":"comedores","kind":"internal","n":2,"ejemplos":["importarexpediente/services.py -> comedores.models","importarexpediente/services.py -> comedores.services.estado_manager"]},{"src":"intervenciones","dst":"acompanamientos","kind":"internal","n":2,"ejemplos":["intervenciones/signals.py -> acompanamientos.acompanamiento_service","intervenciones/views.py -> acompanamientos.acompanamiento_service"]},{"src":"organizaciones","dst":"rendicioncuentasmensual","kind":"internal","n":2,"ejemplos":["organizaciones/views.py -> rendicioncuentasmensual.models","organizaciones/views.py -> rendicioncuentasmensual.services"]},{"src":"pwa","dst":"comunicados","kind":"internal","n":2,"ejemplos":["pwa/api_serializers.py -> comunicados.models","pwa/services/mensajes_service.py -> comunicados.models"]},{"src":"pwa","dst":"iam","kind":"internal","n":2,"ejemplos":["pwa/services/mensajes_service.py -> iam.services","pwa/services/push_service.py -> iam.services"]},{"src":"rendicioncuentasfinal","dst":"comedores","kind":"internal","n":2,"ejemplos":["rendicioncuentasfinal/models.py -> comedores.models","rendicioncuentasfinal/views.py -> comedores.models"]},{"src":"rendicioncuentasfinal","dst":"historial","kind":"internal","n":2,"ejemplos":["rendicioncuentasfinal/rendicion_cuentas_final_service.py -> historial.services.historial_service","rendicioncuentasfinal/views.py -> historial.services.historial_service"]},{"src":"rendicioncuentasmensual","dst":"iam","kind":"internal","n":2,"ejemplos":["rendicioncuentasmensual/services.py -> iam.services","rendicioncuentasmensual/views.py -> iam.services"]},{"src":"rendicioncuentasmensual","dst":"pwa","kind":"internal","n":2,"ejemplos":["rendicioncuentasmensual/services.py -> pwa.services.mensajes_service","rendicioncuentasmensual/services.py -> pwa.services.push_service"]},{"src":"acompanamientos","dst":"intervenciones","kind":"internal","n":1,"ejemplos":["acompanamientos/acompanamiento_service.py -> intervenciones.models.intervenciones"]},{"src":"acompanamientos","dst":"users","kind":"internal","n":1,"ejemplos":["acompanamientos/acompanamiento_service.py -> users.services"]},{"src":"admisiones","dst":"audittrail","kind":"api","n":1,"ejemplos":["admisiones/audit_signals.py -> audittrail.api"]},{"src":"admisiones","dst":"expedientespagos","kind":"internal","n":1,"ejemplos":["admisiones/views/web_views.py -> expedientespagos.services"]},{"src":"admisiones","dst":"historial","kind":"internal","n":1,"ejemplos":["admisiones/views/web_views.py -> historial.services.historial_service"]},{"src":"admisiones","dst":"rendicioncuentasmensual","kind":"internal","n":1,"ejemplos":["admisiones/views/web_views.py -> rendicioncuentasmensual.services"]},{"src":"audittrail","dst":"core","kind":"internal","n":1,"ejemplos":["audittrail/views.py -> core.services.csv_export"]},{"src":"centrodefamilia","dst":"organizaciones","kind":"internal","n":1,"ejemplos":["centrodefamilia/models.py -> organizaciones.models"]},{"src":"centrodeinfancia","dst":"audittrail","kind":"api","n":1,"ejemplos":["centrodeinfancia/signals.py -> audittrail.api"]},{"src":"centrodeinfancia","dst":"ciudadanos","kind":"api","n":1,"ejemplos":["centrodeinfancia/views.py -> ciudadanos.api"]},{"src":"ciudadanos","dst":"celiaquia","kind":"api","n":1,"ejemplos":["ciudadanos/views.py -> celiaquia.api"]},{"src":"comedores","dst":"acompanamientos","kind":"internal","n":1,"ejemplos":["comedores/views/comedor.py -> acompanamientos.acompanamiento_service"]},{"src":"comedores","dst":"audittrail","kind":"api","n":1,"ejemplos":["comedores/audit_signals.py -> audittrail.api"]},{"src":"comunicados","dst":"comedores","kind":"api","n":1,"ejemplos":["comunicados/permissions.py -> comedores.api"]},{"src":"comunicados","dst":"core","kind":"internal","n":1,"ejemplos":["comunicados/api_views.py -> core.api_auth"]},{"src":"comunicados","dst":"iam","kind":"internal","n":1,"ejemplos":["comunicados/permissions.py -> iam.services"]},{"src":"comunicados","dst":"users","kind":"internal","n":1,"ejemplos":["comunicados/permissions.py -> users.services"]},{"src":"core","dst":"historial","kind":"internal","n":1,"ejemplos":["core/views.py -> historial.services.historial_service"]},{"src":"dashboard","dst":"centrodefamilia","kind":"api","n":1,"ejemplos":["dashboard/views.py -> centrodefamilia.api"]},{"src":"dashboard","dst":"core","kind":"internal","n":1,"ejemplos":["dashboard/models.py -> core.permissions.registry"]},{"src":"datacalle","dst":"dispositivos","kind":"internal","n":1,"ejemplos":["datacalle/services/relevamientos.py -> dispositivos.models"]},{"src":"dispositivos","dst":"users","kind":"internal","n":1,"ejemplos":["dispositivos/services.py -> users.territorial_scope"]},{"src":"expedientespagos","dst":"iam","kind":"internal","n":1,"ejemplos":["expedientespagos/views.py -> iam.services"]},{"src":"historial","dst":"rendicioncuentasfinal","kind":"api","n":1,"ejemplos":["historial/services/historial_service/impl.py -> rendicioncuentasfinal.api"]},{"src":"iam","dst":"core","kind":"internal","n":1,"ejemplos":["iam/services.py -> core.permissions.registry"]},{"src":"importarexpediente","dst":"core","kind":"internal","n":1,"ejemplos":["importarexpediente/urls.py -> core.decorators"]},{"src":"intervenciones","dst":"admisiones","kind":"internal","n":1,"ejemplos":["intervenciones/views.py -> admisiones.models.admisiones"]},{"src":"intervenciones","dst":"audittrail","kind":"api","n":1,"ejemplos":["intervenciones/audit_signals.py -> audittrail.api"]},{"src":"intervenciones","dst":"comedores","kind":"internal","n":1,"ejemplos":["intervenciones/views.py -> comedores.services.comedor_service"]},{"src":"ocr","dst":"users","kind":"internal","n":1,"ejemplos":["ocr/views.py -> users.views"]},{"src":"organizaciones","dst":"audittrail","kind":"api","n":1,"ejemplos":["organizaciones/audit_signals.py -> audittrail.api"]},{"src":"organizaciones","dst":"iam","kind":"internal","n":1,"ejemplos":["organizaciones/views.py -> iam.services"]},{"src":"organizaciones","dst":"users","kind":"internal","n":1,"ejemplos":["organizaciones/user_form_catalog.py -> users.form_catalogs"]},{"src":"pwa","dst":"admisiones","kind":"internal","n":1,"ejemplos":["pwa/services/nomina_service.py -> admisiones.models.admisiones"]},{"src":"pwa","dst":"rendicioncuentasmensual","kind":"internal","n":1,"ejemplos":["pwa/services/mensajes_service.py -> rendicioncuentasmensual.models"]},{"src":"relevamientos","dst":"audittrail","kind":"api","n":1,"ejemplos":["relevamientos/audit_signals.py -> audittrail.api"]},{"src":"relevamientos","dst":"users","kind":"internal","n":1,"ejemplos":["relevamientos/views/api_views.py -> users.services_pwa"]},{"src":"rendicioncuentasfinal","dst":"iam","kind":"internal","n":1,"ejemplos":["rendicioncuentasfinal/rendicion_cuentas_final_service.py -> iam.services"]},{"src":"rendicioncuentasfinal","dst":"users","kind":"internal","n":1,"ejemplos":["rendicioncuentasfinal/rendicion_cuentas_final_service.py -> users.services"]},{"src":"rendicioncuentasmensual","dst":"comunicados","kind":"internal","n":1,"ejemplos":["rendicioncuentasmensual/services.py -> comunicados.models"]},{"src":"rendicioncuentasmensual","dst":"organizaciones","kind":"internal","n":1,"ejemplos":["rendicioncuentasmensual/services.py -> organizaciones.models"]},{"src":"ticketera","dst":"audittrail","kind":"internal","n":1,"ejemplos":["ticketera/api_views.py -> audittrail.context"]},{"src":"ticketera","dst":"core","kind":"internal","n":1,"ejemplos":["ticketera/api_views.py -> core.api_auth"]},{"src":"ver_para_ser_libre","dst":"ciudadanos","kind":"api","n":1,"ejemplos":["ver_para_ser_libre/views.py -> ciudadanos.api"]},{"src":"ver_para_ser_libre","dst":"iam","kind":"internal","n":1,"ejemplos":["ver_para_ser_libre/views.py -> iam.services"]}],"menu":[{"orden":1,"label":"Inicio","items":[{"label":"Inicio","url_name":"inicio","app":"core","nivel":0,"ruta":[],"permisos":[],"linea":32}],"linea":31},{"orden":2,"label":"Legajos","items":[{"label":"Búsqueda","url_name":"ciudadanos","app":"ciudadanos","nivel":2,"ruta":["Historia Social Digital"],"permisos":["ciudadanos.add_ciudadano","ciudadanos.view_ciudadano"],"linea":294},{"label":"Revision de Identidad","url_name":"ciudadanos_cola_revision","app":"ciudadanos","nivel":2,"ruta":["Historia Social Digital"],"permisos":["ciudadanos.add_ciudadano","ciudadanos.revision_identidad","ciudadanos.view_ciudadano"],"linea":303},{"label":"Importacion masiva","url_name":"ciudadanos_importacion_masiva","app":"ciudadanos","nivel":2,"ruta":["Historia Social Digital"],"permisos":["ciudadanos.add_ciudadano","ciudadanos.view_ciudadano"],"linea":312},{"label":"Ver Comedores","url_name":"comedores","app":"comedores","nivel":2,"ruta":["Comedores"],"permisos":["comedores.view_comedor","importarexpediente.view_archivosimportados"],"linea":333},{"label":"Técnicos","url_name":"admisiones_tecnicos_listar","app":"admisiones","nivel":3,"ruta":["Comedores","Admisión - Comedores"],"permisos":["admisiones.view_admision","comedores.view_comedor","importarexpediente.view_archivosimportados"],"linea":351},{"label":"Legales","url_name":"admisiones_legales_listar","app":"admisiones","nivel":3,"ruta":["Comedores","Admisión - Comedores"],"permisos":["admisiones.view_admision","comedores.view_comedor","importarexpediente.view_archivosimportados"],"linea":359},{"label":"Acompañamiento","url_name":"lista_comedores_acompanamiento","app":"acompanamientos","nivel":2,"ruta":["Comedores"],"permisos":["acompanamientos.view_informacionrelevante","comedores.view_comedor","importarexpediente.view_archivosimportados"],"linea":371},{"label":"Expedientes de Pago","url_name":"importarexpedientes_list","app":"importarexpediente","nivel":2,"ruta":["Comedores"],"permisos":["comedores.view_comedor","importarexpediente.view_archivosimportados"],"linea":380},{"label":"Rendición de Cuentas Final","url_name":"rendicion_cuentas_final_listar","app":"rendicioncuentasfinal","nivel":2,"ruta":["Comedores"],"permisos":["comedores.view_comedor","importarexpediente.view_archivosimportados","rendicioncuentasfinal.view_rendicioncuentasfinal"],"linea":391},{"label":"Ver Organizaciones","url_name":"organizaciones","app":"organizaciones","nivel":2,"ruta":["Organizaciones"],"permisos":["auth.role_abogado_dupla","auth.role_tecnico_comedor","organizaciones.view_organizacion","rendicioncuentasmensual.manage_auditoria_review_stage","rendicioncuentasmensual.manage_auditoria_stage","rendicioncuentasmensual.manage_regularizacion_stage","rendicioncuentasmensual.manage_territorial_stage","rendicioncuentasmensual.view_rendicioncuentamensual"],"linea":412},{"label":"Rendiciones","url_name":"rendicioncuentasmensual_global_list","app":"rendicioncuentasmensual","nivel":2,"ruta":["Organizaciones"],"permisos":["auth.role_abogado_dupla","auth.role_tecnico_comedor","organizaciones.view_organizacion","rendicioncuentasmensual.manage_auditoria_review_stage","rendicioncuentasmensual.manage_auditoria_stage","rendicioncuentasmensual.manage_regularizacion_stage","rendicioncuentasmensual.manage_territorial_stage","rendicioncuentasmensual.view_rendicioncuentamensual"],"linea":421},{"label":"Ver Centros de Infancia","url_name":"centrodeinfancia","app":"centrodeinfancia","nivel":2,"ruta":["Centro de Infancia"],"permisos":["centrodeinfancia.view_centrodeinfancia"],"linea":442},{"label":"Itinerarios","url_name":"vpsl_itinerario_list","app":"ver_para_ser_libre","nivel":2,"ruta":["Ver Para Ser Libres"],"permisos":["ver_para_ser_libre.view_itinerariovpsl"],"linea":461},{"label":"Sedes","url_name":"vpsl_sede_list","app":"ver_para_ser_libre","nivel":2,"ruta":["Ver Para Ser Libres"],"permisos":["ver_para_ser_libre.view_itinerariovpsl","ver_para_ser_libre.view_sedevpsl"],"linea":469},{"label":"Buscador PAS","url_name":"pas_persona_listar","app":"pas","nivel":2,"ruta":["PAS"],"permisos":["pas.view_paspersona"],"linea":491},{"label":"Panel de Control","url_name":"pas_panel_control","app":"pas","nivel":2,"ruta":["PAS"],"permisos":["pas.view_paspersona"],"linea":498},{"label":"Informes","url_name":"pas_informe_listar","app":"pas","nivel":2,"ruta":["PAS"],"permisos":["pas.view_paspersona"],"linea":505},{"label":"Ver Dispositivos","url_name":"dispositivos_listar","app":"dispositivos","nivel":2,"ruta":["Situación de Calle"],"permisos":["datacalle.view_relevamiento","dispositivos.view_dispositivo"],"linea":525},{"label":"Relevamientos DataCalle","url_name":"datacalle_relevamientos_listar","app":"datacalle","nivel":2,"ruta":["Situación de Calle"],"permisos":["datacalle.view_relevamiento","dispositivos.view_dispositivo"],"linea":534},{"label":"Centros","url_name":"centro_list","app":"centrodefamilia","nivel":2,"ruta":["Centro de Familia"],"permisos":["centrodefamilia.view_centro"],"linea":554},{"label":"Nuevo Preinscripto","url_name":"beneficiarios_crear","app":"centrodefamilia","nivel":2,"ruta":["Centro de Familia"],"permisos":["centrodefamilia.view_centro"],"linea":561},{"label":"Lista de Preinscriptos","url_name":"beneficiarios_list","app":"centrodefamilia","nivel":2,"ruta":["Centro de Familia"],"permisos":["centrodefamilia.view_centro"],"linea":568},{"label":"Lista Responsables","url_name":"responsables_list","app":"centrodefamilia","nivel":2,"ruta":["Centro de Familia"],"permisos":["centrodefamilia.view_centro"],"linea":575},{"label":"Centros de Formación Profesional","url_name":"vat_centro_list","app":"VAT","nivel":2,"ruta":["INET"],"permisos":["VAT.view_centro"],"linea":596},{"label":"Reporte Inscriptos y Asistencias","url_name":"vat_reporte_inscripciones_asistencias","app":"VAT","nivel":2,"ruta":["INET"],"permisos":["VAT.view_centro"],"linea":603},{"label":"Buscador por Ciudadano","url_name":"vat_buscador_ciudadano","app":"VAT","nivel":2,"ruta":["INET"],"permisos":["VAT.view_centro"],"linea":610},{"label":"Inscripciones","url_name":"vat_inscripcion_list","app":"VAT","nivel":2,"ruta":["INET"],"permisos":["VAT.view_centro","VAT.view_inscripcion"],"linea":619},{"label":"Evaluaciones","url_name":"vat_evaluacion_list","app":"VAT","nivel":2,"ruta":["INET"],"permisos":["VAT.view_centro","VAT.view_evaluacion"],"linea":629},{"label":"Resultados de Evaluación","url_name":"vat_resultado_evaluacion_list","app":"VAT","nivel":2,"ruta":["INET"],"permisos":["VAT.view_centro","VAT.view_resultadoevaluacion"],"linea":639},{"label":"Ofertas Institucionales","url_name":"vat_oferta_institucional_list","app":"VAT","nivel":3,"ruta":["INET","Oferta Educativa"],"permisos":["VAT.view_centro","VAT.view_ofertainstitucional"],"linea":657},{"label":"Comisiones","url_name":"vat_comision_list","app":"VAT","nivel":3,"ruta":["INET","Oferta Educativa"],"permisos":["VAT.view_centro","VAT.view_comision"],"linea":665},{"label":"Inscripciones a Oferta","url_name":"vat_inscripcion_oferta_list","app":"VAT","nivel":3,"ruta":["INET","Oferta Educativa"],"permisos":["VAT.view_centro","VAT.view_inscripcionoferta"],"linea":673},{"label":"Contactos","url_name":"vat_institucion_contacto_list","app":"VAT","nivel":3,"ruta":["INET","Datos Institución"],"permisos":["VAT.view_centro","VAT.view_institucioncontacto"],"linea":693},{"label":"Identificadores","url_name":"vat_institucion_identificador_list","app":"VAT","nivel":3,"ruta":["INET","Datos Institución"],"permisos":["VAT.view_centro","VAT.view_institucionidentificadorhist"],"linea":701},{"label":"Ubicaciones","url_name":"vat_institucion_ubicacion_list","app":"VAT","nivel":3,"ruta":["INET","Datos Institución"],"permisos":["VAT.view_centro","VAT.view_institucionubicacion"],"linea":709},{"label":"Modalidades de Cursado","url_name":"vat_modalidadcursada_list","app":"VAT","nivel":3,"ruta":["INET","Catálogos"],"permisos":["VAT.view_centro","VAT.view_modalidadcursada","VAT.view_planversioncurricular"],"linea":729},{"label":"Planes Curriculares","url_name":"vat_planversioncurricular_list","app":"VAT","nivel":3,"ruta":["INET","Catálogos"],"permisos":["VAT.view_centro","VAT.view_modalidadcursada","VAT.view_planversioncurricular"],"linea":737},{"label":"Expedientes","url_name":"expediente_list","app":"celiaquia","nivel":2,"ruta":["Celiaquía"],"permisos":["celiaquia.view_cupo_dashboard","celiaquia.view_expediente","celiaquia.view_reporte_provincias","is_superuser"],"linea":765},{"label":"Dashboard Cupos","url_name":"cupo_dashboard","app":"celiaquia","nivel":2,"ruta":["Celiaquía"],"permisos":["celiaquia.view_cupo_dashboard","celiaquia.view_expediente","celiaquia.view_reporte_provincias","is_superuser"],"linea":773},{"label":"Reporte","url_name":"reporter_provincias","app":"celiaquia","nivel":2,"ruta":["Celiaquía"],"permisos":["celiaquia.view_cupo_dashboard","celiaquia.view_expediente","celiaquia.view_reporte_provincias","is_superuser"],"linea":781}],"linea":274},{"orden":3,"label":"Tableros","items":[],"linea":231},{"orden":4,"label":"Administración del sistema","items":[{"label":"Usuarios","url_name":"usuarios","app":"users","nivel":1,"ruta":[],"permisos":["auditlog.view_logentry","auth.add_group","auth.add_user","auth.change_group","auth.change_user","auth.delete_user","auth.view_group","auth.view_user","encuestas.ver_resultados","encuestas.view_encuesta","is_superuser"],"linea":78},{"label":"Grupos","url_name":"grupos","app":"users","nivel":1,"ruta":[],"permisos":["auditlog.view_logentry","auth.add_group","auth.add_user","auth.change_group","auth.change_user","auth.delete_user","auth.view_group","auth.view_user","encuestas.ver_resultados","encuestas.view_encuesta","is_superuser"],"linea":85},{"label":"Programas","url_name":"programa_listar","app":"core","nivel":1,"ruta":[],"permisos":["auditlog.view_logentry","auth.add_group","auth.add_user","auth.change_group","auth.change_user","auth.delete_user","auth.view_group","auth.view_user","encuestas.ver_resultados","encuestas.view_encuesta","is_superuser"],"linea":92},{"label":"Auditoría","url_name":"audittrail:log_list","app":"audittrail","nivel":1,"ruta":[],"permisos":["auditlog.view_logentry","auth.add_group","auth.add_user","auth.change_group","auth.change_user","auth.delete_user","auth.view_group","auth.view_user","encuestas.ver_resultados","encuestas.view_encuesta","is_superuser"],"linea":99},{"label":"Encuestas","url_name":"encuestas_listar","app":"encuestas","nivel":1,"ruta":[],"permisos":["auditlog.view_logentry","auth.add_group","auth.add_user","auth.change_group","auth.change_user","auth.delete_user","auth.view_group","auth.view_user","encuestas.ver_resultados","encuestas.view_encuesta","is_superuser"],"linea":107},{"label":"Papelera","url_name":"papelera_list","app":"core","nivel":1,"ruta":[],"permisos":["auditlog.view_logentry","auth.add_group","auth.add_user","auth.change_group","auth.change_user","auth.delete_user","auth.view_group","auth.view_user","encuestas.ver_resultados","encuestas.view_encuesta","is_superuser"],"linea":115},{"label":"Parametrías de Voucher","url_name":"vat_voucher_parametria_list","app":"VAT","nivel":1,"ruta":[],"permisos":["auditlog.view_logentry","auth.add_group","auth.add_user","auth.change_group","auth.change_user","auth.delete_user","auth.view_group","auth.view_user","encuestas.ver_resultados","encuestas.view_encuesta","is_superuser"],"linea":122}],"linea":69},{"orden":5,"label":"Configuración de Comedores","items":[{"label":"Equipos Técnicos","url_name":"dupla_list","app":"duplas","nivel":1,"ruta":[],"permisos":["admisiones.gestionar_templates_informe_tecnico","auth.role_admin","core.view_montoprestacionprograma","insumos.view_insumo","pwa.manage_catalogoactividadpwa","pwa.view_catalogoactividadpwa"],"linea":142},{"label":"Monto de Prestaciones","url_name":"montoprestacion_listar","app":"core","nivel":1,"ruta":[],"permisos":["admisiones.gestionar_templates_informe_tecnico","auth.role_admin","core.view_montoprestacionprograma","insumos.view_insumo","pwa.manage_catalogoactividadpwa","pwa.view_catalogoactividadpwa"],"linea":150},{"label":"Cursos App Mobile","url_name":"cursos_app_mobile_list","app":"comedores","nivel":1,"ruta":[],"permisos":["admisiones.gestionar_templates_informe_tecnico","auth.role_admin","core.view_montoprestacionprograma","insumos.view_insumo","pwa.manage_catalogoactividadpwa","pwa.view_catalogoactividadpwa"],"linea":158},{"label":"Actividades PNUD","url_name":"actividades_pnud_list","app":"comedores","nivel":1,"ruta":[],"permisos":["admisiones.gestionar_templates_informe_tecnico","auth.role_admin","core.view_montoprestacionprograma","insumos.view_insumo","pwa.manage_catalogoactividadpwa","pwa.view_catalogoactividadpwa"],"linea":166},{"label":"Insumos","url_name":"insumos_listar","app":"insumos","nivel":1,"ruta":[],"permisos":["admisiones.gestionar_templates_informe_tecnico","auth.role_admin","core.view_montoprestacionprograma","insumos.view_insumo","pwa.manage_catalogoactividadpwa","pwa.view_catalogoactividadpwa"],"linea":174},{"label":"Templates","url_name":"gestor_templates_listar","app":"admisiones","nivel":2,"ruta":["Gestor de templates"],"permisos":["admisiones.gestionar_templates_informe_tecnico","auth.role_admin","core.view_montoprestacionprograma","insumos.view_insumo","pwa.manage_catalogoactividadpwa","pwa.view_catalogoactividadpwa"],"linea":189},{"label":"Variables documentales","url_name":"gestor_templates_variables_listar","app":"admisiones","nivel":2,"ruta":["Gestor de templates"],"permisos":["admisiones.gestionar_templates_informe_tecnico","auth.role_admin","core.view_montoprestacionprograma","insumos.view_insumo","pwa.manage_catalogoactividadpwa","pwa.view_catalogoactividadpwa"],"linea":196},{"label":"Incidencias de templates","url_name":"gestor_templates_incidencias_listar","app":"admisiones","nivel":2,"ruta":["Gestor de templates"],"permisos":["admisiones.gestionar_templates_informe_tecnico","auth.role_admin","core.view_montoprestacionprograma","insumos.view_insumo","pwa.manage_catalogoactividadpwa","pwa.view_catalogoactividadpwa"],"linea":203}],"linea":132},{"orden":6,"label":"OCR","items":[{"label":"OCR","url_name":"ocr_upload","app":"ocr","nivel":0,"ruta":[],"permisos":["is_superuser","ocr.use_ocr"],"linea":218}],"linea":217},{"orden":7,"label":"Comunicados","items":[{"label":"Ver Comunicados","url_name":"comunicados","app":"comunicados","nivel":1,"ruta":[],"permisos":[],"linea":51},{"label":"Crear comunicado","url_name":"comunicados_gestion","app":"comunicados","nivel":1,"ruta":[],"permisos":["auth.role_admin","auth.role_administrador","auth.role_superadmin","comunicados.add_comunicado","comunicados.change_comunicado"],"linea":58}],"linea":40},{"orden":98,"label":"Mi cuenta","items":[{"label":"Mi cuenta","url_name":"mi_cuenta","app":"users","nivel":0,"ruta":[],"permisos":[],"linea":795}],"linea":795}],"pwas":[{"id":"espacios","repository":"dsocial118/Espacios-Comunitarios","canonical_path":"/pwa/espacioscomunitarios/","legacy_path":"/mobile/","enabled":true,"consume":[{"modulo":"users","plano":"token","certeza":"declarado","evidencia":"docs/contexto/aplicaciones.md: /api/users/ login, me, logout"},{"modulo":"pwa","plano":"token","certeza":"declarado","evidencia":"pwa/api_urls.py: espacios, nomina, actividades, mensajes, push"},{"modulo":"comedores","plano":"token","certeza":"declarado","evidencia":"/api/comedores/: nomina, documentos, prestaciones, rendiciones, usuarios"}]},{"id":"datacalle","repository":"dsocial118/DataCalle","canonical_path":"/pwa/datacalle/","legacy_path":"/mobile2/","enabled":true,"consume":[{"modulo":"datacalle","plano":"token","certeza":"declarado","evidencia":"datacalle/api_urls.py + TokenAuthentication en datacalle/api_views.py"},{"modulo":"users","plano":"token","certeza":"inferido","evidencia":"login unico del plano movil en /api/users/login/"}]},{"id":"gestionar","repository":"dsocial118/Gestionar","canonical_path":"/pwa/gestionar/","legacy_path":"/mobile3/","enabled":true,"consume":[{"modulo":"comedores","plano":"token","certeza":"declarado","evidencia":"/api/territorial/: comedores por provincia, actas, primer seguimiento, firma, imagenes"},{"modulo":"users","plano":"token","certeza":"declarado","evidencia":"/api/users/login/ con Profile.es_territorial_comedor"}]}],"externos":[{"id":"gestionar_appsheet","nombre":"GESTIONAR (AppSheet)","rol":"Frontend de campo de relevamientos de comedores. En corte progresivo hacia el plano movil nativo.","direccion":"bidireccional","plano":"api_key","modulos":["relevamientos","comedores"],"evidencia":"relevamientos/urls/api_urls.py (api/relevamiento, HasAPIKey), comedores/tasks.py, GESTIONAR_API_*"},{"id":"renaper","nombre":"RENAPER","rol":"Consulta de identidad ciudadana. Un solo cliente compartido; ningun dominio tiene el suyo.","direccion":"salida","plano":"","modulos":["core"],"evidencia":"core/integrations/renaper.py, core/services/renaper.py, RENAPER_API_*"},{"id":"sintys","nombre":"SINTyS","rol":"Cruces mensuales de PAS por exportacion e importacion de archivo. No hay API.","direccion":"manual","plano":"","modulos":["pas"],"evidencia":"pas/services/cruces_service.py (generar_nomina_sintys_pas, registrar_importacion_sintys)"},{"id":"ticketera_ext","nombre":"Ticketera","rol":"App externa de tickets. Consume usuarios y auth de SISOC; apagable por TICKETERA_ENABLED.","direccion":"entrada","plano":"api_key","modulos":["ticketera"],"evidencia":"docs/integraciones/ticketera_api.md, ticketera/api_views.py (HasAPIKey)"},{"id":"consumidores_s2s","nombre":"Consumidores server-to-server","rol":"APIs abiertas por API key cuyo consumidor no esta declarado en este repo. Vale confirmar quien las usa.","direccion":"entrada","plano":"api_key","modulos":["VAT","centrodefamilia","comunicados","core"],"evidencia":"HasAPIKey en VAT/api_views.py, centrodefamilia/api_views.py, comunicados/api_views.py, core/api_views.py"},{"id":"webpush","nombre":"Web Push","rol":"Notificaciones push hacia la PWA de Espacios.","direccion":"salida","plano":"","modulos":["pwa"],"evidencia":"PWA_WEB_PUSH_PUBLIC_KEY / PRIVATE_KEY / SUBJECT, /api/pwa/push/"},{"id":"sentry","nombre":"Sentry","rol":"Observabilidad de errores, activable por entorno.","direccion":"salida","plano":"","modulos":["sentry"],"evidencia":"SENTRY_ENABLED, SENTRY_DSN, docs/implementaciones/sentry.md"},{"id":"maps","nombre":"Google Maps","rol":"Mapas embebidos en detalle de comedor, ciudadano y CDI.","direccion":"salida","plano":"","modulos":["core","comedores","ciudadanos","centrodeinfancia"],"evidencia":"core/templatetags/custom_filters.py, GOOGLE_MAPS_API_KEY"},{"id":"email","nombre":"SMTP / correo","rol":"Reset de contrasena y envios masivos por el worker de mailing.","direccion":"salida","plano":"","modulos":["users"],"evidencia":"EMAIL_*, rol de contenedor mailing_worker"}],"asincronia":{"roles_contenedor":["bulk_credentials_worker","ciudadanos_import_worker","encuestas_worker","mailing_worker","ocr_worker","user_import_worker","web"],"servicios_compose":["mysql","django","ocr_worker","encuestas_worker"],"servicios_celery":["redis","celery_pas_worker","celery_beat"]},"contratos":[{"id":"core-no-domains","nombre":"core no debe importar apps de dominio","excepciones":["core.debug_queries -> **","core.benchmarks.** -> **"]},{"id":"celiaquia-public-api","nombre":"los dominios solo consumen la API pública de Celiaquía","excepciones":[]},{"id":"ciudadanos-no-domains","nombre":"ciudadanos no debe importar internals de otros dominios","excepciones":[]},{"id":"renaper-consumers-no-centrodefamilia","nombre":"Celiaquia y Comedores consumen RENAPER desde la fachada compartida","excepciones":[]},{"id":"users-no-domains","nombre":"users no debe importar apps de dominio","excepciones":[]},{"id":"dispositivos-public-boundary","nombre":"los dominios no importan internals de Dispositivos","excepciones":[]},{"id":"vat-public-boundary","nombre":"los dominios no importan internals de VAT","excepciones":[]},{"id":"vpsl-public-boundary","nombre":"los dominios no importan internals de Ver para Ser Libre","excepciones":[]},{"id":"centrodefamilia-public-boundary","nombre":"los dominios no importan internals de Centro de Familia","excepciones":[]},{"id":"centrodeinfancia-public-boundary","nombre":"los dominios no importan internals de Centro de Infancia","excepciones":[]},{"id":"centrodeinfancia-consumes-intervenciones-api","nombre":"Centro de Infancia consume el catálogo público de Intervenciones","excepciones":[]},{"id":"vpsl-no-comedores","nombre":"Ver para Ser Libre no depende de Comedores","excepciones":[]},{"id":"dashboard-consumes-comedores-core-public-api","nombre":"Dashboard no consulta internals de Comedores Core","excepciones":[]},{"id":"audittrail-no-comedores-core-events","nombre":"Audittrail no posee receivers de Comedores Core","excepciones":[]},{"id":"comedores-core-public-boundary","nombre":"los módulos externos consumen sólo APIs públicas de Comedores Core","excepciones":["centrodefamilia.models -> organizaciones.models","core.debug_queries -> **"]},{"id":"pas-public-boundary","nombre":"los dominios solo consumen la API pública de PAS","excepciones":[]},{"id":"pas-no-domain-internals","nombre":"PAS no importa internals de otros dominios","excepciones":[]}],"totales":{"apps":34,"aristas":131,"aristas_api":16,"aristas_internals":115,"lineas":174087,"items_menu":60}};</script>
+<script>
+/* Mapa de arquitectura de SISOC — script generado, no editar la copia de static/.
+   Fuente: scripts/arquitectura/plantilla/mapa.js
+
+   Espera un contenedor con id="mapa". El grafo llega por window.__GRAFO_SISOC__
+   (documento autocontenido) o por fetch de la URL en data-grafo (vista Django). */
+
+(() => {
+  "use strict";
+
+  const raiz = document.getElementById("mapa");
+  if (!raiz) return;
+
+  const CAPAS = {
+    api: { etiqueta: "Contrato público", hue: "var(--api)", punteado: false },
+    internal: { etiqueta: "Import de internals", hue: "var(--deuda)", punteado: false },
+    movil: { etiqueta: "Plano móvil", hue: "var(--movil)", punteado: false },
+    s2s: { etiqueta: "Server-to-server", hue: "var(--s2s)", punteado: false },
+    externo: { etiqueta: "Salidas", hue: "var(--neutro)", punteado: true }
+  };
+
+  const PLANOS_API = { token: "token DRF", api_key: "API key", sesion: "sesión" };
+
+  const ARMAZON = `
+    <header class="barra">
+      <div class="marca">
+        <h1>Arquitectura de SISOC</h1>
+        <button class="ayuda-btn" id="mp-ayuda" type="button" aria-expanded="false" aria-controls="mp-ficha" title="Detalles de esta generación">?</button>
+      </div>
+      <label class="buscador">
+        <span class="lupa" aria-hidden="true">/</span>
+        <input id="mp-busqueda" type="search" placeholder="Buscar módulo o pantalla" autocomplete="off" aria-label="Buscar módulo o pantalla">
+      </label>
+      <div class="capas" id="mp-capas" role="group" aria-label="Capas de relación"></div>
+      <div class="ficha" id="mp-ficha" hidden></div>
+    </header>
+
+    <div class="cuerpo">
+      <main class="lienzo" id="mp-lienzo">
+       <div class="lienzo-contenido" id="mp-contenido">
+        <svg class="cables" id="mp-cables" aria-hidden="true"></svg>
+        <section class="marco">
+          <header>
+            <h2>SISOC · monolito Django</h2>
+            <p id="mp-marco-sub"></p>
+          </header>
+          <div class="zonas" id="mp-zonas"></div>
+        </section>
+        <div class="rails">
+          <section class="rail">
+            <header><h2>PWA · plano móvil</h2><p>Repos privados, auth por token.</p></header>
+            <div class="rejilla" id="mp-pwas"></div>
+            <p class="nota" id="mp-pwa-nota"></p>
+          </section>
+          <section class="rail">
+            <header><h2>Sistemas externos</h2><p>Entradas por API key y salidas.</p></header>
+            <div class="rejilla" id="mp-externos"></div>
+          </section>
+          <section class="rail">
+            <header><h2>Ejecución diferida</h2><p>Un rol por contenedor.</p></header>
+            <ul class="async" id="mp-async"></ul>
+            <p class="nota">El resto de la asincronía son hilos dentro del proceso web.</p>
+          </section>
+        </div>
+       </div>
+      </main>
+
+      <aside class="panel">
+        <nav class="pestanias" role="tablist">
+          <button class="pestania" id="mp-tab-detalle" type="button" role="tab" aria-selected="true" aria-controls="mp-hoja-detalle">Detalle</button>
+          <span class="anuncio" id="mp-anuncio" role="status" aria-live="polite"></span>
+          <button class="pestania" id="mp-tab-menu" type="button" role="tab" aria-selected="false" aria-controls="mp-hoja-menu">Menú del usuario</button>
+        </nav>
+        <div class="hoja" id="mp-hoja-detalle" role="tabpanel" aria-labelledby="mp-tab-detalle" tabindex="0"></div>
+        <div class="hoja" id="mp-hoja-menu" role="tabpanel" aria-labelledby="mp-tab-menu" tabindex="0" hidden></div>
+      </aside>
+    </div>`;
+
+  const $ = id => document.getElementById(id);
+  const el = (tag, cls, texto) => {
+    const nodo = document.createElement(tag);
+    if (cls) nodo.className = cls;
+    if (texto != null) nodo.textContent = texto;
+    return nodo;
+  };
+  const miles = n => (n ?? 0).toLocaleString("es-AR");
+
+  function sinDatos(motivo) {
+    raiz.classList.add("mapa-app");
+    const caja = el("div", "vacio");
+    caja.append(el("h2", null, "El mapa todavía no fue generado"));
+    const p = el("p");
+    p.append(document.createTextNode("Falta el grafo de arquitectura. Se genera con "));
+    p.append(el("code", null, "python manage.py generar_mapa_arquitectura"));
+    p.append(document.createTextNode(", que corre en cada arranque del contenedor."));
+    caja.append(p);
+    if (motivo) caja.append(el("p", "pista", motivo));
+    raiz.replaceChildren(caja);
+  }
+
+  /* ------------------------------------------------------------------ */
+
+  function arrancar(G) {
+    raiz.classList.add("mapa-app");
+    raiz.innerHTML = ARMAZON;
+
+    const modulos = new Map(G.modulos.map(m => [m.id, m]));
+    const activas = new Set(["api", "movil", "s2s", "externo"]);
+    let seleccion = null;
+    let resaltado = null;
+    let cache = null;
+    const ocultos = new Set();
+
+    /* ---------- aristas ---------- */
+
+    const aristas = [];
+
+    for (const a of G.aristas) {
+      aristas.push({ desde: "mod:" + a.src, hasta: "mod:" + a.dst, capa: a.kind, n: a.n, ejemplos: a.ejemplos || [] });
+    }
+
+    for (const p of G.pwas) {
+      for (const c of p.consume) {
+        aristas.push({
+          desde: "pwa:" + p.id,
+          hasta: "mod:" + c.modulo,
+          capa: "movil",
+          n: 1,
+          ejemplos: [c.evidencia],
+          certeza: c.certeza,
+          punteado: c.certeza === "inferido"
+        });
+      }
+    }
+
+    for (const x of G.externos) {
+      const capa = x.plano === "api_key" ? "s2s" : "externo";
+      const entrante = x.direccion === "entrada" || x.direccion === "bidireccional";
+      for (const m of x.modulos) {
+        aristas.push({
+          desde: entrante ? "ext:" + x.id : "mod:" + m,
+          hasta: entrante ? "mod:" + m : "ext:" + x.id,
+          capa,
+          n: 1,
+          ejemplos: [x.evidencia],
+          doble: x.direccion === "bidireccional",
+          punteado: x.direccion === "manual" || capa === "externo"
+        });
+      }
+    }
+
+    const porNodo = new Map();
+    for (const a of aristas) {
+      for (const punta of [a.desde, a.hasta]) {
+        if (!porNodo.has(punta)) porNodo.set(punta, []);
+        porNodo.get(punta).push(a);
+      }
+    }
+
+    if (raiz.dataset.volver) {
+      const volver = document.createElement("a");
+      volver.className = "volver";
+      volver.href = raiz.dataset.volver;
+      volver.textContent = "← Novedades";
+      raiz.querySelector(".barra").append(volver);
+    }
+
+    const t = G.totales;
+    $("mp-marco-sub").textContent = `${t.apps} apps · ${miles(t.lineas)} líneas · una base MySQL`;
+
+    /* ---------- ficha del (?) ---------- */
+
+    const ficha = $("mp-ficha");
+    ficha.append(el("h2", null, "Esta generación"));
+    const dl = el("dl");
+    const filas = [
+      ["generado", (G.generado || "").slice(0, 16).replace("T", " ")],
+      ["commit", G.commit || "—"],
+      ["rama", G.rama || "—"],
+      ["apps", miles(t.apps)],
+      ["líneas de Python", miles(t.lineas)],
+      ["dependencias", `${t.aristas} (${t.aristas_api} por fachada, ${t.aristas_internals} por internals)`],
+      ["entradas de menú", miles(t.items_menu)]
+    ];
+    for (const [k, v] of filas) dl.append(el("dt", null, k), el("dd", null, v));
+    ficha.append(dl);
+    ficha.append(el("h2", null, "De dónde sale"));
+    const origen = el("p");
+    origen.append(document.createTextNode("Se extrae del repositorio en cada arranque: apps instaladas, rutas montadas, autenticación de cada API, imports reales entre apps y el árbol del menú lateral con sus permisos. Líneas y dependencias excluyen migraciones, tests y templates."));
+    ficha.append(origen);
+    const aviso = el("p");
+    aviso.append(document.createTextNode("Las flechas son imports directos. El acoplamiento por signals y registries no aparece como flecha."));
+    ficha.append(aviso);
+
+    const btnAyuda = $("mp-ayuda");
+    const alternarFicha = abrir => {
+      ficha.hidden = !abrir;
+      btnAyuda.setAttribute("aria-expanded", String(abrir));
+    };
+    btnAyuda.addEventListener("click", () => alternarFicha(ficha.hidden));
+    document.addEventListener("click", ev => {
+      if (!ficha.hidden && !ficha.contains(ev.target) && ev.target !== btnAyuda) alternarFicha(false);
+    });
+
+    /* ---------- capas ---------- */
+
+    const cuentas = {};
+    for (const a of aristas) cuentas[a.capa] = (cuentas[a.capa] || 0) + 1;
+
+    for (const [id, def] of Object.entries(CAPAS)) {
+      const boton = el("button", "capa");
+      boton.type = "button";
+      boton.style.setProperty("--hue", def.hue);
+      if (def.punteado) boton.dataset.punteado = "1";
+      boton.setAttribute("aria-pressed", String(activas.has(id)));
+      boton.title = {
+        api: "Un dominio consume otro por su fachada pública <app>/api.py",
+        internal: "Un dominio importa models, services o views de otro. Es la deuda que corta el ratchet de .importlinter",
+        movil: "Las PWA entran por APIs con token DRF",
+        s2s: "Sistemas externos entran por APIs con API key",
+        externo: "Servicios que SISOC consume hacia afuera"
+      }[id];
+      boton.append(el("span", "trazo"), el("span", "etq", def.etiqueta), el("span", "cuenta", String(cuentas[id] || 0)));
+      boton.addEventListener("click", () => {
+        activas.has(id) ? activas.delete(id) : activas.add(id);
+        boton.setAttribute("aria-pressed", String(activas.has(id)));
+        dibujar();
+        if (seleccion) panel();
+      });
+      $("mp-capas").append(boton);
+    }
+
+    /* ---------- nodos ---------- */
+
+    function insignia(texto, hue, titulo) {
+      const s = el("span", "insignia", texto);
+      s.style.setProperty("--hue", hue);
+      if (titulo) s.title = titulo;
+      return s;
+    }
+
+    function cablear(boton, id) {
+      boton.dataset.nodo = id;
+      boton.type = "button";
+      boton.setAttribute("aria-pressed", "false");
+      boton.addEventListener("click", () => seleccionar(seleccion === id ? null : id));
+      boton.addEventListener("pointerenter", () => resaltar(id));
+      boton.addEventListener("pointerleave", () => resaltar(null));
+      boton.addEventListener("focus", () => resaltar(id));
+      boton.addEventListener("blur", () => resaltar(null));
+      return boton;
+    }
+
+    const maxLineas = Math.max(...G.modulos.map(m => m.lineas), 1);
+
+    for (const zona of G.zonas) {
+      const apps = G.modulos.filter(m => m.zona === zona.id);
+      if (!apps.length) continue;
+
+      const fila = el("div", "zona");
+      const info = el("div");
+      info.append(el("p", "zona-nombre", zona.nombre), el("p", "zona-detalle", zona.detalle));
+      const rejilla = el("div", "rejilla");
+
+      for (const m of apps.slice().sort((a, b) => b.lineas - a.lineas)) {
+        const b = cablear(el("button", "nodo"), "mod:" + m.id);
+        b.append(el("span", "titulo", m.nombre), el("span", "paquete", m.id));
+        const ins = el("span", "insignias");
+        if (m.tiene_fachada) ins.append(insignia("api", "var(--api)", "Expone fachada pública en " + m.id + "/api.py"));
+        if (m.planos_api.includes("token")) ins.append(insignia("token", "var(--movil)", "API con token DRF (plano móvil)"));
+        if (m.planos_api.includes("api_key")) ins.append(insignia("key", "var(--s2s)", "API con API key (server-to-server)"));
+        if (m.menu.length) ins.append(insignia("menú " + m.menu.length, "var(--neutro)", m.menu.length + " entradas en el menú lateral"));
+        if (!m.instalada) ins.append(insignia("no instalada", "var(--alerta)", "Paquete del runtime fuera de INSTALLED_APPS"));
+        if (ins.childElementCount) b.append(ins);
+        const barra = el("span", "barrita");
+        const relleno = el("span");
+        relleno.style.width = Math.max(2, Math.round((m.lineas / maxLineas) * 100)) + "%";
+        barra.title = miles(m.lineas) + " líneas";
+        barra.append(relleno);
+        b.append(barra);
+        rejilla.append(b);
+      }
+
+      fila.append(info, rejilla);
+      $("mp-zonas").append(fila);
+    }
+
+    const nombrePwa = p => p.repository.split("/").pop().replace(/-/g, " ");
+
+    for (const p of G.pwas) {
+      const b = cablear(el("button", "nodo"), "pwa:" + p.id);
+      b.append(el("span", "titulo", nombrePwa(p)), el("span", "paquete", p.canonical_path));
+      const ins = el("span", "insignias");
+      ins.append(insignia(p.enabled ? "activa" : "apagada", p.enabled ? "var(--movil)" : "var(--alerta)"));
+      if (!p.consume.length) ins.append(insignia("sin contrato", "var(--alerta)", "Ningún namespace de API declarado para esta PWA"));
+      b.append(ins);
+      $("mp-pwas").append(b);
+    }
+
+    const sinContrato = G.pwas.filter(p => !p.consume.length);
+    $("mp-pwa-nota").textContent = sinContrato.length
+      ? `Sin contrato declarado: ${sinContrato.map(p => p.id).join(", ")}.`
+      : "Las tres tienen su consumo de API declarado.";
+
+    for (const x of G.externos) {
+      const b = cablear(el("button", "nodo"), "ext:" + x.id);
+      b.append(el("span", "titulo", x.nombre));
+      const ins = el("span", "insignias");
+      const hue = x.plano === "api_key" ? "var(--s2s)" : "var(--neutro)";
+      ins.append(insignia(x.direccion, hue));
+      b.append(ins);
+      $("mp-externos").append(b);
+    }
+
+    for (const rol of G.asincronia.roles_contenedor) $("mp-async").append(el("li", null, rol));
+    for (const s of G.asincronia.servicios_celery) $("mp-async").append(el("li", "celery", s));
+
+    /* ---------- cables ---------- */
+
+    const svg = $("mp-cables");
+    const NS = "http://www.w3.org/2000/svg";
+
+    function defs() {
+      const d = document.createElementNS(NS, "defs");
+      for (const [id, def] of Object.entries(CAPAS)) {
+        const marker = document.createElementNS(NS, "marker");
+        marker.setAttribute("id", "mp-punta-" + id);
+        marker.setAttribute("viewBox", "0 0 8 8");
+        marker.setAttribute("refX", "7");
+        marker.setAttribute("refY", "4");
+        marker.setAttribute("markerWidth", "5.5");
+        marker.setAttribute("markerHeight", "5.5");
+        marker.setAttribute("orient", "auto-start-reverse");
+        const poly = document.createElementNS(NS, "polygon");
+        poly.setAttribute("points", "0,1 8,4 0,7");
+        poly.setAttribute("fill", def.hue);
+        marker.append(poly);
+        d.append(marker);
+      }
+      return d;
+    }
+
+    function medir() {
+      const contenido = $("mp-contenido");
+      const marco = contenido.getBoundingClientRect();
+      const cajas = new Map();
+      for (const nodo of contenido.querySelectorAll("[data-nodo]")) {
+        const r = nodo.getBoundingClientRect();
+        cajas.set(nodo.dataset.nodo, {
+          x: r.left - marco.left,
+          y: r.top - marco.top,
+          w: r.width,
+          h: r.height
+        });
+      }
+      cache = { ancho: marco.width, alto: marco.height, cajas };
+      return cache;
+    }
+
+    function remedir() {
+      cache = null;
+      dibujar();
+    }
+
+    function borde(caja, hacia) {
+      const cx = caja.x + caja.w / 2;
+      const cy = caja.y + caja.h / 2;
+      const dx = hacia.x - cx;
+      const dy = hacia.y - cy;
+      if (!dx && !dy) return { x: cx, y: cy };
+      const k = Math.min(
+        dx ? (caja.w / 2 + 3) / Math.abs(dx) : Infinity,
+        dy ? (caja.h / 2 + 3) / Math.abs(dy) : Infinity,
+        1
+      );
+      return { x: cx + dx * k, y: cy + dy * k };
+    }
+
+    // Opacidad por capa: cada una llega al 3:1 que pide un grafico informativo.
+    const OPACIDAD = { api: 0.75, internal: 0.7, movil: 0.75, s2s: 0.75, externo: 0.85 };
+    let cables = [];
+
+    function aplicarOpacidad() {
+      const foco = resaltado || seleccion;
+      for (const { path, arista } of cables) {
+        const filtrado = ocultos.has(arista.desde) || ocultos.has(arista.hasta);
+        const tocado = !foco || arista.desde === foco || arista.hasta === foco;
+        path.setAttribute(
+          "opacity",
+          filtrado ? "0.05" : tocado ? String(OPACIDAD[arista.capa]) : "0.06"
+        );
+      }
+    }
+
+    function dibujar() {
+      const { ancho, alto, cajas } = cache || medir();
+      svg.setAttribute("viewBox", `0 0 ${ancho} ${alto}`);
+      const piezas = [defs()];
+      cables = [];
+
+      for (const a of aristas) {
+        if (!activas.has(a.capa) || !cajas.has(a.desde) || !cajas.has(a.hasta)) continue;
+        const A = cajas.get(a.desde);
+        const B = cajas.get(a.hasta);
+        const p1 = borde(A, { x: B.x + B.w / 2, y: B.y + B.h / 2 });
+        const p2 = borde(B, { x: A.x + A.w / 2, y: A.y + A.h / 2 });
+
+        const dx = p2.x - p1.x;
+        const dy = p2.y - p1.y;
+        const dist = Math.hypot(dx, dy) || 1;
+        const curva = Math.min(40, dist * 0.17);
+        const cx = (p1.x + p2.x) / 2 - (dy / dist) * curva;
+        const cy = (p1.y + p2.y) / 2 + (dx / dist) * curva;
+
+        const path = document.createElementNS(NS, "path");
+        path.setAttribute("d", `M ${p1.x.toFixed(1)} ${p1.y.toFixed(1)} Q ${cx.toFixed(1)} ${cy.toFixed(1)} ${p2.x.toFixed(1)} ${p2.y.toFixed(1)}`);
+        path.setAttribute("fill", "none");
+        path.setAttribute("stroke", CAPAS[a.capa].hue);
+        path.setAttribute("stroke-width", a.capa === "internal" ? "1" : "1.3");
+        path.setAttribute("stroke-linecap", "round");
+        if (a.punteado || CAPAS[a.capa].punteado) path.setAttribute("stroke-dasharray", "4 3");
+        path.setAttribute("marker-end", `url(#mp-punta-${a.capa})`);
+        if (a.doble) path.setAttribute("marker-start", `url(#mp-punta-${a.capa})`);
+
+        piezas.push(path);
+        cables.push({ path, arista: a });
+      }
+
+      svg.replaceChildren(...piezas);
+      aplicarOpacidad();
+    }
+
+    /* ---------- foco ---------- */
+
+    function vecinos(nodo) {
+      const set = new Set();
+      for (const a of porNodo.get(nodo) || []) {
+        if (!activas.has(a.capa)) continue;
+        set.add(a.desde === nodo ? a.hasta : a.desde);
+      }
+      return set;
+    }
+
+    function pintarFoco() {
+      const foco = resaltado || seleccion;
+      const lienzo = $("mp-lienzo");
+      lienzo.classList.toggle("enfocado", Boolean(foco));
+      const cerca = foco ? vecinos(foco) : new Set();
+      for (const nodo of lienzo.querySelectorAll("[data-nodo]")) {
+        nodo.classList.toggle("foco", nodo.dataset.nodo === foco);
+        nodo.classList.toggle("vecino", cerca.has(nodo.dataset.nodo));
+        nodo.setAttribute("aria-pressed", String(nodo.dataset.nodo === seleccion));
+      }
+    }
+
+    function resaltar(nodo) {
+      resaltado = nodo;
+      pintarFoco();
+      aplicarOpacidad();
+    }
+
+    function seleccionar(nodo) {
+      seleccion = nodo;
+      pintarFoco();
+      aplicarOpacidad();
+      panel();
+      if (nodo) {
+        verPestania("detalle");
+        $("mp-anuncio").textContent = nombreDe(nodo) + ": detalle actualizado.";
+      }
+    }
+
+    /* ---------- panel ---------- */
+
+    const hojaDetalle = $("mp-hoja-detalle");
+
+    function nombreDe(id) {
+      const [tipo, clave] = id.split(":");
+      if (tipo === "mod") return modulos.get(clave)?.nombre || clave;
+      if (tipo === "pwa") {
+        const p = G.pwas.find(x => x.id === clave);
+        return p ? nombrePwa(p) : clave;
+      }
+      return G.externos.find(x => x.id === clave)?.nombre || clave;
+    }
+
+    function bloque(titulo, contenido) {
+      const b = el("section", "bloque");
+      b.append(el("h4", null, titulo));
+      b.append(contenido);
+      return b;
+    }
+
+    function relacion(a, propio) {
+      const otro = a.desde === propio ? a.hasta : a.desde;
+      const caja = el("div", "rel");
+      const linea = el("div", "rel-linea");
+      const pip = el("span", "pip");
+      pip.style.setProperty("--hue", CAPAS[a.capa].hue);
+      linea.append(pip);
+      const boton = el("button", null, (a.desde === propio ? "→ " : "← ") + nombreDe(otro));
+      boton.type = "button";
+      boton.addEventListener("click", () => seleccionar(otro));
+      linea.append(boton);
+      if (a.n > 1) linea.append(el("span", "n", a.n + " imports"));
+      if (a.certeza === "inferido") linea.append(el("span", "n", "inferido"));
+      caja.append(linea);
+
+      // Visible, no en un title: un tooltip nativo no existe en tactil ni con teclado.
+      if (a.ejemplos.length) {
+        caja.append(el("p", "meta", a.ejemplos[0]));
+        if (a.ejemplos.length > 1) {
+          caja.append(el("p", "meta", `y ${a.ejemplos.length - 1} más`));
+        }
+      }
+      return caja;
+    }
+
+    function panelInicial() {
+      hojaDetalle.replaceChildren();
+      hojaDetalle.append(el("h3", null, "Cómo leer el mapa"));
+      hojaDetalle.append(el("p", "sub", "Pasá el cursor por un módulo para ver sus vínculos. Clic para fijarlo."));
+
+      const caja = el("div");
+      const puntos = [
+        ["var(--api)", `<strong>${t.aristas_api} dependencias por fachada</strong> contra <strong>${t.aristas_internals} por imports de internals</strong>. Las fronteras están declaradas en <code>.importlinter</code>, pero la mayor parte del acoplamiento sigue siendo directo: ese es el baseline que el ratchet va cortando.`],
+        ["var(--movil)", "El <strong>plano móvil</strong> (token DRF) y el <strong>server-to-server</strong> (API key) son dos superficies distintas y entran por módulos distintos."],
+        ["var(--deuda)", "Prendé <em>Import de internals</em> arriba para ver el acoplamiento real. Está apagado por defecto porque tapa todo lo demás."]
+      ];
+      for (const [hue, html] of puntos) {
+        const p = el("p", "hallazgo");
+        p.style.setProperty("--hue", hue);
+        p.innerHTML = html;
+        caja.append(p);
+      }
+      hojaDetalle.append(bloque("Lo primero que se ve", caja));
+
+      const contratos = el("ul", "lista");
+      for (const c of G.contratos) {
+        const li = el("li");
+        li.append(el("span", null, c.nombre));
+        li.append(el("span", "meta", c.excepciones.length ? c.excepciones.length + " excepción(es) en baseline" : "sin excepciones"));
+        contratos.append(li);
+      }
+      hojaDetalle.append(bloque(`Contratos de arquitectura (${G.contratos.length})`, contratos));
+    }
+
+    function panel() {
+      if (!seleccion) return panelInicial();
+      hojaDetalle.replaceChildren();
+      const [tipo, clave] = seleccion.split(":");
+
+      if (tipo === "mod") {
+        const m = modulos.get(clave);
+        hojaDetalle.append(el("h3", null, m.nombre));
+        hojaDetalle.append(el("p", "sub", m.id + "/"));
+
+        const datos = el("dl", "datos");
+        const filas2 = [
+          ["líneas", miles(m.lineas) + ` en ${m.archivos} archivos`],
+          ["zona", G.zonas.find(z => z.id === m.zona)?.nombre || m.zona],
+          ["rutas web", m.rutas_web.join(" ") || "—"],
+          ["rutas API", m.rutas_api.join(" ") || "—"],
+          ["auth API", m.planos_api.map(x => PLANOS_API[x] || x).join(", ") || "—"],
+          ["fachada", m.tiene_fachada ? m.id + "/api.py" : "no expone"]
+        ];
+        for (const [k, v] of filas2) datos.append(el("dt", null, k), el("dd", null, v));
+        hojaDetalle.append(bloque("Ficha", datos));
+
+        if (m.menu.length) {
+          const lista = el("ul", "lista");
+          for (const item of m.menu) {
+            const li = el("li");
+            li.append(el("span", null, item.label));
+            li.append(el("span", "camino", [item.grupo, ...item.ruta].filter(Boolean).join(" / ")));
+            if (item.permisos.length) li.append(el("span", "meta", item.permisos.join(" · ")));
+            lista.append(li);
+          }
+          hojaDetalle.append(bloque(`Menú del usuario (${m.menu.length})`, lista));
+        } else {
+          hojaDetalle.append(bloque("Menú del usuario", el("p", "pista", "No tiene entrada propia: se llega desde otra pantalla o por API.")));
+        }
+      }
+
+      if (tipo === "pwa") {
+        const x = G.pwas.find(p => p.id === clave);
+        hojaDetalle.append(el("h3", null, nombrePwa(x)));
+        hojaDetalle.append(el("p", "sub", x.repository));
+        const datos = el("dl", "datos");
+        const filas2 = [
+          ["ruta canónica", x.canonical_path],
+          ["ruta previa", x.legacy_path || "—"],
+          ["proyecto", x.project + " : " + x.port],
+          ["checkout", x.checkout],
+          ["habilitada", x.enabled ? "sí" : "no"]
+        ];
+        for (const [k, v] of filas2) datos.append(el("dt", null, k), el("dd", null, v));
+        hojaDetalle.append(bloque("Despliegue", datos));
+
+        if (x.consume.length) {
+          const lista = el("ul", "lista");
+          for (const c of x.consume) {
+            const li = el("li");
+            li.append(el("span", null, nombreDe("mod:" + c.modulo) + (c.certeza === "inferido" ? " (inferido)" : "")));
+            li.append(el("span", "meta", c.evidencia));
+            lista.append(li);
+          }
+          hojaDetalle.append(bloque("Qué consume de SISOC", lista));
+        } else {
+          hojaDetalle.append(bloque("Qué consume de SISOC", el("p", "pista", "Ningún namespace de API declarado para esta PWA en este repositorio.")));
+        }
+      }
+
+      if (tipo === "ext") {
+        const x = G.externos.find(e => e.id === clave);
+        hojaDetalle.append(el("h3", null, x.nombre));
+        hojaDetalle.append(el("p", "sub", x.direccion + (x.plano === "api_key" ? " · API key" : "")));
+        hojaDetalle.append(bloque("Rol", el("p", "pista", x.rol)));
+        hojaDetalle.append(bloque("Evidencia", el("p", "pista", x.evidencia)));
+      }
+
+      const mias = (porNodo.get(seleccion) || []).filter(a => activas.has(a.capa));
+      const salen = mias.filter(a => a.desde === seleccion).sort((a, b) => b.n - a.n);
+      const entran = mias.filter(a => a.hasta === seleccion).sort((a, b) => b.n - a.n);
+
+      if (salen.length) {
+        const caja = el("div");
+        for (const a of salen) caja.append(relacion(a, seleccion));
+        hojaDetalle.append(bloque(`Depende de (${salen.length})`, caja));
+      }
+      if (entran.length) {
+        const caja = el("div");
+        for (const a of entran) caja.append(relacion(a, seleccion));
+        hojaDetalle.append(bloque(`Lo usan (${entran.length})`, caja));
+      }
+      if (!mias.length) {
+        hojaDetalle.append(bloque("Vínculos", el("p", "pista", "Sin vínculos en las capas activas. Probá prendiendo Import de internals.")));
+      }
+    }
+
+    /* ---------- pestaña de menú ---------- */
+
+    const hojaMenu = $("mp-hoja-menu");
+
+    for (const grupo of G.menu) {
+      const caja = el("div", "grupo");
+      const h = el("h4");
+      h.append(el("span", null, grupo.label || "(sin nombre)"));
+      h.append(el("span", "cant", grupo.items.length ? String(grupo.items.length) : "dinámico"));
+      caja.append(h);
+
+      if (!grupo.items.length) {
+        caja.append(el("p", "pista", "Tableros armados por permiso al renderizar; no hay rutas fijas en el template."));
+      } else {
+        const lista = el("ul");
+        let ramaActual = "";
+        for (const item of grupo.items) {
+          const rama = item.ruta.join(" / ");
+          if (rama && rama !== ramaActual) {
+            lista.append(el("li", "rama", rama));
+            ramaActual = rama;
+          }
+          const li = el("li");
+          li.dataset.nivel = String(item.nivel);
+          const b = el("button");
+          b.type = "button";
+          b.append(el("span", "etq", item.label));
+          b.append(el("span", "destino", item.app || "?"));
+          b.title = item.permisos.length ? "Permisos del gate: " + item.permisos.join(", ") : "Sin permiso explícito en el template";
+          if (item.app) {
+            b.addEventListener("click", () => {
+              seleccionar("mod:" + item.app);
+              $("mp-lienzo").querySelector('[data-nodo="mod:' + item.app + '"]')?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+            });
+            b.addEventListener("pointerenter", () => resaltar("mod:" + item.app));
+            b.addEventListener("pointerleave", () => resaltar(null));
+          }
+          li.append(b);
+          lista.append(li);
+        }
+        caja.append(lista);
+      }
+      hojaMenu.append(caja);
+    }
+
+    function verPestania(cual) {
+      const esDetalle = cual === "detalle";
+      $("mp-tab-detalle").tabIndex = esDetalle ? 0 : -1;
+      $("mp-tab-menu").tabIndex = esDetalle ? -1 : 0;
+      $("mp-tab-detalle").setAttribute("aria-selected", String(esDetalle));
+      $("mp-tab-menu").setAttribute("aria-selected", String(!esDetalle));
+      hojaDetalle.hidden = !esDetalle;
+      hojaMenu.hidden = esDetalle;
+    }
+
+    $("mp-tab-detalle").addEventListener("click", () => verPestania("detalle"));
+    $("mp-tab-menu").addEventListener("click", () => verPestania("menu"));
+
+    raiz.querySelector(".pestanias").addEventListener("keydown", ev => {
+      if (ev.key !== "ArrowLeft" && ev.key !== "ArrowRight") return;
+      ev.preventDefault();
+      const otra = ev.target.id === "mp-tab-detalle" ? "menu" : "detalle";
+      verPestania(otra);
+      $("mp-tab-" + otra).focus();
+    });
+
+    /* ---------- búsqueda ---------- */
+
+    $("mp-busqueda").addEventListener("input", ev => {
+      const consulta = ev.target.value.trim().toLowerCase();
+      const lienzo = $("mp-lienzo");
+      lienzo.classList.toggle("filtrando", Boolean(consulta));
+      ocultos.clear();
+      let visibles = 0;
+
+      for (const nodo of lienzo.querySelectorAll("[data-nodo]")) {
+        const [tipo, clave] = nodo.dataset.nodo.split(":");
+        let heno = nodo.textContent.toLowerCase() + " " + clave.toLowerCase();
+        if (tipo === "mod") heno += " " + (modulos.get(clave)?.menu || []).map(i => i.label).join(" ").toLowerCase();
+        const fuera = Boolean(consulta) && !heno.includes(consulta);
+        nodo.classList.toggle("oculto", fuera);
+        if (fuera) ocultos.add(nodo.dataset.nodo);
+        else visibles += 1;
+      }
+
+      aplicarOpacidad();
+      $("mp-anuncio").textContent = consulta ? `${visibles} coincidencias.` : "";
+    });
+
+    document.addEventListener("keydown", ev => {
+      if (ev.key === "Escape") {
+        if (!ficha.hidden) {
+          alternarFicha(false);
+          btnAyuda.focus();
+        } else if (seleccion) {
+          seleccionar(null);
+        }
+      }
+      if (ev.key === "/" && document.activeElement !== $("mp-busqueda")) {
+        ev.preventDefault();
+        $("mp-busqueda").focus();
+      }
+    });
+
+    /* ---------- arranque ---------- */
+
+    panelInicial();
+    dibujar();
+
+    new ResizeObserver(remedir).observe($("mp-contenido"));
+    window.addEventListener("resize", remedir);
+    if (document.fonts?.ready) document.fonts.ready.then(remedir);
+  }
+
+  /* ------------------------------------------------------------------ */
+
+  if (window.__GRAFO_SISOC__) {
+    arrancar(window.__GRAFO_SISOC__);
+  } else if (raiz.dataset.grafo) {
+    raiz.classList.add("mapa-app");
+    const espera = el("div", "vacio");
+    espera.append(el("p", null, "Cargando el mapa de arquitectura…"));
+    raiz.replaceChildren(espera);
+
+    fetch(raiz.dataset.grafo, { credentials: "same-origin" })
+      .then(r => (r.ok ? r.json() : Promise.reject(new Error("HTTP " + r.status))))
+      .then(arrancar)
+      .catch(err => sinDatos("No se pudo leer el grafo: " + err.message));
+  } else {
+    sinDatos();
+  }
+})();
+
+</script>
+</body>
+</html>

@@ -51,12 +51,14 @@
 - `docs/implementaciones/usuarios_perfil_iam.md`: implementación de Usuarios/Perfil + IAM por permisos Django y guía para extender nuevas features.
 - `docs/implementaciones/centrodeinfancia_nomina_renaper.md`: contrato de asistencia de nómina CDI, alcance y precarga RENAPER de trabajadores.
 - `docs/implementaciones/centrodeinfancia_nomina_ninos_simepi.md`: autorización, alcance provincial, privacidad y contrato del PDF de nómina infantil SIMEPI.
+- `docs/implementaciones/centrodeinfancia_reportes.md`: contrato de columnas, alcance por rol y permisos del reporte XLSX de CDI, trabajadores y nómina.
 - `docs/implementaciones/comedores_nomina_ciudadanos.md`: alta de ciudadanos con DNI/Sin DNI desde nómina y transacción de datos sociales.
 - `docs/implementaciones/centrodefamilia_preinscriptos.md`: contrato del listado y exportación CSV de preinscriptos CDF, incluyendo columnas, ordenamiento y permisos.
 - `docs/implementaciones/pas.md`: contrato del padrón PAS, DDJJ e informes reproducibles.
 - `docs/implementaciones/encuestas.md`: ciclo funcional de encuestas, permisos, privacidad y operación de rondas.
 - `docs/implementaciones/celiaquia_comentarios_tecnicos.md`: comentarios técnicos, publicación a Provincia y vínculo con Subsanar/Rechazar.
 - `docs/vat/`: guías funcionales, API, operación de vouchers y desarrollo del módulo VAT.
+- `docs/vat/manual_usuario.md`: operación de INET/VAT, incluido el Buscador por Ciudadano y su alcance de acceso.
 
 ### 5. Flujos y sincronizaciones
 - `docs/flujos/comedor_sync.md`: cómo funciona la sincronización de comedores con servicios externos.

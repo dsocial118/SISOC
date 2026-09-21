@@ -2,6 +2,8 @@ from django.urls import path
 
 from core.views import (
     changelog_view,
+    mapa_arquitectura_datos,
+    mapa_arquitectura_view,
     columnas_preferencias,
     detalle_filtro_favorito,
     filtros_favoritos,
@@ -32,6 +34,12 @@ GRUPOS_MONTO_PRESTACION = ["Gestor prestaciones", "Prestacion"]
 urlpatterns = [
     path("inicio/", inicio_view, name="inicio"),
     path("novedades/", changelog_view, name="changelog"),
+    path("arquitectura/", mapa_arquitectura_view, name="mapa_arquitectura"),
+    path(
+        "arquitectura/grafo.json",
+        mapa_arquitectura_datos,
+        name="mapa_arquitectura_datos",
+    ),
     path(
         "ajax/load-municipios/",
         load_municipios,

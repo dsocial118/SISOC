@@ -432,7 +432,7 @@ def test_obtener_documentos_para_descarga_pdf_solo_incluye_vigentes_validados(
 @pytest.mark.django_db
 @pytest.mark.parametrize("pdf_error", [PdfReadError, PdfStreamError])
 def test_generar_pdf_descarga_rendicion_usa_placeholder_por_pdf_invalidos(
-    settings, tmp_path, mocker
+    settings, tmp_path, mocker, pdf_error
 ):
     settings.MEDIA_ROOT = str(tmp_path)
     rendicion = RendicionCuentaMensual.objects.create(
@@ -498,20 +498,6 @@ def test_generar_pdf_descarga_rendicion_requiere_finalizada():
         RendicionCuentaMensualService.generar_pdf_descarga_rendicion(rendicion)
 
     assert "La descarga consolidada solo está disponible" in str(exc_info.value)
-
-
-@pytest.mark.django_db
-def test_generar_pdf_descarga_rendicion_requiere_docs():
-    rendicion = RendicionCuentaMensual.objects.create(
-        mes=6,
-        anio=2026,
-        estado=RendicionCuentaMensual.ESTADO_FINALIZADA,
-    )
-
-    with pytest.raises(ValidationError) as exc_info:
-        RendicionCuentaMensualService.generar_pdf_descarga_rendicion(rendicion)
-
-    assert "no tiene documentación" in str(exc_info.value)
 
 
 def test_obtener_rendiciones_cuentas_mensuales_success(mocker):

@@ -13,6 +13,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core import signing
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.paginator import Paginator
+from django.core.serializers.json import DjangoJSONEncoder
 from django.db import transaction
 from django.db.models import Exists, OuterRef, Q
 from django.http import JsonResponse
@@ -38,6 +39,10 @@ from ciudadanos.api import (
     resolver_nacionalidad_desde_renaper,
 )
 from ciudadanos.models import Ciudadano
+from ciudadanos.services_renaper_validacion import (
+    build_validacion_renaper_payload,
+    identidad_coincide,
+)
 from core.decorators import permissions_any_required
 from core.models import Nacionalidad, Provincia, Sexo
 from core.security import safe_redirect
@@ -255,10 +260,10 @@ def _build_trabajadores_context(request, centro):
     return {
         "trabajadores": centro.trabajadores.order_by("apellido", "nombre"),
         "puede_editar_trabajadores": request.user.has_perm(
-            "centrodeinfancia.change_centrodeinfancia"
+            "centrodeinfancia.change_trabajador"
         ),
         "puede_eliminar_trabajadores": request.user.has_perm(
-            "centrodeinfancia.delete_centrodeinfancia"
+            "centrodeinfancia.delete_trabajador"
         ),
     }
 
@@ -1148,7 +1153,10 @@ class TrabajadorCentroInfanciaDetailView(LoginRequiredMixin, DetailView):
         context = super().get_context_data(**kwargs)
         context["centro"] = self.object.centro
         context["puede_editar_trabajadores"] = self.request.user.has_perm(
-            "centrodeinfancia.change_centrodeinfancia"
+            "centrodeinfancia.change_trabajador"
+        )
+        context["puede_eliminar_trabajadores"] = self.request.user.has_perm(
+            "centrodeinfancia.delete_trabajador"
         )
         return context
 
@@ -1464,6 +1472,65 @@ class NominaCentroInfanciaCreateView(
     model = NominaCentroInfancia
     form_class = NominaCentroInfanciaDestinatariosForm
     template_name = "centrodeinfancia/destinatario_form.html"
+    _RENAPER_PREFILL_SALT = "centrodeinfancia.nomina.renaper_prefill"
+    _RENAPER_PREFILL_MAX_AGE_SECONDS = 15 * 60
+
+    def _crear_token_renaper(self, renaper_data):
+        payload = {
+            "centro_id": self._get_centro().pk,
+            "user_id": self.request.user.pk,
+            "values": {
+                field: renaper_data.get(field)
+                for field in ("dni", "apellido", "nombre", "fecha_nacimiento")
+            },
+        }
+        return signing.dumps(
+            json.loads(json.dumps(payload, cls=DjangoJSONEncoder)),
+            salt=self._RENAPER_PREFILL_SALT,
+        )
+
+    def _obtener_prefill_renaper(self):
+        token = self.request.POST.get("renaper_prefill_token")
+        if not token:
+            return {}, None
+        try:
+            payload = signing.loads(
+                token,
+                salt=self._RENAPER_PREFILL_SALT,
+                max_age=self._RENAPER_PREFILL_MAX_AGE_SECONDS,
+            )
+        except signing.BadSignature:
+            return {}, None
+        if (
+            not isinstance(payload, dict)
+            or payload.get("centro_id") != self._get_centro().pk
+            or payload.get("user_id") != self.request.user.pk
+            or not isinstance(payload.get("values"), dict)
+        ):
+            return {}, None
+        return payload, token
+
+    def _payload_validacion_renaper(self, cleaned_data):
+        payload, _ = self._obtener_prefill_renaper()
+        values = payload.get("values") or {}
+        if (
+            not cleaned_data.get("dni")
+            or str(cleaned_data["dni"]) != str(values.get("dni"))
+            or not identidad_coincide(cleaned_data, values)
+        ):
+            return {"origen_dato": "manual"}
+        try:
+            result = obtener_datos_ciudadano_desde_renaper(str(values["dni"]))
+            data = result.get("data") or {}
+            if (
+                result.get("success")
+                and str(data.get("documento") or data.get("dni")) == str(values["dni"])
+                and identidad_coincide(values, data)
+            ):
+                return build_validacion_renaper_payload(result)
+        except Exception:  # pylint: disable=broad-exception-caught
+            logger.warning("No se pudo revalidar la precarga RENAPER de nómina CDI.")
+        return {"origen_dato": "manual"}
 
     def _get_centro(self):
         if not hasattr(self, "_centro_cache"):
@@ -1587,6 +1654,7 @@ class NominaCentroInfanciaCreateView(
         form = kwargs.get("form")
         ciudadanos = []
         renaper_data = None
+        renaper_prefill, token = self._obtener_prefill_renaper()
         selected_ciudadano = self._get_selected_ciudadano_from_request(self.request)
 
         if query and len(query) >= 4:
@@ -1597,6 +1665,8 @@ class NominaCentroInfanciaCreateView(
                     renaper_data = self._build_nomina_initial_from_renaper(
                         renaper_result
                     )
+                    if renaper_data:
+                        token = self._crear_token_renaper(renaper_data)
                     mensaje = renaper_result.get("message")
                     if mensaje:
                         messages.info(self.request, mensaje)
@@ -1630,9 +1700,8 @@ class NominaCentroInfanciaCreateView(
         context["selected_ciudadano"] = selected_ciudadano
         context["no_resultados"] = bool(query) and not ciudadanos
         context["form"] = form
-        context["renaper_precarga"] = bool(renaper_data) or (
-            self.request.POST.get("origen_dato") == "renaper"
-        )
+        context["renaper_precarga"] = bool(renaper_data) or bool(renaper_prefill)
+        context["renaper_prefill_token"] = token
         context["mostrar_formulario"] = bool(
             selected_ciudadano or context["no_resultados"] or form.is_bound
         )
@@ -1695,7 +1764,6 @@ class NominaCentroInfanciaCreateView(
         centro = self._get_centro()
         form = self.form_class(request.POST, centro=centro, actor=request.user)
         ciudadano_id = request.POST.get("ciudadano_id")
-        origen_dato = request.POST.get("origen_dato") or "manual"
 
         if not form.is_valid():
             messages.warning(request, "Hay errores en la ficha de la nómina.")
@@ -1723,6 +1791,16 @@ class NominaCentroInfanciaCreateView(
                 )
                 context = self.get_context_data(form=form)
                 return self.render_to_response(context)
+        validacion_payload = {"origen_dato": "manual"}
+        if (
+            ciudadano is None
+            and not Ciudadano.objects.filter(
+                tipo_documento=Ciudadano.DOCUMENTO_DNI,
+                documento=form.cleaned_data.get("dni"),
+            ).exists()
+        ):
+            # La reconsulta externa sucede antes de abrir la transacción de alta.
+            validacion_payload = self._payload_validacion_renaper(form.cleaned_data)
         try:
             with transaction.atomic():
                 if ciudadano is None:
@@ -1757,7 +1835,7 @@ class NominaCentroInfanciaCreateView(
                             provincia=form.cleaned_data.get("provincia_domicilio"),
                             municipio=form.cleaned_data.get("municipio_domicilio"),
                             localidad=form.cleaned_data.get("localidad_domicilio"),
-                            origen_dato=origen_dato,
+                            **validacion_payload,
                             creado_por=request.user,
                             modificado_por=request.user,
                         )

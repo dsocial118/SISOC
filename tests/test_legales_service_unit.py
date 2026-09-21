@@ -743,6 +743,45 @@ def test_acciones_de_providencia_rechazan_post_fuera_de_secuencia(mocker):
     assert not providencias.called
 
 
+def test_form_modal_invalido_resuelve_el_modal_y_sus_errores(mocker):
+    """Devuelve el form con errores del modal enviado, o None si no aplica."""
+    adm = SimpleNamespace(
+        pk=55,
+        comedor=SimpleNamespace(es_judicializado=False),
+        providencias=SimpleNamespace(all=lambda: []),
+    )
+
+    # Un POST que no corresponde a ningún modal de providencia.
+    assert (
+        module.LegalesService.form_modal_invalido(
+            SimpleNamespace(POST={"btnConvenio": "1"}), adm
+        )
+        is None
+    )
+
+    invalido = mocker.Mock(is_valid=mocker.Mock(return_value=False))
+    mocker.patch(
+        "admisiones.services.legales_service.ProvidenciaGDEPVForm",
+        return_value=invalido,
+    )
+    resultado = module.LegalesService.form_modal_invalido(
+        SimpleNamespace(POST={"btnGDEPVSegunda": "1"}), adm
+    )
+    assert resultado == ("gde_pv_segunda_form", "modalGDEPVSegunda", invalido)
+
+    valido = mocker.Mock(is_valid=mocker.Mock(return_value=True))
+    mocker.patch(
+        "admisiones.services.legales_service.ProvidenciaGDEPVForm",
+        return_value=valido,
+    )
+    assert (
+        module.LegalesService.form_modal_invalido(
+            SimpleNamespace(POST={"btnGDEPVSegunda": "1"}), adm
+        )
+        is None
+    )
+
+
 def test_get_legales_context_and_helpers(mocker):
     """Construye contexto legal, cubre helper de informe y generación de documentos."""
     adm = SimpleNamespace(

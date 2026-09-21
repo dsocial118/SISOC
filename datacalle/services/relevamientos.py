@@ -8,11 +8,12 @@ backoffice (``users.territorial_scope``).
 from django.contrib.auth.models import User
 from django.db.models import Count
 
-from core.models import Provincia
+from core.models import Municipio, Provincia
 from datacalle.models import Relevamiento
 from dispositivos.models import Dispositivo
 from users.territorial_scope import (
     get_full_province_scope_ids,
+    get_geography_scope_map,
     is_territorial_user,
 )
 
@@ -69,13 +70,23 @@ def get_dispositivos_para_usuario(user):
     return queryset.filter(provincia_id__in=provincia_ids)
 
 
-def get_entrevistadores_para_usuario(user):
-    """Entrevistadores de DataCalle con los que el usuario puede armar equipo.
+def get_dispositivos_para_provincia(user, provincia_id):
+    """Dispositivos de una provincia concreta, dentro del alcance del usuario.
 
-    Se filtra por el alcance del actor, no por la provincia elegida en el
-    formulario: para un coordinador es exactamente el padrón de su provincia,
-    así que no hace falta una cascada. Que el equipo corresponda a la provincia
-    del operativo lo valida ``RelevamientoForm.clean``.
+    QA-0010: el selector tiene que mostrar sólo los de la provincia elegida en
+    la planificación, no todo el alcance del actor (que para un administrador
+    nacional es el país entero).
+    """
+    if not provincia_id:
+        return Dispositivo.objects.none()
+    return get_dispositivos_para_usuario(user).filter(provincia_id=provincia_id)
+
+
+def get_entrevistadores_para_usuario(user):
+    """Entrevistadores de DataCalle dentro del alcance del actor.
+
+    Es el universo máximo; el selector del formulario se acota además a la
+    provincia elegida con ``get_entrevistadores_para_provincia``.
     """
     queryset = (
         User.objects.filter(is_active=True, profile__es_relevador_calle=True)
@@ -91,6 +102,38 @@ def get_entrevistadores_para_usuario(user):
     return queryset.filter(
         profile__relevador_calle_provincias__provincia_id__in=provincia_ids
     )
+
+
+def get_entrevistadores_para_provincia(user, provincia_id):
+    """Entrevistadores de una provincia concreta, dentro del alcance del actor.
+
+    QA-0013: el equipo se arma sólo con relevadores de la provincia elegida.
+    """
+    if not provincia_id:
+        return User.objects.none()
+    return get_entrevistadores_para_usuario(user).filter(
+        profile__relevador_calle_provincias__provincia_id=provincia_id
+    )
+
+
+def get_municipios_para_usuario(user, provincia_id):
+    """Municipios de la provincia, respetando el alcance del coordinador.
+
+    QA-0008: si el alcance territorial baja a municipio, el selector no puede
+    ofrecer toda la provincia.
+    """
+    if not provincia_id:
+        return Municipio.objects.none()
+    queryset = Municipio.objects.filter(provincia_id=provincia_id).order_by("nombre")
+    mapa = get_geography_scope_map(user)
+    if mapa is None:
+        return queryset
+    municipios = mapa.get(int(provincia_id), False)
+    if municipios is False:
+        return Municipio.objects.none()
+    if municipios is None:
+        return queryset
+    return queryset.filter(pk__in=municipios)
 
 
 def save_relevamiento_from_form(form, *, user=None):

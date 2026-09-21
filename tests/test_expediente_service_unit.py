@@ -223,6 +223,11 @@ def test_confirmar_envio_paths(mocker):
         "celiaquia.services.expediente_service.LegajoService.all_legajos_loaded",
         return_value=True,
     )
+    mocker.patch.object(
+        module.ValidacionEdadService,
+        "menores_sin_responsable",
+        return_value=[],
+    )
     set_estado = mocker.patch("celiaquia.services.expediente_service._set_estado")
     out = module.ExpedienteService.confirmar_envio(exp, usuario="u")
     assert out == {"validos": 2, "errores": 0}

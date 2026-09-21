@@ -17,6 +17,10 @@
                 <h5 class="mb-0">Editar datos de rendición</h5>
             </div>
             <div class="card-body">
+                <p class="text-muted small">
+                    Los datos vienen precargados. Lo que dejes igual conserva su valor;
+                    no hace falta completar de nuevo los campos que no cambian.
+                </p>
                 <form method="post">
                     {% csrf_token %}
                     {{ form.non_field_errors }}

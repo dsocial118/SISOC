@@ -120,7 +120,7 @@ Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrollador
 - `scripts/ai/codex_task.ps1 <slug>`: crea branch `codex/<slug>`, worktree en `../worktrees/<slug>` y bootstrap.
 - `scripts/ai/codex_run.ps1 up`: bootstrap + levantar entorno.
 - `scripts/ai/codex_run.ps1 validate`: corre `black`, `djlint`, smoke tests y `makemigrations --check`.
-- `scripts/operacion/deploy_refresh.sh`: refresh operativo de deploy; acepta un SHA esperado para bloquear una revisión obsoleta antes del downtime.
+- `scripts/operacion/deploy_refresh.sh`: refresh operativo de deploy; acepta un SHA esperado, hace fast-forward antes de validar los Compose y bloquea una revisión obsoleta antes del downtime. Así un checkout anterior puede incorporar un Compose nuevo de forma segura.
 
 ## Estructura general del proyecto
 
@@ -314,7 +314,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 | `dispositivos/` | dominio de dispositivos | `models.py`, `views.py`, tests | Bajo |
 | `importarexpediente/` | flujo de importacion de expedientes | `views.py`, `models.py`, urls, tests | Medio |
 | `ocr/` | OCR y procesamiento asociado | `models.py`, `views.py`, urls, tests | Medio |
-| `ver_para_ser_libre/` | modulo de negocio independiente dentro del monolito | `models.py`, `views.py`, `services/workflow.py` | Medio |
+| `ver_para_ser_libre/` | modulo de negocio independiente dentro del monolito; el alta de itinerarios permite elegir cualquier provincia con `create_itinerarios_any_province_vpsl` si el perfil tiene una provincia asignada, y el permiso permite ver solo los itinerarios propios fuera de ella; `services/sedes.py` equipara ambos nombres de CABA al filtrar sedes; alta y edicion de sedes comparten formulario con cinco obligatorios, localidad select2 por provincia y checklist pendiente; `SedeVPSL.mapa_query` alimenta la jornada desde direccion guardada o coordenadas historicas y el iframe no comunica cambios de pin | `models.py`, `forms.py`, `views.py`, `urls.py`, `migrations/0014_sedevpsl_optional_school_data.py`, `templates/ver_para_ser_libre/itinerario_form.html`, `templates/ver_para_ser_libre/sede_form.html`, `tests/test_workflow.py`, `services/workflow.py`, `services/sedes.py` | Medio |
 | `pas/` | núcleo del Programa de Acompañamiento Social, circuito DDJJ —padrón, tokens, formulario público, PDF e importación CSV—, Informes PAS versionados, circuito mensual de cruces SINTyS/RENAPER, Panel de Control y Formación pendiente; el padrón lateral de Formación pagina por scroll mediante `/pas/formacion/personas` | `models.py`, `api.py`, `views.py`, `services/ddjj_service.py`, `services/titulares_import_service.py`, `services/informe_service.py`, `services/cruces_service.py`, `services/supervivencia_service.py`, `services/persona_service.py`, `services/formacion_service.py`, `templates/pas/`, `static/custom/js/pas_formacion.js`, `management/commands/`, `urls.py`, `migrations/` | Alto |
 | `audittrail/` | auditoria interna | `models.py`, `views.py`, `services/query_service` | Alto |
 | `historial/` | historial de dominio | `models.py`, `services/` | Bajo |
@@ -574,13 +574,19 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 ### Si necesitas cambiar rendiciones mensuales u Organizaciones
 
 - estados, etapas, subsanaciones y alcance por proyecto: `rendicioncuentasmensual/services.py`
-- solicitudes de documentos faltantes y categorías documentales: `rendicioncuentasmensual/models.py`; el contrato PWA se serializa en `comedores/api_serializers.py`
+- regla única de datos generales (convenio, número secuencial, período): `RendicionCuentaMensualService.validar_datos_generales`; la usan el formulario web, el alta y la edición de la PWA. No duplicarla
+- el número de rendición es secuencial por proyecto + convenio y se serializa con `select_for_update()`: cualquier camino de escritura nuevo tiene que correr dentro de `transaction.atomic` o el bloqueo no protege nada
+- la ventana del período depende de la línea programática: 3 meses en `secos`, 1 mes en el resto (`periodo_fin_maximo`)
+- solicitudes de documentos faltantes y categorías documentales: `rendicioncuentasmensual/models.py`; el catálogo depende de la línea (`CATEGORIAS_CONFIG["lineas"]`) y web y API lo resuelven con `RendicionCuentaMensualService.obtener_categorias_visibles`; el contrato PWA se serializa en `comedores/api_serializers.py`
+- confirmación de lectura de documentos: campos `visualizacion_*` en `DocumentacionAdjunta` y vista `RendicionDocumentoVerView`; los documentos se sirven por Django, no por la URL de media
+- etiquetas visibles ≠ valores persistidos: la etapa `revision_auditoria` se muestra como «Revisión para Carga». No cambiar valores internos para acomodar un label
 - asociación actual: `RendicionCuentaMensual.proyecto`; conservar fallback por `comedor.codigo_de_proyecto` para datos legados
 - listado y detalle del legajo: `organizaciones/views.py` y templates `organizacion_*`
 - proyectos editables: `OrganizacionForm.codigos_proyecto` mantiene el contrato CSV mediante un campo oculto
-- tests: `tests/test_rendicioncuentasmensual_services_unit.py` y `organizaciones/tests.py`
+- tests: `tests/test_rendicioncuentasmensual_services_unit.py`, `tests/test_rendicioncuentasmensual_domain_rules.py`, `tests/test_rendicioncuentasmensual_visualizacion.py`, `tests/test_rendicioncuentasmensual_acta_auditoria.py` y `organizaciones/tests.py`
 - escenarios QA de permisos por etapa: `python manage.py seed_rendicion_stage_examples --comedor-id <id>` (solicita la contraseña de forma interactiva)
 - documentación canónica: `docs/flujos/rendiciones_mensuales_proyectos.md`
+- contratos que consume la PWA (estados internos, health-check, edición de datos generales): `docs/implementaciones/pwa_backend.md`
 
 ### Si necesitas cambiar altas de ciudadanos en nómina
 
@@ -647,6 +653,20 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
   `GESTIONAR_INTEGRATION_ENABLED` corta todo el tráfico AppSheet/GESTIONAR; no
   usarlo como interruptor parcial.
 - RENAPER: `core/integrations/renaper.py`, `core/services/renaper.py`, docs `docs/flujos/consulta_renaper.md`
+- Validación RENAPER de nómina CDI (#2508, Fase 1): payload en
+  `ciudadanos/services_renaper_validacion.py`, indicador compartido del PDF en
+  `centrodeinfancia/services_renaper_estado.py` y comando
+  `validar_renaper_nominas_cdi --dry-run --batch-size 500 --limit 100`.
+  Incluso dry-run consulta RENAPER real: requiere ventana autorizada. El comando
+  confirma por lote de `--batch-size`, así que una falla conserva los lotes
+  anteriores y reejecutarlo retoma donde quedó.
+  Contrato y límites: `docs/implementaciones/centrodeinfancia_nomina_renaper.md`.
+- Reporte XLSX de CDI (#2508, Fase 2): `centrodeinfancia/services_reportes.py` y
+  `views_reportes.py`, en `/centrodeinfancia/reportes/`. Las columnas replican el
+  archivo validado en el issue y el alcance sale de `aplicar_scope_centros_cdi`:
+  no agregar columnas en el medio ni saltear ese scope. La descarga usa el
+  permiso propio `auth.role_reportes_cdi`, no el global `role_exportar_a_csv`.
+  Contrato: `docs/implementaciones/centrodeinfancia_reportes.md`.
 - Ticketera: `ticketera/`, `docs/integraciones/ticketera_api.md`
 
 ### Si necesitas cambiar preinscriptos CDF o vouchers VAT
@@ -670,6 +690,17 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
   `test_api_vat_centros_cue_`.
 - Request manual: `postman/SISOC APIs.postman_collection.json`, carpeta VAT /
   Centros e institución.
+
+### Si necesitas cambiar el Buscador por Ciudadano de INET
+
+- Entrada y flujo POST: `VAT/views/buscador_ciudadano.py`, `VAT/urls.py` y
+  `VAT/templates/vat/buscador/ciudadano.html`.
+- Scope, trayectoria y exportaciones: `VAT/services/buscador_ciudadano_service.py`
+  sobre el queryset compartido `VAT/services/vat_inscripciones_base.py`.
+- La búsqueda global requiere `ciudadanos.view_ciudadano`; un usuario solo VAT
+  no debe poder inferir ciudadanos ni inscripciones fuera de su alcance.
+- Tests de seguridad, duplicación, exports y queries:
+  `VAT/test_buscador_ciudadano.py`.
 
 ### Si necesitas cambiar CI o reglas de calidad
 

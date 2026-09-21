@@ -254,6 +254,9 @@ compose_for_environment() {
   esac
 
   COMPOSE_FILES+=("docker-compose.celery.yml")
+}
+
+configure_compose_command() {
   COMPOSE_CMD=(docker compose)
   for file in "${COMPOSE_FILES[@]}"; do
     require_file "$ROOT_DIR/$file"
@@ -332,10 +335,6 @@ main() {
 
   validate_expected_revision
 
-  run "${COMPOSE_CMD[@]}" --project-directory "$ROOT_DIR" config -q
-
-  run "${COMPOSE_CMD[@]}" --project-directory "$ROOT_DIR" "${DOWN_ARGS[@]}"
-
   if [[ "$SKIP_PULL" -eq 0 ]]; then
     run git -C "$ROOT_DIR" merge --ff-only "origin/$CURRENT_BRANCH"
   fi
@@ -346,6 +345,14 @@ main() {
     [[ "$deployed_revision" == "$EXPECTED_REVISION" ]] \
       || fail "La revision desplegada $deployed_revision no coincide con $EXPECTED_REVISION."
   fi
+
+  # Los archivos Compose pueden ser introducidos por la revision a desplegar.
+  # Validarlos despues del fast-forward evita bloquear un checkout anterior.
+  configure_compose_command
+
+  run "${COMPOSE_CMD[@]}" --project-directory "$ROOT_DIR" config -q
+
+  run "${COMPOSE_CMD[@]}" --project-directory "$ROOT_DIR" "${DOWN_ARGS[@]}"
 
   run "${COMPOSE_CMD[@]}" --project-directory "$ROOT_DIR" up -d --build
 
