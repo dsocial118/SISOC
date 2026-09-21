@@ -18,6 +18,15 @@ class CiudadanoAdmin(admin.ModelAdmin):
     list_filter = ("activo", "tipo_documento", "sexo")
     readonly_fields = ("creado", "modificado")
 
+    def get_readonly_fields(self, request, obj=None):
+        readonly = super().get_readonly_fields(request, obj)
+        if obj is None:
+            return readonly
+        # Ciudadano.save() rechaza un cambio de tipo_documento con
+        # ValidationError, y save_model() no la traduce a error de formulario:
+        # sin esto el admin devuelve un 500 en lugar de un campo no editable.
+        return tuple(readonly) + ("tipo_documento",)
+
 
 @admin.register(GrupoFamiliar)
 class GrupoFamiliarAdmin(admin.ModelAdmin):

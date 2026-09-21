@@ -1,4 +1,7 @@
+import logging
+
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.db.models import Q
@@ -8,6 +11,8 @@ from django.core.validators import MaxValueValidator as MaxValidator
 
 from core.models import Localidad, Municipio, Nacionalidad, Programa, Provincia, Sexo
 from core.soft_delete import SoftDeleteModelMixin
+
+logger = logging.getLogger("django")
 
 User = get_user_model()
 
@@ -134,6 +139,11 @@ class Ciudadano(SoftDeleteModelMixin, models.Model):
     documento = models.PositiveBigIntegerField(
         validators=[MinValueValidator(1)], null=True
     )
+    # Número de pasaporte (alfanumérico). Solo se usa cuando tipo_documento es
+    # DOCUMENTO_PASAPORTE, porque `documento` es numérico y lo usan como int
+    # decenas de módulos fuera de VAT/ciudadanos.
+    documento_pasaporte = models.CharField(max_length=15, null=True, blank=True)
+    pais_emisor = models.CharField(max_length=100, null=True, blank=True)
     sexo = models.ForeignKey(Sexo, on_delete=models.SET_NULL, null=True, blank=True)
     nacionalidad = models.ForeignKey(
         Nacionalidad, on_delete=models.SET_NULL, null=True, blank=True
@@ -287,6 +297,13 @@ class Ciudadano(SoftDeleteModelMixin, models.Model):
             models.Index(fields=["apellido", "nombre"]),
             models.Index(fields=["documento"]),
             models.Index(fields=["deleted_at", "id"], name="ciud_delid_idx"),
+            # Cubre la búsqueda por pasaporte de buscar_ciudadanos(), que
+            # filtra por tipo + prefijo alfanumérico sobre el manager por
+            # defecto (deleted_at IS NULL). Sin este índice es un full scan.
+            models.Index(
+                fields=["deleted_at", "tipo_documento", "documento_pasaporte"],
+                name="ciud_delpas_idx",
+            ),
             models.Index(
                 fields=["deleted_at", "provincia", "id"],
                 name="ciud_delprov_id_idx",
@@ -306,9 +323,27 @@ class Ciudadano(SoftDeleteModelMixin, models.Model):
     def __str__(self) -> str:
         return f"{self.apellido}, {self.nombre}".strip(", ")
 
+    @classmethod
+    def from_db(cls, db, field_names, values):
+        # Guarda el tipo de documento persistido para que save() detecte
+        # intentos de modificarlo sin pagar una query extra por guardado.
+        instance = super().from_db(db, field_names, values)
+        if "tipo_documento" in field_names:
+            # pylint: disable=protected-access
+            instance._tipo_documento_cargado = instance.tipo_documento
+        return instance
+
     @property
     def nombre_completo(self) -> str:
         return f"{self.nombre} {self.apellido}".strip()
+
+    @property
+    def numero_documento(self):
+        """Número vigente según el tipo. Los pasaportes cargados antes de
+        documento_pasaporte guardaron su número en `documento`."""
+        if self.tipo_documento == self.DOCUMENTO_PASAPORTE:
+            return self.documento_pasaporte or self.documento
+        return self.documento
 
     def _set_identity_field(self, field_name, value):
         if getattr(self, field_name) == value:
@@ -317,12 +352,12 @@ class Ciudadano(SoftDeleteModelMixin, models.Model):
         return {field_name}
 
     def build_documento_unico_key(self):
-        if (
-            self.tipo_registro_identidad == self.TIPO_REGISTRO_ESTANDAR
-            and self.documento
-        ):
-            return f"{self.tipo_documento}_{self.documento}"
-        return None
+        if self.tipo_registro_identidad != self.TIPO_REGISTRO_ESTANDAR:
+            return None
+        numero = self.numero_documento
+        if not numero:
+            return None
+        return f"{self.tipo_documento}_{numero}"
 
     def _debe_requerir_revision_manual(self, tipo, update_fields=None):
         if tipo == self.TIPO_REGISTRO_ESTANDAR:
@@ -394,11 +429,34 @@ class Ciudadano(SoftDeleteModelMixin, models.Model):
         return changed_fields
 
     def save(self, *args, **kwargs):
+        tipo_documento_cargado = getattr(self, "_tipo_documento_cargado", None)
+        if (
+            tipo_documento_cargado is not None
+            and tipo_documento_cargado != self.tipo_documento
+        ):
+            logger.warning(
+                "Intento de modificar tipo_documento en Ciudadano %s: %s -> %s",
+                self.pk,
+                tipo_documento_cargado,
+                self.tipo_documento,
+            )
+            raise ValidationError(
+                "El tipo de documento no se puede modificar una vez creado el legajo."
+            )
         update_fields = kwargs.get("update_fields")
         changed_fields = self.normalizar_identidad(update_fields=update_fields)
         if update_fields is not None and changed_fields:
             kwargs["update_fields"] = set(update_fields) | changed_fields
-        return super().save(*args, **kwargs)
+        super().save(*args, **kwargs)
+        # Fija el valor persistido también tras un save() exitoso, no solo al
+        # cargar desde DB: sin esto, una misma instancia en memoria (creada y
+        # guardada, o recargada y guardada) podía mutar tipo_documento y
+        # guardar de nuevo sin que el guard lo detectara.
+        # Si el campo viene diferido por un .only()/defer(), leerlo aquí
+        # dispararía una query extra por guardado: en ese caso no hay valor
+        # cacheado que fijar y el guard queda inactivo, que es el lado seguro.
+        if "tipo_documento" not in self.get_deferred_fields():
+            self._tipo_documento_cargado = self.tipo_documento
 
     @staticmethod
     def documento_prefix_filter(cleaned, field_name="documento"):

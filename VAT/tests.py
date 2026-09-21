@@ -8122,9 +8122,6 @@ def test_centro_cursos_panel_renderiza_selector_de_planes_en_modal_nuevo_curso(
     client.force_login(user)
     response = client.get(reverse("vat_centro_cursos_panel", kwargs={"pk": centro.pk}))
     content = response.content.decode("utf-8")
-    soup = BeautifulSoup(content, "html.parser")
-    selector_sector = soup.select_one("#planCurricularSelectorSector")
-
     assert response.status_code == 200
     assert 'data-panel-rendered="1"' in content
     assert "Planes Curriculares" not in content
@@ -8135,8 +8132,11 @@ def test_centro_cursos_panel_renderiza_selector_de_planes_en_modal_nuevo_curso(
     assert 'id="modalPlanCurricularSelector"' in content
     assert 'id="openPlanCurricularSelector"' in content
     assert 'id="planCurricularSelectorSearch"' in content
-    assert 'id="planCurricularSelectorSector"' in content
+    # REQ #2457: Modalidad, Sector y Subsector no se muestran en el legajo.
+    assert 'id="planCurricularSelectorSector"' not in content
     assert 'id="planCurricularSelectorModalidad"' not in content
+    assert ">Modalidad<" not in content
+    assert ">Sector<" not in content
     assert 'id="tablaPlanCurricularSelector"' in content
     assert "Plan Curricular" in content
     assert (
@@ -8144,16 +8144,12 @@ def test_centro_cursos_panel_renderiza_selector_de_planes_en_modal_nuevo_curso(
         in content
     )
     assert "Seleccionar plan curricular" in content
-    assert "Buscar por plan, sector o normativa" in content
+    assert "Buscar por plan o normativa" in content
     assert "Guardar y crear comisión" not in content
     assert 'data-post-create-action="open-comision"' not in content
     assert f'value="{plan.id}"' in content
     assert f'value="{plan_inactivo.id}"' not in content
     assert f'value="{plan_otra_provincia.id}"' not in content
-    assert selector_sector is not None
-    assert "select2" in selector_sector.get("class", [])
-    assert selector_sector.get("data-width") == "100%"
-    assert selector_sector.get("data-dropdown-parent") == "#modalPlanCurricularSelector"
 
 
 @pytest.mark.django_db
