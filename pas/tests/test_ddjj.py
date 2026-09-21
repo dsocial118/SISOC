@@ -1,15 +1,18 @@
+from importlib import import_module
 from pathlib import Path
 
 import pytest
+from django.apps import apps as django_apps
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.test import override_settings
 from django.urls import reverse
+from django.utils import timezone
 from pypdf import PdfReader
 
 from core.models import Municipio, Provincia
-from pas.forms import PasDeclaracionJuradaForm
+from pas.forms import PasDeclaracionJuradaForm, separar_domicilio
 from pas.models import PasDeclaracionJurada, PasEstado, PasPersona
 from pas.services.ddjj_service import crear_invitacion, presentar_ddjj
 
@@ -311,6 +314,80 @@ def test_formulario_separa_domicilio_historico_sin_campos_nuevos(client, persona
     assert b'value="742"' in respuesta.content
 
 
+@pytest.mark.parametrize(
+    ("domicilio", "esperado"),
+    [
+        ("Avenida Siempre Viva 742", ("Avenida Siempre Viva", "742")),
+        ("Calle 7 123B", ("Calle 7", "123B")),
+        ("Ruta 9 km 32 s/n", ("Ruta 9 km 32 s/n", "")),
+        ("Barrio Los Pinos", ("Barrio Los Pinos", "")),
+        ("", ("", "")),
+        (None, ("", "")),
+    ],
+)
+def test_domicilio_sin_numeracion_queda_entero_en_la_calle(domicilio, esperado):
+    assert separar_domicilio(domicilio) == esperado
+
+
+@pytest.mark.django_db
+def test_domicilio_sin_numero_se_declara_con_sn(persona_ddjj):
+    """Un domicilio rural sin altura tiene que poder declararse igual."""
+
+    form = PasDeclaracionJuradaForm(
+        datos_formulario(
+            persona_ddjj.provincia,
+            persona_ddjj.municipio,
+            calle="Ruta 9 km 32",
+            altura="S/N",
+        ),
+        persona=persona_ddjj,
+    )
+
+    assert form.is_valid(), form.errors
+    assert form.cleaned_data["domicilio"] == "Ruta 9 km 32 S/N"
+
+
+@pytest.mark.django_db
+def test_migracion_0008_borra_la_firma_y_conserva_el_resto(persona_ddjj):
+    """El borrado es irreversible: tiene que alcanzar solo a la firma."""
+
+    migracion = import_module("pas.migrations.0008_remove_ddjj_firma_respuestas")
+    invitacion = crear_invitacion(persona_ddjj)
+    declaracion = PasDeclaracionJurada.objects.create(
+        persona=persona_ddjj,
+        invitacion=invitacion,
+        version=1,
+        provincia=persona_ddjj.provincia,
+        municipio=persona_ddjj.municipio,
+        domicilio="Calle 123",
+        correo_electronico="persona@example.test",
+        telefono_celular="1100000000",
+        datos_mi_argentina_confirmados=False,
+        embarazada=False,
+        hijos_menores_a_cargo=False,
+        gastos_bajo_limite_smvm=True,
+        no_accedio_mercado_cambios=True,
+        acepto_declaracion=True,
+        respuestas={
+            "domicilio": {"etiqueta": "Domicilio", "respuesta": "Calle 123"},
+            "firma_nombre_completo": {
+                "etiqueta": "Firma con nombre completo",
+                "respuesta": "Persona Ejemplo",
+            },
+        },
+        texto_legal="Texto legal",
+        archivo_pdf="ddjj.pdf",
+        finalizada=timezone.now(),
+    )
+
+    migracion.quitar_firma_de_respuestas(django_apps, None)
+
+    declaracion.refresh_from_db()
+    assert "firma_nombre_completo" not in declaracion.respuestas
+    assert declaracion.respuestas["domicilio"]["respuesta"] == "Calle 123"
+    assert declaracion.finalizada is not None
+
+
 @pytest.mark.django_db
 def test_endpoint_publico_filtra_municipios_por_provincia(client, persona_ddjj):
     otra_provincia = Provincia.objects.create(nombre="Otra provincia")
@@ -371,7 +448,21 @@ def test_formulario_versiona_javascript_del_resumen(client, persona_ddjj):
 
     assert respuesta.status_code == 200
     assert b"pas_ddjj.js?v=20260917" in respuesta.content
-    assert b"pas_ddjj.css?v=20260911b" in respuesta.content
+    assert b"pas_ddjj.css?v=20260921" in respuesta.content
+
+
+def test_opciones_si_no_tienen_indicador_sin_soporte_de_has():
+    """El radio oculto deja a :has() como único indicador de selección."""
+
+    css = (Path(settings.BASE_DIR) / "static/custom/css/pas_ddjj.css").read_text(
+        encoding="utf-8"
+    )
+    fallback = css.split("@supports not (selector(:has(*))) {", 1)[1]
+
+    assert "position: static" in fallback
+    assert "clip-path: none" in fallback
+    assert "accent-color" in fallback
+    assert "input:focus-visible" in fallback
 
 
 def test_mobile_fija_banners_y_desplaza_solo_el_contenido():

@@ -126,6 +126,43 @@ def test_cruces_no_reporta_persona_ya_baja_fallecida(
 
 
 @pytest.mark.django_db
+@pytest.mark.parametrize(
+    ("estado_nombre", "codigo_aviso"),
+    [
+        ("Baja", 39),  # dada de baja, pero por renuncia: no es el caso cerrado
+        ("Activo", 40),  # aviso de fallecido sin la baja aplicada todavía
+    ],
+)
+def test_cruces_solo_excluye_la_baja_por_fallecimiento(
+    client,
+    usuario_pas,
+    persona_pas,
+    estado_nombre,
+    codigo_aviso,
+):
+    """El exclude combina estado y aviso: solo esa pareja sale del reporte."""
+
+    estado, _ = PasEstado.objects.get_or_create(nombre=estado_nombre)
+    aviso = PasAviso.objects.create(codigo=codigo_aviso, descripcion="AVISO")
+    aviso.estados.add(estado)
+    persona_pas.estado = estado
+    persona_pas.save(update_fields=["estado"])
+    persona_pas.avisos.set([aviso])
+    PasIncompatibilidad.objects.create(
+        persona=persona_pas,
+        categoria=PasIncompatibilidad.Categoria.SUPERVIVENCIA,
+        periodo_impacto=date(2026, 8, 1),
+        detalle="Debe seguir apareciendo.",
+    )
+    client.force_login(usuario_pas)
+
+    response = client.get(reverse("pas_cruces"))
+
+    assert response.status_code == 200
+    assert "Debe seguir apareciendo." in response.content.decode()
+
+
+@pytest.mark.django_db
 def test_actualizacion_manual_renaper_fuerza_control_y_redirige(
     client,
     usuario_pas,

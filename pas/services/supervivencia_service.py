@@ -82,14 +82,18 @@ def _guardar_resultado(persona, fecha_consulta, resultado, sexo):
             estado=PasIncompatibilidad.Estado.PENDIENTE,
         ).exists()
         if not ya_es_baja_fallecida and not ya_fue_detectada:
-            incompatibilidad = PasIncompatibilidad.objects.create(
+            # get_or_create sobre la tupla de la UniqueConstraint: una detección
+            # retroactiva sobre un período ya gestionado no puede romper el lote.
+            incompatibilidad, _ = PasIncompatibilidad.objects.get_or_create(
                 persona=persona,
                 categoria=PasIncompatibilidad.Categoria.SUPERVIVENCIA,
                 periodo_impacto=primer_dia_mes_siguiente(fecha_consulta),
-                detalle=(
-                    "RENAPER informó que la persona se encuentra fallecida. "
-                    "Impacta en el período siguiente."
-                ),
+                defaults={
+                    "detalle": (
+                        "RENAPER informó que la persona se encuentra fallecida. "
+                        "Impacta en el período siguiente."
+                    )
+                },
             )
     return control, incompatibilidad
 
@@ -109,6 +113,17 @@ def aplicar_bajas_fallecimiento_pendientes(periodo):
         .order_by("pk")
     )
     if not pendientes:
+        logger.info(
+            "pas.renaper.bajas_aplicadas",
+            extra={
+                "data": {
+                    "periodo": periodo.isoformat(),
+                    "pendientes": 0,
+                    "actualizadas": 0,
+                    "ya_aplicadas": 0,
+                }
+            },
+        )
         return {"actualizadas": 0, "ya_aplicadas": 0}
 
     estado_baja = PasEstado.objects.get(nombre__iexact=NOMBRE_ESTADO_BAJA)
@@ -146,7 +161,21 @@ def aplicar_bajas_fallecimiento_pendientes(periodo):
         incompatibilidad.estado = PasIncompatibilidad.Estado.GESTIONADA
         incompatibilidad.save(update_fields=["estado"])
 
-    return {"actualizadas": actualizadas, "ya_aplicadas": ya_aplicadas}
+    resultado = {"actualizadas": actualizadas, "ya_aplicadas": ya_aplicadas}
+    # La baja es automática e irreversible sin intervención manual: el volumen
+    # de cada ciclo tiene que quedar registrado para poder auditarlo después.
+    logger.info(
+        "pas.renaper.bajas_aplicadas",
+        extra={
+            "data": {
+                "periodo": periodo.isoformat(),
+                "pendientes": len(pendientes),
+                "personas": len(personas_procesadas),
+                **resultado,
+            }
+        },
+    )
+    return resultado
 
 
 def sincronizar_supervivencia_pas(*, fecha_consulta=None, forzar=False, limite=None):

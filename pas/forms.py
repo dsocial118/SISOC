@@ -8,6 +8,22 @@ from core.models import Municipio, Provincia
 from pas.models import PasAviso, PasEstado, PasPersona
 
 
+def separar_domicilio(domicilio):
+    """Parte un domicilio de texto libre en calle y altura.
+
+    Solo separa cuando el último token es una altura reconocible; los
+    domicilios sin numeración quedan enteros en la calle.
+    """
+
+    domicilio = (domicilio or "").strip()
+    if not domicilio:
+        return "", ""
+    partes = domicilio.rsplit(maxsplit=1)
+    if len(partes) == 2 and re.fullmatch(r"\d+[A-Za-z]?", partes[1]):
+        return partes[0], partes[1]
+    return domicilio, ""
+
+
 class PasTitularesImportForm(forms.Form):
     archivo = forms.FileField(
         label="Archivo CSV",
@@ -54,6 +70,7 @@ class PasPersonaBaseForm(forms.ModelForm):
             "nombres",
             "dni",
             "cuit",
+            "genero",
             "provincia",
             "municipio",
             "domicilio",
@@ -66,6 +83,7 @@ class PasPersonaBaseForm(forms.ModelForm):
             "nombres": forms.TextInput(attrs={"class": "form-control"}),
             "dni": forms.NumberInput(attrs={"class": "form-control"}),
             "cuit": forms.TextInput(attrs={"class": "form-control"}),
+            "genero": forms.Select(attrs={"class": "form-select"}),
             "provincia": forms.Select(attrs={"class": "form-select pas-select2"}),
             "municipio": forms.Select(attrs={"class": "form-select pas-select2"}),
             "domicilio": forms.TextInput(attrs={"class": "form-control"}),
@@ -78,6 +96,7 @@ class PasPersonaBaseForm(forms.ModelForm):
             "nombres": "Nombres",
             "dni": "DNI",
             "cuit": "CUIT",
+            "genero": "Género (RENAPER)",
             "provincia": "Provincia",
             "municipio": "Municipio",
             "domicilio": "Calle, número, piso y departamento",
@@ -120,6 +139,16 @@ class PasPersonaBaseForm(forms.ModelForm):
                 "El municipio seleccionado no pertenece a la provincia elegida.",
             )
         return cleaned_data
+
+    def _post_clean(self):
+        super()._post_clean()
+        # El backoffice edita el domicilio como texto libre, pero la DDJJ lee
+        # calle/altura y les da prioridad: sin esto quedarían mostrando la
+        # dirección anterior.
+        if "domicilio" in self.changed_data or not self.instance.pk:
+            self.instance.calle, self.instance.altura = separar_domicilio(
+                self.instance.domicilio
+            )
 
 
 class PasPersonaCreateForm(PasPersonaBaseForm):
@@ -198,7 +227,7 @@ class PasDeclaracionJuradaForm(forms.Form):
         max_length=10,
         required=False,
         widget=forms.TextInput(
-            attrs={"class": "form-control", "placeholder": "Número"}
+            attrs={"class": "form-control", "placeholder": "Número o S/N"}
         ),
     )
     provincia = forms.ModelChoiceField(
@@ -293,21 +322,14 @@ class PasDeclaracionJuradaForm(forms.Form):
             {
                 "calle": calle,
                 "altura": altura,
-                "provincia": bool(persona.provincia_id),
-                "municipio": bool(persona.municipio_id),
+                "provincia": persona.provincia,
+                "municipio": persona.municipio,
                 "correo_electronico": persona.correo_electronico,
                 "telefono_celular": persona.telefono_celular,
             }
             if persona
             else {}
         )
-        if persona:
-            self.valores_datos_existentes.update(
-                {
-                    "provincia": persona.provincia,
-                    "municipio": persona.municipio,
-                }
-            )
         self.campos_datos_existentes = {
             campo: bool(valor) for campo, valor in self.valores_datos_existentes.items()
         }
@@ -333,13 +355,9 @@ class PasDeclaracionJuradaForm(forms.Form):
             return "", ""
         calle = (persona.calle or "").strip()
         altura = (persona.altura or "").strip()
-        domicilio = (persona.domicilio or "").strip()
-        if calle or altura or not domicilio:
+        if calle or altura:
             return calle, altura
-        partes = domicilio.rsplit(maxsplit=1)
-        if len(partes) == 2 and re.fullmatch(r"\d+[A-Za-z]?", partes[1]):
-            return partes[0], partes[1]
-        return domicilio, ""
+        return separar_domicilio(persona.domicilio)
 
     def clean(self):
         data = super().clean()

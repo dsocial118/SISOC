@@ -1,5 +1,6 @@
 """Pruebas de regresión de la programación mensual y el avance persistente."""
 
+import logging
 from contextlib import contextmanager
 from datetime import datetime, date
 from threading import Barrier, Lock
@@ -132,6 +133,39 @@ def test_inicio_ciclo_aplica_baja_fallecida_pendiente(personas_supervivencia):
     assert historial.estado_nuevo == baja
     assert list(historial.avisos_nuevos.all()) == [fallecido]
     assert PasHistorialEstado.objects.filter(persona=persona).count() == 1
+
+
+@pytest.mark.django_db
+@override_settings(PAS_BATCH_SIZE=2000)
+def test_inicio_ciclo_registra_el_volumen_de_bajas_aplicadas(
+    personas_supervivencia, caplog
+):
+    """La baja es automática: sin log no hay forma de auditar qué se tocó."""
+
+    persona = personas_supervivencia[0]
+    baja = PasEstado.objects.create(nombre="Baja")
+    fallecido = PasAviso.objects.create(codigo=40, descripcion="FALLECIDO")
+    fallecido.estados.add(baja)
+    PasIncompatibilidad.objects.create(
+        persona=persona,
+        categoria=PasIncompatibilidad.Categoria.SUPERVIVENCIA,
+        periodo_impacto=date(2026, 9, 1),
+        detalle="Impacta en el período siguiente.",
+    )
+    run = jobs.request_run(cutoff=date(2026, 9, 30))
+
+    with caplog.at_level(logging.INFO, logger="django"):
+        jobs._prepare(run)
+
+    registro = next(
+        record
+        for record in caplog.records
+        if record.getMessage() == "pas.renaper.bajas_aplicadas"
+    )
+    assert registro.data["periodo"] == "2026-09-01"
+    assert registro.data["personas"] == 1
+    assert registro.data["actualizadas"] == 1
+    assert registro.data["ya_aplicadas"] == 0
 
 
 def test_cliente_autentica_una_vez_para_varias_personas():

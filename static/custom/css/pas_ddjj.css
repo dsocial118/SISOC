@@ -142,6 +142,27 @@
     outline-offset: 2px;
 }
 
+/* El radio oculto deja a :has() como único indicador de selección y de foco.
+   Sin soporte (Chrome <105, Firefox <121, WebViews Android viejas) el titular
+   no vería qué opción eligió, así que ahí se restituye el control nativo. */
+@supports not (selector(:has(*))) {
+    .pas-ddjj-options label { gap: 10px; justify-content: center; }
+    .pas-ddjj-options input {
+        position: static;
+        width: 16px;
+        height: 16px;
+        margin: 0;
+        overflow: visible;
+        clip: auto;
+        clip-path: none;
+        accent-color: var(--pas-blue);
+    }
+    .pas-ddjj-options input:focus-visible {
+        outline: 2px solid var(--pas-yellow);
+        outline-offset: 2px;
+    }
+}
+
 .pas-ddjj-notice {
     min-height: 75px;
     display: flex;
