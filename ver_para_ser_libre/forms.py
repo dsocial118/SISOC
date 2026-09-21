@@ -3,7 +3,7 @@ from pathlib import Path
 
 from django import forms
 
-from core.models import Provincia
+from core.models import Localidad, Provincia
 from ver_para_ser_libre.models import (
     CasoLaboratorioVPSL,
     ChecklistJornadaVPSL,
@@ -17,6 +17,10 @@ from ver_para_ser_libre.models import (
     RegistroNominalVPSL,
     ResultadoAtencion,
     SedeVPSL,
+)
+from ver_para_ser_libre.services.sedes import (
+    CABA_JURISDICCIONES,
+    filtrar_sedes_por_provincia,
 )
 from ver_para_ser_libre.services import workflow
 
@@ -103,6 +107,16 @@ class ItinerarioVPSLForm(BootstrapModelForm):
             selected_ids = list(self.instance.sedes.values_list("pk", flat=True))
         raw_ids = self.data.getlist("sedes") if self.is_bound else selected_ids
         self.fields["sedes"].queryset = SedeVPSL.objects.filter(pk__in=raw_ids)
+        if self.is_bound and not self.instance.pk:
+            provincia = self.provincia_bloqueada
+            if not provincia:
+                provincia_id = self.data.get("provincia")
+                if provincia_id and str(provincia_id).isdigit():
+                    provincia = Provincia.objects.filter(pk=provincia_id).first()
+            if provincia:
+                self.fields["sedes"].queryset = filtrar_sedes_por_provincia(
+                    self.fields["sedes"].queryset, provincia
+                )
         self.fields["carta_archivo"].required = not bool(
             self.instance and self.instance.carta_archivo
         )
@@ -111,8 +125,8 @@ class ItinerarioVPSLForm(BootstrapModelForm):
         self.fields["referente_apellido"].label = "Apellido del referente"
         self.fields["referente_telefono"].label = "Teléfono"
         self.fields["referente_email"].label = "Correo electrónico"
-        self._set_localidad_choices()
         if self.provincia_bloqueada:
+            self._set_localidad_choices()
             self.fields["provincia"].initial = self.provincia_bloqueada.pk
             self.fields["provincia"].disabled = True
             css_class = self.fields["provincia"].widget.attrs.get("class", "")
@@ -122,6 +136,15 @@ class ItinerarioVPSLForm(BootstrapModelForm):
             self.fields["provincia"].help_text = (
                 "Provincia asignada al usuario provincial."
             )
+        elif not self.instance.pk:
+            self._set_localidad_choices()
+            self.fields["provincia"].queryset = Provincia.objects.order_by("nombre")
+            self.fields["provincia"].empty_label = "Seleccione una provincia"
+            self.fields["provincia"].widget.attrs[
+                "class"
+            ] = "form-control select2-provincia-vpsl"
+        else:
+            self._set_localidad_choices()
         if self.freeze_completed_fields:
             self._freeze_completed_fields()
         if self.subsanacion_only:
@@ -139,7 +162,9 @@ class ItinerarioVPSLForm(BootstrapModelForm):
                 provincia = None
         sedes = SedeVPSL.objects.all()
         if provincia:
-            sedes = sedes.filter(jurisdiccion__icontains=provincia.nombre)
+            sedes = filtrar_sedes_por_provincia(sedes, provincia)
+        elif not self.instance.pk:
+            sedes = sedes.none()
         localidades = (
             sedes.exclude(localidad="")
             .order_by("localidad")
@@ -331,7 +356,7 @@ class ChecklistSedeVPSLForm(forms.Form):
         ),
     )
 
-    def __init__(self, *args, sede=None, **kwargs):
+    def __init__(self, *args, sede=None, required=True, **kwargs):
         super().__init__(*args, **kwargs)
         self.sede = sede
         existing = {
@@ -344,10 +369,11 @@ class ChecklistSedeVPSLForm(forms.Form):
             checklist = existing.get(item_code)
             prefix = item_code
             self.fields[f"{prefix}_cumple"] = forms.TypedChoiceField(
-                label=f"{label} *",
+                label=f"{label}{' *' if required else ''}",
                 choices=(("", "Seleccionar"), ("true", "Si"), ("false", "No")),
                 coerce=lambda value: value == "true",
-                required=True,
+                empty_value=None,
+                required=required,
                 widget=forms.Select(attrs={"class": "form-control"}),
                 initial=(
                     None
@@ -492,9 +518,97 @@ class SedeVPSLForm(BootstrapModelForm):
             "codigo_postal",
             "telefono",
             "mail",
-            "latitud",
-            "longitud",
         ]
+
+    def clean_cueanexo(self):
+        return self.cleaned_data["cueanexo"] or None
+
+
+class SedeCreateVPSLForm(SedeVPSLForm):
+    LEGACY_PROVINCE_NAMES = {
+        CABA_JURISDICCIONES[1]: CABA_JURISDICCIONES[0],
+        "Tierra del Fuego": "Tierra del Fuego, Antártida e Islas del Atlántico Sur",
+    }
+    provincia = forms.ModelChoiceField(
+        label="Provincia",
+        queryset=Provincia.objects.order_by("nombre"),
+        empty_label="Seleccioná una provincia",
+    )
+    localidad = forms.ChoiceField(
+        label="Localidad",
+        choices=(("", "Seleccioná una localidad"),),
+        widget=forms.Select(attrs={"class": "select2-localidad-vpsl"}),
+    )
+    mail = forms.EmailField(
+        label="Correo electrónico",
+        required=False,
+        max_length=254,
+        widget=forms.EmailInput(attrs={"size": 40}),
+    )
+
+    class Meta(SedeVPSLForm.Meta):
+        fields = [
+            field for field in SedeVPSLForm.Meta.fields if field != "jurisdiccion"
+        ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        provincia_actual = None
+        if self.instance.pk:
+            nombre_provincia = self.LEGACY_PROVINCE_NAMES.get(
+                self.instance.jurisdiccion, self.instance.jurisdiccion
+            )
+            provincia_actual = Provincia.objects.filter(
+                nombre__iexact=nombre_provincia
+            ).first()
+            if provincia_actual:
+                self.fields["provincia"].initial = provincia_actual.pk
+                self.fields["localidad"].initial = self.instance.localidad
+        provincia_id = (
+            self.data.get("provincia")
+            if self.is_bound
+            else (provincia_actual.pk if provincia_actual else None)
+        )
+        if provincia_id and str(provincia_id).isdigit():
+            localidades = list(
+                Localidad.objects.filter(municipio__provincia_id=provincia_id)
+                .order_by("nombre")
+                .values_list("nombre", flat=True)
+                .distinct()
+            )
+            if (
+                self.instance.pk
+                and provincia_actual
+                and str(provincia_id) == str(provincia_actual.pk)
+                and self.instance.localidad
+                and self.instance.localidad not in localidades
+            ):
+                localidades.append(self.instance.localidad)
+            self.fields["localidad"].choices = [
+                ("", "Seleccioná una localidad"),
+                *((nombre, nombre) for nombre in localidades),
+            ]
+        self.fields["domicilio"].label = "Domicilio"
+        self.fields["domicilio"].widget.attrs["placeholder"] = "Calle y altura"
+        self.fields["telefono"].required = True
+        self.fields["telefono"].label = "Teléfono"
+
+    def save(self, commit=True):
+        if self.instance.pk and set(self.changed_data).intersection(
+            {"domicilio", "localidad", "provincia", "departamento", "codigo_postal"}
+        ):
+            self.instance.latitud = None
+            self.instance.longitud = None
+        self.instance.jurisdiccion = self.cleaned_data["provincia"].nombre
+        return super().save(commit=commit)
+
+
+class SedeUpdateVPSLForm(SedeCreateVPSLForm):
+    mail = forms.CharField(
+        label="Correo electrónico",
+        required=False,
+        widget=forms.TextInput(attrs={"size": 40}),
+    )
 
 
 class CasoLaboratorioVPSLForm(BootstrapModelForm):

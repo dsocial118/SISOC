@@ -1,6 +1,7 @@
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, JsonResponse
 from django.urls import reverse, reverse_lazy
 from django.views.generic import (
     CreateView,
@@ -14,6 +15,8 @@ from datacalle.forms import RelevamientoForm
 from datacalle.models import Encuesta, Relevamiento
 from datacalle.services import (
     apply_relevamientos_scope,
+    get_dispositivos_para_provincia,
+    get_entrevistadores_para_provincia,
     delete_relevamiento,
     get_encuestas_para_listado,
     get_encuestas_queryset,
@@ -159,3 +162,43 @@ class EncuestaDetailView(LoginRequiredMixin, DetailView):
         ]
         context["respuestas"] = respuestas_legibles(self.object)
         return context
+
+
+def _provincia_pedida(request):
+    try:
+        return int(request.GET.get("provincia_id") or 0) or None
+    except (TypeError, ValueError):
+        return None
+
+
+@login_required
+def cargar_dispositivos(request):
+    """Dispositivos de una provincia, acotados al alcance del actor (QA-0010)."""
+    dispositivos = get_dispositivos_para_provincia(
+        request.user, _provincia_pedida(request)
+    )
+    return JsonResponse(
+        [
+            {"id": dispositivo.id, "nombre": dispositivo.nombre_institucion}
+            for dispositivo in dispositivos
+        ],
+        safe=False,
+    )
+
+
+@login_required
+def cargar_relevadores(request):
+    """Entrevistadores de una provincia para armar el equipo (QA-0013)."""
+    relevadores = get_entrevistadores_para_provincia(
+        request.user, _provincia_pedida(request)
+    )
+    return JsonResponse(
+        [
+            {
+                "id": relevador.id,
+                "nombre": RelevamientoForm.etiqueta_entrevistador(relevador),
+            }
+            for relevador in relevadores
+        ],
+        safe=False,
+    )

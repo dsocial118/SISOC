@@ -1,0 +1,32 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Arquitectura de SISOC</title>
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link rel="stylesheet"
+              href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" />
+        {% if grafo_disponible %}
+            <link rel="stylesheet" href="{% static 'arquitectura/mapa.css' %}" />
+        {% endif %}
+    </head>
+    <body>
+        {% if grafo_disponible %}
+            <div id="mapa"
+                 data-grafo="{% url 'mapa_arquitectura_datos' %}"
+                 data-volver="{% url 'changelog' %}"></div>
+            <script src="{% static 'arquitectura/mapa.js' %}" defer></script>
+        {% else %}
+            <div class="container py-5">
+                <h1 class="h4">El mapa de arquitectura todavía no fue generado</h1>
+                <p class="text-muted">
+                    Se arma leyendo el repositorio y se regenera en cada arranque del contenedor.
+                    Para generarlo a mano: <code>python manage.py generar_mapa_arquitectura</code>.
+                </p>
+                <a href="{% url 'changelog' %}">Volver a Novedades</a>
+            </div>
+        {% endif %}
+    </body>
+</html>

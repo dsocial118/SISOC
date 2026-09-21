@@ -264,6 +264,17 @@ def run_server():
     environment = os.getenv("ENVIRONMENT", "dev").lower()
     deploy_gunicorn = environment in DEPLOY_GUNICORN_ENVIRONMENTS
 
+    try:
+        run_command(
+            ["python", "manage.py", "generar_mapa_arquitectura"],
+            stage="mapa_arquitectura",
+        )
+    except (OSError, subprocess.SubprocessError) as exc:
+        logger.warning(
+            "[mapa_arquitectura] No se pudo generar el mapa; continúa el arranque: %s",
+            exc,
+        )
+
     if deploy_gunicorn:
         cache_busting()
         logger.info("[server] Iniciando Django en modo produccion con Gunicorn...")

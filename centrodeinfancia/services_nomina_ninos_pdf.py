@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import logging
 import os
-import unicodedata
 from calendar import monthrange
 from collections import defaultdict
 from dataclasses import dataclass
@@ -30,8 +29,12 @@ from reportlab.platypus import (
     TableStyle,
 )
 
-from ciudadanos.models import Ciudadano
 from centrodeinfancia.models import AccesoCDI, NominaCentroInfancia
+from centrodeinfancia.services_renaper_estado import (
+    build_adult_validation_map,
+    estado_renaper_nomina,
+)
+from core.services.text_encoding import normalize_text as _normalize
 from core.services.text_encoding import repair_utf8_mojibake
 
 
@@ -111,13 +114,6 @@ def _date_text(value):
     return value.strftime("%d/%m/%Y")
 
 
-def _normalize(value):
-    normalized = unicodedata.normalize("NFKD", str(value or ""))
-    return " ".join(
-        "".join(char for char in normalized if not unicodedata.combining(char)).split()
-    ).casefold()
-
-
 def _calculate_age(birth_date, unit, as_of):
     if not birth_date or unit not in {"meses", "anios"}:
         return None
@@ -150,24 +146,6 @@ def _get_profile_cuil(user):
         return _text(user.profile.cuil)
     except (AttributeError, ObjectDoesNotExist):
         return "-"
-
-
-def _build_adult_validation_map(documentos):
-    matches = defaultdict(list)
-    if not documentos:
-        return {}
-    for documento, estado in Ciudadano.objects.filter(
-        documento__in=documentos
-    ).values_list("documento", "estado_validacion_renaper"):
-        matches[str(documento)].append(estado)
-    return {
-        documento: (
-            "Sí"
-            if len(estados) == 1 and estados[0] == Ciudadano.RENAPER_VALIDADO
-            else "No"
-        )
-        for documento, estados in matches.items()
-    }
 
 
 def _build_referent_cuil_map(centros):
@@ -289,11 +267,15 @@ def build_export_data(  # pylint: disable=too-many-locals
         )
 
     adult_documents = {
-        str(registro.responsable_legal_1_dni)
+        str(documento)
         for registro in registros
-        if registro.responsable_legal_1_dni
+        for documento in (
+            registro.responsable_legal_1_dni,
+            registro.responsable_legal_2_dni,
+        )
+        if documento
     }
-    adult_validation = _build_adult_validation_map(adult_documents)
+    adult_validation = build_adult_validation_map(adult_documents)
     centros = {registro.centro_id: registro.centro for registro in registros}
     referent_cuils = _build_referent_cuil_map(centros.values())
     rows_by_center = defaultdict(list)
@@ -304,6 +286,7 @@ def build_export_data(  # pylint: disable=too-many-locals
         measure_rank = {"meses": 0, "anios": 1}.get(registro.edad_unidad, 2)
         age_rank = age if age is not None else 10**9
         dni_text = _text(dni)
+        renaper = estado_renaper_nomina(registro, adult_validation=adult_validation)
         row = NinoRow(
             centro_id=registro.centro_id,
             apellido=_text(apellido),
@@ -313,22 +296,14 @@ def build_export_data(  # pylint: disable=too-many-locals
             edad=_text(age),
             medida=_text(medida),
             sexo=_text(sexo),
-            renaper_nino=(
-                "Sí"
-                if registro.ciudadano.estado_validacion_renaper
-                == Ciudadano.RENAPER_VALIDADO
-                else "No"
-            ),
+            renaper_nino=renaper["renaper_nino"],
             adulto_apellido=_text(registro.responsable_legal_1_apellido),
             adulto_nombre=_text(registro.responsable_legal_1_nombre),
             adulto_cuit=_text(registro.responsable_legal_1_cuit),
             adulto_fecha_nacimiento=_date_text(
                 registro.responsable_legal_1_fecha_nacimiento
             ),
-            adulto_renaper=adult_validation.get(
-                str(registro.responsable_legal_1_dni),
-                "No",
-            ),
+            adulto_renaper=renaper["renaper_responsable_1"],
             sort_key=(
                 measure_rank,
                 age_rank,

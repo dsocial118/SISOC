@@ -1,10 +1,16 @@
 {% extends "includes/main.html" %}
 {% load static %}
 
-{% block title %}Sede VPSL{% endblock %}
+{% block title %}
+    {% if form.instance.pk %}
+        Editar sede VPSL
+    {% else %}
+        Nueva sede VPSL
+    {% endif %}
+{% endblock %}
 {% block head %}
     <link rel="stylesheet"
-          href="{% static 'custom/css/ver_para_ser_libre.css' %}?v=sede-form-ux-20260624" />
+          href="{% static 'custom/css/ver_para_ser_libre.css' %}?v=sede-form-20260915" />
 {% endblock %}
 {% block breadcrumb %}
     {% include "components/breadcrumb.html" with items=breadcrumb_items %}
@@ -16,8 +22,20 @@
             <div class="card vpsl-title-card vpsl-header">
                 <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-2">
                     <div>
-                        <h2 class="vpsl-title">Sede VPSL</h2>
-                        <p class="vpsl-subtitle mb-0">Datos escolares, ubicacion y checklist operativo</p>
+                        <h2 class="vpsl-title">
+                            {% if form.instance.pk %}
+                                Editar sede VPSL
+                            {% else %}
+                                Nueva sede VPSL
+                            {% endif %}
+                        </h2>
+                        <p class="vpsl-subtitle mb-0">
+                            {% if form.instance.pk %}
+                                Actualizá los datos de la sede y verificá su ubicación.
+                            {% else %}
+                                Cargá los datos esenciales, verificá la ubicación y agregá el resto cuando esté disponible.
+                            {% endif %}
+                        </p>
                     </div>
                     <a href="{% url 'vpsl_sede_list' %}" class="btn btn-secondary">
                         <i class="bi bi-arrow-left"></i> Volver
@@ -36,19 +54,20 @@
                                         <i class="bi bi-building"></i>
                                     </div>
                                     <div>
-                                        <h3 class="vpsl-section-title">Datos de la sede</h3>
+                                        <h3 class="vpsl-section-title">Campos obligatorios</h3>
                                     </div>
                                 </div>
                                 <div class="vpsl-section-body">
                                     <div class="row g-3">
-                                        {% for field in form %}
-                                            {% if field.name != "latitud" and field.name != "longitud" %}
-                                                <div class="col-12 col-md-6 {% if field.name == 'mail' %}col-md-12{% endif %}">
-                                                    <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
-                                                    {{ field }}
-                                                    {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
-                                                </div>
-                                            {% endif %}
+                                        {% for field in required_fields %}
+                                            <div class="col-12 col-md-6">
+                                                <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }} *</label>
+                                                {{ field }}
+                                                {% if field.name == "localidad" %}
+                                                    <p id="vpsl-localidad-status" class="vpsl-field-note text-muted mb-0">Elegí primero una provincia.</p>
+                                                {% endif %}
+                                                {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                                            </div>
                                         {% endfor %}
                                     </div>
                                 </div>
@@ -59,27 +78,16 @@
                                         <i class="bi bi-geo-alt"></i>
                                     </div>
                                     <div>
-                                        <h3 class="vpsl-section-title">Ubicacion</h3>
+                                        <h3 class="vpsl-section-title">Ubicación en el mapa</h3>
                                     </div>
                                 </div>
                                 <div class="vpsl-section-body">
-                                    <div class="row g-3 mb-3">
-                                        {% for field in form %}
-                                            {% if field.name == "latitud" or field.name == "longitud" %}
-                                                <div class="col-12 col-md-6">
-                                                    <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
-                                                    {{ field }}
-                                                    {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
-                                                </div>
-                                            {% endif %}
-                                        {% endfor %}
-                                    </div>
                                     <div class="vpsl-sede-map-toolbar">
                                         <button type="button" id="vpsl-sede-map-search" class="btn btn-secondary">
                                             <i class="bi bi-search"></i> Buscar ubicación en mapa
                                         </button>
                                         <p id="vpsl-sede-map-status" class="vpsl-field-note text-muted mb-0">
-                                            La búsqueda usa nombre, domicilio, localidad, departamento, jurisdicción, código postal y coordenadas si están cargadas.
+                                            La búsqueda usa domicilio, localidad, provincia y los datos geográficos adicionales. Para reflejarla en las jornadas, guardá los datos de la sede; mover un pin dentro del mapa no cambia el registro.
                                         </p>
                                     </div>
                                     <iframe id="vpsl-sede-map"
@@ -87,20 +95,31 @@
                                             class="vpsl-sede-map"
                                             loading="lazy"
                                             allowfullscreen
-                                            src="https://www.google.com/maps?q={% if mapa_query %}{{ mapa_query }}{% else %}Argentina{% endif %}&output=embed">
+                                            src="https://www.google.com/maps?q={% if mapa_query %}{{ mapa_query }}{% else %}Argentina{% endif %}&amp;output=embed">
                                     </iframe>
                                 </div>
                             </section>
                             <section class="vpsl-section">
                                 <div class="vpsl-section-header">
                                     <div class="vpsl-section-icon">
-                                        <i class="bi bi-clipboard-check"></i>
+                                        <i class="bi bi-card-list"></i>
                                     </div>
                                     <div>
-                                        <h3 class="vpsl-section-title">Checklist</h3>
+                                        <h3 class="vpsl-section-title">Información adicional</h3>
                                     </div>
                                 </div>
                                 <div class="vpsl-section-body">
+                                    <p class="vpsl-field-note text-muted">Estos datos y el checklist pueden completarse más adelante.</p>
+                                    <div class="row g-3">
+                                        {% for field in additional_fields %}
+                                            <div class="col-12 col-md-6">
+                                                <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                                {{ field }}
+                                                {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                    <h4 class="h5 mt-4 mb-3">Checklist operativo</h4>
                                     {% include "ver_para_ser_libre/partials/form_errors.html" with form=checklist_form %}
                                     <div class="row g-3">
                                         {% for group in field_groups %}
@@ -129,7 +148,13 @@
                     </div>
                     <div class="card-footer d-flex gap-2 justify-content-end">
                         <a href="{% url 'vpsl_sede_list' %}" class="btn btn-secondary">Volver</a>
-                        <button type="submit" class="btn btn-primary">Guardar</button>
+                        <button type="submit" class="btn btn-primary">
+                            {% if form.instance.pk %}
+                                Guardar cambios
+                            {% else %}
+                                Guardar sede
+                            {% endif %}
+                        </button>
                     </div>
                 </form>
             </div>
@@ -144,65 +169,86 @@
         const searchButton = document.getElementById("vpsl-sede-map-search");
         const statusElement = document.getElementById("vpsl-sede-map-status");
         const fields = {
-          nombre: document.getElementById("id_nombre"),
           domicilio: document.getElementById("id_domicilio"),
           localidad: document.getElementById("id_localidad"),
+          provincia: document.getElementById("id_provincia"),
           departamento: document.getElementById("id_departamento"),
-          jurisdiccion: document.getElementById("id_jurisdiccion"),
           codigoPostal: document.getElementById("id_codigo_postal"),
-          latitud: document.getElementById("id_latitud"),
-          longitud: document.getElementById("id_longitud"),
         };
+        const localitySelect = $(fields.localidad);
+        const localityStatus = document.getElementById("vpsl-localidad-status");
+
+        fields.localidad.disabled = !fields.provincia.value;
+        localitySelect.select2({
+          width: "100%",
+          placeholder: "Seleccioná una localidad",
+          allowClear: true,
+        });
+        if (fields.provincia.value) localityStatus.textContent = "Buscá y elegí una localidad de la provincia.";
+
+        $(fields.provincia).on("change", async function () {
+          const provinciaId = fields.provincia.value;
+          localityStatus.classList.remove("text-danger");
+          fields.localidad.replaceChildren(new Option("Seleccioná una localidad", ""));
+          localitySelect.val(null).trigger("change");
+          localitySelect.prop("disabled", true).trigger("change.select2");
+          localityStatus.textContent = provinciaId ? "Cargando localidades..." : "Elegí primero una provincia.";
+          if (!provinciaId) return;
+          try {
+            const url = new URL("{% url 'ajax_load_localidades' %}", window.location.origin);
+            url.searchParams.set("provincia_id", provinciaId);
+            const response = await fetch(url);
+            if (!response.ok) throw new Error("No se pudieron cargar las localidades");
+            const localidades = await response.json();
+            if (fields.provincia.value !== provinciaId) return;
+            const nombres = [...new Set(localidades.map(item => item.nombre))].sort((a, b) => a.localeCompare(b, "es"));
+            nombres.forEach(nombre => fields.localidad.add(new Option(nombre, nombre)));
+            localitySelect.prop("disabled", nombres.length === 0).trigger("change.select2");
+            localityStatus.textContent = nombres.length
+              ? "Buscá y elegí una localidad de la provincia."
+              : "No hay localidades cargadas para esta provincia.";
+          } catch (error) {
+            if (fields.provincia.value === provinciaId) {
+              localityStatus.textContent = "No se pudieron cargar las localidades. Volvé a elegir la provincia para reintentar.";
+              localityStatus.classList.add("text-danger");
+            }
+          }
+        });
 
         function valueOf(field) {
           return field && field.value ? field.value.trim() : "";
         }
 
-        function coordinateQuery() {
-          const latitud = valueOf(fields.latitud).replace(",", ".");
-          const longitud = valueOf(fields.longitud).replace(",", ".");
-          if (!latitud || !longitud) return "";
-          const lat = Number(latitud);
-          const lng = Number(longitud);
-          if (!Number.isFinite(lat) || !Number.isFinite(lng)) return "";
-          return `${latitud},${longitud}`;
+        function provinceName() {
+          if (!valueOf(fields.provincia)) return "";
+          return fields.provincia.selectedOptions[0].textContent.trim();
         }
 
         function buildLocationQuery() {
-          const coordinates = coordinateQuery();
-          if (coordinates) return coordinates;
           return [
-            valueOf(fields.nombre),
             valueOf(fields.domicilio),
             valueOf(fields.localidad),
             valueOf(fields.departamento),
-            valueOf(fields.jurisdiccion),
+            provinceName(),
             valueOf(fields.codigoPostal),
             "Argentina",
           ].filter(Boolean).join(", ");
         }
 
         function updateMap() {
-          if (!mapFrame) return;
           const query = buildLocationQuery();
-          if (!query) {
-            if (statusElement) {
-              statusElement.textContent = "Completá al menos un dato de ubicación para buscar en el mapa.";
-              statusElement.classList.add("text-danger");
-            }
+          if (!valueOf(fields.domicilio) || !valueOf(fields.localidad) || !provinceName()) {
+            statusElement.textContent = "Completá domicilio, localidad y provincia para buscar en el mapa.";
+            statusElement.classList.add("text-danger");
             return;
           }
           mapFrame.src = `https://www.google.com/maps?q=${encodeURIComponent(query)}&output=embed`;
-          if (statusElement) {
-            statusElement.textContent = `Buscando en el mapa: ${query}`;
-            statusElement.classList.remove("text-danger");
-            statusElement.classList.add("text-muted");
-          }
+          statusElement.textContent = `Buscando en el mapa: ${query}`;
+          statusElement.classList.remove("text-danger");
+          statusElement.classList.add("text-muted");
         }
 
-        if (searchButton) {
-          searchButton.addEventListener("click", updateMap);
-        }
+        searchButton.addEventListener("click", updateMap);
       });
     </script>
 {% endblock %}

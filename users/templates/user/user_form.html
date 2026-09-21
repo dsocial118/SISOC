@@ -63,7 +63,17 @@
                         {% endif %}
                         {{ form.username | as_crispy_field }}
                         {{ form.email | as_crispy_field }}
-                        <div id="password-field-wrapper">{{ form.password | as_crispy_field }}</div>
+                        <div id="password-field-wrapper">
+                            {{ form.password | as_crispy_field }}
+                            <button type="button"
+                                    id="toggle-password"
+                                    class="btn btn-sm btn-link p-0 mb-2"
+                                    aria-pressed="false"
+                                    aria-label="Mostrar la contraseña">
+                                <i class="fas fa-eye" aria-hidden="true"></i>
+                                <span id="toggle-password-texto">Ver contraseña</span>
+                            </button>
+                        </div>
                         {% if form.can_manage_mobile_access %}
                             <div id="mobile-password-help"
                                  class="alert alert-info mt-2 mb-0"
@@ -430,6 +440,34 @@
     </div>
 {% endblock content %}
 {% block customJS %}
+    <script nonce="{{ request.csp_nonce }}">
+  (() => {
+    // QA-0017: poder ver la contraseña que se está escribiendo, para dictarla.
+    const boton = document.getElementById('toggle-password');
+    const campo = document.getElementById('id_password');
+    if (!boton || !campo) {
+      return;
+    }
+    const texto = document.getElementById('toggle-password-texto');
+    const icono = boton.querySelector('i');
+    boton.addEventListener('click', () => {
+      const visible = campo.type === 'text';
+      campo.type = visible ? 'password' : 'text';
+      boton.setAttribute('aria-pressed', String(!visible));
+      boton.setAttribute(
+        'aria-label',
+        visible ? 'Mostrar la contraseña' : 'Ocultar la contraseña'
+      );
+      if (texto) {
+        texto.textContent = visible ? 'Ver contraseña' : 'Ocultar contraseña';
+      }
+      if (icono) {
+        icono.classList.toggle('fa-eye', visible);
+        icono.classList.toggle('fa-eye-slash', !visible);
+      }
+    });
+  })();
+    </script>
     <script nonce="{{ request.csp_nonce }}">
   (() => {
     const repCheckbox = document.getElementById('id_es_representante_pwa');
