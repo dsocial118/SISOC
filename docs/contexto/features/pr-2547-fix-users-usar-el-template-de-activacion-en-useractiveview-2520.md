@@ -1,4 +1,4 @@
-# Contexto de feature PR #2547 - Fix
+# Contexto de feature PR #2547 - fix(users): usar el template de activación en UserActiveView (#2520)
 
 ## Resumen
 
@@ -9,7 +9,7 @@
 
 ## Contexto funcional
 
-- No informado explícitamente; inferir desde el título del PR y el diff.
+- Gestión de usuarios (alta/baja lógica desde /usuarios/).
 
 ## Arquitectura tocada
 
@@ -18,10 +18,10 @@
 
 ## Decisiones y supuestos detectados
 
-- Tipo de cambio declarado: No informado
-- Área principal declarada: No informada
-- Impacto usuario declarado: No informado
-- Riesgos / rollback: No informado
+- Tipo de cambio declarado: bugfix
+- Área principal declarada: users
+- Impacto usuario declarado: Admins con permiso auth.delete_user. Solo cambia el texto y el color del botón de la pantalla de confirmación; la acción y los permisos no cambian.
+- Riesgos / rollback: Riesgo bajo, sin cambios de datos, permisos ni contratos. Rollback = revertir el commit; confirm_class es retrocompatible por default.
 
 ## Design system y UI
 
