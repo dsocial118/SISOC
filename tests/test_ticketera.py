@@ -17,6 +17,7 @@ from rest_framework.test import APIClient
 
 from auditlog.models import LogEntry
 from audittrail.models import AuditEntryMeta
+from centrodeinfancia.models import AccesoCDI, CentroDeInfancia, Trabajador
 
 
 USUARIOS_URL = "/api/ticketera/usuarios/"
@@ -204,6 +205,93 @@ def test_verificar_credenciales_validas_devuelve_200(api_client):
         "first_name": "",
         "last_name": "",
     }
+    assert response.data["centros_cdi"] == []
+
+
+@pytest.mark.django_db
+def test_verificar_informa_centros_cdi_por_cada_vinculo(api_client):
+    user = _crear_usuario(username="vinculado", password="ClaveOk123!")
+    referente = CentroDeInfancia.objects.create(
+        nombre="CDI Referente", codigo_cdi="REF001"
+    )
+    trabajador = CentroDeInfancia.objects.create(
+        nombre="CDI Trabajador", codigo_cdi="TRA001"
+    )
+    ambos = CentroDeInfancia.objects.create(nombre="CDI Ambos", codigo_cdi="AMB001")
+    AccesoCDI.objects.create(user=user, centro=referente)
+    AccesoCDI.objects.create(user=user, centro=ambos)
+    Trabajador.objects.create(
+        centro=trabajador, usuario=user, nombre="Ana", apellido="Pérez"
+    )
+    Trabajador.objects.create(
+        centro=ambos, usuario=user, nombre="Ana", apellido="Pérez"
+    )
+
+    response = api_client.post(
+        VERIFICAR_URL,
+        {"username": "vinculado", "password": "ClaveOk123!"},
+        format="json",
+    )
+
+    assert response.status_code == status.HTTP_200_OK
+    assert response.data["centros_cdi"] == [
+        {
+            "id": referente.id,
+            "nombre": "CDI Referente",
+            "codigo_cdi": "REF001",
+            "vinculo": "referente",
+        },
+        {
+            "id": ambos.id,
+            "nombre": "CDI Ambos",
+            "codigo_cdi": "AMB001",
+            "vinculo": "referente",
+        },
+        {
+            "id": trabajador.id,
+            "nombre": "CDI Trabajador",
+            "codigo_cdi": "TRA001",
+            "vinculo": "trabajador",
+        },
+        {
+            "id": ambos.id,
+            "nombre": "CDI Ambos",
+            "codigo_cdi": "AMB001",
+            "vinculo": "trabajador",
+        },
+    ]
+
+
+@pytest.mark.django_db
+def test_verificar_omite_vinculos_cdi_inactivos_y_borrados(api_client):
+    user = _crear_usuario(username="sin.vigentes", password="ClaveOk123!")
+    acceso_baja = CentroDeInfancia.objects.create(
+        nombre="CDI Acceso baja", codigo_cdi="BAJ001"
+    )
+    trabajador_baja = CentroDeInfancia.objects.create(
+        nombre="CDI Trabajador baja", codigo_cdi="BAJ002"
+    )
+    centro_borrado = CentroDeInfancia.objects.create(
+        nombre="CDI Borrado", codigo_cdi="BAJ003"
+    )
+    AccesoCDI.objects.create(user=user, centro=acceso_baja, activo=False)
+    trabajador_eliminado = Trabajador.objects.create(
+        centro=trabajador_baja, usuario=user, nombre="Ana", apellido="Pérez"
+    )
+    AccesoCDI.objects.create(user=user, centro=centro_borrado)
+    trabajador_eliminado.delete()
+    # Conserva el AccesoCDI para verificar que el manager de CentroDeInfancia
+    # impide exponer el centro eliminado, aun cuando el vínculo siga vigente.
+    centro_borrado.delete(cascade=False)
+
+    response = api_client.post(
+        VERIFICAR_URL,
+        {"username": "sin.vigentes", "password": "ClaveOk123!"},
+        format="json",
+    )
+
+    assert response.status_code == status.HTTP_200_OK
+    assert response.data["centros_cdi"] == []
 
 
 @pytest.mark.django_db

@@ -222,7 +222,7 @@ def get_object_scoped_por_provincia_or_404(
     return get_object_or_404(scoped_queryset, *args, **kwargs)
 
 
-def _ids_centros_referente(user):
+def ids_centros_referente(user):
     """IDs de CDIs donde el usuario es referente (tiene AccesoCDI).
 
     Devuelve la lista de centros con acceso activo si el usuario es referente
@@ -247,7 +247,7 @@ def _ids_centros_referente(user):
     )
 
 
-def _ids_centros_trabajador(user):
+def ids_centros_trabajador(user):
     """IDs de CDIs donde el usuario está vinculado como trabajador."""
     if not user or not getattr(user, "is_authenticated", False):
         return None
@@ -264,6 +264,12 @@ def _ids_centros_trabajador(user):
             "centro_id", flat=True
         )
     )
+
+
+# Compatibilidad interna para los callers existentes del módulo. Los helpers
+# públicos permiten reutilizar las mismas reglas de vigencia en integraciones.
+_ids_centros_referente = ids_centros_referente
+_ids_centros_trabajador = ids_centros_trabajador
 
 
 def es_auditor_simepi(user):

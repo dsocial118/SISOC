@@ -114,7 +114,15 @@ Respuestas:
       "email": "...",
       "first_name": "...",
       "last_name": "..."
-    }
+    },
+    "centros_cdi": [
+      {
+        "id": 12,
+        "nombre": "CDI Los Pinos",
+        "codigo_cdi": "ABC123",
+        "vinculo": "referente"
+      }
+    ]
   }
   ```
 - `401 Unauthorized` — credenciales incorrectas o usuario inactivo:
@@ -127,6 +135,9 @@ Notas:
 
 - Si `must_change_password` es `true`, la Ticketera debería forzar al usuario a llamar `/auth/cambiar-password/` antes de habilitar el resto de la sesión.
 - No se distingue "usuario inexistente" de "contraseña incorrecta" (ambos son `401`).
+- `centros_cdi` siempre está presente. Es una lista vacía si el usuario no tiene vínculos CDI vigentes.
+- Cada entrada informa el CDI y el vínculo: `referente` para un `AccesoCDI` activo y `trabajador` para un trabajador no eliminado lógicamente. Un mismo CDI puede aparecer dos veces si reúne ambos vínculos.
+- Los CDI eliminados lógicamente no se informan.
 
 ---
 
