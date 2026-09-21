@@ -217,9 +217,7 @@ def test_verificar_informa_centros_cdi_por_cada_vinculo(api_client):
     trabajador = CentroDeInfancia.objects.create(
         nombre="CDI Trabajador", codigo_cdi="TRA001"
     )
-    ambos = CentroDeInfancia.objects.create(
-        nombre="CDI Ambos", codigo_cdi="AMB001"
-    )
+    ambos = CentroDeInfancia.objects.create(nombre="CDI Ambos", codigo_cdi="AMB001")
     AccesoCDI.objects.create(user=user, centro=referente)
     AccesoCDI.objects.create(user=user, centro=ambos)
     Trabajador.objects.create(

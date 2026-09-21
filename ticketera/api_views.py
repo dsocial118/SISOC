@@ -63,11 +63,7 @@ def _centros_cdi_payload(user):
     centros_por_id = CentroDeInfancia.objects.only(
         "id", "nombre", "codigo_cdi"
     ).in_bulk(
-        {
-            centro_id
-            for _, centro_ids in centros_por_vinculo
-            for centro_id in centro_ids
-        }
+        {centro_id for _, centro_ids in centros_por_vinculo for centro_id in centro_ids}
     )
 
     return [
