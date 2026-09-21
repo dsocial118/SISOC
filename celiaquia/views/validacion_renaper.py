@@ -244,6 +244,48 @@ def _formatear_fecha_renaper(fecha_renaper):
     return fecha_renaper
 
 
+# Datos del ejemplar del DNI. RENAPER los devuelve en el payload crudo, pero el
+# dict mapeado por core.services.renaper (18 campos fijos) no los conserva, así
+# que hasta ahora llegaban en cada consulta y se descartaban. Sirven como
+# referencia para saber a qué versión del documento corresponde el domicilio
+# informado, que es la duda que motiva el pedido.
+EJEMPLAR_PLACEHOLDERS = {"", "0", "-", "n/a", "na", "s/d", "sd", "null", "none"}
+
+
+def _valor_ejemplar(datos_api, clave):
+    valor = datos_api.get(clave)
+    if valor is None:
+        return None
+    texto = str(valor).strip()
+    if texto.lower() in EJEMPLAR_PLACEHOLDERS:
+        return None
+    return texto
+
+
+def _extraer_datos_ejemplar_dni(resultado_renaper):
+    """Extrae emisión, vencimiento y ejemplar del payload crudo de RENAPER.
+
+    Devuelve None si el servicio no informó ninguno de los tres: el bloque es
+    informativo y no debe ocupar lugar en la UI cuando no hay nada que mostrar.
+    """
+    datos_api = resultado_renaper.get("datos_api")
+    if not isinstance(datos_api, dict):
+        return None
+
+    emision = _valor_ejemplar(datos_api, "emision")
+    vencimiento = _valor_ejemplar(datos_api, "vencimiento")
+    ejemplar = _valor_ejemplar(datos_api, "ejemplar")
+
+    if not any((emision, vencimiento, ejemplar)):
+        return None
+
+    return {
+        "emision": _formatear_fecha_renaper(emision),
+        "vencimiento": _formatear_fecha_renaper(vencimiento),
+        "ejemplar": ejemplar.upper() if ejemplar else None,
+    }
+
+
 def _resolver_provincia_renaper(datos_renaper):
     provincia_valor = datos_renaper.get("provincia")
     if provincia_valor not in (None, ""):
@@ -628,6 +670,7 @@ class ValidacionRenaperView(View):
             datos_renaper_formateados = _formatear_datos_renaper(
                 datos_renaper, sexo_renaper, documento_consulta
             )
+            datos_ejemplar = _extraer_datos_ejemplar_dni(resultado_renaper)
 
             # La validación se guardará cuando el usuario elija "Datos correctos" o "Datos incorrectos"
 
@@ -639,6 +682,14 @@ class ValidacionRenaperView(View):
                         "stage": "result",
                         "campos_provincia": list(datos_provincia.keys()),
                         "campos_renaper": list(datos_renaper_formateados.keys()),
+                        # Permite medir en produccion con que frecuencia RENAPER
+                        # informa el ejemplar, sin registrar los valores.
+                        "ejemplar_disponible": bool(datos_ejemplar),
+                        "campos_ejemplar": sorted(
+                            clave
+                            for clave, valor in (datos_ejemplar or {}).items()
+                            if valor
+                        ),
                     }
                 },
             )
@@ -648,6 +699,7 @@ class ValidacionRenaperView(View):
                     "success": True,
                     "datos_provincia": datos_provincia,
                     "datos_renaper": datos_renaper_formateados,
+                    "datos_ejemplar": datos_ejemplar,
                     "ciudadano_nombre": f"{ciudadano.nombre} {ciudadano.apellido}",
                     "documento": documento_consulta,
                 }
