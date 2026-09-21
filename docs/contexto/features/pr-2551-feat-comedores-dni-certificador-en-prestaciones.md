@@ -37,7 +37,9 @@
 - `comedores/migrations/0060_prestacionalimentariaconformidad_dni_certificador.py`
 - `comedores/models.py`
 - `comedores/services/certificacion_prestaciones_service.py`
+- `docs/contexto/features/pr-2551-feat-comedores-dni-certificador-en-prestaciones.md`
 - `docs/registro/cambios/2026-09-21-dni-certificador-prestaciones.md`
+- `docs/registro/prs/PR-2551.md`
 - `tests/test_certificacion_prestaciones_service_unit.py`
 - `tests/test_pwa_comedores_api.py`
 - Documentación sugerida para ampliar contexto:
