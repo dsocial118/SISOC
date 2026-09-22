@@ -9,20 +9,17 @@ Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrollador
   users/0051 une las hojas de configuracion mobile y DataCalle sin operaciones.
   Evidencia/conflictos: docs/registro/cambios/2026-09-08-sincronizacion-datacalle-main.md.
 
-- PWA privadas: `scripts/operacion/pwas.json` declara Espacios Comunitarios,
-  DataCalle y Gestionar. `deploy_pwas.py` prepara snapshots/imagenes antes del
-  downtime y activa despues del health del backend. Las apps nuevas estan
-  habilitadas en el registro: requieren Compose en main, .env privado en la raiz
-  y la API de HML disponible antes de promover. `PWA_API_BASE_URL` fija la URL
-  HTTPS del entorno para Expo; Espacios conserva /api y /mobile/ y agrega
-  /pwa/espacioscomunitarios/ con un segundo build en la misma imagen. Instalar
-  primero esa imagen y luego el include; no redirigir /mobile/. Contrato y orden:
-  `docs/operacion/deploy_pwas.md`. `render_pwa_nginx.py` genera un include de servidor
-  y una vista previa que no debe instalarse. No mover `/sisoc/SISOC-Mobile` ni
-  asumir acceso publico de Git. Estado privado de releases: `SISOC/.deploy/pwa/`.
-  El helper de backend corre con umask 022 en un subshell; el estado PWA conserva
-  077. Verificar tambien estabilidad de workers tras desplegar: el healthcheck
-  HTTP no detecta errores de lectura de codigo en otros UID de contenedores.
+- PWA privadas: Espacios Comunitarios, DataCalle y Gestionar despliegan desde sus
+  propios repositorios y ramas `main`, `homologacion` y `development`. SISOC ya
+  no las activa como parte de su deploy. `scripts/operacion/pwas.json` y
+  `deploy_pwas.py` quedan como herramientas operativas compatibles, no como el
+  disparador automatico. `render_pwa_nginx.py` genera el include compartido;
+  `scripts/infra/install_qa_pwa_nginx.sh` lo instala transaccionalmente en el
+  vhost HTTP de QA con backup y rollback. Contrato, aliases y riesgos:
+  `docs/operacion/deploy_pwas.md`. No mover `/sisoc/SISOC-Mobile` ni asumir
+  acceso publico de Git. Verificar tambien estabilidad de workers tras desplegar:
+  el healthcheck HTTP no detecta errores de lectura de codigo en otros UID de
+  contenedores.
 
 - `Hecho observado`: confirmado leyendo codigo, config, workflows o docs del repo.
 - `Inferencia`: deduccion razonable por nombres, estructura o convenciones, pero no validada en profundidad.

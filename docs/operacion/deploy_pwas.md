@@ -2,10 +2,11 @@
 
 ## Alcance y estado
 
-SISOC coordina `main` de las PWA habilitadas al desplegar `homologacion` en HML
-o `main` en PRD. Se mantienen el gate de production, sus revisores y la
-serializacion actual. QA no incorpora satelites. Un push a una PWA no dispara
-por si solo un despliegue.
+Desde la automatizacion de septiembre de 2026, cada PWA se despliega desde su
+propio repositorio: `main` a produccion, `homologacion` a HML y `development` a
+QA. SISOC ya no construye ni activa PWA durante su despliegue. La promocion es
+descendente y ocurre solo tras un deploy exitoso: produccion promueve a
+`homologacion` y HML promueve a `development`.
 
 Esta entrega implementa la coordinacion y genera configuraciones Nginx; no
 aprovisiona credenciales, fusiona ramas ni modifica servidores automaticamente.
@@ -25,9 +26,9 @@ La aceptacion funcional, de instalacion y offline queda al equipo de testers.
 
 | ID | Repositorio privado | Checkout hermano de SISOC | Proyecto / puerto | Estado |
 | --- | --- | --- | --- | --- |
-| espacios | dsocial118/Espacios-Comunitarios | SISOC-Mobile | sisoc-mobile / 8080 | habilitada en /mobile/ y /pwa/espacioscomunitarios/ |
-| datacalle | dsocial118/DataCalle | DataCalle | sisoc-pwa-datacalle / 8081 | habilitada, base /pwa/datacalle/ |
-| gestionar | dsocial118/Gestionar | Gestionar | sisoc-pwa-gestionar / 8082 | habilitada, base /pwa/gestionar/ |
+| espacios | secretarianaf/Espacios-Comunitarios | SISOC-Mobile | sisoc-mobile / 8080 | habilitada en /mobile/ y /pwa/espacioscomunitarios/ |
+| datacalle | secretarianaf/DataCalle | DataCalle | sisoc-pwa-datacalle / 8081 | habilitada, base /pwa/datacalle/ |
+| gestionar | secretarianaf/Gestionar | Gestionar | sisoc-pwa-gestionar / 8082 | habilitada, base /pwa/gestionar/ |
 
 Fuente de configuracion: `scripts/operacion/pwas.json`. No renombrar las carpetas
 historicas ni los proyectos Compose al cambiar un nombre en GitHub.
@@ -148,7 +149,7 @@ clave publica; repetir en PRD con su propia clave):
 
 ```bash
 GIT_SSH_COMMAND='ssh -i ~/.ssh/sisoc-pwa-espacios -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes' \
-  git ls-remote git@github.com:dsocial118/Espacios-Comunitarios.git refs/heads/main
+  git ls-remote git@github.com:secretarianaf/Espacios-Comunitarios.git refs/heads/main
 ```
 
 Usar el path absoluto a la clave si el shell/SSH no expande `~` en ese contexto.
@@ -237,7 +238,7 @@ con el backend vigente. No hacer publico el repositorio como mecanismo de rollba
 
 ## Nginx por entorno
 
-En los dos hosts inspeccionados, el vhost esta en
+En HML y PRD, el vhost esta en
 `/etc/nginx/sites-available/sisoc`. HML usa `hml-sisoc.secretarianaf.gob.ar` y PRD
 `sisoc.secretarianaf.gob.ar`. No reemplazar los vhosts reales por una plantilla:
 conservar TLS, cabeceras, limites y rutas Django/static/media.
@@ -254,6 +255,19 @@ unico `include /etc/nginx/snippets/sisoc-pwas.conf;`. Copiar el candidato a esa
 ruta solo despues de revisar el diff, respaldar el include/vhost anterior y
 comprobar upstreams. Ejecutar `nginx -t` y recargar Nginx. Repetir por entorno,
 primero HML y luego PRD. El generador no instala nada ni ejecuta sudo/reloads.
+
+QA usa HTTP en `10.80.9.15`, solo accesible por VPN, sin dominio ni TLS. Reutiliza
+el mismo snippet y, por lo tanto, los mismos endpoints y aliases. El instalador
+versionado conserva el vhost existente, crea un backup root-only, agrega el
+include antes del `location /`, valida y revierte si falla:
+
+```bash
+sudo bash scripts/infra/install_qa_pwa_nginx.sh
+sudo bash scripts/infra/install_qa_pwa_nginx.sh --apply --yes
+```
+
+El primer comando es un preflight de solo lectura. El segundo modifica Nginx y
+solo debe ejecutarse cuando los tres upstreams QA esten listos para publicarse.
 
 `docs/operacion/nginx/sisoc-pwas.conf` es el candidato activo de esta entrega:
 `/mobile/`, `/pwa/espacioscomunitarios/`, `/pwa/datacalle/` y `/pwa/gestionar/`, con aliases `/mobile2/` y

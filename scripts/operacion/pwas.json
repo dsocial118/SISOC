@@ -3,7 +3,7 @@
     {
       "id": "espacios",
       "enabled": true,
-      "repository": "dsocial118/Espacios-Comunitarios",
+      "repository": "secretarianaf/Espacios-Comunitarios",
       "checkout": "SISOC-Mobile",
       "project": "sisoc-mobile",
       "port": 8080,
@@ -15,7 +15,7 @@
     {
       "id": "datacalle",
       "enabled": true,
-      "repository": "dsocial118/DataCalle",
+      "repository": "secretarianaf/DataCalle",
       "checkout": "DataCalle",
       "project": "sisoc-pwa-datacalle",
       "port": 8081,
@@ -27,7 +27,7 @@
     {
       "id": "gestionar",
       "enabled": true,
-      "repository": "dsocial118/Gestionar",
+      "repository": "secretarianaf/Gestionar",
       "checkout": "Gestionar",
       "project": "sisoc-pwa-gestionar",
       "port": 8082,

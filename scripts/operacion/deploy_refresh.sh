@@ -15,7 +15,7 @@ WITH_MOBILE=0
 WITHOUT_MOBILE=0
 MOBILE_DIR=""
 MOBILE_SCRIPT=""
-MOBILE_HTTPS_REMOTE="https://github.com/dsocial118/Espacios-Comunitarios.git"
+MOBILE_HTTPS_REMOTE="https://github.com/secretarianaf/Espacios-Comunitarios.git"
 EXPECTED_REVISION=""
 
 usage() {
@@ -192,11 +192,11 @@ normalize_mobile_origin() {
     || fail "SISOC-Mobile no tiene remote origin configurado."
 
   case "$current_remote" in
-    "$MOBILE_HTTPS_REMOTE"|git@github.com:dsocial118/Espacios-Comunitarios.git|ssh://git@github.com/dsocial118/Espacios-Comunitarios.git)
+    "$MOBILE_HTTPS_REMOTE"|git@github.com:secretarianaf/Espacios-Comunitarios.git|ssh://git@github.com/secretarianaf/Espacios-Comunitarios.git)
       return 0
       ;;
-    https://github.com/dsocial118/SISOC-Mobile.git|https://github.com/dsocial118/SISOC-Mobile|git@github.com:dsocial118/SISOC-Mobile.git|ssh://git@github.com/dsocial118/SISOC-Mobile.git)
-      log "Origin anterior de Espacios Comunitarios: actualizar durante el aprovisionamiento."
+    https://github.com/dsocial118/Espacios-Comunitarios.git|git@github.com:dsocial118/Espacios-Comunitarios.git|ssh://git@github.com/dsocial118/Espacios-Comunitarios.git|https://github.com/dsocial118/SISOC-Mobile.git|https://github.com/dsocial118/SISOC-Mobile|git@github.com:dsocial118/SISOC-Mobile.git|ssh://git@github.com/dsocial118/SISOC-Mobile.git)
+      log "Origin anterior de Espacios Comunitarios aceptado por compatibilidad; actualizar durante el aprovisionamiento."
       ;;
     *)
       fail "Origin inesperado para SISOC-Mobile; revisar origin sin copiar credenciales al log."

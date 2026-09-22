@@ -30,3 +30,8 @@ QA se sirve por HTTP en `10.80.9.15`, solo mediante VPN, sin dominio ni TLS.
 Conserva los aliases de produccion: `/mobile/`,
 `/pwa/espacioscomunitarios/`, `/pwa/datacalle/`, `/mobile2/`,
 `/pwa/gestionar/` y `/mobile3/`.
+
+`scripts/infra/install_qa_pwa_nginx.sh` instala en forma transaccional el
+snippet canónico dentro del vhost HTTP existente. Crea backup root-only, exige
+un solo `location /`, ejecuta `nginx -t`, recarga y restaura la configuración
+anterior ante cualquier fallo.
