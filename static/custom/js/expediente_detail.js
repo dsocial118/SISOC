@@ -1473,9 +1473,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const comparacionDiv = document.getElementById('renaper-comparacion');
         const alertasDiv = document.getElementById('renaper-alertas');
 
+        const ejemplarDiv = document.getElementById('renaper-ejemplar');
+
         loadingDiv.style.display = 'block';
         comparacionDiv.style.display = 'none';
         alertasDiv.innerHTML = '';
+        if (ejemplarDiv) {
+          ejemplarDiv.innerHTML = '';
+          ejemplarDiv.classList.remove('alert-warning');
+          ejemplarDiv.classList.add('alert-info');
+          ejemplarDiv.style.display = 'none';
+        }
 
         try {
           const resp = await fetch(url, {
@@ -1559,6 +1567,44 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
             datosRenaperTable.appendChild(rowRenaper);
           });
+
+          // Ejemplar del DNI: dato informativo de Renaper, sin contraparte
+          // provincial, por eso va aparte y no como fila comparable.
+          if (ejemplarDiv) {
+            const ejemplar = data.datos_ejemplar;
+            // vencido llega en null cuando el servicio manda una fecha que no
+            // se pudo interpretar: en ese caso se muestra sin adjetivar.
+            const vencido = Boolean(ejemplar) && ejemplar.vencido === true;
+            const partes = [];
+            if (ejemplar) {
+              if (ejemplar.emision) {
+                partes.push(`emitido el <strong>${escapeHtml(ejemplar.emision)}</strong>`);
+              }
+              if (ejemplar.ejemplar) {
+                partes.push(`ejemplar <strong>${escapeHtml(ejemplar.ejemplar)}</strong>`);
+              }
+              if (ejemplar.vencimiento) {
+                partes.push(
+                  vencido
+                    ? `<strong>vencido el ${escapeHtml(ejemplar.vencimiento)}</strong>`
+                    : `vence el <strong>${escapeHtml(ejemplar.vencimiento)}</strong>`
+                );
+              }
+            }
+            if (partes.length) {
+              // Un DNI vencido es la señal más fuerte de que el domicilio de
+              // Renaper puede estar desactualizado: se destaca en ámbar.
+              if (vencido) {
+                ejemplarDiv.classList.remove('alert-info');
+                ejemplarDiv.classList.add('alert-warning');
+              }
+              const cierre = vencido
+                ? 'Los datos de arriba corresponden a este ejemplar, que ya está vencido.'
+                : 'Los datos de arriba corresponden a este ejemplar.';
+              ejemplarDiv.innerHTML = `DNI ${partes.join(' · ')}. ${cierre}`;
+              ejemplarDiv.style.display = 'block';
+            }
+          }
 
         } catch (err) {
           console.error('Error validación Renaper:', err);

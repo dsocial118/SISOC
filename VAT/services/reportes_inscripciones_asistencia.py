@@ -12,6 +12,7 @@ from django.http import HttpResponse
 from openpyxl import Workbook
 from openpyxl.styles import Font
 
+from ciudadanos.models import Ciudadano
 from VAT.models import Centro, Comision, ComisionCurso, Curso, Inscripcion
 from VAT.services.access_scope import filter_centros_queryset_for_user
 from VAT.services.tipo_alumno_service import (
@@ -100,6 +101,8 @@ def _apply_filters(queryset, filtros: ReporteFiltros):
     curso_id = _normalize_id(filtros.curso_id)
     programa_id = _normalize_id(filtros.programa_id)
     titulo_id = _normalize_id(filtros.titulo_id)
+    # REQ #2457 quitó el selector de Modalidad de la UI del reporte. El filtro
+    # se conserva porque sigue siendo válido vía query param en URLs guardadas.
     modalidad_id = _normalize_id(filtros.modalidad_id)
 
     if filtros.nivel == "centro" and centro_id:
@@ -269,6 +272,8 @@ def build_reporte_inscripciones_asistencia(user, filtros: ReporteFiltros):
 DETALLE_VALUES = (
     "id",
     "ciudadano__documento",
+    "ciudadano__documento_pasaporte",
+    "ciudadano__tipo_documento",
     "ciudadano__apellido",
     "ciudadano__nombre",
     "estado",
@@ -338,12 +343,6 @@ def _build_filter_options(user):
         .distinct()
         .order_by("titulo_nombre_ref")
     )
-    modalidades = (
-        inscripciones_scope.values("modalidad_id_ref", "modalidad_nombre_ref")
-        .exclude(modalidad_id_ref__isnull=True)
-        .distinct()
-        .order_by("modalidad_nombre_ref")
-    )
     cursos = (
         inscripciones_scope.values("unidad_formativa_id", "unidad_formativa_nombre")
         .exclude(unidad_formativa_id__isnull=True)
@@ -367,7 +366,6 @@ def _build_filter_options(user):
         "centros": list(centros),
         "programas": list(programas),
         "titulos": list(titulos),
-        "modalidades": list(modalidades),
         "cursos": list(cursos),
         "comisiones": list(comisiones),
         "curso_estado_choices": list(Curso.ESTADO_CURSO_CHOICES),
@@ -400,6 +398,8 @@ def _detalle_export_queryset(user, filtros: ReporteFiltros):
         .values(
             "id",
             "ciudadano__documento",
+            "ciudadano__documento_pasaporte",
+            "ciudadano__tipo_documento",
             "ciudadano__apellido",
             "ciudadano__nombre",
             "estado",
@@ -414,11 +414,23 @@ def _detalle_export_queryset(user, filtros: ReporteFiltros):
     )
 
 
+def detalle_row_numero_documento(row):
+    """Equivalente a Ciudadano.numero_documento para filas de .values(),
+    donde no hay instancia del modelo sobre la que leer la property."""
+    if row.get("ciudadano__tipo_documento") == Ciudadano.DOCUMENTO_PASAPORTE:
+        return (
+            row.get("ciudadano__documento_pasaporte")
+            or row.get("ciudadano__documento")
+            or ""
+        )
+    return row.get("ciudadano__documento") or ""
+
+
 def _detalle_row_cells(row, estado_labels):
     fecha = row.get("fecha_inscripcion")
     estado = row.get("estado") or ""
     return [
-        row.get("ciudadano__documento") or "",
+        detalle_row_numero_documento(row),
         row.get("ciudadano__apellido") or "",
         row.get("ciudadano__nombre") or "",
         estado_labels.get(estado, estado),

@@ -113,12 +113,22 @@ class TicketeraAuthVerificarUserSerializer(serializers.Serializer):
     last_name = serializers.CharField()
 
 
+class TicketeraCentroCDISerializer(serializers.Serializer):
+    """Centro CDI y tipo de vínculo del usuario autenticado."""
+
+    id = serializers.IntegerField()
+    nombre = serializers.CharField()
+    codigo_cdi = serializers.CharField(allow_null=True)
+    vinculo = serializers.ChoiceField(choices=("referente", "trabajador"))
+
+
 class TicketeraAuthVerificarResponseSerializer(serializers.Serializer):
     """Respuesta de una verificación de credenciales válida (200)."""
 
     valid = serializers.BooleanField()
     must_change_password = serializers.BooleanField()
     user = TicketeraAuthVerificarUserSerializer()
+    centros_cdi = TicketeraCentroCDISerializer(many=True)
 
 
 class TicketeraAuthCambiarPasswordResponseSerializer(serializers.Serializer):
