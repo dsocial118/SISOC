@@ -7,7 +7,7 @@ EXPECTED_DB_HOST="${PROD_EXPECTED_DB_HOST:-10.80.5.46}"
 EXPECTED_DB_SERVER="${PROD_EXPECTED_DB_SERVER:-ldmzsql-sisoc}"
 EXPECTED_DB_NAME="${PROD_EXPECTED_DB_NAME:-sisoc_local}"
 DOMAIN="${PROD_DOMAIN:-sisoc.secretarianaf.gob.ar}"
-RUNNER_UNIT="${PROD_RUNNER_UNIT:-actions.runner.dsocial118-SISOC.sisoc-produccion.service}"
+RUNNER_UNIT="${PROD_RUNNER_UNIT:-actions.runner.secretarianaf.sisoc-produccion-org.service}"
 CONTAINERS=(
   sisoc-django-1
   sisoc-ocr_worker-1

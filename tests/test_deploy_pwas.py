@@ -125,7 +125,7 @@ def test_prepare_does_not_resolve_disabled_apps_or_start_services(
     calls = [args for args, _ in fake.calls]
     fetches = [args for args in calls if "fetch" in args]
     assert len(fetches) == 1
-    assert "git@github.com:dsocial118/Espacios-Comunitarios.git" in fetches[0]
+    assert "git@github.com:secretarianaf/Espacios-Comunitarios.git" in fetches[0]
     assert "refs/heads/main" in fetches[0]
     assert not any("up" in args or "down" in args for args in calls)
     assert not (tmp_path / "state/espacios/source/.env").exists()

@@ -145,7 +145,7 @@ def _run_deploy(
 def test_mobile_ssh_origin_conserva_autenticacion(tmp_path):
     checkout = _mobile_checkout(
         tmp_path,
-        "git@github.com:dsocial118/Espacios-Comunitarios.git",
+        "git@github.com:secretarianaf/Espacios-Comunitarios.git",
     )
 
     result = _run_deploy(tmp_path, checkout, dry_run=False)
@@ -153,8 +153,20 @@ def test_mobile_ssh_origin_conserva_autenticacion(tmp_path):
     assert result.returncode == 0, result.stderr
     assert "remote set-url" not in result.stdout
     assert (checkout / ".origin").read_text(encoding="utf-8").strip() == (
-        "git@github.com:dsocial118/Espacios-Comunitarios.git"
+        "git@github.com:secretarianaf/Espacios-Comunitarios.git"
     )
+
+
+def test_mobile_origin_transferido_se_acepta_temporalmente(tmp_path):
+    checkout = _mobile_checkout(
+        tmp_path,
+        "git@github.com:dsocial118/Espacios-Comunitarios.git",
+    )
+
+    result = _run_deploy(tmp_path, checkout, dry_run=False)
+
+    assert result.returncode == 0, result.stderr
+    assert "aceptado por compatibilidad" in result.stdout
 
 
 def test_mobile_fetch_fallido_bloquea_backend(tmp_path, monkeypatch):

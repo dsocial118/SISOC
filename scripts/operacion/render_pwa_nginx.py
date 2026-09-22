@@ -27,7 +27,10 @@ def redirect_exact(source, target):
 
 
 def render(apps, *, preview=False):
-    parts = ["# Generated PWA locations. Include INSIDE the canonical HTTPS server.\n"]
+    parts = [
+        "# Generated PWA locations. Include INSIDE the canonical server "
+        "(HTTP or HTTPS).\n"
+    ]
     if preview:
         parts.append(
             "# PREVIEW ONLY: requires all web builds and legacy SW migration.\n"

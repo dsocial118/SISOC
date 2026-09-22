@@ -4,6 +4,7 @@ set -Eeuo pipefail
 APP_ROOT="${APP_ROOT:-/home/admin-ssies/sisoc-comedores-test/BACKOFFICE}"
 BACKUP_BASE="${BACKUP_BASE:-/home/sisoc-deploy/backups/infra/qa}"
 EXPECTED_HOSTNAME="${QA_EXPECTED_HOSTNAME:-mdsldmz-ssies-test}"
+RUNNER_UNIT="${QA_RUNNER_UNIT:-actions.runner.secretarianaf.sisoc-qa-org.service}"
 TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
 BACKUP_DIR="$BACKUP_BASE/$TIMESTAMP"
 
@@ -36,8 +37,8 @@ main() {
 
   copy_readable /etc/nginx/nginx.conf "$BACKUP_DIR/nginx/nginx.conf"
   copy_readable /etc/nginx/sites-available/staging.conf "$BACKUP_DIR/nginx/staging.conf"
-  copy_readable /etc/systemd/system/actions.runner.dsocial118-SISOC.sisoc-qa.service \
-    "$BACKUP_DIR/systemd/actions.runner.dsocial118-SISOC.sisoc-qa.service"
+  copy_readable "/etc/systemd/system/$RUNNER_UNIT" \
+    "$BACKUP_DIR/systemd/$RUNNER_UNIT"
 
   local relative
   for relative in \
@@ -72,7 +73,7 @@ main() {
   git -C "$APP_ROOT" status --short --branch > "$BACKUP_DIR/status/git-status.txt"
   git -C "$APP_ROOT" rev-parse HEAD > "$BACKUP_DIR/status/git-head.txt"
   df -hT > "$BACKUP_DIR/status/df-hT.txt"
-  systemctl is-active docker containerd nginx mysql cron \
+  systemctl is-active docker containerd nginx mysql cron "$RUNNER_UNIT" \
     > "$BACKUP_DIR/status/systemd-active.txt" 2>&1 || true
   docker ps --no-trunc > "$BACKUP_DIR/docker/containers.txt"
   docker image ls --digests --no-trunc > "$BACKUP_DIR/docker/images.txt"
