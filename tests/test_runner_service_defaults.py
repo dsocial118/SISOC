@@ -35,4 +35,4 @@ def test_runner_unit_defaults_keep_environment_override():
 
     for script_name, variable_name in expected_overrides.items():
         content = (INFRA_DIR / script_name).read_text(encoding="utf-8")
-        assert f'${{{variable_name}:-' in content
+        assert f"${{{variable_name}:-" in content
