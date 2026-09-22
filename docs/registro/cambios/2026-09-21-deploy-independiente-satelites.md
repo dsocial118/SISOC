@@ -40,6 +40,12 @@ snippet canónico dentro del vhost HTTP existente. Crea backup root-only, exige
 un solo `location /`, ejecuta `nginx -t`, recarga y restaura la configuración
 anterior ante cualquier fallo.
 
+Los tres runners pasan de estar registrados solo en `secretarianaf/SISOC` a
+estar registrados en la organizacion. El grupo organizacional queda limitado a
+los cuatro repositorios SISOC. La migracion instala primero un runner paralelo,
+lo valida con un job y solo despues retira el servicio anterior, para no dejar
+los despliegues sin ejecutor ni mezclar labels entre entornos.
+
 El gate de los satelites vive en el workflow porque GitHub no ofrece Required
 reviewers para estos Environments bajo el plan actual. Como se decidio no
 proteger sus branches, un usuario con escritura tambien podria modificar ese

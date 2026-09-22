@@ -116,12 +116,29 @@ job del SHA actual.
 
 ## Instalar runner por entorno
 
-Ejecutar en el servidor de aplicacion de cada entorno con el usuario operativo del deploy, por ejemplo `sisoc-deploy`. Reemplazar `<TOKEN_REGISTRO>` por un token de registro nuevo generado en GitHub para el repositorio `secretarianaf/SISOC`.
+Los runners deben registrarse en la organizacion `secretarianaf`: los cuatro
+repositorios despliegan en forma independiente y un runner registrado solo en
+`secretarianaf/SISOC` no puede ejecutar los workflows satelite.
+
+En **Organization Settings -> Actions -> Runner groups**, configurar el grupo
+`Default` con acceso `Selected repositories` exclusivamente para:
+
+- `secretarianaf/SISOC`
+- `secretarianaf/Espacios-Comunitarios`
+- `secretarianaf/DataCalle`
+- `secretarianaf/Gestionar`
+
+Ejecutar en el servidor de aplicacion de cada entorno con el usuario operativo
+del deploy, por ejemplo `sisoc-deploy`. Reemplazar `<TOKEN_REGISTRO>` por un
+token de registro organizacional nuevo; expira despues de una hora. Durante la
+migracion usar un directorio nuevo y mantener activo el runner de repositorio
+hasta verificar que el organizacional aparece online y acepta un job del
+entorno.
 
 ```bash
 sudo -iu sisoc-deploy
-mkdir -p ~/actions-runner
-cd ~/actions-runner
+mkdir -p ~/actions-runner-org-<entorno>
+cd ~/actions-runner-org-<entorno>
 
 RUNNER_VERSION=<version-vigente>
 curl -o actions-runner-linux-x64.tar.gz -L \
@@ -129,9 +146,9 @@ curl -o actions-runner-linux-x64.tar.gz -L \
 tar xzf actions-runner-linux-x64.tar.gz
 
 ./config.sh \
-  --url https://github.com/secretarianaf/SISOC \
+  --url https://github.com/secretarianaf \
   --token <TOKEN_REGISTRO> \
-  --name sisoc-<entorno> \
+  --name sisoc-<entorno>-org \
   --labels sisoc-<entorno> \
   --unattended
 ```
@@ -140,9 +157,9 @@ Usar el label final segun entorno:
 
 | Entorno | `--name` sugerido | `--labels` |
 | --- | --- | --- |
-| QA | `sisoc-qa` | `sisoc-qa` |
-| Homologacion | `sisoc-homologacion` | `sisoc-homologacion` |
-| Produccion | `sisoc-produccion` | `sisoc-produccion` |
+| QA | `sisoc-qa-org` | `sisoc-qa` |
+| Homologacion | `sisoc-homologacion-org` | `sisoc-homologacion` |
+| Produccion | `sisoc-produccion-org` | `sisoc-produccion` |
 
 Instalar y arrancar como servicio:
 
@@ -151,6 +168,14 @@ sudo ./svc.sh install sisoc-deploy
 sudo ./svc.sh start
 sudo ./svc.sh status
 ```
+
+No detener ni desregistrar el runner anterior todavia. Primero verificar en
+GitHub que el runner organizacional esta `Idle`, despachar un job controlado del
+entorno y confirmar que tomo el nuevo nombre. Recien entonces ejecutar
+`sudo ./svc.sh stop` y `sudo ./svc.sh uninstall` desde el directorio del runner
+de repositorio anterior; eliminar su registro en GitHub despues de comprobar
+que no hay jobs en curso. Esta secuencia deja rollback inmediato al servicio
+anterior si el runner organizacional no conecta.
 
 ## Permisos locales del runner
 
@@ -228,7 +253,11 @@ despachan el deploy de forma explícita.
 
 - Solo `.github/workflows/deploy.yml` debe usar estos runners self-hosted.
 - No correr workflows de PR ni jobs que ejecuten codigo no confiable en los runners de deploy.
-- Registrar cada runner solo en el repositorio `secretarianaf/SISOC`, no a nivel organizacion, salvo decision explicita de infraestructura.
+- Registrar los runners a nivel organizacion y limitar el grupo a los cuatro
+  repositorios de SISOC. No habilitar acceso general a repositorios futuros.
+- Mantener labels exclusivos por entorno. No agregar `self-hosted` sin el label
+  `sisoc-qa`, `sisoc-homologacion` o `sisoc-produccion` en ningun workflow de
+  deploy.
 - No commitear secretos ni `.env` reales. Los `.env` viven en cada servidor con `chmod 600`.
 - Rotar tokens de registro inmediatamente si se exponen durante la instalacion.
 - Mantener el acceso SSH/VPN segun el modelo actual; el runner elimina la necesidad de SSH manual desde GitHub, no abre los servidores a Internet.
