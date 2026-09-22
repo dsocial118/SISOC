@@ -19,10 +19,14 @@ eso el botón debe usarse para recuperación del cierre, no como control diario.
 Los valores internos de estado son `pending` (pendiente), `running` (en proceso), `paused`
 (requiere intervención), `completed` y `completed_with_errors`.
 
-Cada fallecimiento confirmado crea una incompatibilidad de Supervivencia
-pendiente, visible en la bandeja existente. No cambia automáticamente el
-estado administrativo del titular. El impacto es el primer día del mes
-siguiente a la fecha de corte, aunque la ejecución termine otro mes.
+Cada fallecimiento confirmado crea una única incompatibilidad de Supervivencia
+pendiente, visible en la bandeja existente. Al preparar la corrida del período
+siguiente, las incompatibilidades cuyo impacto ya corresponde cambian el titular
+a estado `Baja`, reemplazan sus avisos por el código `40 (FALLECIDO)`, registran
+el historial y pasan a gestionadas. El impacto es el primer día del mes siguiente
+a la fecha de corte, aunque la ejecución termine otro mes. Una persona ya
+detectada o que ya se encuentra en `Baja` con aviso `FALLECIDO` no genera una
+nueva novedad pendiente ni se muestra en el reporte de próximos cambios.
 Errores técnicos y ausencia de coincidencia no se interpretan como muerte.
 La bandeja conserva su límite existente de 100 incompatibilidades recientes.
 
@@ -44,6 +48,10 @@ El máximo inicial es 16 solicitudes HTTP por segundo entre todos los hilos. Es
 una tasa agregada: aumentar `PAS_CONCURRENCY` no multiplica ese límite. Un
 segundo intento por sexo y un reintento posterior a un 401 también consumen
 una ranura. Por eso 16 solicitudes/s no equivale necesariamente a 16 personas/s.
+
+La consulta usa el género `M` o `F` persistido en el padrón cuando está
+disponible. Si el dato falta o es `X`, conserva el fallback de consulta con `M`
+y luego `F`, haciendo el segundo intento únicamente ante ausencia de coincidencia.
 
 Para 250.000 titulares, el piso matemático es unas 4 h 20 min si cada persona
 requiere una solicitud, y unas 8 h 41 min si todas requieren dos. No es un tiempo

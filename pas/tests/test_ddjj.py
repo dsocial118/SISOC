@@ -1,15 +1,18 @@
+from importlib import import_module
 from pathlib import Path
 
 import pytest
+from django.apps import apps as django_apps
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.test import override_settings
 from django.urls import reverse
+from django.utils import timezone
 from pypdf import PdfReader
 
 from core.models import Municipio, Provincia
-from pas.forms import PasDeclaracionJuradaForm
+from pas.forms import PasDeclaracionJuradaForm, separar_domicilio
 from pas.models import PasDeclaracionJurada, PasEstado, PasPersona
 from pas.services.ddjj_service import crear_invitacion, presentar_ddjj
 
@@ -37,7 +40,8 @@ def datos_formulario(provincia, municipio, **cambios):
         "datos_mi_argentina_confirmados": "si",
         "provincia": str(provincia.pk),
         "municipio": str(municipio.pk),
-        "domicilio": "Calle 123",
+        "calle": "Calle",
+        "altura": "123",
         "correo_electronico": "persona@example.test",
         "telefono_celular": "1100000000",
         "embarazada": "no",
@@ -48,8 +52,12 @@ def datos_formulario(provincia, municipio, **cambios):
         "gastos_bajo_limite_smvm": "si",
         "no_accedio_mercado_cambios": "si",
         "acepto_declaracion": "on",
-        "firma_nombre_completo": "Persona Ejemplo",
     }
+    if "domicilio" in cambios:
+        domicilio = cambios.pop("domicilio")
+        partes = domicilio.rsplit(maxsplit=1)
+        datos["calle"] = partes[0] if len(partes) == 2 else domicilio
+        datos["altura"] = partes[1] if len(partes) == 2 else ""
     datos.update(cambios)
     return datos
 
@@ -84,7 +92,10 @@ def test_presentacion_crea_pdf_inmutable_e_impacta_datos_actuales(
     assert invitacion.utilizada
     assert persona_ddjj.provincia == nueva_provincia
     assert persona_ddjj.municipio == nuevo_municipio
+    assert persona_ddjj.calle == "Calle"
+    assert persona_ddjj.altura == "123"
     assert persona_ddjj.domicilio == "Calle 123"
+    assert "firma_nombre_completo" not in declaracion.respuestas
     declaracion.domicilio = "No debe cambiar"
     with pytest.raises(ValidationError):
         declaracion.save()
@@ -244,7 +255,8 @@ def test_rechazar_datos_exige_todos_los_campos_editables(persona_ddjj):
     )
 
     assert not form.is_valid()
-    assert "domicilio" in form.errors
+    assert "calle" in form.errors
+    assert "altura" in form.errors
     assert "correo_electronico" in form.errors
 
 
@@ -271,6 +283,8 @@ def test_respuestas_dependientes_ocultas_se_descartan(persona_ddjj):
 
 @pytest.mark.django_db
 def test_formulario_muestra_foto_de_datos_pas(client, persona_ddjj):
+    persona_ddjj.calle = "Domicilio visible"
+    persona_ddjj.altura = "123"
     persona_ddjj.domicilio = "Domicilio visible 123"
     persona_ddjj.correo_electronico = "visible@example.test"
     persona_ddjj.telefono_celular = "11 4444 5555"
@@ -280,10 +294,98 @@ def test_formulario_muestra_foto_de_datos_pas(client, persona_ddjj):
     respuesta = client.get(reverse("pas_ddjj_formulario", args=[invitacion.token]))
 
     assert respuesta.status_code == 200
-    assert b"Domicilio visible 123" in respuesta.content
+    assert b"Domicilio visible" in respuesta.content
+    assert b'value="123"' in respuesta.content
     assert b"visible@example.test" in respuesta.content
     assert b"11 4444 5555" in respuesta.content
     assert b"data-data-step" in respuesta.content
+
+
+@pytest.mark.django_db
+def test_formulario_separa_domicilio_historico_sin_campos_nuevos(client, persona_ddjj):
+    persona_ddjj.domicilio = "Avenida Siempre Viva 742"
+    persona_ddjj.save(update_fields=["domicilio"])
+    invitacion = crear_invitacion(persona_ddjj)
+
+    respuesta = client.get(reverse("pas_ddjj_formulario", args=[invitacion.token]))
+
+    assert respuesta.status_code == 200
+    assert b"Avenida Siempre Viva" in respuesta.content
+    assert b'value="742"' in respuesta.content
+
+
+@pytest.mark.parametrize(
+    ("domicilio", "esperado"),
+    [
+        ("Avenida Siempre Viva 742", ("Avenida Siempre Viva", "742")),
+        ("Calle 7 123B", ("Calle 7", "123B")),
+        ("Ruta 9 km 32 s/n", ("Ruta 9 km 32 s/n", "")),
+        ("Barrio Los Pinos", ("Barrio Los Pinos", "")),
+        ("", ("", "")),
+        (None, ("", "")),
+    ],
+)
+def test_domicilio_sin_numeracion_queda_entero_en_la_calle(domicilio, esperado):
+    assert separar_domicilio(domicilio) == esperado
+
+
+@pytest.mark.django_db
+def test_domicilio_sin_numero_se_declara_con_sn(persona_ddjj):
+    """Un domicilio rural sin altura tiene que poder declararse igual."""
+
+    form = PasDeclaracionJuradaForm(
+        datos_formulario(
+            persona_ddjj.provincia,
+            persona_ddjj.municipio,
+            calle="Ruta 9 km 32",
+            altura="S/N",
+        ),
+        persona=persona_ddjj,
+    )
+
+    assert form.is_valid(), form.errors
+    assert form.cleaned_data["domicilio"] == "Ruta 9 km 32 S/N"
+
+
+@pytest.mark.django_db
+def test_migracion_0008_borra_la_firma_y_conserva_el_resto(persona_ddjj):
+    """El borrado es irreversible: tiene que alcanzar solo a la firma."""
+
+    migracion = import_module("pas.migrations.0008_remove_ddjj_firma_respuestas")
+    invitacion = crear_invitacion(persona_ddjj)
+    declaracion = PasDeclaracionJurada.objects.create(
+        persona=persona_ddjj,
+        invitacion=invitacion,
+        version=1,
+        provincia=persona_ddjj.provincia,
+        municipio=persona_ddjj.municipio,
+        domicilio="Calle 123",
+        correo_electronico="persona@example.test",
+        telefono_celular="1100000000",
+        datos_mi_argentina_confirmados=False,
+        embarazada=False,
+        hijos_menores_a_cargo=False,
+        gastos_bajo_limite_smvm=True,
+        no_accedio_mercado_cambios=True,
+        acepto_declaracion=True,
+        respuestas={
+            "domicilio": {"etiqueta": "Domicilio", "respuesta": "Calle 123"},
+            "firma_nombre_completo": {
+                "etiqueta": "Firma con nombre completo",
+                "respuesta": "Persona Ejemplo",
+            },
+        },
+        texto_legal="Texto legal",
+        archivo_pdf="ddjj.pdf",
+        finalizada=timezone.now(),
+    )
+
+    migracion.quitar_firma_de_respuestas(django_apps, None)
+
+    declaracion.refresh_from_db()
+    assert "firma_nombre_completo" not in declaracion.respuestas
+    assert declaracion.respuestas["domicilio"]["respuesta"] == "Calle 123"
+    assert declaracion.finalizada is not None
 
 
 @pytest.mark.django_db
@@ -345,8 +447,35 @@ def test_formulario_versiona_javascript_del_resumen(client, persona_ddjj):
     respuesta = client.get(reverse("pas_ddjj_formulario", args=[invitacion.token]))
 
     assert respuesta.status_code == 200
-    assert b"pas_ddjj.js?v=20260831" in respuesta.content
-    assert b"pas_ddjj.css?v=20260831" in respuesta.content
+    assert b"pas_ddjj.js?v=20260917" in respuesta.content
+    assert b"pas_ddjj.css?v=20260921" in respuesta.content
+
+
+def test_opciones_si_no_tienen_indicador_sin_soporte_de_has():
+    """El radio oculto deja a :has() como único indicador de selección."""
+
+    css = (Path(settings.BASE_DIR) / "static/custom/css/pas_ddjj.css").read_text(
+        encoding="utf-8"
+    )
+    fallback = css.split("@supports not (selector(:has(*))) {", 1)[1]
+
+    assert "position: static" in fallback
+    assert "clip-path: none" in fallback
+    assert "accent-color" in fallback
+    assert "input:focus-visible" in fallback
+
+
+def test_mobile_fija_banners_y_desplaza_solo_el_contenido():
+    css = (Path(settings.BASE_DIR) / "static/custom/css/pas_ddjj.css").read_text(
+        encoding="utf-8"
+    )
+    reglas_mobile = css.split("@media (max-width: 640px) {", 1)[1]
+
+    assert "height: 100dvh" in reglas_mobile
+    assert "overflow: hidden" in reglas_mobile
+    assert "flex: 0 0 60px" in reglas_mobile
+    assert "overflow-y: auto" in reglas_mobile
+    assert "flex: 0 0 46px" in reglas_mobile
 
 
 def test_resumen_final_no_tiene_altura_fija():

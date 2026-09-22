@@ -8,7 +8,11 @@ from django.utils import timezone
 from django.urls import reverse
 
 from core.models import Municipio, Provincia
-from pas.forms import PasCambioEstadoForm, PasPersonaCreateForm
+from pas.forms import (
+    PasCambioEstadoForm,
+    PasPersonaCreateForm,
+    PasPersonaUpdateForm,
+)
 from pas.models import (
     PasAviso,
     PasDeclaracionJurada,
@@ -102,6 +106,65 @@ def test_registrar_persona_crea_estado_actual_e_historial(ubicacion, catalogo_pa
     assert historial.estado_nuevo == catalogo_pas["activo"]
     assert list(historial.avisos_nuevos.all()) == [catalogo_pas["aviso_activo"]]
     assert persona.invitacion_ddjj_vigente is not None
+
+
+def _datos_backoffice(persona, **cambios):
+    datos = {
+        "id_persona": str(persona.id_persona),
+        "apellidos": persona.apellidos,
+        "nombres": persona.nombres,
+        "dni": str(persona.dni),
+        "cuit": persona.cuit,
+        "genero": persona.genero,
+        "provincia": str(persona.provincia_id),
+        "municipio": str(persona.municipio_id),
+        "domicilio": persona.domicilio,
+        "correo_electronico": persona.correo_electronico,
+        "telefono_celular": persona.telefono_celular,
+    }
+    datos.update(cambios)
+    return datos
+
+
+@pytest.mark.django_db
+def test_backoffice_sincroniza_calle_y_altura_al_editar_el_domicilio(titular_pas):
+    """La DDJJ prioriza calle/altura: editar solo el domicilio las dejaría viejas."""
+
+    titular_pas.calle = "Calle vieja"
+    titular_pas.altura = "100"
+    titular_pas.domicilio = "Calle vieja 100"
+    titular_pas.save()
+
+    form = PasPersonaUpdateForm(
+        _datos_backoffice(titular_pas, domicilio="Avenida Nueva 250"),
+        instance=titular_pas,
+    )
+
+    assert form.is_valid(), form.errors
+    persona = form.save()
+
+    persona.refresh_from_db()
+    assert persona.calle == "Avenida Nueva"
+    assert persona.altura == "250"
+    assert persona.domicilio == "Avenida Nueva 250"
+
+
+@pytest.mark.django_db
+def test_backoffice_permite_cargar_el_genero_para_renaper(titular_pas):
+    """Sin esto el padrón cargado a mano nunca tendría género."""
+
+    assert titular_pas.genero == ""
+
+    form = PasPersonaUpdateForm(
+        _datos_backoffice(titular_pas, genero=PasPersona.Genero.FEMENINO),
+        instance=titular_pas,
+    )
+
+    assert form.is_valid(), form.errors
+    form.save()
+
+    titular_pas.refresh_from_db()
+    assert titular_pas.genero == "F"
 
 
 @pytest.mark.django_db

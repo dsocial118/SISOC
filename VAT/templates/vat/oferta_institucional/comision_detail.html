@@ -683,6 +683,12 @@
         .ci-modal textarea::placeholder {
             color: rgba(255, 255, 255, 0.55);
         }
+        /* Solo las esquinas externas: las internas las achata Bootstrap para
+           que el input-group se vea como un único control continuo. */
+        .ci-modal .input-group > .btn:last-child {
+            border-top-right-radius: 10px;
+            border-bottom-right-radius: 10px;
+        }
         .ci-modal .form-control:focus,
         .ci-modal .form-select:focus,
         .ci-modal textarea:focus,
@@ -1506,7 +1512,7 @@
                                                 <a href="{% url 'vat_inscripcion_detail' insc.pk %}">{{ insc.ciudadano.apellido|default:"—" }}</a>
                                             </td>
                                             <td>{{ insc.ciudadano.nombre|default:"—" }}</td>
-                                            <td>{{ insc.ciudadano.documento|default:"—" }}</td>
+                                            <td>{{ insc.ciudadano.get_tipo_documento_display }} {{ insc.ciudadano.numero_documento|default:"—" }}</td>
                                             <td>
                                                 {% if insc.es_alumno_vat %}
                                                     <span class="ci-pill ci-pill-teal">{{ insc.tipo_alumno }}</span>
@@ -1626,7 +1632,7 @@
                                                     <a href="{% url 'vat_inscripcion_detail' insc.pk %}">{{ insc.ciudadano.apellido|default:"—" }}</a>
                                                 </td>
                                                 <td>{{ insc.ciudadano.nombre|default:"—" }}</td>
-                                                <td>{{ insc.ciudadano.documento|default:"—" }}</td>
+                                                <td>{{ insc.ciudadano.get_tipo_documento_display }} {{ insc.ciudadano.numero_documento|default:"—" }}</td>
                                                 <td>{{ insc.fecha_inscripcion|date:"d/m/Y" }}</td>
                                                 <td>
                                                     <span class="ci-pill ci-pill-yellow">{{ insc.get_estado_display }}</span>
@@ -2062,7 +2068,7 @@
                                                     data-resultado="{{ alumno.resultado_final|default_if_none:'' }}">
                                                     <td class="text-uppercase">{{ alumno.ciudadano.apellido|default:"—" }}</td>
                                                     <td>{{ alumno.ciudadano.nombre|default:"—" }}</td>
-                                                    <td>{{ alumno.ciudadano.documento|default:"—" }}</td>
+                                                    <td>{{ alumno.ciudadano.get_tipo_documento_display }} {{ alumno.ciudadano.numero_documento|default:"—" }}</td>
                                                     <td>
                                                         {% if alumno.resultado_final == resultado_aprobado %}
                                                             <span class="ci-pill ci-pill-green" data-resultado-pill>Aprobado</span>
@@ -2206,16 +2212,24 @@
                             <div class="border rounded-3 p-3 mb-3">
                                 <label for="inscripcionDocumentoSearch" class="form-label fw-semibold">Buscar por documento</label>
                                 <div class="input-group">
+                                    {# aria-label en vez de un <label>: dentro de .input-group #}
+                                    {# Bootstrap redondea por posición y un label como primer #}
+                                    {# hijo le achata las esquinas al select. #}
+                                    <select class="form-select flex-grow-0 w-auto"
+                                            id="inscripcionTipoDocumentoSearch"
+                                            aria-label="Tipo de documento a buscar">
+                                        <option value="DNI" selected>DNI</option>
+                                        <option value="PASAPORTE">Pasaporte</option>
+                                    </select>
                                     <input type="text"
                                            class="form-control"
                                            id="inscripcionDocumentoSearch"
-                                           placeholder="Ingrese DNI (mín. 7 dígitos)"
-                                           inputmode="numeric" />
+                                           placeholder="Ingrese DNI (mín. 7 dígitos)" />
                                     <button type="button"
                                             class="btn btn-outline-secondary"
                                             id="inscripcionBuscarBtn">Buscar</button>
                                 </div>
-                                <div class="form-text">Se buscará en ciudadanos.ciudadano por número de documento.</div>
+                                <div class="form-text">Se buscará el ciudadano por número de documento.</div>
                             </div>
 
                             <div id="inscripcionSelectedCitizen" class="alert alert-success d-none"></div>
@@ -2228,7 +2242,6 @@
                             <div id="inscripcionQuickCitizenSection"
                                  class="border rounded-3 p-3 d-none">
                                 <h6 class="mb-3">Crear ciudadano nuevo</h6>
-                                {{ ciudadano_rapido_form.tipo_documento }}
                                 <div class="row g-3">
                                     <div class="col-md-6">
                                         <label for="{{ ciudadano_rapido_form.apellido.id_for_label }}"
@@ -2239,6 +2252,11 @@
                                         <label for="{{ ciudadano_rapido_form.nombre.id_for_label }}"
                                                class="form-label">Nombre</label>
                                         {{ ciudadano_rapido_form.nombre }}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="{{ ciudadano_rapido_form.tipo_documento.id_for_label }}"
+                                               class="form-label">Tipo de documento</label>
+                                        {{ ciudadano_rapido_form.tipo_documento }}
                                     </div>
                                     <div class="col-md-6">
                                         <label for="{{ ciudadano_rapido_form.documento.id_for_label }}"
@@ -2941,6 +2959,8 @@
         var ciudadanoIdInput = document.getElementById('inscripcionCiudadanoId');
         var alertBox = document.getElementById('inscripcionRapidaAlert');
         var documentoField = document.getElementById('{{ ciudadano_rapido_form.documento.id_for_label }}');
+        var tipoDocumentoField = document.getElementById('{{ ciudadano_rapido_form.tipo_documento.id_for_label }}');
+        var tipoDocumentoSearch = document.getElementById('inscripcionTipoDocumentoSearch');
 
         function resetAlert() {
             alertBox.className = 'alert d-none';
@@ -2972,6 +2992,11 @@
             noResultsBox.classList.remove('d-none');
             quickSection.classList.remove('d-none');
             if (documentoField) documentoField.value = documento || '';
+            // El alta hereda el tipo elegido en la búsqueda: sería incoherente
+            // buscar un pasaporte y que el alta quede preseleccionada en DNI.
+            if (tipoDocumentoField && tipoDocumentoSearch) {
+                tipoDocumentoField.value = tipoDocumentoSearch.value;
+            }
         }
 
         function renderResults(results) {
@@ -2995,18 +3020,29 @@
         }
 
         function buscarCiudadano() {
+            var tipoDocumento = tipoDocumentoSearch ? tipoDocumentoSearch.value : 'DNI';
+            var esPasaporte = tipoDocumento === 'PASAPORTE';
             var query = (searchInput.value || '').trim();
+            if (esPasaporte) {
+                query = query.toUpperCase().replace(/\s/g, '');
+            }
             clearSelection();
             clearResults();
             hideQuickForm();
             resetAlert();
 
-            if (!/^\d{7,}$/.test(query)) {
+            if (esPasaporte) {
+                if (!/^[A-Z0-9]{6,15}$/.test(query)) {
+                    showAlert('Ingrese un pasaporte de 6 a 15 caracteres alfanuméricos.', 'warning');
+                    return;
+                }
+            } else if (!/^\d{7,}$/.test(query)) {
                 showAlert('Ingrese un documento numérico de al menos 7 dígitos.', 'warning');
                 return;
             }
 
-            fetch('{% url "api_buscar_ciudadanos" %}?q=' + encodeURIComponent(query), {
+            fetch('{% url "api_buscar_ciudadanos" %}?q=' + encodeURIComponent(query)
+                  + '&tipo_documento=' + encodeURIComponent(tipoDocumento), {
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest'
                 }
@@ -3038,6 +3074,18 @@
             hideQuickForm();
             resetAlert();
         });
+
+        if (tipoDocumentoSearch) {
+            tipoDocumentoSearch.addEventListener('change', function() {
+                searchInput.placeholder = tipoDocumentoSearch.value === 'PASAPORTE'
+                    ? 'Ingrese pasaporte (6 a 15 caracteres)'
+                    : 'Ingrese DNI (mín. 7 dígitos)';
+                clearSelection();
+                clearResults();
+                hideQuickForm();
+                resetAlert();
+            });
+        }
 
         form.addEventListener('submit', function(event) {
             event.preventDefault();

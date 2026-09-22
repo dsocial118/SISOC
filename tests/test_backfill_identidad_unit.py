@@ -112,3 +112,90 @@ def test_dry_run_no_escribe_en_db():
     c.refresh_from_db()
     assert c.identificador_interno is None
     assert c.tipo_registro_identidad == Ciudadano.TIPO_REGISTRO_ESTANDAR  # default
+
+
+@pytest.mark.django_db
+def test_pasaporte_no_se_clasifica_como_sin_dni():
+    """Un pasaporte cargado desde VAT queda con documento=NULL. Antes caía en
+    la rama "sin documento", que lo marcaba SIN_DNI y le borraba
+    documento_unico_key: eso degradaba en silencio la unicidad del pasaporte."""
+    c = _ciudadano(
+        tipo_documento=Ciudadano.DOCUMENTO_PASAPORTE,
+        documento=None,
+        documento_pasaporte="AB123456",
+    )
+    assert c.documento_unico_key == "PASAPORTE_AB123456"
+
+    _run_backfill()
+
+    c.refresh_from_db()
+    assert c.tipo_registro_identidad == Ciudadano.TIPO_REGISTRO_ESTANDAR
+    assert c.documento_unico_key == "PASAPORTE_AB123456"
+    assert c.requiere_revision_manual is False
+    assert c.identificador_interno == f"CIU-{c.pk}"
+
+
+@pytest.mark.django_db
+def test_pasaporte_duplicado_clasifica_como_no_validado():
+    """Los pasaportes comparten documento=NULL: agruparlos por esa columna los
+    daría a todos como un único grupo duplicado. Se agrupan por
+    documento_pasaporte."""
+    c1, c2 = _ciudadanos_legacy_sin_normalizar(
+        {
+            "nombre": "Ana",
+            "tipo_documento": Ciudadano.DOCUMENTO_PASAPORTE,
+            "documento_pasaporte": "XY999888",
+        },
+        {
+            "nombre": "Beto",
+            "tipo_documento": Ciudadano.DOCUMENTO_PASAPORTE,
+            "documento_pasaporte": "XY999888",
+        },
+    )
+
+    _run_backfill()
+
+    for c in (c1, c2):
+        c.refresh_from_db()
+        assert c.tipo_registro_identidad == Ciudadano.TIPO_REGISTRO_DNI_NO_VALIDADO
+        assert c.documento_unico_key is None
+        assert c.requiere_revision_manual is True
+
+
+@pytest.mark.django_db
+def test_pasaportes_distintos_no_se_toman_como_duplicados():
+    c1, c2 = _ciudadanos_legacy_sin_normalizar(
+        {
+            "nombre": "Ana",
+            "tipo_documento": Ciudadano.DOCUMENTO_PASAPORTE,
+            "documento_pasaporte": "AA111111",
+        },
+        {
+            "nombre": "Beto",
+            "tipo_documento": Ciudadano.DOCUMENTO_PASAPORTE,
+            "documento_pasaporte": "BB222222",
+        },
+    )
+
+    _run_backfill()
+
+    for c, esperado in ((c1, "PASAPORTE_AA111111"), (c2, "PASAPORTE_BB222222")):
+        c.refresh_from_db()
+        assert c.tipo_registro_identidad == Ciudadano.TIPO_REGISTRO_ESTANDAR
+        assert c.documento_unico_key == esperado
+
+
+@pytest.mark.django_db
+def test_pasaporte_historico_en_documento_sigue_tratandose_como_numerico():
+    """Los pasaportes previos a documento_pasaporte guardaron su número en
+    `documento`. Deben conservar su clave, no pasar por la rama nueva."""
+    c = _ciudadano(
+        tipo_documento=Ciudadano.DOCUMENTO_PASAPORTE,
+        documento=44555666,
+    )
+
+    _run_backfill()
+
+    c.refresh_from_db()
+    assert c.tipo_registro_identidad == Ciudadano.TIPO_REGISTRO_ESTANDAR
+    assert c.documento_unico_key == "PASAPORTE_44555666"
