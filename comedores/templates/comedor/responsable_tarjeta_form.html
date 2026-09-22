@@ -6,13 +6,63 @@
             <h3>Responsable de la Tarjeta</h3>
         </div>
         <div class="card-body">
-            <form method="post"
-                  data-localidades-url="{% url 'ajax_load_localidades' %}">{% csrf_token %}{{ form|crispy }}<button class="btn btn-primary" type="submit">Guardar</button>
+            <form method="post" id="responsableTarjetaForm">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-md-6">{{ form.responsable_tarjeta_nombre|as_crispy_field }}</div>
+                    <div class="col-md-6">{{ form.responsable_tarjeta_mail|as_crispy_field }}</div>
+                    <div class="col-md-6">{{ form.responsable_tarjeta_dni|as_crispy_field }}</div>
+                    <div class="col-md-6">{{ form.responsable_tarjeta_cuit|as_crispy_field }}</div>
+                    <div class="col-md-6">{{ form.responsable_tarjeta_telefono|as_crispy_field }}</div>
+                    <div class="col-md-6">{{ form.responsable_tarjeta_domicilio|as_crispy_field }}</div>
+                    <div class="col-md-4">{{ form.responsable_tarjeta_provincia|as_crispy_field }}</div>
+                    <div class="col-md-4">
+                        <div id="responsable-tarjeta-municipio-loader"
+                             class="skeleton-loader d-none"></div>
+                        <div id="responsable-tarjeta-municipio-field">{{ form.responsable_tarjeta_municipio|as_crispy_field }}</div>
+                    </div>
+                    <div class="col-md-4">
+                        <div id="responsable-tarjeta-localidad-loader"
+                             class="skeleton-loader d-none"></div>
+                        <div id="responsable-tarjeta-localidad-field">{{ form.responsable_tarjeta_localidad|as_crispy_field }}</div>
+                    </div>
+                </div>
+                <button class="btn btn-primary" type="submit">Guardar</button>
                 <a class="btn btn-secondary"
-                   href="{% url 'comedor_detalle' object.pk %}">Cancelar</a></form>
+                   href="{% url 'comedor_detalle' object.pk %}">Cancelar</a>
+            </form>
         </div>
     </div>
 {% endblock %}
-{% block extra_js %}
-    <script src="{% static 'custom/js/geografiaProvinciaLocalidad.js' %}"></script>
+{% block customJS %}
+    <script src="{% static 'custom/js/ubicacionSelects.js' %}"></script>
+    <script nonce="{{ request.csp_nonce }}">
+        document.addEventListener("DOMContentLoaded", function () {
+            var initHelper = window.setupUbicacionSelects || window.initUbicacionSelects;
+            if (typeof initHelper !== "function") return;
+            initHelper({
+                selectors: {
+                    provincia: "#id_responsable_tarjeta_provincia",
+                    municipio: "#id_responsable_tarjeta_municipio",
+                    localidad: "#id_responsable_tarjeta_localidad",
+                },
+                ajaxMunicipiosUrl: "{% url 'ajax_load_municipios' %}",
+                ajaxLocalidadesUrl: "{% url 'ajax_load_localidades' %}",
+                ui: {
+                    provincia: {},
+                    municipio: {
+                        wrapper: "#responsable-tarjeta-municipio-field",
+                        loader: "#responsable-tarjeta-municipio-loader",
+                        dropdownParent: "#responsable-tarjeta-municipio-field",
+                    },
+                    localidad: {
+                        wrapper: "#responsable-tarjeta-localidad-field",
+                        loader: "#responsable-tarjeta-localidad-loader",
+                        dropdownParent: "#responsable-tarjeta-localidad-field",
+                    },
+                },
+                autoPrefetch: true,
+            });
+        });
+    </script>
 {% endblock %}

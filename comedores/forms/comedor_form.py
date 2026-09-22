@@ -298,37 +298,71 @@ class ResponsableTarjetaComedorForm(forms.ModelForm):
             "responsable_tarjeta_cuit",
             "responsable_tarjeta_domicilio",
             "responsable_tarjeta_provincia",
+            "responsable_tarjeta_municipio",
             "responsable_tarjeta_localidad",
             "responsable_tarjeta_telefono",
         ]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        provincia_id = (
-            self.data.get("responsable_tarjeta_provincia")
-            if self.is_bound
-            else getattr(self.instance, "responsable_tarjeta_provincia_id", None)
+        self.popular_campos_ubicacion()
+
+    def popular_campos_ubicacion(self):
+        """Encadena Provincia -> Municipio -> Localidad igual que el alta de organizaciones."""
+
+        def valor_actual(nombre):
+            if self.is_bound:
+                valor = self.data.get(self.add_prefix(nombre))
+                return int(valor) if valor and str(valor).isdigit() else None
+            return getattr(self.instance, f"{nombre}_id", None)
+
+        provincia_id = valor_actual("responsable_tarjeta_provincia")
+        municipio_id = valor_actual("responsable_tarjeta_municipio")
+
+        self.fields["responsable_tarjeta_provincia"].queryset = (
+            Provincia.objects.all().order_by("nombre")
         )
-        localidades = Localidad.objects.none()
+
         if provincia_id:
+            self.fields["responsable_tarjeta_municipio"].queryset = (
+                Municipio.objects.filter(provincia_id=provincia_id).order_by("nombre")
+            )
+        else:
+            self.fields["responsable_tarjeta_municipio"].queryset = (
+                Municipio.objects.none()
+            )
+
+        if municipio_id:
+            localidades = Localidad.objects.filter(municipio_id=municipio_id)
+        elif provincia_id:
             localidades = Localidad.objects.filter(
                 municipio__provincia_id=provincia_id
             ).select_related("municipio__provincia")
+        else:
+            localidades = Localidad.objects.none()
         self.fields["responsable_tarjeta_localidad"].queryset = localidades.order_by(
             "nombre"
         )
-        self.fields["responsable_tarjeta_provincia"].widget.attrs[
-            "data-geografia-provincia"
-        ] = "id_responsable_tarjeta_localidad"
-        self.fields["responsable_tarjeta_localidad"].widget.attrs[
-            "data-geografia-localidad"
-        ] = "true"
 
     def clean(self):
         cleaned_data = super().clean()
-        localidad = cleaned_data.get("responsable_tarjeta_localidad")
         provincia = cleaned_data.get("responsable_tarjeta_provincia")
-        if localidad and provincia and localidad.municipio.provincia_id != provincia.id:
+        municipio = cleaned_data.get("responsable_tarjeta_municipio")
+        localidad = cleaned_data.get("responsable_tarjeta_localidad")
+
+        if municipio and provincia and municipio.provincia_id != provincia.id:
+            self.add_error(
+                "responsable_tarjeta_municipio",
+                "El municipio no pertenece a la provincia seleccionada.",
+            )
+        if localidad and municipio and localidad.municipio_id != municipio.id:
+            self.add_error(
+                "responsable_tarjeta_localidad",
+                "La localidad no pertenece al municipio seleccionado.",
+            )
+        elif (
+            localidad and provincia and localidad.municipio.provincia_id != provincia.id
+        ):
             self.add_error(
                 "responsable_tarjeta_localidad",
                 "La localidad no pertenece a la provincia seleccionada.",
