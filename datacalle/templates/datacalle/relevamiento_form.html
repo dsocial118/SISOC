@@ -169,8 +169,11 @@
       if (campoArea) {
         campoArea.style.display = esEspacioPublico ? '' : 'none';
       }
+      // Sin fase elegida no se muestra ninguno: el lugar depende de la fase,
+      // asi que ofrecer el desplegable de dispositivos antes de elegirla
+      // confundia (QA: "al seleccionar X debe habilitar Y", no antes).
       if (campoDispositivo) {
-        campoDispositivo.style.display = esEspacioPublico ? 'none' : '';
+        campoDispositivo.style.display = esDispositivo ? '' : 'none';
       }
       // Se pide en el momento de elegir la fase, no recién al guardar.
       if (inputArea) {
@@ -192,9 +195,19 @@
     if (inputArea) {
       inputArea.addEventListener('input', () => limpiarError(inputArea));
     }
+    // fase y dispositivo son select2, que emite el "change" de jQuery y NO el
+    // nativo: un addEventListener acá corre una sola vez, al cargar, y despues
+    // nunca mas. Es el mismo criterio que la cascada de provincia mas abajo.
+    const alCambiarFase = (select, handler) => {
+      if (window.jQuery) {
+        window.jQuery(select).on('change', handler);
+        return;
+      }
+      select.addEventListener('change', handler);
+    };
+
     if (selectDispositivo) {
-      selectDispositivo.addEventListener('change', () =>
-        limpiarError(selectDispositivo));
+      alCambiarFase(selectDispositivo, () => limpiarError(selectDispositivo));
     }
 
     if (formulario) {
@@ -213,7 +226,7 @@
       });
     }
 
-    fase.addEventListener('change', sincronizarFase);
+    alCambiarFase(fase, sincronizarFase);
     sincronizarFase();
   })();
 
