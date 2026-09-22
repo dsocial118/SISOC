@@ -915,3 +915,34 @@ def test_qa_0042_el_listado_filtra_por_fase(client, provincias):
     # Un valor inventado no filtra nada ni rompe: se ignora.
     todos = client.get("/datacalle/relevamientos/?fase=cualquiera").content.decode()
     assert "Plaza del centro" in todos and "Refugio municipal" in todos
+
+
+@pytest.mark.django_db
+def test_la_fase_alterna_area_operativa_y_dispositivo_aunque_sea_select2(
+    client, provincias
+):
+    """El toggle de fase tiene que escuchar el "change" de jQuery.
+
+    `fase` y `dispositivo` llevan la clase `select2`, que `custom.js` inicializa
+    en toda la pagina. select2 emite el "change" de jQuery y no el nativo, asi
+    que un addEventListener corria una sola vez al cargar y despues nunca mas:
+    elegir "Espacio publico" no habilitaba el area operativa. Y sin fase elegida
+    no debe mostrarse ninguno de los dos campos.
+    """
+    cordoba, _ = provincias
+    coordinador = _dar_permisos(
+        _crear_coordinador(cordoba), ["add_relevamiento", "view_relevamiento"]
+    )
+    client.force_login(coordinador)
+
+    html = client.get("/datacalle/relevamientos/crear/").content.decode()
+
+    # Bind por jQuery para los dos select2, no solo addEventListener nativo.
+    assert "window.jQuery(select).on('change', handler)" in html
+    assert "alCambiarFase(fase, sincronizarFase)" in html
+    assert "fase.addEventListener('change'" not in html
+    # El desplegable de dispositivos solo aparece con la fase de dispositivo.
+    assert "campoDispositivo.style.display = esDispositivo ? '' : 'none'" in html
+    # Los dos campos siguen en el formulario, para que el toggle tenga que mostrar.
+    assert 'id="campo-area-operativa"' in html
+    assert 'id="campo-dispositivo"' in html
