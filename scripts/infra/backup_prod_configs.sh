@@ -8,7 +8,7 @@ MOBILE_ROOT="${MOBILE_ROOT:-/sisoc/SISOC-Mobile}"
 TARGET_USER="${PROD_MAINTENANCE_USER:-sisoc-deploy}"
 TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
 BACKUP_DIR="${BACKUP_DIR:-/var/backups/sisoc/night-maintenance/prod/$TIMESTAMP}"
-RUNNER_UNIT="${PROD_RUNNER_UNIT:-actions.runner.dsocial118-SISOC.sisoc-produccion.service}"
+RUNNER_UNIT="${PROD_RUNNER_UNIT:-actions.runner.secretarianaf.sisoc-produccion-org.service}"
 
 umask 077
 
