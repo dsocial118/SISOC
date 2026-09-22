@@ -11,7 +11,11 @@ pendiente de validacion final.
   en HML y `development` en QA.
 - La promocion descendente ocurre solamente despues de un deploy verificado:
   `main -> homologacion -> development`.
-- Produccion conserva el gate manual del GitHub Environment.
+- SISOC conserva el gate nativo del Environment `production`, con
+  `juanikitro`, `Mkdir-arg` y `dsocial118` como revisores.
+- En los satelites del plan gratuito, un push a `main` no despliega. Produccion
+  se inicia manualmente con `workflow_dispatch` y el workflow solo acepta como
+  actor a esos mismos tres usuarios.
 - Un run obsoleto no puede promover la punta nueva de una branch.
 
 ## Recuperacion
@@ -35,3 +39,9 @@ Conserva los aliases de produccion: `/mobile/`,
 snippet canónico dentro del vhost HTTP existente. Crea backup root-only, exige
 un solo `location /`, ejecuta `nginx -t`, recarga y restaura la configuración
 anterior ante cualquier fallo.
+
+El gate de los satelites vive en el workflow porque GitHub no ofrece Required
+reviewers para estos Environments bajo el plan actual. Como se decidio no
+proteger sus branches, un usuario con escritura tambien podria modificar ese
+control en un cambio posterior; el equipo debe tratar los permisos de escritura
+como acceso operativo de confianza.

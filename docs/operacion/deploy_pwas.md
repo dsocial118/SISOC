@@ -8,6 +8,13 @@ QA. SISOC ya no construye ni activa PWA durante su despliegue. La promocion es
 descendente y ocurre solo tras un deploy exitoso: produccion promueve a
 `homologacion` y HML promueve a `development`.
 
+Un push a `main` de un satelite deja el job de deploy omitido. La aprobacion de
+produccion se materializa ejecutando manualmente el workflow sobre `main`; solo
+`juanikitro`, `Mkdir-arg` y `dsocial118` pasan la validacion del actor. Este gate
+versionado es la alternativa disponible en el plan gratuito sin protecciones de
+branch; los permisos de escritura del repositorio siguen siendo un limite de
+confianza, porque permiten cambiar el propio workflow.
+
 Esta entrega implementa la coordinacion y genera configuraciones Nginx; no
 aprovisiona credenciales, fusiona ramas ni modifica servidores automaticamente.
 DataCalle y Gestionar estan habilitadas en el registro de esta entrega; su
