@@ -41,8 +41,10 @@ def test_hml_y_produccion_extraen_wrapper_del_sha_del_evento():
             '> "$deploy_script"'
         )
         execution = 'SISOC_ROOT_DIR="$APP_ROOT" bash "$deploy_script"'
-        assert source.index(validation) < source.index(extraction) < source.index(
-            execution
+        assert (
+            source.index(validation)
+            < source.index(extraction)
+            < source.index(execution)
         )
         assert f"--environment {environment}" in source
 
@@ -66,7 +68,10 @@ def test_wrapper_reconstruye_y_verifica_revision_anterior():
 
     assert "trap rollback_on_exit EXIT" in script
     assert 'git -C "$ROOT_DIR" reset --hard "$previous_revision"' in script
-    assert '--skip-pull --expected-revision "$previous_revision" --without-mobile' in script
+    assert (
+        '--skip-pull --expected-revision "$previous_revision" --without-mobile'
+        in script
+    )
     assert "if ! verify_stack; then" in script
     assert "Las migraciones de base de datos no se revierten automaticamente" in script
 
