@@ -40,11 +40,18 @@
 - `docs/contexto/features/pr-2552-ci-deploy-encadenar-promociones-por-ambiente.md`
 - `docs/indice.md`
 - `docs/operacion/deploy_automatizado.md`
+- `docs/operacion/deploy_pwas.md`
+- `docs/operacion/nginx/sisoc-pwas.conf`
 - `docs/registro/cambios/2026-09-21-deploy-independiente-satelites.md`
 - `docs/registro/prs/PR-2552.md`
 - `docs/registro/releases/pending/2026-09-23-pr-2552.md`
+- `scripts/infra/install_qa_pwa_nginx.sh`
+- `scripts/operacion/deploy_pwas.py`
+- `scripts/operacion/deploy_refresh.sh`
 - `scripts/operacion/deploy_verified.sh`
-- `tests/test_deploy_workflow.py`
+- `scripts/operacion/pwas.json`
+- `scripts/operacion/render_pwa_nginx.py`
+- ... y 3 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/ARCHITECTURE.md`
