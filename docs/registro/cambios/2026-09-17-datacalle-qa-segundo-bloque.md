@@ -32,6 +32,15 @@ SISOC sólo lo copia (ver `datacalle/instrumento/README.md`).
   de operativo (espacio público / dispositivo), el mismo que tiene la app, a
   pedido de DataCalle en el canal de coordinación.
 
+- **El toggle de fase escucha el `change` de jQuery (2026-09-22).** `fase` y
+  `dispositivo` llevan la clase `select2`, que `custom.js` inicializa en toda la
+  página. select2 emite el `change` de jQuery y **no** el nativo, así que el
+  `addEventListener` corría una sola vez al cargar y después nunca más: elegir
+  "Espacio público" no habilitaba el área operativa ni el desplegable de
+  dispositivos. Es el mismo criterio que ya usaba la cascada de provincia unas
+  líneas más abajo, que sí funcionaba. Además, sin fase elegida ya no se muestra
+  ninguno de los dos campos: el lugar depende de la fase.
+
 ## Decisiones
 
 - **El endpoint de cierre se mantiene, devolviendo 403, en lugar de removerse.**
