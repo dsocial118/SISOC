@@ -2,10 +2,18 @@
 
 ## Alcance y estado
 
-SISOC coordina `main` de las PWA habilitadas al desplegar `homologacion` en HML
-o `main` en PRD. Se mantienen el gate de production, sus revisores y la
-serializacion actual. QA no incorpora satelites. Un push a una PWA no dispara
-por si solo un despliegue.
+Desde la automatizacion de septiembre de 2026, cada PWA se despliega desde su
+propio repositorio: `main` a produccion, `homologacion` a HML y `development` a
+QA. SISOC ya no construye ni activa PWA durante su despliegue. La promocion es
+descendente y ocurre solo tras un deploy exitoso: produccion promueve a
+`homologacion` y HML promueve a `development`.
+
+Un push a `main` de un satelite deja el job de deploy omitido. La aprobacion de
+produccion se materializa ejecutando manualmente el workflow sobre `main`; solo
+`juanikitro`, `Mkdir-arg` y `dsocial118` pasan la validacion del actor. Este gate
+versionado es la alternativa disponible en el plan gratuito sin protecciones de
+branch; los permisos de escritura del repositorio siguen siendo un limite de
+confianza, porque permiten cambiar el propio workflow.
 
 Esta entrega implementa la coordinacion y genera configuraciones Nginx; no
 aprovisiona credenciales, fusiona ramas ni modifica servidores automaticamente.
@@ -25,9 +33,9 @@ La aceptacion funcional, de instalacion y offline queda al equipo de testers.
 
 | ID | Repositorio privado | Checkout hermano de SISOC | Proyecto / puerto | Estado |
 | --- | --- | --- | --- | --- |
-| espacios | dsocial118/Espacios-Comunitarios | SISOC-Mobile | sisoc-mobile / 8080 | habilitada en /mobile/ y /pwa/espacioscomunitarios/ |
-| datacalle | dsocial118/DataCalle | DataCalle | sisoc-pwa-datacalle / 8081 | habilitada, base /pwa/datacalle/ |
-| gestionar | dsocial118/Gestionar | Gestionar | sisoc-pwa-gestionar / 8082 | habilitada, base /pwa/gestionar/ |
+| espacios | secretarianaf/Espacios-Comunitarios | SISOC-Mobile | sisoc-mobile / 8080 | habilitada en /mobile/ y /pwa/espacioscomunitarios/ |
+| datacalle | secretarianaf/DataCalle | DataCalle | sisoc-pwa-datacalle / 8081 | habilitada, base /pwa/datacalle/ |
+| gestionar | secretarianaf/Gestionar | Gestionar | sisoc-pwa-gestionar / 8082 | habilitada, base /pwa/gestionar/ |
 
 Fuente de configuracion: `scripts/operacion/pwas.json`. No renombrar las carpetas
 historicas ni los proyectos Compose al cambiar un nombre en GitHub.
@@ -137,8 +145,10 @@ permanentes del runner.
    puede definir ssh_identity=null tras validarlo; nunca copiar tokens personales
    a las URLs de Git.
 4. Como runner, comprobar lectura del remoto canonico con la identidad elegida.
-   Los checkouts habilitados deben existir, tener rama main, no contener cambios
-   tracked y ser ancestros de main remoto. No usar la rama en trabajo del usuario.
+   Los checkouts habilitados deben existir, estar en la branch del entorno
+   (`development` en QA, `homologacion` en HML y `main` en PRD), no contener
+   cambios tracked y ser ancestros de esa misma branch remota. No usar la rama
+   en trabajo del usuario.
 5. Mantener el `.env` propio de cada entorno en el checkout. No guardarlo en Git.
    La carpeta privada `.deploy/pwa/` se crea dentro del checkout SISOC; queda
    ignorada por Git. No compartirla por HTTP ni recolectarla en artefactos publicos.
@@ -148,7 +158,7 @@ clave publica; repetir en PRD con su propia clave):
 
 ```bash
 GIT_SSH_COMMAND='ssh -i ~/.ssh/sisoc-pwa-espacios -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes' \
-  git ls-remote git@github.com:dsocial118/Espacios-Comunitarios.git refs/heads/main
+  git ls-remote git@github.com:secretarianaf/Espacios-Comunitarios.git refs/heads/main
 ```
 
 Usar el path absoluto a la clave si el shell/SSH no expande `~` en ese contexto.
@@ -170,12 +180,13 @@ acordar o agregar su empaquetado operativo con este contrato (no se exige Vite):
   secretos de servidor. El runtime se administra desde SISOC, no desde servicios
   adicionales que pudiera definir la app.
 - Build reproducible desde el lockfile y un snapshot limpio del SHA. Los archivos
-  Compose mapea `VITE_PUBLIC_BASE_PATH` al nombre que use el framework. Espacios
+  Compose mapean `VITE_PUBLIC_BASE_PATH` al nombre que use el framework. Espacios
   conserva `VITE_API_BASE_URL=/api`. Para Expo, `PWA_API_BASE_URL` es
+  `http://10.80.9.15/api` en QA,
   `https://hml-sisoc.secretarianaf.gob.ar/api` en HML y
-  `https://sisoc.secretarianaf.gob.ar/api` en PRD. El coordinador fija estos valores
-  despues de leer el ambiente; no pueden heredar por accidente la API de otro
-  entorno. DataCalle usa EXPO_PUBLIC_SISOC_API_URL y Gestionar
+  `https://sisoc.secretarianaf.gob.ar/api` en PRD. El workflow lee estos valores
+  del `.env` persistente del checkout; no pueden heredar por accidente la API de
+  otro entorno. DataCalle usa EXPO_PUBLIC_SISOC_API_URL y Gestionar
   EXPO_PUBLIC_API_BASE_URL, con autenticacion api. No usar build:production de
   DataCalle en HML porque fija la URL de PRD.
 - DataCalle debe generar recursos/router/manifest/SW bajo `/pwa/datacalle/`;
@@ -237,7 +248,7 @@ con el backend vigente. No hacer publico el repositorio como mecanismo de rollba
 
 ## Nginx por entorno
 
-En los dos hosts inspeccionados, el vhost esta en
+En HML y PRD, el vhost esta en
 `/etc/nginx/sites-available/sisoc`. HML usa `hml-sisoc.secretarianaf.gob.ar` y PRD
 `sisoc.secretarianaf.gob.ar`. No reemplazar los vhosts reales por una plantilla:
 conservar TLS, cabeceras, limites y rutas Django/static/media.
@@ -254,6 +265,58 @@ unico `include /etc/nginx/snippets/sisoc-pwas.conf;`. Copiar el candidato a esa
 ruta solo despues de revisar el diff, respaldar el include/vhost anterior y
 comprobar upstreams. Ejecutar `nginx -t` y recargar Nginx. Repetir por entorno,
 primero HML y luego PRD. El generador no instala nada ni ejecuta sudo/reloads.
+
+QA usa HTTP en `10.80.9.15`, solo accesible por VPN, sin dominio ni TLS. Reutiliza
+el mismo snippet y, por lo tanto, los mismos endpoints y aliases. El instalador
+versionado conserva el vhost existente, crea un backup root-only, agrega el
+include antes del `location /`, valida y revierte si falla:
+
+Antes del primer deploy, crear los tres checkouts como `sisoc-deploy` en branch
+`development` y guardar estos `.env` minimos con modo `600`. Son argumentos
+publicos incorporados al frontend; no copiar credenciales AppSheet ni secretos:
+
+`/sisoc/SISOC-Mobile/.env`:
+
+```dotenv
+VITE_API_BASE_URL=/api
+VITE_PUBLIC_BASE_PATH=/mobile/
+FRONTEND_BIND_ADDRESS=127.0.0.1
+FRONTEND_PORT=8080
+```
+
+`/sisoc/DataCalle/.env`:
+
+```dotenv
+PWA_API_BASE_URL=http://10.80.9.15/api
+VITE_PUBLIC_BASE_PATH=/pwa/datacalle/
+FRONTEND_BIND_ADDRESS=127.0.0.1
+FRONTEND_PORT=8081
+```
+
+`/sisoc/Gestionar/.env`:
+
+```dotenv
+PWA_API_BASE_URL=http://10.80.9.15/api
+VITE_PUBLIC_BASE_PATH=/pwa/gestionar/
+FRONTEND_BIND_ADDRESS=127.0.0.1
+FRONTEND_PORT=8082
+```
+
+Espacios mantiene `/mobile/` como build historico; su Dockerfile genera tambien
+el build canonico de `/pwa/espacioscomunitarios/` dentro de la misma imagen.
+
+```bash
+sudo bash scripts/infra/install_qa_pwa_nginx.sh
+sudo bash scripts/infra/install_qa_pwa_nginx.sh --apply --yes
+```
+
+El primer comando es un preflight de solo lectura. El segundo modifica Nginx y
+debe ejecutarse antes del primer deploy QA: cada workflow verifica su URL
+publica y fallaria con 404 si el alias todavia no existe. Es esperable que las
+rutas nuevas respondan 502 mientras sus contenedores aun no estan levantados;
+desplegar despues Espacios, DataCalle y Gestionar, y exigir 200 en cada URL antes
+de considerar listo el entorno. Nginx conserva rollback automatico si falla su
+validacion o recarga.
 
 `docs/operacion/nginx/sisoc-pwas.conf` es el candidato activo de esta entrega:
 `/mobile/`, `/pwa/espacioscomunitarios/`, `/pwa/datacalle/` y `/pwa/gestionar/`, con aliases `/mobile2/` y

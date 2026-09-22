@@ -5,6 +5,7 @@ APP_ROOT="${APP_ROOT:-/sisoc/SISOC}"
 MOBILE_ROOT="${MOBILE_ROOT:-/sisoc/SISOC-Mobile}"
 BACKUP_BASE="${BACKUP_BASE:-$HOME/backups/infra/hml}"
 EXPECTED_HOSTNAME="${HML_EXPECTED_HOSTNAME:-ldmzssies-homolo}"
+RUNNER_UNIT="${HML_RUNNER_UNIT:-actions.runner.secretarianaf.sisoc-homologacion-org.service}"
 TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
 BACKUP_DIR="$BACKUP_BASE/$TIMESTAMP"
 
@@ -48,8 +49,8 @@ main() {
 
   copy_readable /etc/nginx/nginx.conf "$BACKUP_DIR/nginx/nginx.conf"
   copy_readable /etc/nginx/sites-available/sisoc "$BACKUP_DIR/nginx/sisoc"
-  copy_readable /etc/systemd/system/actions.runner.dsocial118-SISOC.sisoc-homologacion.service \
-    "$BACKUP_DIR/systemd/actions.runner.dsocial118-SISOC.sisoc-homologacion.service"
+  copy_readable "/etc/systemd/system/$RUNNER_UNIT" \
+    "$BACKUP_DIR/systemd/$RUNNER_UNIT"
   copy_readable /etc/systemd/system/sisoc.service \
     "$BACKUP_DIR/systemd/sisoc.service"
 
@@ -80,8 +81,7 @@ main() {
     > "$BACKUP_DIR/status/git-mobile-head.txt"
   df -hT > "$BACKUP_DIR/status/df-hT.txt"
   df -ih > "$BACKUP_DIR/status/df-ih.txt"
-  systemctl is-active docker containerd nginx mysql cron \
-    actions.runner.dsocial118-SISOC.sisoc-homologacion \
+  systemctl is-active docker containerd nginx mysql cron "$RUNNER_UNIT" \
     > "$BACKUP_DIR/status/systemd-active.txt" 2>&1 || true
 
   docker ps --no-trunc > "$BACKUP_DIR/docker/containers.txt"
