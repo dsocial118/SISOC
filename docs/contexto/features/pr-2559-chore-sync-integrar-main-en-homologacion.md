@@ -18,6 +18,7 @@
 - Hay cambios en vistas web y puede existir impacto en permisos o renderizado.
 - Se modifican templates, con posible impacto visual o de composición UI.
 - Existen cambios de persistencia o migraciones que requieren revisión de datos.
+- El alcance incluye automatización o tooling de CI/CD.
 
 ## Decisiones y supuestos detectados
 
@@ -29,12 +30,17 @@
 ## Design system y UI
 
 - El PR toca piezas de UI y conviene revisar consistencia visual con el patrón existente.
-- Archivos visuales relevantes: datacalle/templates/datacalle/encuesta_detail.html, datacalle/templates/datacalle/relevamiento_detail.html, datacalle/templates/datacalle/relevamiento_form.html, datacalle/templates/datacalle/relevamiento_list.html
+- Archivos visuales relevantes: .github/scripts/sync_main_downstream.js, .github/scripts/sync_main_downstream.test.js, datacalle/templates/datacalle/encuesta_detail.html, datacalle/templates/datacalle/relevamiento_detail.html, datacalle/templates/datacalle/relevamiento_form.html, datacalle/templates/datacalle/relevamiento_list.html
 
 ## Memoria operativa para agentes
 
 - Empezar por `docs/registro/prs/PR-2559.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
+- `.github/scripts/sync_main_downstream.js`
+- `.github/scripts/sync_main_downstream.test.js`
+- `.github/workflows/deploy.yml`
+- `.github/workflows/sync-main-downstream.yml`
+- `AGENT_REPO_MAP.md`
 - `CHANGELOG.md`
 - `audittrail/constants.py`
 - `datacalle/api_permissions.py`
@@ -50,14 +56,8 @@
 - `datacalle/templates/datacalle/encuesta_detail.html`
 - `datacalle/templates/datacalle/relevamiento_detail.html`
 - `datacalle/templates/datacalle/relevamiento_form.html`
-- `datacalle/templates/datacalle/relevamiento_list.html`
-- `datacalle/urls.py`
-- `datacalle/views.py`
-- `docs/contexto/features/pr-2537-chore-sync-integrar-main-en-homologacion.md`
-- `docs/contexto/features/pr-2539-chore-sync-integrar-main-en-homologacion.md`
-- ... y 26 archivo(s) adicional(es) relacionados.
+- ... y 55 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
-- `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`
