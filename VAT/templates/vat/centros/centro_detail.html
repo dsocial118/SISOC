@@ -3513,7 +3513,6 @@
             var createAction = formEl.getAttribute('action');
             var selectorModalEl = document.getElementById('modalPlanCurricularSelector');
             var selectorSearchInput = document.getElementById('planCurricularSelectorSearch');
-            var selectorSectorInput = document.getElementById('planCurricularSelectorSector');
             var selectorSummaryEl = document.getElementById('planCurricularSelectorSummary');
             var selectorButtonLabelEl = document.getElementById('planCurricularSelectorButtonLabel');
             var selectorEmptyStateEl = document.getElementById('planCurricularSelectorEmpty');
@@ -3522,12 +3521,6 @@
                 ? Array.from(selectorModalEl.querySelectorAll('[data-plan-selector-row]'))
                 : [];
             var shouldReturnToCursoModal = false;
-
-            function refreshSelect2(target) {
-                if (window.refreshSelect2Element) {
-                    window.refreshSelect2Element(target);
-                }
-            }
 
             function ensureTipoSelect2() {
                 var tipoField = formEl.querySelector('select[name="tipo"]');
@@ -3643,35 +3636,6 @@
                 });
             }
 
-            function populatePlanSelectorFilters() {
-                if (!selectorSectorInput) return;
-
-                var selectedSector = selectorSectorInput.value || '';
-                var sectors = [];
-
-                selectorRows.forEach(function(row) {
-                    var sector = row.dataset.planSector || '';
-
-                    if (sector && !sectors.includes(sector)) {
-                        sectors.push(sector);
-                    }
-                });
-
-                sectors.sort();
-
-                selectorSectorInput.innerHTML = '<option value="">Todos los sectores</option>';
-
-                sectors.forEach(function(sector) {
-                    var option = document.createElement('option');
-                    option.value = sector;
-                    option.textContent = sector;
-                    option.selected = sector === selectedSector;
-                    selectorSectorInput.appendChild(option);
-                });
-
-                refreshSelect2(selectorSectorInput);
-            }
-
             function setPlanEstudioInfo(planLabel, locked) {
                 if (!planEstudioInfoEl) return;
 
@@ -3710,19 +3674,15 @@
                 var searchValue = normalizePlanSelectorValue(
                     selectorSearchInput ? selectorSearchInput.value : ''
                 );
-                var sectorValue = selectorSectorInput ? selectorSectorInput.value : '';
                 var visibleRows = 0;
 
                 selectorRows.forEach(function(row) {
-                    var matchesSearch = !searchValue || [
+                    var isVisible = !searchValue || [
                         row.dataset.planLabel,
-                        row.dataset.planSector,
                         row.dataset.planNormativa,
                     ].some(function(value) {
                         return normalizePlanSelectorValue(value).includes(searchValue);
                     });
-                    var matchesSector = !sectorValue || row.dataset.planSector === sectorValue;
-                    var isVisible = matchesSearch && matchesSector;
 
                     row.classList.toggle('d-none', !isVisible);
                     if (isVisible) {
@@ -3767,18 +3727,10 @@
                 selectorSearchInput.addEventListener('input', applyPlanSelectorFilters);
             }
 
-            if (selectorSectorInput) {
-                if (window.initSelect2Elements) {
-                    window.initSelect2Elements(selectorSectorInput);
-                }
-                selectorSectorInput.addEventListener('change', applyPlanSelectorFilters);
-            }
-
             if (selectorOpenButton && selectorModalEl && window.bootstrap && window.bootstrap.Modal) {
                 selectorOpenButton.addEventListener('click', function(event) {
                     event.preventDefault();
                     shouldReturnToCursoModal = true;
-                    populatePlanSelectorFilters();
                     applyPlanSelectorFilters();
                     syncPlanSelectorTableSelection();
                     window.bootstrap.Modal.getOrCreateInstance(modalEl).hide();
@@ -3788,13 +3740,11 @@
 
             if (selectorModalEl) {
                 selectorModalEl.addEventListener('show.bs.modal', function() {
-                    populatePlanSelectorFilters();
                     applyPlanSelectorFilters();
                     syncPlanSelectorTableSelection();
                 });
 
                 selectorModalEl.addEventListener('shown.bs.modal', function() {
-                    refreshSelect2(selectorSectorInput);
                     if (selectorSearchInput) {
                         selectorSearchInput.focus();
                     }

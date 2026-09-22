@@ -170,3 +170,24 @@ def test_ciudadano_no_validado_permite_mismo_dni_que_estandar(db):
 
     assert estandar.documento_unico_key == "DNI_30111225"
     assert no_validado.documento_unico_key is None
+
+
+def test_admin_deja_tipo_documento_readonly_al_editar(db, rf):
+    """Ciudadano.save() rechaza el cambio de tipo con ValidationError, que
+    ModelAdmin.save_model() no traduce a error de formulario: si el campo
+    quedara editable, el admin devolvería un 500."""
+    from django.contrib.admin.sites import AdminSite
+
+    from ciudadanos.admin import CiudadanoAdmin
+
+    model_admin = CiudadanoAdmin(Ciudadano, AdminSite())
+    request = rf.get("/admin/ciudadanos/ciudadano/")
+    ciudadano = Ciudadano.objects.create(
+        nombre="Ana",
+        apellido="Perez",
+        fecha_nacimiento=date(1990, 1, 1),
+        documento=30999111,
+    )
+
+    assert "tipo_documento" not in model_admin.get_readonly_fields(request)
+    assert "tipo_documento" in model_admin.get_readonly_fields(request, ciudadano)

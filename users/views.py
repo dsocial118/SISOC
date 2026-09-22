@@ -261,7 +261,7 @@ class UserDeleteView(AdminRequiredMixin, DeleteView):
 
 class UserActiveView(AdminRequiredMixin, UpdateView):
     model = User
-    template_name = "user/user_confirm_delete.html"
+    template_name = "user/user_confirm_active.html"
     success_url = reverse_lazy("usuarios")
     required_permissions = ("auth.delete_user",)
     fields = []

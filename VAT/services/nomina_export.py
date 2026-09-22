@@ -71,7 +71,7 @@ def _first_non_empty(*values):
 def _resolve_document(ciudadano, observaciones):
     return _first_non_empty(
         ciudadano.cuil_cuit,
-        ciudadano.documento,
+        ciudadano.numero_documento,
         observaciones.get("cuil"),
         observaciones.get("documento"),
     )

@@ -333,12 +333,14 @@
                                     </article>
                                     <dl class="pas-ddjj-response-grid">
                                         {% for clave, respuesta in declaracion_seleccionada.respuestas.items %}
-                                            <div>
-                                                <dt>{{ respuesta.etiqueta }}</dt>
-                                                <dd>
-                                                    {{ respuesta.respuesta }}
-                                                </dd>
-                                            </div>
+                                            {% if clave != "firma_nombre_completo" %}
+                                                <div>
+                                                    <dt>{{ respuesta.etiqueta }}</dt>
+                                                    <dd>
+                                                        {{ respuesta.respuesta }}
+                                                    </dd>
+                                                </div>
+                                            {% endif %}
                                         {% endfor %}
                                     </dl>
                                 {% else %}

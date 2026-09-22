@@ -1634,7 +1634,7 @@ def test_prestacion_alimentaria_conformidad_crea_registro():
 
     response = client.post(
         f"/api/comedores/{comedor.id}/prestacion-alimentaria/conformidad/",
-        {"conforme": True, "periodo": "2035-12"},
+        {"conforme": True, "periodo": "2035-12", "dni_certificador": "12345678"},
         format="json",
     )
 
@@ -1643,6 +1643,31 @@ def test_prestacion_alimentaria_conformidad_crea_registro():
     conformidad = PrestacionAlimentariaConformidad.objects.get(comedor=comedor)
     assert conformidad.conforme is True
     assert conformidad.periodo == date(2035, 12, 1)
+    assert conformidad.dni_certificador == "12345678"
+    assert "dni_certificador" not in response.data
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("dni_certificador", [None, "123456", "123456789", "12a4567"])
+def test_prestacion_alimentaria_alimentar_rechaza_dni_certificador_invalido(
+    dni_certificador,
+):
+    comedor, client = _comedor_alimentar_comunidad(
+        username=f"rep_conf_dni_{str(dni_certificador).replace('a', 'x')}"
+    )
+    payload = {"conforme": True, "periodo": "2035-12"}
+    if dni_certificador is not None:
+        payload["dni_certificador"] = dni_certificador
+
+    response = client.post(
+        f"/api/comedores/{comedor.id}/prestacion-alimentaria/conformidad/",
+        payload,
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert "dni_certificador" in response.data
+    assert not PrestacionAlimentariaConformidad.objects.filter(comedor=comedor).exists()
 
 
 @pytest.mark.django_db
@@ -1700,7 +1725,7 @@ def test_prestacion_alimentaria_error_pdf_devuelve_503(mocker):
 
     response = client.post(
         f"/api/comedores/{comedor.id}/prestacion-alimentaria/conformidad/",
-        {"conforme": True, "periodo": "2035-10"},
+        {"conforme": True, "periodo": "2035-10", "dni_certificador": "12345678"},
         format="json",
     )
 
@@ -1712,7 +1737,11 @@ def test_prestacion_alimentaria_error_pdf_devuelve_503(mocker):
 def test_prestacion_alimentaria_conformidad_permite_repetir_periodo():
     comedor, client = _comedor_alimentar_comunidad(username="rep_conf_dup")
     url = f"/api/comedores/{comedor.id}/prestacion-alimentaria/conformidad/"
-    payload = {"conforme": True, "periodo": "2027-08"}
+    payload = {
+        "conforme": True,
+        "periodo": "2027-08",
+        "dni_certificador": "12345678",
+    }
 
     assert client.post(url, payload, format="json").status_code == 201
     segunda = client.post(url, payload, format="json")
@@ -1726,7 +1755,11 @@ def test_prestacion_alimentaria_conformidad_realizada_elimina_advertencia():
     comedor, client = _comedor_alimentar_comunidad(username="rep_conf_repetida")
     url = f"/api/comedores/{comedor.id}/prestacion-alimentaria/conformidad/"
 
-    primera = client.post(url, {"conforme": True}, format="json")
+    primera = client.post(
+        url,
+        {"conforme": True, "dni_certificador": "12345678"},
+        format="json",
+    )
     detalle = client.get(f"/api/comedores/{comedor.id}/prestacion-alimentaria/")
 
     assert primera.status_code == 201
@@ -1741,13 +1774,21 @@ def test_prestacion_alimentaria_no_conforme_requiere_observaciones():
     comedor, client = _comedor_alimentar_comunidad(username="rep_conf_obs")
     url = f"/api/comedores/{comedor.id}/prestacion-alimentaria/conformidad/"
 
-    sin_observaciones = client.post(url, {"conforme": False}, format="json")
+    sin_observaciones = client.post(
+        url,
+        {"conforme": False, "dni_certificador": "12345678"},
+        format="json",
+    )
     assert sin_observaciones.status_code == 400
     assert not PrestacionAlimentariaConformidad.objects.filter(comedor=comedor).exists()
 
     con_observaciones = client.post(
         url,
-        {"conforme": False, "observaciones": "Faltan raciones"},
+        {
+            "conforme": False,
+            "observaciones": "Faltan raciones",
+            "dni_certificador": "12345678",
+        },
         format="json",
     )
     assert con_observaciones.status_code == 201
@@ -1852,3 +1893,45 @@ def test_prestacion_alimentaria_pnud_expone_datos_convenio():
     assert conformidad.status_code == 201
     registro = PrestacionAlimentariaConformidad.objects.get(comedor=comedor)
     assert registro.informe_tecnico_id is None
+    assert registro.dni_certificador is None
+
+
+@pytest.mark.django_db
+def test_descarga_certificacion_no_altera_dni_ni_regenera_pdf(mocker):
+    comedor, client = _comedor_alimentar_comunidad(username="rep_conf_descarga_dni")
+    generador_pdf = mocker.patch(
+        "comedores.api_views.generar_certificacion_prestaciones_pdf",
+        return_value=b"%PDF-1.4\n%%EOF",
+    )
+    response = client.post(
+        f"/api/comedores/{comedor.id}/prestacion-alimentaria/conformidad/",
+        {"conforme": True, "dni_certificador": "12345678"},
+        format="json",
+    )
+    conformidad = PrestacionAlimentariaConformidad.objects.get(comedor=comedor)
+
+    descarga = client.get(
+        f"{response.data['certificacion_pdf_url']}?dni_certificador=87654321"
+    )
+
+    assert descarga.status_code == 200
+    conformidad.refresh_from_db()
+    assert conformidad.dni_certificador == "12345678"
+    assert generador_pdf.call_count == 1
+
+
+@pytest.mark.django_db
+def test_sin_permiso_prestaciones_no_puede_fijar_dni_certificador():
+    comedor, _ = _comedor_alimentar_comunidad(username="rep_conf_sin_permiso")
+    usuario = get_user_model().objects.get(username="rep_conf_sin_permiso")
+    usuario.user_permissions.clear()
+    client = _token_client(usuario)
+
+    response = client.post(
+        f"/api/comedores/{comedor.id}/prestacion-alimentaria/conformidad/",
+        {"conforme": True, "dni_certificador": "12345678"},
+        format="json",
+    )
+
+    assert response.status_code == 403
+    assert not PrestacionAlimentariaConformidad.objects.filter(comedor=comedor).exists()
