@@ -5,6 +5,7 @@
 
 - [sin-area] fix(datacalle): revisión QA del backoffice + tres roles con provincia única. (PR #2542)
 - [sin-area] ci(deploy): encadenar promociones por ambiente. (PR #2552)
+- [sin-area] fix(datacalle): la fase no habilitaba área operativa ni el desplegable de dispositivos. (PR #2553)
 <!-- AUTO-GENERATED RELEASE END: 2026-09-23 -->
 
 <!-- AUTO-GENERATED RELEASE START: 2026-09-16 -->
