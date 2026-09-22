@@ -11,29 +11,6 @@
         <form method="post" enctype="multipart/form-data">
             {% csrf_token %}
 
-            <!-- Redacción -->
-            <div class="editor-panel">
-                <div class="panel-label">
-                    <i class="fas fa-pen"></i> Redacción
-                </div>
-                <div class="panel-body">
-                    <div class="mb-3">
-                        <label for="id_titulo">
-                            Título <span class="text-danger">*</span>
-                        </label>
-                        {{ form.titulo }}
-                        {% if form.titulo.errors %}<div class="invalid-feedback d-block">{{ form.titulo.errors.0 }}</div>{% endif %}
-                    </div>
-                    <div class="mb-0">
-                        <label for="id_cuerpo">
-                            Contenido <span class="text-danger">*</span>
-                        </label>
-                        {{ form.cuerpo }}
-                        {% if form.cuerpo.errors %}<div class="invalid-feedback d-block">{{ form.cuerpo.errors.0 }}</div>{% endif %}
-                    </div>
-                </div>
-            </div>
-
             <!-- Configuración -->
             <div class="editor-panel">
                 <div class="panel-label">
@@ -82,7 +59,7 @@
                 </div>
             </div>
 
-            <!-- Destinatarios (solo para comunicados a comedores) -->
+            <!-- Destinatarios: seleccion personalizada con filtros combinables -->
             <div id="comedores-options"
                  class="editor-panel {% if form.instance.subtipo != 'comedores' %}d-none{% endif %}">
                 <div class="panel-label">
@@ -100,49 +77,42 @@
                         </div>
                         <small class="form-text">Se enviará a todos los comedores que tiene asignados.</small>
                     </div>
-
                     <div id="comedores-selector"
                          class="{% if form.instance.para_todos_comedores %}d-none{% endif %}">
-                        <label>Seleccionar Comedores</label>
-                        <div class="d-none">{{ form.comedores }}</div>
-                        {% if form.comedores.errors %}<div class="invalid-feedback d-block">{{ form.comedores.errors.0 }}</div>{% endif %}
-                        <div id="comedoresSeleccionados" class="comedores-badges mb-2"></div>
-                        <div class="input-group mb-2 comedores-search">
-                            <span class="input-group-text"><i class="fas fa-search"></i></span>
-                            <input type="text"
-                                   id="comedorSearch"
-                                   class="form-control"
-                                   placeholder="Filtrar comedores por nombre..." />
-                        </div>
-                        <div id="comedoresLista" class="comedores-lista-container"></div>
-                        <small class="form-text">Haga clic en "Agregar" para seleccionar comedores.</small>
+                        {% include "comunicados/partials/destinatarios_panel.html" with universo="comedores" campo=form.comedores %}
                     </div>
                 </div>
             </div>
 
-            <!-- Destinatarios (solo para comunicados a organizaciones) -->
             <div id="organizaciones-options"
                  class="editor-panel {% if form.instance.subtipo != 'organizaciones' %}d-none{% endif %}">
                 <div class="panel-label">
                     <i class="fas fa-building"></i> Destinatarios
                 </div>
                 <div class="panel-body">
-                    <div id="organizaciones-selector">
-                        <label>Seleccionar Organizaciones</label>
-                        <div class="d-none">{{ form.organizaciones }}</div>
-                        {% if form.organizaciones.errors %}
-                            <div class="invalid-feedback d-block">{{ form.organizaciones.errors.0 }}</div>
-                        {% endif %}
-                        <div id="organizacionesSeleccionadas" class="comedores-badges mb-2"></div>
-                        <div class="input-group mb-2 comedores-search">
-                            <span class="input-group-text"><i class="fas fa-search"></i></span>
-                            <input type="text"
-                                   id="organizacionSearch"
-                                   class="form-control"
-                                   placeholder="Filtrar organizaciones por nombre..." />
-                        </div>
-                        <div id="organizacionesLista" class="comedores-lista-container"></div>
-                        <small class="form-text">Haga clic en "Agregar" para seleccionar organizaciones.</small>
+                    {% include "comunicados/partials/destinatarios_panel.html" with universo="organizaciones" campo=form.organizaciones %}
+                </div>
+            </div>
+
+            <!-- Redacción -->
+            <div class="editor-panel">
+                <div class="panel-label">
+                    <i class="fas fa-pen"></i> Redacción
+                </div>
+                <div class="panel-body">
+                    <div class="mb-3">
+                        <label for="id_titulo">
+                            Título <span class="text-danger">*</span>
+                        </label>
+                        {{ form.titulo }}
+                        {% if form.titulo.errors %}<div class="invalid-feedback d-block">{{ form.titulo.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="mb-0">
+                        <label for="id_cuerpo">
+                            Contenido <span class="text-danger">*</span>
+                        </label>
+                        {{ form.cuerpo }}
+                        {% if form.cuerpo.errors %}<div class="invalid-feedback d-block">{{ form.cuerpo.errors.0 }}</div>{% endif %}
                     </div>
                 </div>
             </div>
@@ -248,5 +218,9 @@
         </form>
     </div>
 
+    {{ destinatarios_filters_config|json_script:"destinatarios-filters-config" }}
+    {{ destinatarios_seleccionados|json_script:"destinatarios-seleccionados" }}
+    {{ destinatarios_urls|json_script:"destinatarios-urls" }}
     <script src="{% static 'custom/js/comunicadosForm.js' %}"></script>
+    <script src="{% static 'custom/js/comunicadosDestinatarios.js' %}"></script>
 {% endblock %}

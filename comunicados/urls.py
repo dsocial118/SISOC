@@ -51,6 +51,17 @@ urlpatterns = [
         views.ComunicadoToggleDestacadoView.as_view(),
         name="comunicados_toggle_destacado",
     ),
+    # Destinatarios (filtros combinables del selector personalizado)
+    path(
+        "comunicados/destinatarios/<str:universo>/buscar/",
+        views.DestinatariosBuscarView.as_view(),
+        name="comunicados_destinatarios_buscar",
+    ),
+    path(
+        "comunicados/destinatarios/<str:universo>/todos/",
+        views.DestinatariosSeleccionarTodosView.as_view(),
+        name="comunicados_destinatarios_todos",
+    ),
     # Mailing
     path(
         "comunicados/mailing/",

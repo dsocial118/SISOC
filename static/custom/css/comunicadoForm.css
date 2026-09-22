@@ -362,3 +362,88 @@
     text-align: center;
   }
 }
+
+/* ==========================================================================
+   Seleccion personalizada de destinatarios (issue #2505)
+   Filtros combinables + resultados + seleccion, dentro del panel Destinatarios.
+   ========================================================================== */
+.destinatarios-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.destinatarios-filtros__rows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.destinatarios-filtro-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr) minmax(0, 1.4fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+
+@media (max-width: 767.98px) {
+  .destinatarios-filtro-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.destinatarios-filtro-row .form-select,
+.destinatarios-filtro-row .form-control {
+  background: #1a2332;
+  border: 1px solid #3d4f63;
+  color: #d1d5db;
+  font-size: 13px;
+}
+
+.destinatarios-filtros__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.destinatarios-resultados__head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.destinatarios-resumen {
+  color: #9ca3af;
+  font-size: 13px;
+}
+
+.destinatarios-detalle {
+  color: #6b7280;
+  font-size: 11px;
+}
+
+.destinatarios-paginacion {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.destinatarios-paginacion:empty {
+  display: none;
+}
+
+.destinatarios-pagina {
+  color: #9ca3af;
+  font-size: 12px;
+}
+
+.destinatarios-seleccion > label {
+  display: block;
+  color: #d1d5db;
+  margin-bottom: 6px;
+}

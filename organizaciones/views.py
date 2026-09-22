@@ -21,6 +21,10 @@ from django.views.generic import (
     UpdateView,
 )
 from core.pagination import NoCountPaginator, build_no_count_page_range
+from organizaciones.filter_config import (
+    ORGANIZACION_ADVANCED_FILTER,
+    get_filters_ui_config,
+)
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
 from iam.services import user_has_permission_code
 
@@ -139,10 +143,20 @@ def _filtrar_organizaciones_por_dupla(queryset, user):
     ).distinct()
 
 
-def _build_organizacion_list_queryset(query, user=None):
+def _build_organizacion_list_queryset(query, user=None, request_or_get=None):
+    """Listado de organizaciones con busqueda simple y filtros combinables.
+
+    ``request_or_get`` habilita el parametro ``filters`` (JSON) que comparten el
+    listado y el selector de destinatarios de comunicados.
+    """
+
     queryset = _apply_organizacion_search(
         _build_organizacion_list_base_queryset(), query
     )
+    if request_or_get is not None:
+        queryset = ORGANIZACION_ADVANCED_FILTER.filter_queryset(
+            queryset, request_or_get
+        ).distinct()
     return _filtrar_organizaciones_por_dupla(queryset, user) if user else queryset
 
 
@@ -383,7 +397,9 @@ class OrganizacionListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         return _build_organizacion_list_queryset(
-            self.request.GET.get("busqueda"), self.request.user
+            self.request.GET.get("busqueda"),
+            self.request.user,
+            request_or_get=self.request,
         )
 
     def paginate_queryset(self, queryset, page_size):
@@ -396,6 +412,8 @@ class OrganizacionListView(LoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["query"] = self.request.GET.get("busqueda", "")
+        context["filters_mode"] = True
+        context["filters_config"] = get_filters_ui_config()
         context["puede_crear_organizacion"] = _puede_ver_todas_las_organizaciones(
             self.request.user
         )
@@ -1362,9 +1380,9 @@ def organizaciones_ajax(request):
     """
     busqueda = request.GET.get("busqueda", "").strip()
     paginator = NoCountPaginator(
-        _build_organizacion_list_queryset(busqueda, request.user).values_list(
-            "pk", flat=True
-        ),
+        _build_organizacion_list_queryset(
+            busqueda, request.user, request_or_get=request
+        ).values_list("pk", flat=True),
         10,
     )
     page_obj = paginator.get_page(request.GET.get("page", 1))
