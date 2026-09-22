@@ -311,7 +311,12 @@ sudo bash scripts/infra/install_qa_pwa_nginx.sh --apply --yes
 ```
 
 El primer comando es un preflight de solo lectura. El segundo modifica Nginx y
-solo debe ejecutarse cuando los tres upstreams QA esten listos para publicarse.
+debe ejecutarse antes del primer deploy QA: cada workflow verifica su URL
+publica y fallaria con 404 si el alias todavia no existe. Es esperable que las
+rutas nuevas respondan 502 mientras sus contenedores aun no estan levantados;
+desplegar despues Espacios, DataCalle y Gestionar, y exigir 200 en cada URL antes
+de considerar listo el entorno. Nginx conserva rollback automatico si falla su
+validacion o recarga.
 
 `docs/operacion/nginx/sisoc-pwas.conf` es el candidato activo de esta entrega:
 `/mobile/`, `/pwa/espacioscomunitarios/`, `/pwa/datacalle/` y `/pwa/gestionar/`, con aliases `/mobile2/` y
