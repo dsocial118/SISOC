@@ -41,7 +41,9 @@
 - `comedores/templates/comedor/responsable_tarjeta_form.html`
 - `comedores/tests/test_responsable_tarjeta_form.py`
 - `comedores/views/comedor.py`
+- `docs/contexto/features/pr-2555-bug-en-guardado-de-localidad-2491-y-este-issue-fix-datos-de-nomina-comedores-2507.md`
 - `docs/registro/cambios/2026-09-22-responsable-tarjeta-municipio.md`
+- `docs/registro/prs/PR-2555.md`
 - `static/custom/css/comedor_detail.css`
 - `static/custom/css/nuevo_comedor.css`
 - `tests/test_comedor_service_characterization_db.py`
