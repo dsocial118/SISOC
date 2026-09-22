@@ -17,7 +17,7 @@ on:
                     - deploy
                     - inspect-cdi-talla-blockers
 
-permissions: { actions: write, contents: write, pull-requests: write }
+permissions: { contents: read }
 
 concurrency: { group: "deploy-${{ github.ref }}", cancel-in-progress: false }
 
@@ -51,11 +51,15 @@ jobs:
                           echo "- Evento: \`$EXPECTED_SHA\`"
                           echo "- origin/development actual: \`$remote_sha\`";
                       } >> "$GITHUB_STEP_SUMMARY"
-                      exit 0
+                      exit 1
                   fi
+                  previous_sha="$(git -C "$APP_ROOT" rev-parse HEAD)"
                   git -C "$APP_ROOT" merge --ff-only origin/development
-                  echo "Commit previo al deploy para rollback: $(git rev-parse HEAD)"
-                  ./scripts/operacion/deploy_refresh.sh --yes --skip-pull --expected-revision "$EXPECTED_SHA"
+                  SISOC_ROOT_DIR="$APP_ROOT" bash "$APP_ROOT/scripts/operacion/deploy_verified.sh" \
+                      --environment qa \
+                      --expected-revision "$EXPECTED_SHA" \
+                      --rollback-revision "$previous_sha" \
+                      --skip-pull
                   wait_for() {
                       local description="$1"
                       local attempts="$2"
@@ -135,14 +139,18 @@ jobs:
                           echo "- Evento: \`$EXPECTED_SHA\`"
                           echo "- origin/homologacion actual: \`$remote_sha\`";
                       } >> "$GITHUB_STEP_SUMMARY"
-                      exit 0
+                      exit 1
                   fi
 
                   [[ "$(git -C "$APP_ROOT" branch --show-current)" == "homologacion" ]]
                   git -C "$APP_ROOT" diff --quiet
                   git -C "$APP_ROOT" diff --cached --quiet
-                  echo "Commit previo al deploy para rollback: $(git rev-parse HEAD)"
-                  SISOC_ROOT_DIR="$APP_ROOT" bash "$APP_ROOT/scripts/operacion/deploy_refresh.sh" --yes --expected-revision "$EXPECTED_SHA" --without-mobile
+                  deploy_script="$(mktemp "${RUNNER_TEMP:-/tmp}/sisoc-deploy-verified.XXXXXXXX")"
+                  git -C "$APP_ROOT" show "$EXPECTED_SHA:scripts/operacion/deploy_verified.sh" > "$deploy_script"
+                  SISOC_ROOT_DIR="$APP_ROOT" bash "$deploy_script" \
+                      --environment homologacion \
+                      --expected-revision "$EXPECTED_SHA"
+                  rm -f "$deploy_script"
                   wait_for() {
                       local description="$1"
                       local attempts="$2"
@@ -222,13 +230,17 @@ jobs:
                           echo "- origin/main actual: \`$remote_sha\`"
                           echo "- Accion requerida: aprobar el job del commit actual.";
                       } >> "$GITHUB_STEP_SUMMARY"
-                      exit 0
+                      exit 1
                   fi
                   [[ "$(git -C "$APP_ROOT" branch --show-current)" == "main" ]]
                   git -C "$APP_ROOT" diff --quiet
                   git -C "$APP_ROOT" diff --cached --quiet
-                  echo "Commit previo al deploy para rollback: $(git rev-parse HEAD)"
-                  SISOC_ROOT_DIR="$APP_ROOT" bash "$APP_ROOT/scripts/operacion/deploy_refresh.sh" --yes --expected-revision "$EXPECTED_SHA" --without-mobile
+                  deploy_script="$(mktemp "${RUNNER_TEMP:-/tmp}/sisoc-deploy-verified.XXXXXXXX")"
+                  git -C "$APP_ROOT" show "$EXPECTED_SHA:scripts/operacion/deploy_verified.sh" > "$deploy_script"
+                  SISOC_ROOT_DIR="$APP_ROOT" bash "$deploy_script" \
+                      --environment production \
+                      --expected-revision "$EXPECTED_SHA"
+                  rm -f "$deploy_script"
                   wait_for() {
                       local description="$1"
                       local attempts="$2"
@@ -283,35 +295,93 @@ jobs:
         needs: deploy-produccion
         if: github.ref == 'refs/heads/main' && needs.deploy-produccion.result == 'success'
         runs-on: ubuntu-latest
+        env:
+            RELEASE_AUTOMATION_APP_CLIENT_ID: ${{ vars.RELEASE_AUTOMATION_APP_CLIENT_ID }}
+            RELEASE_AUTOMATION_APP_PRIVATE_KEY_PRESENT: ${{ secrets.RELEASE_AUTOMATION_APP_PRIVATE_KEY != '' }}
         steps:
-            - uses: actions/github-script@v8
+            - name: Checkout de la automatizacion desplegada
+              uses: actions/checkout@v6.0.2
               with:
+                  ref: ${{ github.sha }}
+                  persist-credentials: false
+
+            - name: Validar GitHub App de automatizacion
+              if: ${{ env.RELEASE_AUTOMATION_APP_CLIENT_ID == '' || env.RELEASE_AUTOMATION_APP_PRIVATE_KEY_PRESENT != 'true' }}
+              run: |
+                  echo "SETUP_BLOCKED: faltan RELEASE_AUTOMATION_APP_CLIENT_ID o RELEASE_AUTOMATION_APP_PRIVATE_KEY."
+                  exit 1
+
+            - name: Generar token temporal de GitHub App
+              id: app-token
+              uses: actions/create-github-app-token@v3
+              with:
+                  client-id: ${{ vars.RELEASE_AUTOMATION_APP_CLIENT_ID }}
+                  private-key: ${{ secrets.RELEASE_AUTOMATION_APP_PRIVATE_KEY }}
+
+            - name: Promover la revision desplegada a homologacion
+              uses: actions/github-script@v8
+              env:
+                  PROMOTION_SOURCE: main
+                  PROMOTION_TARGET: homologacion
+                  DEPLOYED_SHA: ${{ github.sha }}
+              with:
+                github-token: ${{ steps.app-token.outputs.token }}
                 script: |
-                    const { owner, repo } = context.repo;
-                    const compare = await github.rest.repos.compareCommits({ owner, repo, base: 'main', head: 'homologacion' });
-                    if (compare.data.behind_by === 0) return;
-                    const open = await github.rest.pulls.list({ owner, repo, state: 'open', base: 'homologacion', head: `${owner}:main` });
-                    const pull = open.data[0] ?? (await github.rest.pulls.create({ owner, repo, base: 'homologacion', head: 'main', title: 'chore(sync): integrar main en homologacion', body: 'Promocion posterior a deploy exitoso de produccion.' })).data;
-                    const merged = await github.rest.pulls.merge({ owner, repo, pull_number: pull.number, sha: pull.head.sha, merge_method: 'merge' });
-                    if (!merged.data.merged) throw new Error(`No se pudo integrar main en homologacion: ${merged.data.message}`);
-                    await github.rest.actions.createWorkflowDispatch({ owner, repo, workflow_id: 'deploy.yml', ref: 'homologacion' });
+                    const { run } = require(`${process.env.GITHUB_WORKSPACE}/.github/scripts/sync_main_downstream.js`);
+                    await run({
+                      github,
+                      context,
+                      core,
+                      source: process.env.PROMOTION_SOURCE,
+                      target: process.env.PROMOTION_TARGET,
+                      deployedSha: process.env.DEPLOYED_SHA,
+                    });
 
     promover-homologacion-a-qa:
         needs: deploy-homologacion
         if: github.ref == 'refs/heads/homologacion' && needs.deploy-homologacion.result == 'success'
         runs-on: ubuntu-latest
+        env:
+            RELEASE_AUTOMATION_APP_CLIENT_ID: ${{ vars.RELEASE_AUTOMATION_APP_CLIENT_ID }}
+            RELEASE_AUTOMATION_APP_PRIVATE_KEY_PRESENT: ${{ secrets.RELEASE_AUTOMATION_APP_PRIVATE_KEY != '' }}
         steps:
-            - uses: actions/github-script@v8
+            - name: Checkout de la automatizacion desplegada
+              uses: actions/checkout@v6.0.2
               with:
+                  ref: ${{ github.sha }}
+                  persist-credentials: false
+
+            - name: Validar GitHub App de automatizacion
+              if: ${{ env.RELEASE_AUTOMATION_APP_CLIENT_ID == '' || env.RELEASE_AUTOMATION_APP_PRIVATE_KEY_PRESENT != 'true' }}
+              run: |
+                  echo "SETUP_BLOCKED: faltan RELEASE_AUTOMATION_APP_CLIENT_ID o RELEASE_AUTOMATION_APP_PRIVATE_KEY."
+                  exit 1
+
+            - name: Generar token temporal de GitHub App
+              id: app-token
+              uses: actions/create-github-app-token@v3
+              with:
+                  client-id: ${{ vars.RELEASE_AUTOMATION_APP_CLIENT_ID }}
+                  private-key: ${{ secrets.RELEASE_AUTOMATION_APP_PRIVATE_KEY }}
+
+            - name: Promover la revision desplegada a QA
+              uses: actions/github-script@v8
+              env:
+                  PROMOTION_SOURCE: homologacion
+                  PROMOTION_TARGET: development
+                  DEPLOYED_SHA: ${{ github.sha }}
+              with:
+                github-token: ${{ steps.app-token.outputs.token }}
                 script: |
-                    const { owner, repo } = context.repo;
-                    const compare = await github.rest.repos.compareCommits({ owner, repo, base: 'homologacion', head: 'development' });
-                    if (compare.data.behind_by === 0) return;
-                    const open = await github.rest.pulls.list({ owner, repo, state: 'open', base: 'development', head: `${owner}:homologacion` });
-                    const pull = open.data[0] ?? (await github.rest.pulls.create({ owner, repo, base: 'development', head: 'homologacion', title: 'chore(sync): integrar homologacion en development', body: 'Promocion posterior a deploy exitoso de homologacion.' })).data;
-                    const merged = await github.rest.pulls.merge({ owner, repo, pull_number: pull.number, sha: pull.head.sha, merge_method: 'merge' });
-                    if (!merged.data.merged) throw new Error(`No se pudo integrar homologacion en development: ${merged.data.message}`);
-                    await github.rest.actions.createWorkflowDispatch({ owner, repo, workflow_id: 'deploy.yml', ref: 'development' });
+                    const { run } = require(`${process.env.GITHUB_WORKSPACE}/.github/scripts/sync_main_downstream.js`);
+                    await run({
+                      github,
+                      context,
+                      core,
+                      source: process.env.PROMOTION_SOURCE,
+                      target: process.env.PROMOTION_TARGET,
+                      deployedSha: process.env.DEPLOYED_SHA,
+                    });
 
     recuperar-talla-legacy-produccion:
         if: >-

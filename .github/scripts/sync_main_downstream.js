@@ -1,34 +1,24 @@
 "use strict";
 
-const SYNCHRONIZATION_BRANCH_PREFIX = "automation/sync-main-to-";
+const PROMOTION_BRANCH_PREFIX = "automation/promote-";
 
-function synchronizationBranch(target) {
-  return `${SYNCHRONIZATION_BRANCH_PREFIX}${target}`;
+function promotionBranch(source, target) {
+  return `${PROMOTION_BRANCH_PREFIX}${source}-to-${target}`;
 }
 
 function isCommitSha(value) {
   return typeof value === "string" && /^(?:[0-9a-f]{40}|[0-9a-f]{64})$/i.test(value);
 }
 
-async function ensureSynchronizationBranch({ github, owner, repo, target, branch }) {
+async function ensurePromotionBranch({ github, owner, repo, target, branch }) {
   try {
-    await github.rest.git.getRef({
-      owner,
-      repo,
-      ref: `heads/${branch}`,
-    });
+    await github.rest.git.getRef({ owner, repo, ref: `heads/${branch}` });
     return;
   } catch (error) {
-    if (error.status !== 404) {
-      throw error;
-    }
+    if (error.status !== 404) throw error;
   }
 
-  const targetRef = await github.rest.git.getRef({
-    owner,
-    repo,
-    ref: `heads/${target}`,
-  });
+  const targetRef = await github.rest.git.getRef({ owner, repo, ref: `heads/${target}` });
   await github.rest.git.createRef({
     owner,
     repo,
@@ -37,31 +27,20 @@ async function ensureSynchronizationBranch({ github, owner, repo, target, branch
   });
 }
 
-async function mergeIntoSynchronizationBranch({ github, owner, repo, branch, source }) {
+async function mergeIntoPromotionBranch({ github, owner, repo, branch, head }) {
   const merged = await github.rest.repos.merge({
     owner,
     repo,
     base: branch,
-    head: source,
-    commit_title: `chore(sync): incorporar ${source} en ${branch}`,
-    commit_message: "Actualizacion segura de la rama temporal de sincronizacion descendente.",
+    head,
+    commit_title: `chore(sync): incorporar ${head} en ${branch}`,
+    commit_message: "Promocion descendente posterior a un despliegue verificado.",
   });
-
-  // GitHub returns 204 without a body when the source is already in the base.
-  if (merged?.status === 204 && merged.data == null) {
-    return;
-  }
-
-  // A successful non-fast-forward merge returns the resulting commit (201).
-  if (merged?.status === 201 && isCommitSha(merged.data?.sha)) {
-    return;
-  }
-
+  if (merged?.status === 204 && merged.data == null) return;
+  if (merged?.status === 201 && isCommitSha(merged.data?.sha)) return;
   const detail = merged?.data?.message
     ?? (merged?.data ? "falta SHA valido del commit resultante" : "falta cuerpo");
-  throw new Error(
-    `Respuesta inesperada al incorporar ${source} en ${branch}: ${detail} (status ${merged?.status ?? "desconocido"}).`,
-  );
+  throw new Error(`Respuesta inesperada al incorporar ${head}: ${detail} (status ${merged?.status ?? "desconocido"}).`);
 }
 
 async function enableAutoMerge({ github, core, pull }) {
@@ -69,7 +48,6 @@ async function enableAutoMerge({ github, core, pull }) {
     core.info(`PR #${pull.number} ya tiene auto-merge habilitado.`);
     return;
   }
-
   await github.graphql(
     `mutation EnableAutoMerge($pullRequestId: ID!) {
       enablePullRequestAutoMerge(
@@ -80,51 +58,36 @@ async function enableAutoMerge({ github, core, pull }) {
     }`,
     { pullRequestId: pull.node_id },
   );
-  core.info(`PR #${pull.number} armado para auto-merge nativo.`);
 }
 
-async function closeLegacySynchronizationPulls({ github, core, owner, repo, target }) {
-  const legacyPulls = await github.rest.pulls.list({
-    owner,
-    repo,
-    state: "open",
-    base: target,
-    head: `${owner}:main`,
-    per_page: 10,
-  });
-  const title = `chore(sync): integrar main en ${target}`;
-
-  for (const pull of legacyPulls.data) {
-    if (pull.user?.login !== "github-actions[bot]" || pull.title !== title) {
-      continue;
-    }
-    await github.rest.pulls.update({
-      owner,
-      repo,
-      pull_number: pull.number,
-      state: "closed",
-    });
-    core.info(`PR directo obsoleto #${pull.number} cerrado a favor de la rama tecnica.`);
+async function run({ github, context, core, source, target, deployedSha }) {
+  if (!source || !target || source === target || !isCommitSha(deployedSha)) {
+    throw new Error("Parametros de promocion invalidos.");
   }
-}
-
-async function synchronizeTarget({ github, core, owner, repo, target }) {
-  const comparison = await github.rest.repos.compareCommits({
-    owner,
-    repo,
-    base: "main",
-    head: target,
-  });
-  if (comparison.data.behind_by === 0) {
-    core.info(`${target} ya contiene todo main; no hay cambios.`);
+  const { owner, repo } = context.repo;
+  const sourceRef = await github.rest.git.getRef({ owner, repo, ref: `heads/${source}` });
+  if (sourceRef.data.object.sha !== deployedSha) {
+    core.notice(
+      `No se promueve ${deployedSha}: ${source} avanzo a ${sourceRef.data.object.sha}.`,
+    );
     return;
   }
 
-  const branch = synchronizationBranch(target);
-  await closeLegacySynchronizationPulls({ github, core, owner, repo, target });
-  await ensureSynchronizationBranch({ github, owner, repo, target, branch });
-  await mergeIntoSynchronizationBranch({ github, owner, repo, branch, source: target });
-  await mergeIntoSynchronizationBranch({ github, owner, repo, branch, source: "main" });
+  const comparison = await github.rest.repos.compareCommits({
+    owner,
+    repo,
+    base: deployedSha,
+    head: target,
+  });
+  if (comparison.data.behind_by === 0) {
+    core.info(`${target} ya contiene la revision desplegada ${deployedSha}.`);
+    return;
+  }
+
+  const branch = promotionBranch(source, target);
+  await ensurePromotionBranch({ github, owner, repo, target, branch });
+  await mergeIntoPromotionBranch({ github, owner, repo, branch, head: target });
+  await mergeIntoPromotionBranch({ github, owner, repo, branch, head: deployedSha });
 
   const pulls = await github.rest.pulls.list({
     owner,
@@ -136,63 +99,28 @@ async function synchronizeTarget({ github, core, owner, repo, target }) {
   });
   let pull = pulls.data[0];
   if (!pull) {
-    const created = await github.rest.pulls.create({
-      owner,
-      repo,
-      base: target,
-      head: branch,
-      title: `chore(sync): integrar main en ${target}`,
-      body: [
-        "Sincronizacion descendente automatica.",
-        "",
-        "- La rama tecnica parte de la rama destino y solo incorpora `main`.",
-        "- No escribe ni promueve cambios hacia `main`.",
-        "- GitHub hace el merge solo cuando los requisitos de la ruleset estan verdes.",
-      ].join("\n"),
-    });
-    pull = created.data;
-    core.info(`PR #${pull.number} creado: ${pull.html_url}`);
-  } else {
-    core.info(`Reutilizando PR #${pull.number}: ${pull.html_url}`);
+    pull = (
+      await github.rest.pulls.create({
+        owner,
+        repo,
+        base: target,
+        head: branch,
+        title: `chore(sync): integrar ${source} en ${target}`,
+        body: [
+          "Promocion descendente automatica.",
+          "",
+          `- Revision ya desplegada en \`${source}\`: \`${deployedSha}\`.`,
+          `- Destino: \`${target}\`.`,
+          "- GitHub fusiona solo cuando la ruleset y los checks requeridos estan verdes.",
+        ].join("\n"),
+      })
+    ).data;
   }
-
   pull = (
-    await github.rest.pulls.get({
-      owner,
-      repo,
-      pull_number: pull.number,
-    })
+    await github.rest.pulls.get({ owner, repo, pull_number: pull.number })
   ).data;
   await enableAutoMerge({ github, core, pull });
-  core.info(
-    `GitHub esperara CI y fusionara #${pull.number}; el push resultante activa el deploy del destino.`,
-  );
+  core.info(`PR #${pull.number} preparado para promover ${source} -> ${target}.`);
 }
 
-async function run({ github, context, core }) {
-  const owner = context.repo.owner;
-  const repo = context.repo.repo;
-  const targets = ["development", "homologacion"];
-  const failures = [];
-
-  for (const target of targets) {
-    core.startGroup(`Sincronizar main -> ${target}`);
-    try {
-      await synchronizeTarget({ github, core, owner, repo, target });
-    } catch (error) {
-      failures.push(`${target}: ${error.message}`);
-      core.error(`${target}: ${error.stack ?? error.message}`);
-    } finally {
-      core.endGroup();
-    }
-  }
-
-  if (failures.length > 0) {
-    core.setFailed(failures.join("\n"));
-  }
-}
-
-module.exports = {
-  run,
-  synchronizationBranch,
-};
+module.exports = { run, promotionBranch };

@@ -81,7 +81,7 @@ Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrollador
 | Docker Compose para local | Hecho observado | `docker-compose.yml` |
 | Compose separado para deploy | Hecho observado | `docker-compose.deploy.yml`, `docker-compose.produccion.yml` |
 | GitHub Actions para lint/tests/arquitectura/release sanity | Hecho observado | `.github/workflows/` |
-| Promoción event-driven y sincronización descendente con gates | Hecho observado | `.github/workflows/release-orchestrator.yml`, `.github/workflows/sync-main-downstream.yml`, `docs/operacion/deploy_automatizado.md` |
+| Promoción event-driven y sincronización descendente con gates | Hecho observado | `.github/workflows/release-orchestrator.yml`, `.github/workflows/deploy.yml`, `docs/operacion/deploy_automatizado.md` |
 | Helpers de Codex/worktrees | Hecho observado | `scripts/ai/`, `.codex/environments/environment.toml` |
 
 ## Que tipo de proyecto es
@@ -121,6 +121,7 @@ Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrollador
 - `scripts/ai/codex_run.ps1 up`: bootstrap + levantar entorno.
 - `scripts/ai/codex_run.ps1 validate`: corre `black`, `djlint`, smoke tests y `makemigrations --check`.
 - `scripts/operacion/deploy_refresh.sh`: refresh operativo de deploy; acepta un SHA esperado, hace fast-forward antes de validar los Compose y bloquea una revisión obsoleta antes del downtime. Así un checkout anterior puede incorporar un Compose nuevo de forma segura.
+- `scripts/operacion/deploy_verified.sh`: wrapper de CI para QA/HML/PRD; valida migraciones y healthcheck y restaura automáticamente el checkout/stack anterior ante un fallo.
 
 ## Estructura general del proyecto
 
@@ -709,19 +710,21 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - `.github/workflows/architecture.yml`
 - `.github/workflows/release-sanity.yml`
 - `.github/workflows/release-orchestrator.yml`
-- `.github/workflows/sync-main-downstream.yml`
 - `.github/scripts/sync_main_downstream.js`: crea y actualiza ramas técnicas
-  `automation/sync-main-to-<destino>` para que los PRs descendentes cumplan
-  checks estrictos sin mezclar QA/HML en `main`.
-- El workflow descendente debe checkoutear `development`, donde vive el helper
-  versionado; un checkout de `main` falla durante el bootstrap si todavía no
-  contiene ese archivo. La regresión se cubre en
-  `.github/scripts/sync_main_downstream.test.js` y `deploy_guard` ejecuta las
-  pruebas Node de ambos orquestadores.
+  `automation/promote-<origen>-to-<destino>` después de un deploy verificado.
+  Rechaza una rama origen que ya no coincida con el SHA desplegado y habilita
+  auto-merge para respetar los checks del destino.
+- `.github/scripts/sync_main_downstream.test.js` cubre la promoción exacta y
+  el rechazo de runs obsoletos; `deploy_guard` ejecuta las pruebas Node de
+  ambos orquestadores.
 - `.github/workflows/deploy.yml`
-- Producción sondea hasta 30 veces `migrate --check` y su healthcheck luego
-  de `deploy_refresh.sh`; si no convergen, publica `docker compose ps` y los
-  últimos logs de Django. La regresión vive en `tests/test_deploy_workflow.py`.
+- QA, HML y producción ejecutan `deploy_verified.sh`, que sondea
+  `migrate --check` y el healthcheck específico. Si no convergen, publica
+  diagnóstico y reconstruye/verifica la revisión anterior; las migraciones de
+  base no se revierten automáticamente.
+- Después de producción verificada se promueve `main -> homologacion`; después
+  de HML verificada, `homologacion -> development`. Cada tramo verifica el SHA
+  desplegado y usa la GitHub App para respetar rulesets y auto-merge.
 - Ante el bloqueo histórico de `centrodeinfancia.0042`, `deploy.yml` sólo
   permite inspeccionar sin PII las categorías de los ids legacy 7, 237 y 242.
   No expone una acción que nulifique filas; antes archiva el SHA aprobado en un
@@ -966,7 +969,8 @@ Marcar esas zonas como `A inferir` hasta relevarlas cuando una tarea real las to
 - `.github/workflows/architecture.yml`
 - `.github/workflows/release-sanity.yml`
 - `.github/workflows/release-orchestrator.yml`
-- `.github/workflows/sync-main-downstream.yml`
+- `.github/workflows/deploy.yml`: deploy por ambiente y promoción secuencial
+  posterior a producción/HML verificadas.
 - `.github/workflows/pr-docs.yml`: genera los artefactos spec-as-source; usa
   `git status --porcelain --untracked-files=all` para incluir archivos nuevos.
   Solo pushea en ramas internas no protegidas; `sync_pr_artifacts` verifica
