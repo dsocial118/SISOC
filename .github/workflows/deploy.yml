@@ -51,11 +51,15 @@ jobs:
                           echo "- Evento: \`$EXPECTED_SHA\`"
                           echo "- origin/development actual: \`$remote_sha\`";
                       } >> "$GITHUB_STEP_SUMMARY"
-                      exit 0
+                      exit 1
                   fi
+                  previous_sha="$(git -C "$APP_ROOT" rev-parse HEAD)"
                   git -C "$APP_ROOT" merge --ff-only origin/development
-                  echo "Commit previo al deploy para rollback: $(git rev-parse HEAD)"
-                  ./scripts/operacion/deploy_refresh.sh --yes --skip-pull --expected-revision "$EXPECTED_SHA"
+                  SISOC_ROOT_DIR="$APP_ROOT" bash "$APP_ROOT/scripts/operacion/deploy_verified.sh" \
+                      --environment qa \
+                      --expected-revision "$EXPECTED_SHA" \
+                      --rollback-revision "$previous_sha" \
+                      --skip-pull
                   wait_for() {
                       local description="$1"
                       local attempts="$2"
@@ -135,25 +139,18 @@ jobs:
                           echo "- Evento: \`$EXPECTED_SHA\`"
                           echo "- origin/homologacion actual: \`$remote_sha\`";
                       } >> "$GITHUB_STEP_SUMMARY"
-                      exit 0
+                      exit 1
                   fi
 
                   [[ "$(git -C "$APP_ROOT" branch --show-current)" == "homologacion" ]]
                   git -C "$APP_ROOT" diff --quiet
                   git -C "$APP_ROOT" diff --cached --quiet
-                  umask 077
-                  mkdir -p "$APP_ROOT/.deploy/pwa"
-                  PWA_STATE="$(mktemp -d "$APP_ROOT/.deploy/pwa/hml.XXXXXXXX")"
-                  git -C "$APP_ROOT" show "$EXPECTED_SHA:scripts/operacion/deploy_pwas.py" > "$PWA_STATE/deploy_pwas.py"
-                  git -C "$APP_ROOT" show "$EXPECTED_SHA:scripts/operacion/pwas.json" > "$PWA_STATE/pwas.json"
-                  git -C "$APP_ROOT" show "$EXPECTED_SHA:scripts/operacion/deploy_refresh.sh" > "$PWA_STATE/backend.sh"
-                  echo "Estado PWA para recuperacion: $PWA_STATE" >> "$GITHUB_STEP_SUMMARY"
-                  python3 "$PWA_STATE/deploy_pwas.py" prepare --config "$PWA_STATE/pwas.json" --root "$APP_ROOT/.." --state "$PWA_STATE" --environment hml
-                  echo "Commit previo al deploy para rollback: $(git rev-parse HEAD)"
-                  (
-                      umask 022
-                      SISOC_ROOT_DIR="$APP_ROOT" bash "$PWA_STATE/backend.sh" --yes --expected-revision "$EXPECTED_SHA" --without-mobile
-                  )
+                  deploy_script="$(mktemp "${RUNNER_TEMP:-/tmp}/sisoc-deploy-verified.XXXXXXXX")"
+                  git -C "$APP_ROOT" show "$EXPECTED_SHA:scripts/operacion/deploy_verified.sh" > "$deploy_script"
+                  SISOC_ROOT_DIR="$APP_ROOT" bash "$deploy_script" \
+                      --environment homologacion \
+                      --expected-revision "$EXPECTED_SHA"
+                  rm -f "$deploy_script"
                   wait_for() {
                       local description="$1"
                       local attempts="$2"
@@ -194,7 +191,6 @@ jobs:
                   wait_for "healthcheck de HML" 30 bash "$APP_ROOT/scripts/infra/healthcheck_hml.sh"
                   deployed_sha="$(git -C "$APP_ROOT" rev-parse HEAD)"
                   [[ "$deployed_sha" == "$EXPECTED_SHA" ]]
-                  python3 "$PWA_STATE/deploy_pwas.py" activate --state "$PWA_STATE" --environment hml
                   {
                       echo "### Deploy HML verificado"
                       echo "- Revision desplegada: \`$deployed_sha\`"
@@ -234,24 +230,17 @@ jobs:
                           echo "- origin/main actual: \`$remote_sha\`"
                           echo "- Accion requerida: aprobar el job del commit actual.";
                       } >> "$GITHUB_STEP_SUMMARY"
-                      exit 0
+                      exit 1
                   fi
                   [[ "$(git -C "$APP_ROOT" branch --show-current)" == "main" ]]
                   git -C "$APP_ROOT" diff --quiet
                   git -C "$APP_ROOT" diff --cached --quiet
-                  umask 077
-                  mkdir -p "$APP_ROOT/.deploy/pwa"
-                  PWA_STATE="$(mktemp -d "$APP_ROOT/.deploy/pwa/prd.XXXXXXXX")"
-                  git -C "$APP_ROOT" show "$EXPECTED_SHA:scripts/operacion/deploy_pwas.py" > "$PWA_STATE/deploy_pwas.py"
-                  git -C "$APP_ROOT" show "$EXPECTED_SHA:scripts/operacion/pwas.json" > "$PWA_STATE/pwas.json"
-                  git -C "$APP_ROOT" show "$EXPECTED_SHA:scripts/operacion/deploy_refresh.sh" > "$PWA_STATE/backend.sh"
-                  echo "Estado PWA para recuperacion: $PWA_STATE" >> "$GITHUB_STEP_SUMMARY"
-                  python3 "$PWA_STATE/deploy_pwas.py" prepare --config "$PWA_STATE/pwas.json" --root "$APP_ROOT/.." --state "$PWA_STATE" --environment prd
-                  echo "Commit previo al deploy para rollback: $(git rev-parse HEAD)"
-                  (
-                      umask 022
-                      SISOC_ROOT_DIR="$APP_ROOT" bash "$PWA_STATE/backend.sh" --yes --expected-revision "$EXPECTED_SHA" --without-mobile
-                  )
+                  deploy_script="$(mktemp "${RUNNER_TEMP:-/tmp}/sisoc-deploy-verified.XXXXXXXX")"
+                  git -C "$APP_ROOT" show "$EXPECTED_SHA:scripts/operacion/deploy_verified.sh" > "$deploy_script"
+                  SISOC_ROOT_DIR="$APP_ROOT" bash "$deploy_script" \
+                      --environment production \
+                      --expected-revision "$EXPECTED_SHA"
+                  rm -f "$deploy_script"
                   wait_for() {
                       local description="$1"
                       local attempts="$2"
@@ -295,13 +284,104 @@ jobs:
                   fi
                   deployed_sha="$(git -C "$APP_ROOT" rev-parse HEAD)"
                   [[ "$deployed_sha" == "$EXPECTED_SHA" ]]
-                  python3 "$PWA_STATE/deploy_pwas.py" activate --state "$PWA_STATE" --environment prd
                   {
                       echo "### Deploy produccion verificado"
                       echo "- Revision desplegada: \`$deployed_sha\`"
                       echo "- Migraciones: \`migrate --check\` OK"
                       echo "- Health: \`healthcheck_prod.sh\` OK";
                   } >> "$GITHUB_STEP_SUMMARY"
+
+    promover-produccion-a-homologacion:
+        needs: deploy-produccion
+        if: github.ref == 'refs/heads/main' && needs.deploy-produccion.result == 'success'
+        runs-on: ubuntu-latest
+        env:
+            RELEASE_AUTOMATION_APP_CLIENT_ID: ${{ vars.RELEASE_AUTOMATION_APP_CLIENT_ID }}
+            RELEASE_AUTOMATION_APP_PRIVATE_KEY_PRESENT: ${{ secrets.RELEASE_AUTOMATION_APP_PRIVATE_KEY != '' }}
+        steps:
+            - name: Checkout de la automatizacion desplegada
+              uses: actions/checkout@v6.0.2
+              with:
+                  ref: ${{ github.sha }}
+                  persist-credentials: false
+
+            - name: Validar GitHub App de automatizacion
+              if: ${{ env.RELEASE_AUTOMATION_APP_CLIENT_ID == '' || env.RELEASE_AUTOMATION_APP_PRIVATE_KEY_PRESENT != 'true' }}
+              run: |
+                  echo "SETUP_BLOCKED: faltan RELEASE_AUTOMATION_APP_CLIENT_ID o RELEASE_AUTOMATION_APP_PRIVATE_KEY."
+                  exit 1
+
+            - name: Generar token temporal de GitHub App
+              id: app-token
+              uses: actions/create-github-app-token@v3
+              with:
+                  client-id: ${{ vars.RELEASE_AUTOMATION_APP_CLIENT_ID }}
+                  private-key: ${{ secrets.RELEASE_AUTOMATION_APP_PRIVATE_KEY }}
+
+            - name: Promover la revision desplegada a homologacion
+              uses: actions/github-script@v8
+              env:
+                  PROMOTION_SOURCE: main
+                  PROMOTION_TARGET: homologacion
+                  DEPLOYED_SHA: ${{ github.sha }}
+              with:
+                github-token: ${{ steps.app-token.outputs.token }}
+                script: |
+                    const { run } = require(`${process.env.GITHUB_WORKSPACE}/.github/scripts/sync_main_downstream.js`);
+                    await run({
+                      github,
+                      context,
+                      core,
+                      source: process.env.PROMOTION_SOURCE,
+                      target: process.env.PROMOTION_TARGET,
+                      deployedSha: process.env.DEPLOYED_SHA,
+                    });
+
+    promover-homologacion-a-qa:
+        needs: deploy-homologacion
+        if: github.ref == 'refs/heads/homologacion' && needs.deploy-homologacion.result == 'success'
+        runs-on: ubuntu-latest
+        env:
+            RELEASE_AUTOMATION_APP_CLIENT_ID: ${{ vars.RELEASE_AUTOMATION_APP_CLIENT_ID }}
+            RELEASE_AUTOMATION_APP_PRIVATE_KEY_PRESENT: ${{ secrets.RELEASE_AUTOMATION_APP_PRIVATE_KEY != '' }}
+        steps:
+            - name: Checkout de la automatizacion desplegada
+              uses: actions/checkout@v6.0.2
+              with:
+                  ref: ${{ github.sha }}
+                  persist-credentials: false
+
+            - name: Validar GitHub App de automatizacion
+              if: ${{ env.RELEASE_AUTOMATION_APP_CLIENT_ID == '' || env.RELEASE_AUTOMATION_APP_PRIVATE_KEY_PRESENT != 'true' }}
+              run: |
+                  echo "SETUP_BLOCKED: faltan RELEASE_AUTOMATION_APP_CLIENT_ID o RELEASE_AUTOMATION_APP_PRIVATE_KEY."
+                  exit 1
+
+            - name: Generar token temporal de GitHub App
+              id: app-token
+              uses: actions/create-github-app-token@v3
+              with:
+                  client-id: ${{ vars.RELEASE_AUTOMATION_APP_CLIENT_ID }}
+                  private-key: ${{ secrets.RELEASE_AUTOMATION_APP_PRIVATE_KEY }}
+
+            - name: Promover la revision desplegada a QA
+              uses: actions/github-script@v8
+              env:
+                  PROMOTION_SOURCE: homologacion
+                  PROMOTION_TARGET: development
+                  DEPLOYED_SHA: ${{ github.sha }}
+              with:
+                github-token: ${{ steps.app-token.outputs.token }}
+                script: |
+                    const { run } = require(`${process.env.GITHUB_WORKSPACE}/.github/scripts/sync_main_downstream.js`);
+                    await run({
+                      github,
+                      context,
+                      core,
+                      source: process.env.PROMOTION_SOURCE,
+                      target: process.env.PROMOTION_TARGET,
+                      deployedSha: process.env.DEPLOYED_SHA,
+                    });
 
     recuperar-talla-legacy-produccion:
         if: >-

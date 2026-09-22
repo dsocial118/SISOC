@@ -2,9 +2,9 @@
 
 Estado: runbook operativo para automatizar el deploy de SISOC en QA, homologacion y produccion usando GitHub Actions con runners self-hosted instalados en cada servidor de aplicacion.
 
-El workflow no usa runners cloud ni `actions/checkout`: opera sobre el checkout
-provisionado en el servidor. HML y PRD extraen el helper de backend y el
-coordinador PWA desde el SHA del evento aprobado; QA conserva el helper local.
+Los jobs de deploy operan sobre el checkout provisionado en cada servidor. Los
+jobs de promocion usan runners de GitHub y una GitHub App acotada para respetar
+las rulesets y habilitar auto-merge.
 
 ## Flujo operativo
 
@@ -21,28 +21,25 @@ correspondiente. El runner local:
 2. entra al checkout provisionado en el servidor;
 3. verifica que `origin/<branch>` siga siendo el SHA exacto que disparó el
    workflow, antes de bajar Docker;
-4. en HML/PRD prepara las imagenes de main de las PWA habilitadas antes de
-   interrumpir servicios; registra `git rev-parse HEAD` como referencia previa
-   de rollback y ejecuta `deploy_refresh.sh --expected-revision <SHA>`;
-5. prueba `migrate --check`, el healthcheck específico del entorno y registra
-   el SHA realmente desplegado en el summary del job; en HML/PRD activa luego
-   las imagenes PWA preparadas y comprueba su salud.
+4. ejecuta `deploy_verified.sh`, que registra la revision previa, refresca
+   solo SISOC y valida migraciones y healthcheck;
+5. si falla el refresh o su verificacion, vuelve automaticamente al commit
+   anterior, reconstruye el stack y verifica la recuperacion. Las migraciones
+   de base de datos no se revierten automaticamente.
 
 En **QA**, el workflow primero hace un fetch limitado de `development`, verifica
 que sea el SHA del evento y aplica `merge --ff-only` antes del downtime. Luego
-invoca `deploy_refresh.sh --skip-pull --expected-revision <SHA>`: el pull ya
+invoca `deploy_verified.sh --skip-pull --expected-revision <SHA>`: el pull ya
 quedó realizado y no debe repetirse dentro del helper. Si el SHA remoto avanzó,
-el job se omite sin bajar Docker.
+el job falla sin bajar Docker y no habilita una promocion.
 
 Como el entrypoint del contenedor aplica migraciones durante el arranque, QA,
 homologación y producción consultan ambos checks mediante sondeo acotado: continúan apenas
 las migraciones y el healthcheck responden, o publican el último error después
-del límite. HML y PRD usan el helper extraido del SHA verificado, con
-`SISOC_ROOT_DIR` apuntando al checkout real y `--without-mobile` para separar
-la preparacion/activacion de las PWA del reinicio del backend.
-El estado privado PWA se crea con umask 077. Solo el helper del backend usa
-umask 022 en un subshell para que el checkout actualizado sea legible por los
-workers con otros UID. Verificar su estabilidad ademas del healthcheck HTTP.
+del límite. HML y PRD extraen `deploy_verified.sh` del SHA verificado, con
+`SISOC_ROOT_DIR` apuntando al checkout real. Los tres entornos usan
+`--without-mobile`: cada PWA se construye y despliega desde su propio
+repositorio.
 
 El script existente conserva las validaciones operativas: lee `ENVIRONMENT`
 desde `.env`, valida branch esperada, ejecuta `docker compose config -q`, baja
@@ -69,27 +66,21 @@ sirve a produccion; tambien validan host configurado, servidor y schema de DB
 contra los contratos `PROD_EXPECTED_DB_*`. Cualquier diferencia falla sin leer
 ni modificar las filas. El camino mutante que asignaba `NULL` ya no se expone.
 
-## Plan A: `main` como subconjunto comun
+## Promocion descendente por deploy verificado
 
-`.github/workflows/sync-main-downstream.yml` mantiene automaticamente este
-invariante:
+La cadena es estrictamente secuencial:
 
-- `development` contiene todo `main` y puede tener extras de QA;
-- `homologacion` contiene todo `main` y puede tener extras de HML;
-- `main` no recibe los extras de esas ramas por este mecanismo.
+1. `main` se despliega en produccion despues de la aprobacion del Environment;
+2. solo si ese deploy termina bien se arma `main -> homologacion`;
+3. el push resultante despliega HML;
+4. solo si HML termina bien se arma `homologacion -> development`;
+5. el push resultante despliega QA.
 
-Ante cada push a `main`, y también como reconciliación horaria, el workflow
-abre o reutiliza un PR por destino desde `automation/sync-main-to-<destino>`.
-Esa rama técnica parte de la rama destino y recibe un merge de `main`, por lo
-que conserva los extras de QA/HML sin incorporarlos a `main` y también queda
-actualizada ante rulesets con checks estrictos. GitHub integra el PR únicamente
-cuando los checks requeridos están verdes y no hay conflictos. El push
-resultante activa un único deploy de la rama actualizada; no se hace un dispatch
-adicional.
-
-Si hubiera un PR directo histórico abierto desde `main`, el workflow solo lo
-cierra cuando fue creado por `github-actions[bot]` y coincide con el título de
-sincronización; evita que dos auto-merges compitan por el mismo destino.
+Cada tramo usa una rama tecnica `automation/promote-<origen>-to-<destino>` y
+auto-merge nativo. Antes de modificarla se comprueba que la punta de la rama
+origen siga siendo exactamente el SHA desplegado; un run obsoleto no promueve
+codigo nuevo. GitHub integra el PR únicamente cuando los checks y la ruleset
+del destino están verdes.
 
 Un conflicto deja el PR abierto, falla el job y no despliega ese entorno. No se
 usan force push, rebase automático ni resolución automática de conflictos. Las
@@ -125,12 +116,29 @@ job del SHA actual.
 
 ## Instalar runner por entorno
 
-Ejecutar en el servidor de aplicacion de cada entorno con el usuario operativo del deploy, por ejemplo `sisoc-deploy`. Reemplazar `<TOKEN_REGISTRO>` por un token de registro nuevo generado en GitHub para el repositorio `dsocial118/SISOC`.
+Los runners deben registrarse en la organizacion `secretarianaf`: los cuatro
+repositorios despliegan en forma independiente y un runner registrado solo en
+`secretarianaf/SISOC` no puede ejecutar los workflows satelite.
+
+En **Organization Settings -> Actions -> Runner groups**, configurar el grupo
+`Default` con acceso `Selected repositories` exclusivamente para:
+
+- `secretarianaf/SISOC`
+- `secretarianaf/Espacios-Comunitarios`
+- `secretarianaf/DataCalle`
+- `secretarianaf/Gestionar`
+
+Ejecutar en el servidor de aplicacion de cada entorno con el usuario operativo
+del deploy, por ejemplo `sisoc-deploy`. Reemplazar `<TOKEN_REGISTRO>` por un
+token de registro organizacional nuevo; expira despues de una hora. Durante la
+migracion usar un directorio nuevo y mantener activo el runner de repositorio
+hasta verificar que el organizacional aparece online y acepta un job del
+entorno.
 
 ```bash
 sudo -iu sisoc-deploy
-mkdir -p ~/actions-runner
-cd ~/actions-runner
+mkdir -p ~/actions-runner-org-<entorno>
+cd ~/actions-runner-org-<entorno>
 
 RUNNER_VERSION=<version-vigente>
 curl -o actions-runner-linux-x64.tar.gz -L \
@@ -138,9 +146,9 @@ curl -o actions-runner-linux-x64.tar.gz -L \
 tar xzf actions-runner-linux-x64.tar.gz
 
 ./config.sh \
-  --url https://github.com/dsocial118/SISOC \
+  --url https://github.com/secretarianaf \
   --token <TOKEN_REGISTRO> \
-  --name sisoc-<entorno> \
+  --name sisoc-<entorno>-org \
   --labels sisoc-<entorno> \
   --unattended
 ```
@@ -149,9 +157,9 @@ Usar el label final segun entorno:
 
 | Entorno | `--name` sugerido | `--labels` |
 | --- | --- | --- |
-| QA | `sisoc-qa` | `sisoc-qa` |
-| Homologacion | `sisoc-homologacion` | `sisoc-homologacion` |
-| Produccion | `sisoc-produccion` | `sisoc-produccion` |
+| QA | `sisoc-qa-org` | `sisoc-qa` |
+| Homologacion | `sisoc-homologacion-org` | `sisoc-homologacion` |
+| Produccion | `sisoc-produccion-org` | `sisoc-produccion` |
 
 Instalar y arrancar como servicio:
 
@@ -160,6 +168,14 @@ sudo ./svc.sh install sisoc-deploy
 sudo ./svc.sh start
 sudo ./svc.sh status
 ```
+
+No detener ni desregistrar el runner anterior todavia. Primero verificar en
+GitHub que el runner organizacional esta `Idle`, despachar un job controlado del
+entorno y confirmar que tomo el nuevo nombre. Recien entonces ejecutar
+`sudo ./svc.sh stop` y `sudo ./svc.sh uninstall` desde el directorio del runner
+de repositorio anterior; eliminar su registro en GitHub despues de comprobar
+que no hay jobs en curso. Esta secuencia deja rollback inmediato al servicio
+anterior si el runner organizacional no conecta.
 
 ## Permisos locales del runner
 
@@ -214,7 +230,7 @@ estos flujos. Habilitar Auto-merge en el repositorio. Estas opciones requieren
 rol de administrador y complementan, no sustituyen, los gates versionados.
 
 Crear una GitHub App privada de servicio, instalada solamente en
-`dsocial118/SISOC`, sin webhooks. Debe recibir permisos de repositorio en
+`secretarianaf/SISOC`, sin webhooks. Debe recibir permisos de repositorio en
 escritura para `Contents`, `Pull requests`, `Checks` e `Issues` (`Metadata` es
 lectura implícita); no necesita permisos de `Actions`. En **Settings → Secrets
 and variables → Actions**, crear:
@@ -237,20 +253,24 @@ despachan el deploy de forma explícita.
 
 - Solo `.github/workflows/deploy.yml` debe usar estos runners self-hosted.
 - No correr workflows de PR ni jobs que ejecuten codigo no confiable en los runners de deploy.
-- Registrar cada runner solo en el repositorio `dsocial118/SISOC`, no a nivel organizacion, salvo decision explicita de infraestructura.
+- Registrar los runners a nivel organizacion y limitar el grupo a los cuatro
+  repositorios de SISOC. No habilitar acceso general a repositorios futuros.
+- Mantener labels exclusivos por entorno. No agregar `self-hosted` sin el label
+  `sisoc-qa`, `sisoc-homologacion` o `sisoc-produccion` en ningun workflow de
+  deploy.
 - No commitear secretos ni `.env` reales. Los `.env` viven en cada servidor con `chmod 600`.
 - Rotar tokens de registro inmediatamente si se exponen durante la instalacion.
 - Mantener el acceso SSH/VPN segun el modelo actual; el runner elimina la necesidad de SSH manual desde GitHub, no abre los servidores a Internet.
 
 ## Rollback
 
-El rollback sigue el procedimiento actual documentado en `docs/operacion/infraestructura.md`, seccion 9:
+`deploy_verified.sh` restaura automaticamente el commit anterior cuando falla
+el refresh, `migrate --check` o el healthcheck. Reconstruye el stack anterior
+y verifica nuevamente migraciones y salud antes de informar el resultado.
 
-- volver al ultimo tag estable o commit acordado;
-- restaurar backup de DB si el cambio lo requiere;
-- ejecutar el deploy operativo del entorno.
-
-Cada ejecucion del workflow registra el commit que estaba desplegado antes del refresh (`git rev-parse HEAD`). Ese valor sirve como referencia rapida para volver al commit previo si el tag estable no alcanza o si se necesita reconstruir la secuencia del incidente.
+Este rollback cubre checkout y contenedores, no revierte migraciones de base de
+datos. Para una migracion incompatible se mantiene el procedimiento de
+`docs/operacion/infraestructura.md`, seccion 9, incluyendo el backup acordado.
 
 ## Fallas frecuentes
 

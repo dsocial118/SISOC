@@ -20,9 +20,9 @@ import tarfile
 
 
 REPOSITORIES = {
-    "espacios": "dsocial118/Espacios-Comunitarios",
-    "datacalle": "dsocial118/DataCalle",
-    "gestionar": "dsocial118/Gestionar",
+    "espacios": "secretarianaf/Espacios-Comunitarios",
+    "datacalle": "secretarianaf/DataCalle",
+    "gestionar": "secretarianaf/Gestionar",
 }
 
 
