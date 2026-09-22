@@ -36,6 +36,7 @@ COLUMNAS_REQUERIDAS = {
 }
 
 COLUMNAS_OPCIONALES = (
+    "genero",
     "calle",
     "altura",
     "correo_electronico",
@@ -49,6 +50,8 @@ ALIASES_COLUMNAS = {
     "cuil": "cuit",
     "email": "correo_electronico",
     "correo electronico": "correo_electronico",
+    "ciudadano_genero": "genero",
+    "ciudadano_genero_cod": "genero",
     "ultimoestadopas": "ultimo_estado_pas",
     "ultimo estado pas": "ultimo_estado_pas",
     "avisoliquidacion": "aviso_liquidacion",
@@ -216,10 +219,20 @@ def _resolver_datos_opcionales(
         except ValidationError as error:
             raise ValidationError(f"email '{correo_electronico}' inválido.") from error
 
-    domicilio = " ".join(parte for parte in (fila["calle"], fila["altura"]) if parte)
+    genero = fila["genero"].upper()
+    if genero not in {"", *PasPersona.Genero.values}:
+        raise ValidationError("género debe ser M, F o X.")
+
+    calle = fila["calle"]
+    altura = fila["altura"]
+    if len(calle) > PasPersona._meta.get_field("calle").max_length:
+        raise ValidationError("Calle supera el máximo permitido.")
+    if len(altura) > PasPersona._meta.get_field("altura").max_length:
+        raise ValidationError("Altura supera el máximo permitido.")
+    domicilio = " ".join(parte for parte in (calle, altura) if parte)
     if len(domicilio) > PasPersona._meta.get_field("domicilio").max_length:
         raise ValidationError("Calle y Altura superan el máximo permitido.")
-    return estado, aviso, domicilio, correo_electronico
+    return estado, aviso, genero, calle, altura, domicilio, correo_electronico
 
 
 def _resolver_ubicacion(fila, provincias, municipios):
@@ -369,7 +382,15 @@ def importar_titulares_csv(archivo, usuario=None):
             continue
 
         try:
-            estado, aviso, domicilio, correo_electronico = _resolver_datos_opcionales(
+            (
+                estado,
+                aviso,
+                genero,
+                calle,
+                altura,
+                domicilio,
+                correo_electronico,
+            ) = _resolver_datos_opcionales(
                 fila,
                 estados,
                 estado_activo,
@@ -387,6 +408,9 @@ def importar_titulares_csv(archivo, usuario=None):
             cuit=cuit,
             provincia=provincia,
             municipio=municipio,
+            genero=genero,
+            calle=calle,
+            altura=altura,
             domicilio=domicilio,
             correo_electronico=correo_electronico,
             estado=estado,

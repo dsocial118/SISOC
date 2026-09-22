@@ -6,23 +6,23 @@ document.addEventListener("DOMContentLoaded", () => {
     const next = document.getElementById("ddjj-next");
     const submit = document.getElementById("ddjj-submit");
     const confirmModal = document.getElementById("ddjj-confirm-modal");
-    let visible = [];
+    const shell = document.querySelector(".pas-ddjj-shell");
+    const totalSteps = steps.length;
     let current = 0;
     const answer = (name) => form.querySelector(`[name="${name}"]:checked`)?.value || "";
     form.querySelectorAll(".pas-ddjj-options-inverted input").forEach((input) => {
         input.value = input.value === "si" ? "no" : "si";
     });
     const refresh = () => {
-        steps.forEach((step) => {
-            const condition = step.dataset.condition;
-            step.hidden = Boolean(condition && answer(condition) !== "si");
-            step.querySelectorAll("input").forEach((input) => { input.disabled = step.hidden; });
+        form.querySelectorAll(".pas-ddjj-conditional[data-condition]").forEach((block) => {
+            block.hidden = answer(block.dataset.condition) !== "si";
+            block.querySelectorAll("input,select").forEach((control) => {
+                control.disabled = block.hidden;
+            });
         });
-        visible = steps.filter((step) => !step.hidden);
-        current = Math.min(current, visible.length - 1);
     };
     const validate = () => {
-        const controls = [...visible[current].querySelectorAll("input,select")].filter((el) => !el.disabled);
+        const controls = [...steps[current].querySelectorAll("input,select")].filter((el) => !el.disabled);
         const radioNames = [...new Set(controls.filter((el) => el.type === "radio").map((el) => el.name))];
         for (const name of radioNames) {
             const group = controls.filter((el) => el.name === name);
@@ -33,30 +33,30 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         return controls.every((el) => el.reportValidity());
     };
-    const contact = () => document.querySelectorAll("[data-summary-field]").forEach((target) => {
-        target.value = form.elements[target.dataset.summaryField]?.value || "Sin dato";
-    });
     const summary = () => {
         const box = document.getElementById("ddjj-summary"); box.innerHTML = "";
         const appendRow = (label, value) => {
             const row = document.createElement("div"); row.innerHTML = `<strong>${label}</strong><span></span>`;
             row.querySelector("span").textContent = value; box.appendChild(row);
         };
-        ["domicilio", "provincia", "municipio"].forEach((name) => {
+        const calle = form.elements.calle?.value || "";
+        const numero = form.elements.altura?.value || "";
+        appendRow("Domicilio", [calle, numero].filter(Boolean).join(" "));
+        ["provincia", "municipio"].forEach((name) => {
             const field = form.elements[name]; if (!field) return;
             let value = field.value;
             if (field.tagName === "SELECT") value = field.selectedOptions[0]?.textContent || "";
-            const labels = {domicilio:"Domicilio", provincia:"Provincia", municipio:"Municipio"};
+            const labels = {provincia:"Provincia", municipio:"Municipio"};
             appendRow(labels[name], value);
         });
         [
             ["embarazada", "Embarazo"],
             ["controles_embarazo_cumplidos", "Controles de embarazo"],
-            ["hijos_menores_a_cargo", "Menores a cargo"],
-            ["vacunacion_cumplida", "Vacunación de menores"],
+            ["hijos_menores_a_cargo", "Menores de 18 años a cargo"],
+            ["vacunacion_cumplida", "Plan Nacional de Vacunación"],
             ["regularidad_escolar_acreditada", "Regularidad escolar"],
             ["gastos_bajo_limite_smvm", "Gastos sobre 1 SMVM"],
-            ["no_accedio_mercado_cambios", "Compra de dólares"],
+            ["no_accedio_mercado_cambios", "Compra de divisas"],
         ].forEach(([name, label]) => {
             const selected = form.querySelector(`[name="${name}"]:checked`);
             if (!selected || selected.disabled) return;
@@ -66,14 +66,21 @@ document.addEventListener("DOMContentLoaded", () => {
     };
     const show = (scroll = true) => {
         refresh(); steps.forEach((step) => { step.style.display = "none"; });
-        const step = visible[current]; step.style.display = "block";
-        const index = Number(step.dataset.stepIndex); const percent = Math.round(index / 7 * 100);
-        document.getElementById("ddjj-progress-text").textContent = `Paso ${index} de 7`;
+        const step = steps[current]; step.style.display = "block";
+        const index = Number(step.dataset.stepIndex); const percent = Math.round(index / totalSteps * 100);
+        document.getElementById("ddjj-progress-text").textContent = `Paso ${index} de ${totalSteps}`;
         document.getElementById("ddjj-progress-percent").textContent = `${percent}%`;
-        document.getElementById("ddjj-progress-bar").style.width = `${percent}%`;
-        back.hidden = current === 0; next.hidden = index === 7; submit.hidden = index !== 7;
-        if (index >= 6) contact(); if (index === 7) summary();
-        if (scroll) window.scrollTo({top: 0, behavior: "smooth"});
+        document.querySelectorAll(".pas-ddjj-progress span").forEach((segment, segmentIndex) => {
+            segment.classList.toggle("is-complete", segmentIndex < index - 1);
+            segment.classList.toggle("is-current", segmentIndex === index - 1);
+        });
+        back.hidden = current === 0; next.hidden = index === totalSteps; submit.hidden = index !== totalSteps;
+        next.textContent = index === 1 ? "Confirmar y continuar" : "Continuar";
+        if (index === totalSteps) summary();
+        if (scroll) {
+            shell?.scrollTo({top: 0, behavior: "smooth"});
+            window.scrollTo({top: 0, behavior: "smooth"});
+        }
     };
     next.addEventListener("click", () => { if (validate()) { current += 1; show(); } });
     back.addEventListener("click", () => { current = Math.max(0, current - 1); show(); });

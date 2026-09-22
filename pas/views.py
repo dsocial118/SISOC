@@ -70,6 +70,8 @@ from pas.services.titulares_import_service import (
     importar_titulares_csv,
 )
 from pas.services.supervivencia_service import (
+    CODIGO_AVISO_FALLECIDO,
+    NOMBRE_ESTADO_BAJA,
     resumen_supervivencia,
 )
 
@@ -486,6 +488,11 @@ class PasCrucesView(LoginRequiredMixin, TemplateView):
                 "incompatibilidades": list(
                     PasIncompatibilidad.objects.select_related("persona")
                     .filter(estado=PasIncompatibilidad.Estado.PENDIENTE)
+                    .exclude(
+                        persona__estado__nombre__iexact=NOMBRE_ESTADO_BAJA,
+                        persona__avisos__codigo=CODIGO_AVISO_FALLECIDO,
+                    )
+                    .distinct()
                     .order_by("-fecha_deteccion")[:100]
                 ),
             }

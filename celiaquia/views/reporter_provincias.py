@@ -1,4 +1,4 @@
-from collections import Counter
+from collections import Counter, defaultdict
 from datetime import datetime, time, timedelta
 from urllib.parse import urlencode
 
@@ -51,15 +51,39 @@ CUPO_ITEMS = [
 # menor de edad -> doble rol -> responsable -> beneficiario. Así los subtotales
 # suman el total de aprobados.
 CLASIFICACION_APROBADOS_ITEMS = [
-    {"code": "beneficiario", "label": "Beneficiario únicamente", "tone": "success"},
+    {
+        "code": "beneficiario",
+        "label": "Beneficiario únicamente",
+        "short": "Beneficiario",
+        "tone": "success",
+    },
     {
         "code": "doble_rol",
         "label": "Beneficiario y responsable (doble rol)",
+        "short": "Doble rol",
         "tone": "accent",
     },
-    {"code": "responsable", "label": "Responsable únicamente", "tone": "primary"},
-    {"code": "menor", "label": "Menor de edad", "tone": "warning"},
+    {
+        "code": "responsable",
+        "label": "Responsable únicamente",
+        "short": "Responsable",
+        "tone": "primary",
+    },
+    {
+        "code": "menor",
+        "label": "Menor de edad",
+        "short": "Menor de edad",
+        "tone": "warning",
+    },
 ]
+
+# Etiqueta corta para la columna "Rol" del detalle; la larga se usa en el panel.
+CLASIFICACION_APROBADOS_LABELS = {
+    item["code"]: item["short"] for item in CLASIFICACION_APROBADOS_ITEMS
+}
+CLASIFICACION_APROBADOS_TONES = {
+    item["code"]: item["tone"] for item in CLASIFICACION_APROBADOS_ITEMS
+}
 
 VALIDACION_LABELS = {item["code"]: item["label"] for item in VALIDACION_ITEMS}
 SINTYS_LABELS = {item["code"]: item["label"] for item in SINTYS_ITEMS}
@@ -371,31 +395,93 @@ def _clasificar_legajo_aprobado(
     return "beneficiario"
 
 
+def _build_subtotales_aprobados(total, personas_unicas, beneficiarios, duplas):
+    """Subtotales transversales del panel de aprobados.
+
+    Las duplas se muestran separadas del total de legajos y del total de
+    beneficiarios: son unidades hijo-responsable, no personas adicionales."""
+    return [
+        {
+            "label": "Legajos aprobados",
+            "value": total,
+            "support": "Suma de las categorías de arriba",
+            "tone": "primary",
+        },
+        {
+            "label": "Personas únicas",
+            "value": personas_unicas,
+            "support": "Ciudadanos distintos entre los legajos aprobados",
+            "tone": "success",
+        },
+        {
+            "label": "Beneficiarios alcanzados",
+            "value": beneficiarios,
+            "support": "Personas únicas, excluidos los responsables únicamente",
+            "tone": "warning",
+        },
+        {
+            "label": "Duplas hijo-responsable",
+            "value": duplas,
+            "support": "Cada dupla cuenta como una unidad, no como dos personas",
+            "tone": "accent",
+        },
+    ]
+
+
 def _build_clasificacion_aprobados(queryset):
     """Clasifica los legajos APROBADOS por tipo de rol/edad (categorías mutuamente
-    excluyentes). Devuelve el total de aprobados y los subtotales por categoría."""
+    excluyentes) y cuenta las duplas hijo-responsable conformadas.
+
+    Devuelve el total de aprobados, los subtotales por categoría y los subtotales
+    transversales (personas únicas, beneficiarios alcanzados y duplas)."""
     hoy = timezone.localdate()
     filas = list(
         queryset.filter(revision_tecnico=RevisionTecnico.APROBADO).values_list(
             "ciudadano_id", "rol", "ciudadano__fecha_nacimiento"
         )
     )
-    ciudadano_ids = [ciudadano_id for ciudadano_id, _, _ in filas]
-    # Ciudadanos aprobados que son beneficiarios dentro de una relación familiar
-    # (figuran como hijo con cuidador principal). Una sola consulta batch.
-    beneficiarios_familia = set(
+    aprobados_ids = {ciudadano_id for ciudadano_id, _, _ in filas}
+    # Relaciones familiares de los ciudadanos aprobados que figuran como hijo con
+    # cuidador principal. Una sola consulta batch que sirve para dos cosas: marcar
+    # a los responsables que además son beneficiarios y armar las duplas.
+    # No se filtra por `vinculo`: `FamiliaService` siempre escribe PADRE/MADRE
+    # junto con cuidador_principal=True, pero la ficha del ciudadano permite
+    # cargar cualquier vínculo con esa marca. Si aparecieran vínculos no
+    # parentales marcados como cuidador principal habría que acotarlo acá y en
+    # `_anotar_clasificacion_pagina` (ver el registro del cambio).
+    relaciones = list(
         GrupoFamiliar.objects.filter(
-            ciudadano_2_id__in=ciudadano_ids,
+            ciudadano_2_id__in=aprobados_ids,
             cuidador_principal=True,
-        ).values_list("ciudadano_2_id", flat=True)
+        ).values_list("ciudadano_1_id", "ciudadano_2_id")
+    )
+    beneficiarios_familia = {hijo_id for _, hijo_id in relaciones}
+    # Dupla hijo-responsable: un hijo aprobado cuyo responsable también está
+    # aprobado en la lectura actual. Se cuenta por hijo (una unidad aunque la
+    # conformen dos legajos, y una sola aunque tuviera más de un responsable),
+    # para no duplicar el conteo de personas.
+    duplas = len(
+        {
+            hijo_id
+            for responsable_id, hijo_id in relaciones
+            if responsable_id in aprobados_ids
+        }
     )
 
-    counts = Counter(
-        _clasificar_legajo_aprobado(
-            rol, fecha_nacimiento, hoy, ciudadano_id in beneficiarios_familia
+    # La clasificación se guarda junto al ciudadano para poder contar tanto en
+    # legajos (los subtotales por categoría) como en personas. No es lo mismo:
+    # `ExpedienteCiudadano` es único por (expediente, ciudadano), así que un
+    # ciudadano puede tener legajos aprobados en más de un expediente.
+    clasificados = [
+        (
+            ciudadano_id,
+            _clasificar_legajo_aprobado(
+                rol, fecha_nacimiento, hoy, ciudadano_id in beneficiarios_familia
+            ),
         )
         for ciudadano_id, rol, fecha_nacimiento in filas
-    )
+    ]
+    counts = Counter(codigo for _, codigo in clasificados)
     total = sum(counts.values())
     max_count = max(counts.values(), default=0)
 
@@ -413,7 +499,87 @@ def _build_clasificacion_aprobados(queryset):
         for item in CLASIFICACION_APROBADOS_ITEMS
     ]
 
-    return {"total": total, "items": items}
+    # Beneficiarios alcanzados: personas distintas que no son responsable puro,
+    # porque el responsable puro valida a sus dependientes pero no es
+    # beneficiario del programa. Se cuenta en personas —igual que "Personas
+    # únicas" y que las duplas— para que las tres cifras de la franja sean
+    # comparables entre sí. Un ciudadano que es responsable puro en un
+    # expediente y beneficiario en otro cuenta como beneficiario.
+    beneficiarios = len(
+        {
+            ciudadano_id
+            for ciudadano_id, codigo in clasificados
+            if codigo != "responsable"
+        }
+    )
+    personas_unicas = len(aprobados_ids)
+
+    return {
+        "total": total,
+        "items": items,
+        "personas_unicas": personas_unicas,
+        "beneficiarios": beneficiarios,
+        "duplas": duplas,
+        "subtotales": _build_subtotales_aprobados(
+            total, personas_unicas, beneficiarios, duplas
+        ),
+    }
+
+
+def _anotar_clasificacion_pagina(casos, queryset):
+    """Anota las filas visibles con su categoría de rol y la marca de dupla.
+
+    La categoría se calcula para todos los legajos de la página, no sólo los
+    aprobados: es una propiedad de la persona y de su rol, no del resultado de
+    la revisión. Por eso la columna del detalle no es sumable contra el panel,
+    que cuenta únicamente aprobados.
+
+    La marca de dupla sí exige legajo aprobado y se pone sobre el del hijo (la
+    unidad que se cuenta en el subtotal), no sobre el del responsable. El panel
+    cuenta duplas por persona, así que un hijo con legajos aprobados en dos
+    expedientes marca dos filas para una sola dupla."""
+    casos = list(casos)
+    if not casos:
+        return casos
+
+    hoy = timezone.localdate()
+    ciudadano_ids = [caso.ciudadano_id for caso in casos]
+    # Un hijo puede tener más de un responsable vinculado: se guardan todos para
+    # no marcar "sin dupla" una fila que sí la tiene por el otro responsable.
+    relaciones = defaultdict(set)
+    responsables_ids = set()
+    for responsable_id, hijo_id in GrupoFamiliar.objects.filter(
+        ciudadano_2_id__in=ciudadano_ids,
+        cuidador_principal=True,
+    ).values_list("ciudadano_1_id", "ciudadano_2_id"):
+        relaciones[hijo_id].add(responsable_id)
+        responsables_ids.add(responsable_id)
+
+    responsables_aprobados = set(
+        queryset.filter(
+            ciudadano_id__in=responsables_ids,
+            revision_tecnico=RevisionTecnico.APROBADO,
+        ).values_list("ciudadano_id", flat=True)
+    )
+
+    for caso in casos:
+        es_hijo = caso.ciudadano_id in relaciones
+        codigo = _clasificar_legajo_aprobado(
+            caso.rol,
+            getattr(caso.ciudadano, "fecha_nacimiento", None),
+            hoy,
+            es_hijo,
+        )
+        caso.clasificacion_codigo = codigo
+        caso.clasificacion_label = CLASIFICACION_APROBADOS_LABELS.get(codigo, "-")
+        caso.clasificacion_tone = CLASIFICACION_APROBADOS_TONES.get(codigo, "neutral")
+        caso.integra_dupla = (
+            caso.revision_tecnico == RevisionTecnico.APROBADO
+            and es_hijo
+            and bool(relaciones[caso.ciudadano_id] & responsables_aprobados)
+        )
+
+    return casos
 
 
 def _build_case_context(queryset, total_cases, excluir_comentarios_internos=False):
@@ -528,6 +694,9 @@ def _build_report_context(request):
     )
     provincias = _get_provincias_disponibles(user, es_usuario_provincial)
     paginator, page_obj, current_querystring = _build_pagination(queryset, request)
+    # Se reemplaza la lista de la página en el propio `page_obj` para que las
+    # anotaciones estén tanto en `ultimos_casos` como al iterar la paginación.
+    page_obj.object_list = _anotar_clasificacion_pagina(page_obj.object_list, queryset)
 
     return {
         "total_casos": total_casos,

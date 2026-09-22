@@ -20,6 +20,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from audittrail.context import audit_context
+from centrodeinfancia.public_api import centros_cdi_de_usuario
 from core.api_auth import HasAPIKey
 from ticketera.api_serializers import (
     TicketeraAuthCambiarPasswordResponseSerializer,
@@ -274,6 +275,8 @@ class TicketeraAuthVerificarView(APIView):
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 
+        centros_cdi = centros_cdi_de_usuario(user)
+
         with audit_context(
             source=AUDIT_SOURCE,
             extra={"remote_source": source},
@@ -314,6 +317,7 @@ class TicketeraAuthVerificarView(APIView):
                     "first_name": user.first_name,
                     "last_name": user.last_name,
                 },
+                "centros_cdi": centros_cdi,
             },
             status=status.HTTP_200_OK,
         )
