@@ -45,13 +45,13 @@
 - `docs/registro/cambios/2026-09-21-deploy-independiente-satelites.md`
 - `docs/registro/prs/PR-2552.md`
 - `docs/registro/releases/pending/2026-09-23-pr-2552.md`
+- `scripts/infra/backup_hml_configs.sh`
+- `scripts/infra/backup_prod_configs.sh`
+- `scripts/infra/backup_qa_configs.sh`
+- `scripts/infra/healthcheck_prod.sh`
 - `scripts/infra/install_qa_pwa_nginx.sh`
 - `scripts/operacion/deploy_pwas.py`
-- `scripts/operacion/deploy_refresh.sh`
-- `scripts/operacion/deploy_verified.sh`
-- `scripts/operacion/pwas.json`
-- `scripts/operacion/render_pwa_nginx.py`
-- ... y 3 archivo(s) adicional(es) relacionados.
+- ... y 8 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/ARCHITECTURE.md`
