@@ -52,7 +52,7 @@
 - `VAT/templates/vat/modalidad_institucional/detail.html`
 - `VAT/templates/vat/oferta_institucional/comision_confirm_delete.html`
 - `VAT/templates/vat/oferta_institucional/horario_confirm_delete.html`
-- ... y 112 archivo(s) adicional(es) relacionados.
+- ... y 114 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
