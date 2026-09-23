@@ -15,10 +15,7 @@
     <div class="d-flex justify-content-between mb-3">
         <div>
             {% if comedor.id %}
-                <a href="{% url 'comedor_detalle' comedor.id %}"
-                   class="btn btn-secondary">Volver</a>
             {% else %}
-                <a href="{% url 'comedores' %}" class="btn btn-secondary">Volver</a>
             {% endif %}
         </div>
         <div>
@@ -446,10 +443,6 @@
                 <div class="sticky-actions">
                     <div>
                         {% if comedor.id %}
-                            <a href="{% url 'comedor_detalle' comedor.id %}"
-                               class="btn btn-secondary">
-                                <i class="fas fa-arrow-left mr-1"></i> Volver
-                            </a>
                         {% else %}
                             <a href="{% url 'comedores' %}" class="btn btn-secondary">
                                 <i class="fas fa-arrow-left mr-1"></i> Volver

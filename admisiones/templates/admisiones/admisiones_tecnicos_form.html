@@ -33,10 +33,6 @@
           href="{% static 'custom/css/informeTecnicoSecciones.css' %}" />
     <div class="row justify-content-between d-print-none mx-1 mb-3">
         <div class="col-auto">
-            <a href="{% url 'admisiones_tecnicos_listar' %}"
-               class="btn btn-secondary mr-1">Volver</a>
-        </div>
-        <div class="col-auto">
             {% for boton in botones_disponibles %}
                 {% if informe_form and boton == "caratular_expediente" %}
                     <a href="#informe-tecnico-seccion" class="btn btn-primary mr-1">Caratular expediente</a>

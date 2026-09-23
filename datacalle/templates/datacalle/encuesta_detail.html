@@ -25,12 +25,6 @@
                 {% endif %}
             </div>
         </div>
-        <div class="dc-header__actions">
-            <a href="{% url 'datacalle_relevamientos_detalle' encuesta.relevamiento.pk %}"
-               class="btn btn-secondary btn-sm">
-                <i class="fas fa-arrow-left mr-1"></i> Volver al operativo
-            </a>
-        </div>
     </div>
 
     {% if encuesta.sin_entrevista_por_menor %}

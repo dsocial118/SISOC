@@ -9,14 +9,7 @@
         <!-- Navegación -->
         <div class="mb-4">
             {% if can_manage %}
-                <a href="{% url 'comunicados_gestion' %}"
-                   class="btn btn-outline-secondary">
-                    <i class="fas fa-arrow-left"></i> Volver al Gestor
-                </a>
             {% else %}
-                <a href="{% url 'comunicados' %}" class="btn btn-outline-secondary">
-                    <i class="fas fa-arrow-left"></i> Volver a Comunicados
-                </a>
             {% endif %}
         </div>
 

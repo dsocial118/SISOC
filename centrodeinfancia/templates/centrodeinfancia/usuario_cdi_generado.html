@@ -58,8 +58,6 @@
                     </div>
 
                     <div class="mt-3">
-                        <a href="{% url 'centrodeinfancia_detalle' centro.id %}"
-                           class="btn btn-primary">Volver al CDI</a>
                         {% if puede_generar_otro %}
                             <a href="{% url 'centrodeinfancia_generar_usuario' centro.id %}"
                                class="btn btn-secondary">Generar otro</a>

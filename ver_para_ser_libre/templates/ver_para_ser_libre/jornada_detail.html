@@ -13,10 +13,6 @@
 {% block content %}
     <div class="vpsl-page vpsl-jornada-detail">
         <div class="vpsl-page-toolbar">
-            <a href="{% url 'vpsl_itinerario_detail' jornada.itinerario.pk %}"
-               class="btn btn-light">
-                <i class="bi bi-arrow-left"></i> Volver
-            </a>
             <div class="vpsl-actions">
                 {% if puede_exportar %}
                     <a href="{% url 'vpsl_jornada_export' jornada.pk %}"

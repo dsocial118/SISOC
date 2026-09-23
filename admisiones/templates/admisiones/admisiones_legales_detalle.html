@@ -30,10 +30,6 @@
           href="{% static 'custom/css/numeroExpedienteModal.css' %}" />
     <div class="row justify-content-between d-print-none mx-1 mb-3">
         <div class="col-auto">
-            <a href="{% url 'admisiones_legales_listar' %}"
-               class="btn btn-secondary mr-1">Volver</a>
-        </div>
-        <div class="col-auto">
             {% for boton in botones_disponibles %}
                 {% render_boton_legales boton admision %}
             {% endfor %}

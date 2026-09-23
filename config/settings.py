@@ -256,6 +256,7 @@ TEMPLATES = [
                 "django.contrib.messages.context_processors.messages",
                 "sentry.context_processors.sentry_frontend",
                 "core.context_processors.footer_version",
+                "core.context_processors.boton_volver",
                 "encuestas.context_processors.ronda_pendiente",
             ],
         },

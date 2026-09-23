@@ -29,12 +29,6 @@
                     <h1>Editar contenido del template</h1>
                     <p>{{ version.plantilla.nombre }}. Guardá los cambios como borrador y publicá la versión cuando esté lista.</p>
                 </div>
-                <div class="gt-hero__actions">
-                    <a href="{% url 'gestor_templates_detalle' version.plantilla.pk %}"
-                       class="btn btn-outline-primary">
-                        <i class="fas fa-arrow-left"></i> Volver al template
-                    </a>
-                </div>
             </section>
             <form method="post" class="gt-form">
                 {% csrf_token %}

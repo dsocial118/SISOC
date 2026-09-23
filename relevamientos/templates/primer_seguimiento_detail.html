@@ -4,10 +4,6 @@
     {{ seguimiento.get_tipo_display }} - Comedor: {{ comedor.nombre }}
 {% endblock title %}
 {% block titulo-pagina %}
-    <div class="mb-4">
-        <a href="{% url 'relevamiento_detalle' comedor.id relevamiento.id %}"
-           class="btn btn-outline-secondary btn-back mr-1">Volver</a>
-    </div>
     {{ comedor.nombre }}
     <span class="ml-2 h5">| {{ seguimiento.get_tipo_display }} #{{ seguimiento.numero_orden }}</span>
     <span class="ml-2 h5">|

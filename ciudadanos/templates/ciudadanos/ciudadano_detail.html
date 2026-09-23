@@ -424,7 +424,6 @@
                     {% endif %}
                 </div>
                 <div class="btn-group">
-                    <a href="{% url 'ciudadanos' %}" class="btn btn-outline-light">Volver</a>
                     {% if perms.auditlog.view_logentry %}
                         <a href="{% url 'audittrail:log_instance' 'ciudadanos' 'ciudadano' ciudadano.pk %}"
                            class="btn btn-outline-light">Historial</a>
@@ -1597,7 +1596,9 @@
                                         <small style="color: rgba(255,255,255,0.7);">Estado Legajo</small>
                                         <div style="font-size: 0.95rem;
                                                     color: rgba(255,255,255,0.95);
-                                                    margin-top: 0.25rem">{{ celiaquia_resumen.legajo_actual.estado_legajo }}</div>
+                                                    margin-top: 0.25rem">
+                                            {{ celiaquia_resumen.legajo_actual.estado_legajo }}
+                                        </div>
                                     </div>
                                     <div>
                                         <small style="color: rgba(255,255,255,0.7);">Resultado Cruce</small>

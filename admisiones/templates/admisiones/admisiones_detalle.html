@@ -28,10 +28,6 @@
 {% block content %}
     <div class="row mb-3">
         <div class="col-12 d-flex justify-content-between flex-wrap gap-2">
-            <a href="{% url 'comedor_detalle' comedor.id %}"
-               class="btn btn-secondary">
-                <i class="fas fa-arrow-left me-2"></i>Volver al comedor
-            </a>
             {% if admision.activa %}
                 {% if user.is_superuser %}
                     <button type="button"

@@ -6,10 +6,6 @@
 {% block title %}Espacio Comunitario: {{ comedor.nombre }}{% endblock %}
 {% block app-header %}
     <div class="row g-2 align-items-center">
-        <div class="col-12 col-lg-auto d-flex justify-content-start">
-            <a href="{% url 'comedores' %}"
-               class="btn btn-sm btn-primary w-100 w-sm-auto backbutton-handler">Volver</a>
-        </div>
         <div class="col-12 col-lg d-flex flex-wrap justify-content-start justify-content-lg-end gap-2 align-items-center header-actions">
             {% if puede_validar_comedor %}
                 <a href="#"

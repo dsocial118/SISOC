@@ -1,0 +1,27 @@
+{% comment %}
+Boton "Volver" unificado del sistema (issue #2460).
+
+Criterios del issue:
+- visible en todas las pantallas (lo renderiza includes/main.html, no cada template);
+- arriba a la izquierda, como en el detalle de comedores;
+- gris, como en la edicion de admisiones tecnicas;
+- al volver se conservan los filtros de la pantalla anterior (lo resuelve
+  custom/js/volver.js, que recuerda la URL previa completa con su querystring).
+
+Opt-out y destino por defecto, desde el contexto de la vista o con
+{% include %} ... with:
+- ocultar_volver=True   -> no se renderiza (home, login, pantallas raiz).
+- volver_url=<url>      -> destino cuando no hay historial previo en la sesion.
+- volver_texto=<texto>  -> reemplaza "Volver".
+{% endcomment %}
+{% if not ocultar_volver %}
+    <div class="sisoc-volver-barra d-print-none">
+        <a href="{{ volver_url|default:'/' }}"
+           class="btn btn-secondary btn-sm sisoc-volver"
+           data-sisoc-volver
+           data-volver-fallback="{{ volver_url|default:'' }}">
+            <i class="fas fa-arrow-left" aria-hidden="true"></i>
+            <span>{{ volver_texto|default:"Volver" }}</span>
+        </a>
+    </div>
+{% endif %}

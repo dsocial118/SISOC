@@ -18,8 +18,9 @@ Uso clásico (texto): {% include 'components/search_bar.html' with titulo='Mi T�
 Modo filtros combinables: {% include 'components/search_bar.html' with titulo='Buscar' reset_url=reset_url add_url=add_url filters_mode=True %}
 Modo búsqueda AJAX dinámica: {% include 'components/search_bar.html' with titulo='Buscar' placeholder='Buscar...' reset_url=reset_url add_url=add_url ajax_search_mode=True ajax_url=ajax_url target_tbody_id='table-tbody' %}
 
-Boton "Volver" (opcional): pasar back_url (nombre de url o url completa) y
-opcionalmente back_text. Si no se pasa, no se renderiza.
+El boton "Volver" ya no vive aca: se unifico en includes/main.html
+(components/back_button.html), arriba a la izquierda de todas las pantallas.
+Ver docs/registro/cambios/2026-09-23-volver-unificado.md (issue #2460).
 
 search_name (opcional, default 'busqueda'): nombre del parametro GET del input
 en modo simple. Sirve para migrar listados cuya vista ya lee otro nombre
@@ -40,21 +41,10 @@ Layout (prototipo Figma "SISOC_ Versión UX", nodo 13501:32237):
 {% endcomment %}
 {% firstof filters_mode comedores_filters_mode False as filters_mode_value %}
 {% with filters_mode=filters_mode_value %}
-    {% if back_url or export_url %}
+    {% if export_url %}
         {% firstof export_permissions export_group "auth.role_exportar_a_csv" as export_permissions_value %}
         {% firstof export_admin_permissions "" as export_admin_permissions_value %}
         <div class="poncho-topbar">
-            {% if back_url %}
-                {% if back_url|is_url %}
-                    <a href="{{ back_url }}" class="poncho-volver">
-                        <i class="fas fa-arrow-left" aria-hidden="true"></i>{{ back_text|default:"Volver" }}
-                    </a>
-                {% else %}
-                    <a href="{% url back_url %}" class="poncho-volver">
-                        <i class="fas fa-arrow-left" aria-hidden="true"></i>{{ back_text|default:"Volver" }}
-                    </a>
-                {% endif %}
-            {% endif %}
             {% if request.user.is_superuser or request.user|has_any_perm:export_admin_permissions_value %}
                 <button type="button"
                         class="poncho-export btn-export-csv"
@@ -255,16 +245,16 @@ Layout (prototipo Figma "SISOC_ Versión UX", nodo 13501:32237):
             {% endif %}
         </div>
     </div>
-    </div>
-    {% if filters_mode %}
-        {% comment %}
+</div>
+{% if filters_mode %}
+    {% comment %}
     El modal de filtros favoritos y favorite_filters.js se retiraron por
     definicion de UX/UI (2026-08-04). El backend de favoritos sigue existiendo,
     solo se saco de la UI. Ver docs/registro.
-        {% endcomment %}
-        <script src="{% static filters_js|default:'custom/js/advanced_filters.js' %}"></script>
-    {% elif ajax_search_mode %}
-        <script nonce="{{ request.csp_nonce }}">
+    {% endcomment %}
+    <script src="{% static filters_js|default:'custom/js/advanced_filters.js' %}"></script>
+{% elif ajax_search_mode %}
+    <script nonce="{{ request.csp_nonce }}">
   document.addEventListener("DOMContentLoaded", function () {
     const searchInput = document.getElementById("ajax-search-input");
     const searchGo = document.getElementById("ajax-search-go");
@@ -440,6 +430,6 @@ Layout (prototipo Figma "SISOC_ Versión UX", nodo 13501:32237):
       });
     }
   });
-        </script>
-    {% endif %}
+    </script>
+{% endif %}
 {% endwith %}
