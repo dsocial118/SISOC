@@ -601,7 +601,9 @@ def _yield_job_to_queue(job: CiudadanosImportJob) -> None:
     job.last_activity_at = now
 
 
-def _iter_prepared_rows(rows, *, start: int, requested_by, parallelism: int):
+def _iter_prepared_rows(  # pylint: disable=too-many-locals
+    rows, *, start: int, requested_by, parallelism: int
+):
     """Solapa consultas RENAPER; el worker principal persiste en orden."""
     if parallelism == 1:
         client = APIClient(reuse_token=True)
@@ -658,7 +660,7 @@ def _iter_prepared_rows(rows, *, start: int, requested_by, parallelism: int):
             client.session.close()
 
 
-def process_ciudadanos_import_job(
+def process_ciudadanos_import_job(  # pylint: disable=too-many-locals,too-many-branches
     job: CiudadanosImportJob,
 ) -> CiudadanosImportJob:
     if job.status in (

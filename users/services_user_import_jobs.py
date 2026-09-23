@@ -495,7 +495,9 @@ def _yield_job_to_queue(job: UserImportJob) -> None:
     job.last_activity_at = now
 
 
-def process_user_import_job(job: UserImportJob) -> UserImportJob:
+def process_user_import_job(  # pylint: disable=too-many-return-statements,too-many-branches
+    job: UserImportJob,
+) -> UserImportJob:
     if job.status in (
         UserImportJob.Status.COMPLETED,
         UserImportJob.Status.COMPLETED_WITH_ERRORS,
