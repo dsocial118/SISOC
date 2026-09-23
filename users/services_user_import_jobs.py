@@ -274,7 +274,7 @@ def _start_job_row_attempt(
             "last_attempted_row",
             "last_attempted_email",
             "last_activity_at",
-        ]
+        ],
     )
 
 
@@ -438,7 +438,7 @@ def _record_row_failure(
             "last_error_at",
             "finished_at",
             "last_activity_at",
-        ]
+        ],
     )
     return job
 
@@ -458,7 +458,7 @@ def _record_job_level_failure(*, job: UserImportJob, message: str) -> UserImport
             "last_error_at",
             "finished_at",
             "last_activity_at",
-        ]
+        ],
     )
     return job
 
@@ -583,9 +583,11 @@ def process_user_import_job(job: UserImportJob) -> UserImportJob:
             return _send_credentials_if_needed(job)
 
         if time.monotonic() - slice_started_at >= slice_seconds:
-            if UserImportJob.objects.filter(
-                status=UserImportJob.Status.PENDING
-            ).exclude(pk=job.pk).exists():
+            if (
+                UserImportJob.objects.filter(status=UserImportJob.Status.PENDING)
+                .exclude(pk=job.pk)
+                .exists()
+            ):
                 _yield_job_to_queue(job)
                 return job
             slice_started_at = time.monotonic()

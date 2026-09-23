@@ -321,7 +321,7 @@ def _sync_job_total_rows(*, job: CiudadanosImportJob, total_rows: int) -> None:
             "existing_rows",
             "failed_rows",
             "pending_rows",
-        ]
+        ],
     )
 
 
@@ -375,7 +375,7 @@ def _record_job_level_failure(
             "last_error_at",
             "finished_at",
             "last_activity_at",
-        ]
+        ],
     )
     return job
 
@@ -431,7 +431,7 @@ def _start_job_row_attempt(*, job: CiudadanosImportJob, row_index: int, row) -> 
             "last_attempted_row",
             "last_attempted_documento",
             "last_activity_at",
-        ]
+        ],
     )
 
 
@@ -483,7 +483,7 @@ def _save_row_pending_after_systemic_error(
             "last_error_at",
             "finished_at",
             "last_activity_at",
-        ]
+        ],
     )
     return job
 
@@ -509,9 +509,7 @@ def _save_row_processed(
         old_status = row_log.status
         if result["status"] == "ready_to_create":
             result = dict(result)
-            result["ciudadano"] = Ciudadano.objects.create(
-                **result["ciudadano_data"]
-            )
+            result["ciudadano"] = Ciudadano.objects.create(**result["ciudadano_data"])
             result["status"] = "created"
 
         _apply_row_base_data(row_log, row)
@@ -578,7 +576,7 @@ def _mark_job_completed(job: CiudadanosImportJob) -> CiudadanosImportJob:
             "last_error_message",
             "last_error_type",
             "last_error_at",
-        ]
+        ],
     )
     return job
 
@@ -772,9 +770,13 @@ def process_ciudadanos_import_job(
                 row_index + 1 < total_rows
                 and time.monotonic() - slice_started_at >= slice_seconds
             ):
-                if CiudadanosImportJob.objects.filter(
-                    status=CiudadanosImportJob.Status.PENDING
-                ).exclude(pk=job.pk).exists():
+                if (
+                    CiudadanosImportJob.objects.filter(
+                        status=CiudadanosImportJob.Status.PENDING
+                    )
+                    .exclude(pk=job.pk)
+                    .exists()
+                ):
                     _yield_job_to_queue(job)
                     return job
                 slice_started_at = time.monotonic()

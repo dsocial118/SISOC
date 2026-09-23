@@ -507,7 +507,9 @@ RENAPER_REQUEST_TIMEOUT_SECONDS = _safe_positive_float_env(
 # El proveedor limita las consultas de toda la organización, no los logins.
 # Tests unitarios de transporte usan dobles HTTP sin base de datos.
 RENAPER_MAX_CONSULTAS_POR_SEGUNDO = (
-    0 if RUNNING_TESTS else max(1, _safe_int_env("RENAPER_MAX_CONSULTAS_POR_SEGUNDO", 30))
+    0
+    if RUNNING_TESTS
+    else max(1, _safe_int_env("RENAPER_MAX_CONSULTAS_POR_SEGUNDO", 30))
 )
 RENAPER_VALIDACION_MAX_RETRIES = _safe_int_env(
     "RENAPER_VALIDACION_MAX_RETRIES",
