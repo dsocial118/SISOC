@@ -2523,6 +2523,89 @@
         setupModalForm('formIdentificador', 'modalIdentificador');
         setupModalForm('formUbicacion', 'modalUbicacion');
 
+        function setupUbicacionDepartamentoCascade(formId, modalId) {
+            // REQ 2026-09-23 (docs/registro/analisis/2026-09-23-inet-sedes-fuera-del-departamento.md):
+            // "Departamento" lista todos los de la provincia del centro y
+            // "Localidad" se completa por AJAX recién al elegir uno. Así el
+            // HTML no trae las miles de localidades de la provincia. El
+            // departamento es solo un filtro de UI: no se guarda.
+            //
+            // Se usa delegación de eventos sobre el <form> -no un listener
+            // directo sobre el <select>- porque setupModalAddReset() y el fetch
+            // de editUbicacion() reemplazan el innerHTML de .modal-body (ver esas
+            // funciones más arriba), lo que destruye cualquier listener puesto
+            // directamente sobre los campos.
+            var form = document.getElementById(formId);
+            var modal = document.getElementById(modalId);
+            if (!form || form.dataset.departamentoCascadeBound === '1') return;
+            form.dataset.departamentoCascadeBound = '1';
+
+            var localidadesUrl = '{% url "ajax_load_localidades" %}';
+            var requestId = 0;
+
+            function refreshSelect2(target) {
+                if (window.refreshSelect2Element) {
+                    window.refreshSelect2Element(target);
+                }
+            }
+
+            function cargarLocalidades(conservarSeleccion) {
+                var departamentoSelect = form.querySelector('#id_departamento_ubicacion');
+                var localidadSelect = form.querySelector('#id_localidad_ubicacion');
+                if (!departamentoSelect || !localidadSelect) return;
+
+                var municipioId = departamentoSelect.value;
+                var valorPrevio = conservarSeleccion ? localidadSelect.value : '';
+                var vacia = '<option value=""></option>';
+
+                if (!municipioId) {
+                    localidadSelect.innerHTML = vacia;
+                    refreshSelect2(localidadSelect);
+                    return;
+                }
+
+                // Descarta respuestas viejas si se cambia de departamento rápido.
+                var esteRequest = ++requestId;
+                fetch(localidadesUrl + '?municipio_id=' + encodeURIComponent(municipioId), {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                .then(function(r) {
+                    if (!r.ok) throw new Error('HTTP ' + r.status);
+                    return r.json();
+                })
+                .then(function(localidades) {
+                    if (esteRequest !== requestId) return;
+                    localidadSelect.innerHTML = vacia;
+                    localidades.forEach(function(loc) {
+                        var opt = document.createElement('option');
+                        opt.value = loc.id;
+                        opt.textContent = loc.nombre;
+                        if (String(loc.id) === String(valorPrevio)) opt.selected = true;
+                        localidadSelect.appendChild(opt);
+                    });
+                    refreshSelect2(localidadSelect);
+                })
+                .catch(function(err) {
+                    console.error('No se pudieron cargar las localidades:', err);
+                });
+            }
+
+            form.addEventListener('change', function(event) {
+                if (event.target && event.target.id === 'id_departamento_ubicacion') {
+                    cargarLocalidades(false);
+                }
+            });
+
+            // En edición el departamento ya viene elegido: al abrir el modal se
+            // traen sus localidades conservando la guardada.
+            if (modal) {
+                modal.addEventListener('shown.bs.modal', function() {
+                    cargarLocalidades(true);
+                });
+            }
+        }
+        setupUbicacionDepartamentoCascade('formUbicacion', 'modalUbicacion');
+
         function setupUbicacionModalSelect2() {
             var modal = document.getElementById('modalUbicacion');
             if (!modal || modal.dataset.ubicacionSelect2Bound === '1') return;
@@ -2951,6 +3034,66 @@
         setupSectorSubsectorCascade('formTitulo');
         setupSectorSubsectorCascade('formPlan');
 
+        function getFieldContainer(field) {
+            if (!field) return null;
+            return field.closest('p') || field.closest('.mb-3') || field.parentElement;
+        }
+
+        function bindMultiSelectCounter(selectField, counterKey) {
+            if (!selectField) {
+                return function() {};
+            }
+
+            var fieldContainer = getFieldContainer(selectField);
+            var counterValueNode = fieldContainer
+                ? fieldContainer.querySelector('[data-voucher-counter-value="' + counterKey + '"]')
+                : null;
+            var counterChipNode = fieldContainer
+                ? fieldContainer.querySelector('[data-voucher-counter="' + counterKey + '"]')
+                : null;
+            var selectedInfoNode = null;
+
+            if (!counterValueNode) {
+                selectedInfoNode = document.createElement('div');
+                selectedInfoNode.className = 'form-text mt-1';
+                selectedInfoNode.textContent = 'Seleccionados: 0';
+                if (fieldContainer) {
+                    fieldContainer.appendChild(selectedInfoNode);
+                }
+            }
+
+            return function refreshCounter() {
+                var selectedCount = Array.from(selectField.options).filter(function(option) {
+                    return option.selected;
+                }).length;
+                if (counterValueNode) {
+                    counterValueNode.textContent = selectedCount;
+                    if (counterChipNode) {
+                        counterChipNode.classList.toggle('is-active', selectedCount > 0);
+                    }
+                } else if (selectedInfoNode) {
+                    selectedInfoNode.textContent = 'Seleccionados: ' + selectedCount;
+                }
+            };
+        }
+
+        // Contador de seleccionados para el multiselect "Tipo" del modal de
+        // Curso. Antes lo armaba setupOfertaVoucherSelector(), pero esa
+        // función quedó atada a los campos de voucher (REQ 2026-09-23, ver
+        // docs/registro/analisis/2026-09-23-inet-quitar-usa-voucher-alta-curso.md)
+        // que en el modal de Curso ya no existen como <select>/<input> visibles.
+        function setupCursoTipoCounter(formId) {
+            var form = document.getElementById(formId);
+            if (!form) return;
+
+            var tipoSelect = form.querySelector('select[name="tipo"]');
+            var refreshTipoSelectedInfo = bindMultiSelectCounter(tipoSelect, 'tipo');
+            if (tipoSelect) {
+                tipoSelect.addEventListener('change', refreshTipoSelectedInfo);
+                refreshTipoSelectedInfo();
+            }
+        }
+
         function setupOfertaVoucherSelector(formId) {
             var form = document.getElementById(formId);
             if (!form) return;
@@ -2961,49 +3104,6 @@
             var costoCreditosInput = form.querySelector('input[name="costo_creditos"]');
 
             if (!usaVoucherInput || !vouchersSelect) return;
-
-            function getFieldContainer(field) {
-                if (!field) return null;
-                return field.closest('p') || field.closest('.mb-3') || field.parentElement;
-            }
-
-            function bindMultiSelectCounter(selectField, counterKey) {
-                if (!selectField) {
-                    return function() {};
-                }
-
-                var fieldContainer = getFieldContainer(selectField);
-                var counterValueNode = fieldContainer
-                    ? fieldContainer.querySelector('[data-voucher-counter-value="' + counterKey + '"]')
-                    : null;
-                var counterChipNode = fieldContainer
-                    ? fieldContainer.querySelector('[data-voucher-counter="' + counterKey + '"]')
-                    : null;
-                var selectedInfoNode = null;
-
-                if (!counterValueNode) {
-                    selectedInfoNode = document.createElement('div');
-                    selectedInfoNode.className = 'form-text mt-1';
-                    selectedInfoNode.textContent = 'Seleccionados: 0';
-                    if (fieldContainer) {
-                        fieldContainer.appendChild(selectedInfoNode);
-                    }
-                }
-
-                return function refreshCounter() {
-                    var selectedCount = Array.from(selectField.options).filter(function(option) {
-                        return option.selected;
-                    }).length;
-                    if (counterValueNode) {
-                        counterValueNode.textContent = selectedCount;
-                        if (counterChipNode) {
-                            counterChipNode.classList.toggle('is-active', selectedCount > 0);
-                        }
-                    } else if (selectedInfoNode) {
-                        selectedInfoNode.textContent = 'Seleccionados: ' + selectedCount;
-                    }
-                };
-            }
 
             var refreshSelectedInfo = bindMultiSelectCounter(vouchersSelect, '1');
             var tipoSelect = form.querySelector('select[name="tipo"]');
@@ -3084,7 +3184,7 @@
         }
 
         setupOfertaVoucherSelector('formOferta');
-        setupOfertaVoucherSelector('formCurso');
+        setupCursoTipoCounter('formCurso');
 
         function setupCursoComisionFilter() {
             var cursosTable = document.getElementById('tablaCursosCentro');
@@ -3783,11 +3883,8 @@
                     setFormValue('nombre', triggerButton.getAttribute('data-nombre'));
                     setFormValue('tipo', triggerButton.getAttribute('data-tipo'));
                     setFormValue('estado', triggerButton.getAttribute('data-estado'));
-                    setFormValue('usa_voucher', triggerButton.getAttribute('data-usa-voucher'));
                     setFormValue('inscripcion_libre', triggerButton.getAttribute('data-inscripcion-libre'));
-                    setFormValue('costo_creditos', triggerButton.getAttribute('data-costo-creditos'));
                     setFormValue('observaciones', triggerButton.getAttribute('data-observaciones'));
-                    setFormValue('voucher_parametrias', triggerButton.getAttribute('data-voucher-ids'));
                     setPlanEstudioFieldLock('', false);
                     updatePlanSelectorSummary();
                     return;
@@ -3820,7 +3917,7 @@
             setupModalForm('formCurso', 'modalCurso');
             setupModalForm('formComisionCurso', 'modalComisionCurso');
             setupComisionCursoModal();
-            setupOfertaVoucherSelector('formCurso');
+            setupCursoTipoCounter('formCurso');
             setupCursoComisionFilter();
             setupCursoFormModal();
             if (typeof initializeVoucherSelect2 === 'function') {

@@ -17,7 +17,6 @@ from django.db.models import (
     Exists,
     F,
     OuterRef,
-    Prefetch,
     Q,
     Subquery,
 )
@@ -35,7 +34,6 @@ from VAT.models import (
     InstitucionIdentificadorHist,
     InstitucionUbicacion,
     PlanVersionCurricular,
-    VoucherParametria,
 )
 from VAT.cache_utils import get_planes_centro_cache_version
 from VAT.services.centro_filter_config import (
@@ -55,10 +53,8 @@ from VAT.forms import (
     CursoForm,
     ComisionCursoForm,
     build_curso_queryset_for_centros,
-    build_localidad_queryset_for_centro,
     build_plan_estudio_queryset_for_centro,
     build_ubicacion_queryset_for_centros,
-    build_voucher_parametria_queryset,
 )
 from VAT.services.access_scope import (
     can_user_access_centro,
@@ -197,8 +193,9 @@ def _build_identificador_form(centro):
 
 
 def _build_ubicacion_form(centro):
+    # departamento y localidad se auto-configuran en
+    # InstitucionUbicacionForm.__init__ a partir de este "centro" inicial.
     form = InstitucionUbicacionForm(initial={"centro": centro})
-    form.fields["localidad"].queryset = build_localidad_queryset_for_centro(centro)
     return _scope_centro_field_to_current_centro(form, centro)
 
 
@@ -382,17 +379,9 @@ def _build_cursos_panel_context(request, centro):
     can_manage_centro = can_user_edit_centro(getattr(request, "user", None), centro)
     cursos = list(
         Curso.objects.filter(centro=centro)
-        .select_related("modalidad", "plan_estudio")
+        .select_related("plan_estudio")
         .annotate(comisiones_count=Count("comisiones"))
-        .prefetch_related(
-            "plan_estudio__titulos",
-            Prefetch(
-                "voucher_parametrias",
-                queryset=VoucherParametria.objects.select_related("programa").order_by(
-                    "nombre"
-                ),
-            ),
-        )
+        .prefetch_related("plan_estudio__titulos")
         .order_by("-fecha_creacion")
     )
     for curso in cursos:
@@ -410,15 +399,6 @@ def _build_cursos_panel_context(request, centro):
     curso_form.fields["plan_estudio"].queryset = build_plan_estudio_queryset_for_centro(
         centro.provincia_id,
         include_plan_ids=[curso.plan_estudio_id for curso in cursos],
-    )
-    curso_form.fields["voucher_parametrias"].queryset = (
-        build_voucher_parametria_queryset(
-            [
-                voucher.id
-                for curso in cursos
-                for voucher in curso.voucher_parametrias.all()
-            ]
-        )
     )
     comision_curso_form = ComisionCursoForm()
     comision_curso_form.fields["curso"].queryset = build_curso_queryset_for_centros(

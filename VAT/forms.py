@@ -12,7 +12,7 @@ from django.utils.text import slugify
 from django.utils import timezone
 from ciudadanos.models import Ciudadano
 from core.models import Dia, Sexo
-from core.models import Localidad, Programa
+from core.models import Localidad, Municipio, Programa
 from iam.services import user_has_permission_code
 from VAT.services.access_scope import es_operador_cfp
 from VAT.models import (
@@ -50,6 +50,33 @@ class VoucherParametriaSelectMultiple(forms.SelectMultiple):
         if value is not None and hasattr(value, "instance") and value.instance:
             option["attrs"]["data-programa-id"] = str(value.instance.programa_id)
         return option
+
+
+class LocalidadSelectBajoDemanda(forms.Select):
+    """Select de Localidad que renderiza solo la opción seleccionada. El resto
+    se trae por AJAX al elegir un Departamento en el modal de sedes (REQ
+    2026-09-23, docs/registro/analisis/2026-09-23-inet-sedes-fuera-del-departamento.md).
+
+    El queryset del campo sigue abarcando toda la provincia -es lo que valida
+    el servidor-, pero no se itera al renderizar: en provincias grandes son
+    miles de localidades que antes viajaban en cada carga del legajo."""
+
+    def optgroups(self, name, value, attrs=None):
+        # Solo pks numéricos: un POST inválido se re-renderiza con errores y un
+        # valor no numérico haría fallar el filter con un 500.
+        seleccionados = [str(v) for v in value if str(v).isdigit()]
+        opciones = [self.create_option(name, "", "", not seleccionados, 0)]
+        if seleccionados:
+            localidades = Localidad.objects.filter(pk__in=seleccionados).only(
+                "id", "nombre"
+            )
+            for index, localidad in enumerate(localidades, start=1):
+                opciones.append(
+                    self.create_option(
+                        name, str(localidad.pk), localidad.nombre, True, index
+                    )
+                )
+        return [(None, opciones, 0)]
 
 
 def _normalize_related_ids(values):
@@ -154,9 +181,13 @@ def build_plan_estudio_queryset_for_centro(
             Q(pk__in=include_plan_ids) | Q(pk__in=base_queryset.values("pk"))
         )
 
+    # Se ordena por lo que muestra la etiqueta (nombre y normativa, ver
+    # PlanVersionCurricular.__str__): Sector y Modalidad ya no son visibles y
+    # ordenar por ellos dejaba la lista en un orden que parecía aleatorio.
     return base_queryset.select_related("sector", "modalidad_cursada").order_by(
-        "sector__nombre",
-        "modalidad_cursada__nombre",
+        "nombre",
+        "normativa",
+        "id",
     )
 
 
@@ -203,14 +234,25 @@ def build_ubicacion_queryset_for_centros(centro_ids, include_ubicacion_ids=None)
 
 
 def build_localidad_queryset_for_centro(centro):
+    # REQ 2026-09-23 (docs/registro/analisis/2026-09-23-inet-sedes-fuera-del-departamento.md):
+    # antes se cortaba en el municipio del centro y por eso un CFP con sede en
+    # otro municipio de la misma provincia no podía cargarla. El alcance queda
+    # provincial: se listan todas las localidades de la provincia del centro,
+    # sin importar el municipio.
     queryset = Localidad.objects.order_by("nombre")
-    if centro.municipio_id:
-        municipio_queryset = queryset.filter(municipio_id=centro.municipio_id)
-        if municipio_queryset.exists():
-            return municipio_queryset
-    if centro.provincia_id:
+    if centro and centro.provincia_id:
         return queryset.filter(municipio__provincia_id=centro.provincia_id)
     return queryset
+
+
+def build_municipio_queryset_for_centro(centro):
+    """Departamentos para el selector de filtrado del modal de sedes: todos
+    los de la provincia del centro (ver build_localidad_queryset_for_centro)."""
+    if centro and centro.provincia_id:
+        return Municipio.objects.filter(provincia_id=centro.provincia_id).order_by(
+            "nombre"
+        )
+    return Municipio.objects.none()
 
 
 class ReferenteModelChoiceField(forms.ModelChoiceField):
@@ -272,6 +314,18 @@ REFERENTE_GROUP_NAMES = ("CFP",)
 REVISOR_GROUP_NAMES = ("CFPRevisor",)
 ROLE_INET_PROVINCIA_PERMISSION = "auth.role_inet_provincia"
 
+# REQ 2026-09-23 (docs/registro/analisis/2026-09-23-inet-bloquear-cue-y-denominacion.md):
+# denominación y CUE del centro quedan de solo lectura para estos perfiles.
+# OJO: el grupo está cargado como "CFPJuridicccion" (con "Juridic" y tres
+# "c") en core/permissions/registry.py, no "CFPJurisdiccion" -si se corrige
+# la ortografía acá el bloqueo deja de aplicar, sin ningún error visible.
+# Para sumar otro rol al bloqueo alcanza con agregar su grupo a esta tupla.
+IDENTIFICACION_CENTRO_BLOQUEADA_GROUP_NAMES = (
+    "CFP",
+    "CFPJuridicccion",
+    "CFPRevisor",
+)
+
 
 def _is_inet_provincia_actor(actor) -> bool:
     if not actor or not getattr(actor, "is_authenticated", False):
@@ -280,6 +334,14 @@ def _is_inet_provincia_actor(actor) -> bool:
     if not getattr(profile, "es_usuario_provincial", False):
         return False
     return user_has_permission_code(actor, ROLE_INET_PROVINCIA_PERMISSION)
+
+
+def _debe_bloquear_identificacion_centro(actor) -> bool:
+    if not actor or not getattr(actor, "is_authenticated", False):
+        return False
+    return actor.groups.filter(
+        name__in=IDENTIFICACION_CENTRO_BLOQUEADA_GROUP_NAMES
+    ).exists()
 
 
 def _lock_fields_readonly(form, field_names):
@@ -905,6 +967,17 @@ class CentroAltaForm(CentroForm):
                 self,
                 ["tipo_gestion", "clase_institucion", "situacion"],
             )
+
+        # REQ 2026-09-23 (docs/registro/analisis/2026-09-23-inet-bloquear-cue-y-denominacion.md):
+        # denominación y CUE quedan de solo lectura para CFP/CFPJuridicccion/
+        # CFPRevisor. Aplica solo en edición: en el alta, nombre y codigo son
+        # los datos que definen el legajo y tienen que poder cargarse.
+        if (
+            _debe_bloquear_identificacion_centro(actor)
+            and self.instance
+            and self.instance.pk
+        ):
+            _lock_fields_readonly(self, ["nombre", "codigo"])
 
         # Operador CFP: no ve datos administrativos del centro. Se eliminan del
         # form para evitar fuga en el HTML y bloquear cualquier POST manipulado.
@@ -1692,11 +1765,22 @@ class InstitucionUbicacionForm(forms.ModelForm):
         label="Centro",
         widget=forms.Select(attrs=_select2_attrs(placeholder="Seleccionar centro...")),
     )
+    # No es un campo de InstitucionUbicacion: solo filtra las opciones de
+    # "localidad" en el navegador. REQ 2026-09-23,
+    # docs/registro/analisis/2026-09-23-inet-sedes-fuera-del-departamento.md.
+    departamento = forms.ModelChoiceField(
+        queryset=Municipio.objects.none(),
+        label="Departamento",
+        required=False,
+        widget=forms.Select(
+            attrs=_select2_attrs(placeholder="Todos los departamentos...")
+        ),
+    )
     localidad = forms.ModelChoiceField(
         queryset=Localidad.objects.order_by("nombre"),
         label="Localidad",
-        widget=forms.Select(
-            attrs=_select2_attrs(placeholder="Seleccionar localidad...")
+        widget=LocalidadSelectBajoDemanda(
+            attrs=_select2_attrs(placeholder="Elegí primero un departamento...")
         ),
     )
     rol_ubicacion = forms.ChoiceField(
@@ -1728,10 +1812,28 @@ class InstitucionUbicacionForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         lock_centro = kwargs.pop("lock_centro", False)
         super().__init__(*args, **kwargs)
+        self.order_fields(
+            [
+                "centro",
+                "departamento",
+                "localidad",
+                "rol_ubicacion",
+                "nombre_ubicacion",
+                "domicilio",
+                "es_principal",
+                "observaciones",
+            ]
+        )
         modal_dropdown_parent = "#modalUbicacion .modal-body"
         self.fields["centro"].widget.attrs.update(
             {
                 "id": "id_centro_ubicacion",
+                "data-dropdown-parent": modal_dropdown_parent,
+            }
+        )
+        self.fields["departamento"].widget.attrs.update(
+            {
+                "id": "id_departamento_ubicacion",
                 "data-dropdown-parent": modal_dropdown_parent,
             }
         )
@@ -1742,9 +1844,42 @@ class InstitucionUbicacionForm(forms.ModelForm):
             }
         )
 
+        centro = self._resolver_centro(lock_centro)
+        self.fields["departamento"].queryset = build_municipio_queryset_for_centro(
+            centro
+        )
+        self.fields["localidad"].queryset = build_localidad_queryset_for_centro(centro)
+
+        # En edición, el departamento arranca en el de la localidad guardada
+        # para que el modal pueda cargar sus localidades hermanas por AJAX.
+        if not self.is_bound and self.instance.localidad_id:
+            self.initial.setdefault(
+                "departamento", self.instance.localidad.municipio_id
+            )
+
         if lock_centro:
             self.fields["centro"].disabled = True
             self.fields["centro"].widget.attrs["readonly"] = True
+
+    def _resolver_centro(self, lock_centro):
+        # El centro enviado manda sobre el guardado: en la edición standalone
+        # (InstitucionUbicacionUpdateView) el campo es editable, y la localidad
+        # tiene que validarse contra la provincia del centro elegido, no del
+        # anterior. Con lock_centro el campo va disabled y el POST se ignora.
+        centro_val = None
+        if self.is_bound and not lock_centro:
+            centro_val = self.data.get(self.add_prefix("centro"))
+        if not centro_val and self.instance.centro_id:
+            return self.instance.centro
+        centro_val = centro_val or self.initial.get("centro")
+        if isinstance(centro_val, Centro):
+            return centro_val
+        if not centro_val:
+            return None
+        try:
+            return Centro.objects.only("id", "provincia_id").filter(pk=centro_val).first()
+        except (TypeError, ValueError):
+            return None
 
     class Meta:
         model = InstitucionUbicacion
@@ -1914,13 +2049,20 @@ class CursoForm(forms.ModelForm):
             centro_id=centro_id,
         )
 
+        # REQ 2026-09-23: "Usa voucher" se oculta del alta/edición (ver
+        # docs/registro/analisis/2026-09-23-inet-quitar-usa-voucher-alta-curso.md).
+        # No se elimina el campo ni su lógica: los cursos que ya lo usan
+        # conservan su valor porque _hide_and_lock_fields() deja el campo
+        # disabled, y un campo disabled toma su valor inicial (el guardado en
+        # el modelo) en vez del enviado por POST.
+        _hide_and_lock_fields(
+            self, ["usa_voucher", "costo_creditos", "voucher_parametrias"]
+        )
+
     def clean(self):
         cleaned_data = super().clean()
         plan_estudio = cleaned_data.get("plan_estudio")
-        usa_voucher = cleaned_data.get("usa_voucher")
-        inscripcion_libre = cleaned_data.get("inscripcion_libre")
         voucher_parametrias = cleaned_data.get("voucher_parametrias")
-        costo_creditos = cleaned_data.get("costo_creditos")
 
         if not plan_estudio:
             self.add_error(
@@ -1930,28 +2072,10 @@ class CursoForm(forms.ModelForm):
         else:
             cleaned_data["modalidad"] = plan_estudio.modalidad_cursada
 
-        if usa_voucher and inscripcion_libre:
-            self.add_error(
-                "inscripcion_libre",
-                "No podés activar inscripción libre y voucher al mismo tiempo.",
-            )
-
-        if usa_voucher and not voucher_parametrias:
-            self.add_error(
-                "voucher_parametrias",
-                "Debés seleccionar al menos un voucher cuando el curso usa voucher.",
-            )
-
-        if usa_voucher and (costo_creditos is None or costo_creditos <= 0):
-            self.add_error(
-                "costo_creditos",
-                "Debés informar un costo mayor a 0 cuando el curso usa voucher.",
-            )
-
-        if not usa_voucher:
-            cleaned_data["costo_creditos"] = 0
-            cleaned_data["voucher_parametrias"] = VoucherParametria.objects.none()
-
+        # usa_voucher/costo_creditos/inscripcion_libre están resueltos por
+        # Curso.clean() (validación de modelo, corre en el full_clean() del
+        # ModelForm) ahora que "usa_voucher" no se puede tocar desde la UI:
+        # ver _hide_and_lock_fields() en __init__.
         if voucher_parametrias:
             programas_ids = {voucher.programa_id for voucher in voucher_parametrias}
             if len(programas_ids) > 1:
