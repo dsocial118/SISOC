@@ -1387,7 +1387,7 @@
                         </h6>
                     </div>
                     <div class="card-body d-flex flex-column">
-                        {% if comedor.responsable_tarjeta_nombre or comedor.responsable_tarjeta_mail or comedor.responsable_tarjeta_dni or comedor.responsable_tarjeta_cuit or comedor.responsable_tarjeta_domicilio or comedor.responsable_tarjeta_localidad or comedor.responsable_tarjeta_provincia or comedor.responsable_tarjeta_telefono %}
+                        {% if comedor.responsable_tarjeta_nombre or comedor.responsable_tarjeta_mail or comedor.responsable_tarjeta_dni or comedor.responsable_tarjeta_cuit or comedor.responsable_tarjeta_domicilio or comedor.responsable_tarjeta_localidad or comedor.responsable_tarjeta_municipio or comedor.responsable_tarjeta_provincia or comedor.responsable_tarjeta_telefono %}
                             <div class="row gy-2">
                                 <p class="col-12 col-md-6 mb-0 fs-7">
                                     <strong>Nombre:</strong> {{ comedor.responsable_tarjeta_nombre|default:"-" }}
@@ -1406,6 +1406,9 @@
                                 </p>
                                 <p class="col-12 col-md-6 mb-0 fs-7">
                                     <strong>Teléfono:</strong> {{ comedor.responsable_tarjeta_telefono|default:"-" }}
+                                </p>
+                                <p class="col-12 col-md-6 mb-0 fs-7">
+                                    <strong>Municipio:</strong> {% firstof comedor.responsable_tarjeta_municipio.nombre comedor.responsable_tarjeta_localidad.municipio.nombre "-" %}
                                 </p>
                                 <p class="col-12 col-md-6 mb-0 fs-7">
                                     <strong>Localidad:</strong> {{ comedor.responsable_tarjeta_localidad.nombre|default:"-" }}
@@ -1475,7 +1478,7 @@
                                 <i class="bi bi-people-fill fs-1"></i>
                             </div>
                             <div>
-                                <div class="fw-bold fs-2 mb-0 py-0 text-white">{{ nomina_total|default:0 }}</div>
+                                <div class="fw-bold fs-2 mb-0 py-0 text-white">{{ nomina_asistentes|default:0 }}</div>
                                 <p class="mb-0 text-white fw-bold">Asistentes</p>
                             </div>
                         </div>
@@ -1521,6 +1524,17 @@
                             <div>
                                 <div class="fw-bold fs-2 mb-0 py-0 text-white">{{ nomina_espera|default:0 }}</div>
                                 <p class="mb-0 text-white fw-bold">Lista de espera</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="d-flex align-items-center bg-gris px-3 py-2 rounded-3 mb-2">
+                            <div class="d-flex align-items-center justify-content-center bg-gris-75 text-white rounded-circle mx-2 me-3 comedor-icon-60">
+                                <i class="bi bi-person-dash-fill fs-1"></i>
+                            </div>
+                            <div>
+                                <div class="fw-bold fs-2 mb-0 py-0 text-white">{{ nomina_bajas|default:0 }}</div>
+                                <p class="mb-0 text-white fw-bold">Dados de baja</p>
                             </div>
                         </div>
                     </div>

@@ -432,6 +432,13 @@ class Comedor(SoftDeleteModelMixin, models.Model):
         blank=True,
         related_name="comedores_responsable_tarjeta",
     )
+    responsable_tarjeta_municipio = models.ForeignKey(
+        to=Municipio,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="comedores_responsable_tarjeta",
+    )
     responsable_tarjeta_provincia = models.ForeignKey(
         to=Provincia,
         on_delete=models.PROTECT,
