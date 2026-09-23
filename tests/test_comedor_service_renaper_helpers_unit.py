@@ -1064,6 +1064,7 @@ def test_get_nomina_detail_calcula_resumen_y_porcentajes(mocker):
         "cantidad_nomina_f": 4,
         "cantidad_nomina_x": 1,
         "espera": 2,
+        "baja": 1,
         "cantidad_total": 10,
         "cantidad_activos": 8,
         "rango_ninos": 2,
@@ -1090,6 +1091,9 @@ def test_get_nomina_detail_calcula_resumen_y_porcentajes(mocker):
     assert out[1:6] == (3, 4, 1, 2, 10)
     rangos = out[6]
     assert rangos["cantidad_activos"] == 8
+    # Se exponen para el resumen del legajo (issue #2507).
+    assert rangos["espera"] == 2
+    assert rangos["baja"] == 1
     assert rangos["total_activos"] == 8
     assert rangos["pct_ninos"] == 25
     assert rangos["pct_adolescentes"] == 12

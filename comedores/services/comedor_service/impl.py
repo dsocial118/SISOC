@@ -106,11 +106,24 @@ class TimestampDiffYears(Func):
 
 
 def _aggregate_nomina_resumen(qs_nomina_age):
+    # Todo lo que se muestra como resumen cuenta solo asistentes activos
+    # (issue #2507). `cantidad_total` es la excepción a propósito: es el total
+    # real de registros y lo usa la API como `count` de paginación.
     return qs_nomina_age.aggregate(
-        cantidad_nomina_m=Count("id", filter=Q(ciudadano__sexo__sexo="Masculino")),
-        cantidad_nomina_f=Count("id", filter=Q(ciudadano__sexo__sexo="Femenino")),
-        cantidad_nomina_x=Count("id", filter=Q(ciudadano__sexo__sexo="X")),
+        cantidad_nomina_m=Count(
+            "id",
+            filter=Q(ciudadano__sexo__sexo="Masculino", estado=Nomina.ESTADO_ACTIVO),
+        ),
+        cantidad_nomina_f=Count(
+            "id",
+            filter=Q(ciudadano__sexo__sexo="Femenino", estado=Nomina.ESTADO_ACTIVO),
+        ),
+        cantidad_nomina_x=Count(
+            "id",
+            filter=Q(ciudadano__sexo__sexo="X", estado=Nomina.ESTADO_ACTIVO),
+        ),
         espera=Count("id", filter=Q(estado=Nomina.ESTADO_ESPERA)),
+        baja=Count("id", filter=Q(estado=Nomina.ESTADO_BAJA)),
         cantidad_total=Count("id"),
         cantidad_activos=Count("id", filter=Q(estado=Nomina.ESTADO_ACTIVO)),
         rango_ninos=Count("id", filter=Q(edad__lte=13, estado=Nomina.ESTADO_ACTIVO)),
@@ -151,6 +164,10 @@ def _build_nomina_rangos_resumen(resumen):
         "adultos_mayores": resumen["rango_adultos_mayores"],
         "adulto_mayor_avanzado": resumen["rango_adulto_mayor_avanzado"],
         "cantidad_activos": resumen["cantidad_activos"] or 0,
+        # Se exponen acá para que lleguen al legajo y al detalle sin cambiar la
+        # forma de la tupla que devuelven los `get_nomina_detail*`.
+        "espera": resumen["espera"] or 0,
+        "baja": resumen["baja"] or 0,
         "total_activos": total_activos,
         "pct_ninos": _pct(resumen["rango_ninos"]),
         "pct_adolescentes": _pct(resumen["rango_adolescentes"]),
