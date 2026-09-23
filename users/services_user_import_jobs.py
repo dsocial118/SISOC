@@ -29,7 +29,7 @@ from users.services_user_import import (
 logger = logging.getLogger("django")
 DEFAULT_USER_IMPORT_JOB_POLL_SECONDS = 2
 DEFAULT_USER_IMPORT_JOB_STALE_SECONDS = 900
-DEFAULT_USER_IMPORT_JOB_SLICE_SECONDS = 300
+DEFAULT_USER_IMPORT_JOB_SLICE_SECONDS = 1800
 
 
 class LostImportLease(RuntimeError):

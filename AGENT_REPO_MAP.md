@@ -203,7 +203,7 @@ SISOC/
 - `user_import_worker`
 - `ocr_worker`
 - `encuestas_worker`: abre/cierra rondas de encuestas por fecha (ver `encuestas/services.py:run_encuestas_scheduler`, sin Celery).
-- Los loops persistentes llaman `close_old_connections()` por ciclo. Ciudadanos y usuarios reclaman lotes con `lease_token`; los lotes inactivos vuelven a pendiente y un worker anterior no debe confirmar filas. Con otros pendientes, ambos importadores ceden el worker por tramos configurables de cinco minutos y el reclamo prioriza al lote que lleva más tiempo esperando.
+- Los loops persistentes llaman `close_old_connections()` por ciclo. Ciudadanos y usuarios reclaman lotes con `lease_token`; los lotes inactivos vuelven a pendiente y un worker anterior no debe confirmar filas. Con otros pendientes, ambos importadores ceden el worker por tramos configurables de treinta minutos y el reclamo prioriza al lote que lleva más tiempo esperando.
 
 ## Configuracion y variables de entorno relevantes
 
