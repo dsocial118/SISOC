@@ -9,7 +9,7 @@
 
 ## Contexto funcional
 
-- No informado explícitamente; inferir desde el título del PR y el diff.
+- Recuperación de workers persistentes tras cortes MySQL y procesamiento de lotes extensos con cupo RENAPER compartido.
 
 ## Arquitectura tocada
 
@@ -18,10 +18,10 @@
 
 ## Decisiones y supuestos detectados
 
-- Tipo de cambio declarado: No informado
-- Área principal declarada: No informada
-- Impacto usuario declarado: No informado
-- Riesgos / rollback: No informado
+- Tipo de cambio declarado: fix
+- Área principal declarada: importaciones masivas y RENAPER
+- Impacto usuario declarado: Los lotes interrumpidos por reinicio se reanudan solos y un lote extenso cede turno a otros; la meta de siete días sigue pendiente de medición.
+- Riesgos / rollback: Aplicar las tres migraciones antes del código; conservar la configuración anterior y volver al tag previo si hay regresión, sin borrar filas ni credenciales. El correo ya enviado puede requerir revisión manual tras una caída.
 
 ## Design system y UI
 
