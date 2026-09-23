@@ -7,7 +7,7 @@ import time
 from datetime import timedelta
 
 from django.core.exceptions import ValidationError
-from django.db import OperationalError, models
+from django.db import OperationalError, close_old_connections, models
 from django.http import Http404
 from django.utils import timezone
 
@@ -531,13 +531,15 @@ def run_mailing_jobs_worker(*, once: bool = False) -> None:
     poll_seconds = get_mailing_job_poll_seconds()
     while True:
         try:
+            close_old_connections()
             processed_job = process_next_mailing_job()
         except Exception:
             logger.exception("Fallo inesperado en el worker de mailing.")
             if once:
                 raise
-            time.sleep(poll_seconds)
-            continue
+            processed_job = False
+        finally:
+            close_old_connections()
         if once:
             return
         if processed_job:

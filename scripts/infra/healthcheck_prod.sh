@@ -13,6 +13,7 @@ CONTAINERS=(
   sisoc-ocr_worker-1
   sisoc-bulk_credentials_worker-1
   sisoc-ciudadanos_import_worker-1
+  sisoc-ciudadanos_import_worker-2
   sisoc-mailing_worker-1
   sisoc-user_import_worker-1
   sisoc-redis-1

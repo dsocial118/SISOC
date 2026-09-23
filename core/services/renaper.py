@@ -6,6 +6,8 @@ import logging
 import unicodedata
 from typing import Any
 
+from django.db import DatabaseError
+
 from core.integrations.renaper import APIClient
 from core.models import Sexo
 
@@ -122,6 +124,10 @@ def consultar_datos_renaper(dni: str, sexo: str, *, client=None) -> dict[str, An
             "data": _mapear_datos_renaper(datos, dni, sexo),
             "datos_api": datos,
         }
+    except DatabaseError:
+        return _error_result(
+            "No se pudo consultar la base de datos.", "database_unavailable"
+        )
     except Exception as exc:  # pylint: disable=broad-exception-caught
         _log_unexpected_error("renaper.integration.unhandled_error", exc)
         return _error_result(

@@ -285,3 +285,12 @@ class PreferenciaColumnas(models.Model):
 
     def __str__(self):
         return f"{self.usuario_id} - {self.listado}"
+
+
+class RenaperConsultaRateLimit(models.Model):
+    """Próximo turno de consulta RENAPER compartido entre procesos SISOC."""
+
+    next_available_at = models.DateTimeField()
+
+    class Meta:
+        verbose_name = "Límite global de consultas RENAPER"

@@ -3,10 +3,18 @@ from __future__ import annotations
 import logging
 import os
 import time
+import uuid
 from datetime import timedelta
 
 from django.core.exceptions import ValidationError
-from django.db import OperationalError, models
+from django.db import (
+    DatabaseError,
+    OperationalError,
+    close_old_connections,
+    models,
+    transaction,
+)
+from django.db.models.functions import Coalesce
 from django.http import Http404
 from django.utils import timezone
 
@@ -21,10 +29,11 @@ from users.services_user_import import (
 logger = logging.getLogger("django")
 DEFAULT_USER_IMPORT_JOB_POLL_SECONDS = 2
 DEFAULT_USER_IMPORT_JOB_STALE_SECONDS = 900
-STALE_JOB_ERROR_MESSAGE = (
-    "El lote se interrumpio antes de finalizar. "
-    "Puede reanudarlo desde la ultima fila pendiente."
-)
+DEFAULT_USER_IMPORT_JOB_SLICE_SECONDS = 300
+
+
+class LostImportLease(RuntimeError):
+    """Otro worker recuperó el lote; este proceso no debe persistir filas."""
 
 
 def _safe_positive_int(value, default: int) -> int:
@@ -46,6 +55,13 @@ def get_user_import_job_stale_seconds() -> int:
     return _safe_positive_int(
         os.getenv("USER_IMPORT_JOB_STALE_SECONDS", ""),
         DEFAULT_USER_IMPORT_JOB_STALE_SECONDS,
+    )
+
+
+def get_user_import_job_slice_seconds() -> int:
+    return _safe_positive_int(
+        os.getenv("USER_IMPORT_JOB_SLICE_SECONDS", ""),
+        DEFAULT_USER_IMPORT_JOB_SLICE_SECONDS,
     )
 
 
@@ -82,6 +98,7 @@ def request_resume_user_import_job(*, job: UserImportJob) -> UserImportJob:
     job.last_error_at = None
     job.finished_at = None
     job.resume_count += 1
+    job.lease_token = None
     job.last_activity_at = timezone.now()
     job.save(
         update_fields=[
@@ -90,6 +107,7 @@ def request_resume_user_import_job(*, job: UserImportJob) -> UserImportJob:
             "last_error_at",
             "finished_at",
             "resume_count",
+            "lease_token",
             "last_activity_at",
         ]
     )
@@ -107,31 +125,37 @@ def mark_stale_user_import_jobs_as_failed() -> int:
         | models.Q(last_activity_at__lt=stale_threshold)
     )
     updated_count = 0
-    for job in stale_jobs.iterator():
-        job.status = UserImportJob.Status.FAILED
-        job.last_error_message = STALE_JOB_ERROR_MESSAGE
-        job.last_error_at = timezone.now()
-        job.finished_at = timezone.now()
-        job.save(
-            update_fields=[
-                "status",
-                "last_error_message",
-                "last_error_at",
-                "finished_at",
-            ]
+    for job_id, lease_token in list(stale_jobs.values_list("pk", "lease_token")):
+        updated_count += (
+            UserImportJob.objects.filter(
+                pk=job_id,
+                status=UserImportJob.Status.PROCESSING,
+                lease_token=lease_token,
+            )
+            .filter(
+                models.Q(last_activity_at__isnull=True)
+                | models.Q(last_activity_at__lt=stale_threshold)
+            )
+            .update(
+                status=UserImportJob.Status.PENDING,
+                lease_token=None,
+                resume_count=models.F("resume_count") + 1,
+                last_activity_at=timezone.now(),
+            )
         )
-        updated_count += 1
     return updated_count
 
 
 def claim_next_user_import_job() -> UserImportJob | None:
     candidate_ids = list(
         UserImportJob.objects.filter(status=UserImportJob.Status.PENDING)
-        .order_by("requested_at", "id")
+        .annotate(queue_time=Coalesce("last_activity_at", "requested_at"))
+        .order_by("queue_time", "id")
         .values_list("id", flat=True)[:20]
     )
     now = timezone.now()
     for job_id in candidate_ids:
+        lease_token = uuid.uuid4()
         updated = UserImportJob.objects.filter(
             pk=job_id,
             status=UserImportJob.Status.PENDING,
@@ -139,6 +163,7 @@ def claim_next_user_import_job() -> UserImportJob | None:
             status=UserImportJob.Status.PROCESSING,
             finished_at=None,
             last_activity_at=now,
+            lease_token=lease_token,
         )
         if not updated:
             continue
@@ -149,6 +174,49 @@ def claim_next_user_import_job() -> UserImportJob | None:
             job.save(update_fields=["started_at"])
         return job
     return None
+
+
+def _lock_owned_job(job: UserImportJob) -> None:
+    if job.lease_token is None:
+        raise LostImportLease(f"El worker no reclamó el lote #{job.pk}.")
+    current = UserImportJob.objects.select_for_update().get(pk=job.pk)
+    if (
+        current.status != UserImportJob.Status.PROCESSING
+        or current.lease_token != job.lease_token
+    ):
+        raise LostImportLease(f"El worker perdió el lote #{job.pk}.")
+
+
+def _save_owned_job(job: UserImportJob, update_fields: list[str]) -> None:
+    if job.lease_token is None:
+        raise LostImportLease(f"El worker no reclamó el lote #{job.pk}.")
+    updated = UserImportJob.objects.filter(
+        pk=job.pk,
+        status=UserImportJob.Status.PROCESSING,
+        lease_token=job.lease_token,
+    ).update(**{field: getattr(job, field) for field in update_fields})
+    if not updated:
+        raise LostImportLease(f"El worker perdió el lote #{job.pk}.")
+
+
+def _ensure_job_claimed(job: UserImportJob) -> None:
+    """Permite el procesamiento directo sólo si el lote sigue pendiente."""
+    if job.lease_token is not None:
+        return
+    token = uuid.uuid4()
+    updated = UserImportJob.objects.filter(
+        pk=job.pk,
+        status=UserImportJob.Status.PENDING,
+        lease_token__isnull=True,
+    ).update(
+        status=UserImportJob.Status.PROCESSING,
+        lease_token=token,
+        last_activity_at=timezone.now(),
+    )
+    if not updated:
+        raise LostImportLease(f"El worker no pudo reclamar el lote #{job.pk}.")
+    job.lease_token = token
+    job.status = UserImportJob.Status.PROCESSING
 
 
 def _load_job_rows(job: UserImportJob) -> list[dict] | None:
@@ -199,8 +267,9 @@ def _start_job_row_attempt(
     job.last_attempted_row = row_data["fila"]
     job.last_attempted_email = row_data.get("correo", "")
     job.last_activity_at = now
-    job.save(
-        update_fields=[
+    _save_owned_job(
+        job,
+        [
             "next_row_index",
             "last_attempted_row",
             "last_attempted_email",
@@ -261,7 +330,7 @@ def _record_row_skipped(  # pylint: disable=too-many-arguments
             ["status", "finished_at", "last_error_message", "last_error_at"]
         )
 
-    job.save(update_fields=update_fields)
+    _save_owned_job(job, update_fields)
     return job
 
 
@@ -328,7 +397,7 @@ def _record_row_created(  # pylint: disable=too-many-arguments
             ["status", "finished_at", "last_error_message", "last_error_at"]
         )
 
-    job.save(update_fields=update_fields)
+    _save_owned_job(job, update_fields)
     return job
 
 
@@ -357,8 +426,9 @@ def _record_row_failure(
     job.last_error_at = now
     job.finished_at = now
     job.last_activity_at = now
-    job.save(
-        update_fields=[
+    _save_owned_job(
+        job,
+        [
             "processed_rows",
             "created_rows",
             "skipped_rows",
@@ -380,8 +450,9 @@ def _record_job_level_failure(*, job: UserImportJob, message: str) -> UserImport
     job.last_error_at = now
     job.finished_at = now
     job.last_activity_at = now
-    job.save(
-        update_fields=[
+    _save_owned_job(
+        job,
+        [
             "status",
             "last_error_message",
             "last_error_at",
@@ -404,7 +475,35 @@ def _send_credentials_if_needed(job: UserImportJob) -> UserImportJob:
     return job
 
 
+@transaction.atomic
+def _yield_job_to_queue(job: UserImportJob) -> None:
+    _lock_owned_job(job)
+    now = timezone.now()
+    updated = UserImportJob.objects.filter(
+        pk=job.pk,
+        status=UserImportJob.Status.PROCESSING,
+        lease_token=job.lease_token,
+    ).update(
+        status=UserImportJob.Status.PENDING,
+        lease_token=None,
+        last_activity_at=now,
+    )
+    if not updated:
+        raise LostImportLease(f"El worker perdió el lote #{job.pk}.")
+    job.status = UserImportJob.Status.PENDING
+    job.lease_token = None
+    job.last_activity_at = now
+
+
 def process_user_import_job(job: UserImportJob) -> UserImportJob:
+    if job.status in (
+        UserImportJob.Status.COMPLETED,
+        UserImportJob.Status.COMPLETED_WITH_ERRORS,
+    ):
+        return _send_credentials_if_needed(job)
+    _ensure_job_claimed(job)
+    slice_seconds = get_user_import_job_slice_seconds()
+    slice_started_at = time.monotonic()
     rows = _load_job_rows(job)
     if rows is None:
         return job
@@ -412,7 +511,7 @@ def process_user_import_job(job: UserImportJob) -> UserImportJob:
     total_rows = len(rows)
     if job.total_rows != total_rows:
         job.total_rows = total_rows
-        job.save(update_fields=["total_rows"])
+        _save_owned_job(job, ["total_rows"])
 
     if job.next_row_index >= total_rows:
         now = timezone.now()
@@ -423,62 +522,73 @@ def process_user_import_job(job: UserImportJob) -> UserImportJob:
         )
         job.finished_at = now
         job.last_activity_at = now
-        job.save(update_fields=["status", "finished_at", "last_activity_at"])
+        _save_owned_job(job, ["status", "finished_at", "last_activity_at"])
         return _send_credentials_if_needed(job)
 
     for row_index in range(job.next_row_index, total_rows):
+        close_old_connections()
         row_data = rows[row_index]
         _start_job_row_attempt(job=job, row_index=row_index, row_data=row_data)
-        row_log, old_status = _get_or_create_job_row(job=job, row_data=row_data)
+        with transaction.atomic():
+            _lock_owned_job(job)
+            row_log, old_status = _get_or_create_job_row(job=job, row_data=row_data)
 
-        try:
-            result = process_single_user_import_row(row_data=row_data, job=job)
-        except ValidationError as exc:
-            return _record_row_failure(
-                job=job,
-                row_log=row_log,
-                old_status=old_status,
-                message=build_user_import_error_message(exc),
-            )
-        except Exception:
-            logger.exception(
-                "Fallo inesperado procesando lote de importacion. job_id=%s fila=%s",
-                job.id,
-                row_data.get("fila"),
-            )
-            return _record_row_failure(
-                job=job,
-                row_log=row_log,
-                old_status=old_status,
-                message="Ocurrio un error inesperado al procesar la fila.",
-            )
+            try:
+                result = process_single_user_import_row(row_data=row_data, job=job)
+            except DatabaseError:
+                raise
+            except ValidationError as exc:
+                return _record_row_failure(
+                    job=job,
+                    row_log=row_log,
+                    old_status=old_status,
+                    message=build_user_import_error_message(exc),
+                )
+            except Exception:
+                logger.exception(
+                    "Fallo inesperado procesando lote de importacion. job_id=%s fila=%s",
+                    job.id,
+                    row_data.get("fila"),
+                )
+                return _record_row_failure(
+                    job=job,
+                    row_log=row_log,
+                    old_status=old_status,
+                    message="Ocurrio un error inesperado al procesar la fila.",
+                )
 
-        row_status = result["status"]
-
-        if row_status == UserImportJobRow.Status.SKIPPED:
-            job = _record_row_skipped(
-                job=job,
-                row_log=row_log,
-                old_status=old_status,
-                message=result["mensaje"],
-                row_index=row_index,
-                total_rows=total_rows,
-            )
-        else:
-            job = _record_row_created(
-                job=job,
-                row_log=row_log,
-                old_status=old_status,
-                result=result,
-                row_index=row_index,
-                total_rows=total_rows,
-            )
+            if result["status"] == UserImportJobRow.Status.SKIPPED:
+                job = _record_row_skipped(
+                    job=job,
+                    row_log=row_log,
+                    old_status=old_status,
+                    message=result["mensaje"],
+                    row_index=row_index,
+                    total_rows=total_rows,
+                )
+            else:
+                job = _record_row_created(
+                    job=job,
+                    row_log=row_log,
+                    old_status=old_status,
+                    result=result,
+                    row_index=row_index,
+                    total_rows=total_rows,
+                )
 
         if job.status in (
             UserImportJob.Status.COMPLETED,
             UserImportJob.Status.COMPLETED_WITH_ERRORS,
         ):
             return _send_credentials_if_needed(job)
+
+        if time.monotonic() - slice_started_at >= slice_seconds:
+            if UserImportJob.objects.filter(
+                status=UserImportJob.Status.PENDING
+            ).exclude(pk=job.pk).exists():
+                _yield_job_to_queue(job)
+                return job
+            slice_started_at = time.monotonic()
 
     return job
 
@@ -496,7 +606,10 @@ def process_next_user_import_job() -> bool:
     if not job:
         return False
 
-    process_user_import_job(job)
+    try:
+        process_user_import_job(job)
+    except LostImportLease:
+        logger.info("Otro worker recuperó el lote de usuarios #%s.", job.pk)
     return True
 
 
@@ -504,6 +617,7 @@ def run_user_import_jobs_worker(*, once: bool = False) -> None:
     poll_seconds = get_user_import_job_poll_seconds()
     while True:
         try:
+            close_old_connections()
             processed_job = process_next_user_import_job()
         except Exception:
             logger.exception(
@@ -511,8 +625,9 @@ def run_user_import_jobs_worker(*, once: bool = False) -> None:
             )
             if once:
                 raise
-            time.sleep(poll_seconds)
-            continue
+            processed_job = False
+        finally:
+            close_old_connections()
         if once:
             return
         if processed_job:

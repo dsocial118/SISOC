@@ -1,5 +1,8 @@
 from datetime import timedelta
 from io import BytesIO
+from types import SimpleNamespace
+from threading import Barrier
+import uuid
 
 import pytest
 from django.contrib.auth import get_user_model
@@ -21,8 +24,10 @@ from ciudadanos.services_importacion_masiva import (
     parse_cuil_o_dni,
 )
 from ciudadanos.services_importacion_masiva_jobs import (
-    STALE_JOB_ERROR_MESSAGE,
+    LostImportLease,
+    _start_job_row_attempt,
     can_resume_ciudadanos_import_job,
+    claim_next_ciudadanos_import_job,
     create_ciudadanos_import_job,
     mark_stale_ciudadanos_import_jobs_as_failed,
     process_ciudadanos_import_job,
@@ -257,7 +262,9 @@ def test_process_ciudadanos_import_job_creates_existing_and_failed_rows(mocker):
     assert result.existing_rows == 1
     assert result.failed_rows == 1
     assert result.pending_rows == 0
-    mock_consultar.assert_called_once_with("30111222", "F")
+    mock_consultar.assert_called_once()
+    assert mock_consultar.call_args.args == ("30111222", "F")
+    assert mock_consultar.call_args.kwargs["client"].reuse_token is True
 
     existing_row = result.rows.get(fila=2)
     created_row = result.rows.get(fila=3)
@@ -356,7 +363,8 @@ def test_process_ciudadanos_import_job_continues_after_invalid_short_dni(mocker)
     assert job.status == CiudadanosImportJob.Status.COMPLETED_WITH_ERRORS
     assert job.created_rows == 1
     assert job.failed_rows == 1
-    mock_consultar.assert_called_once_with("30111222", "M")
+    mock_consultar.assert_called_once()
+    assert mock_consultar.call_args.args == ("30111222", "M")
     failed_row = job.rows.get(fila=2)
     assert failed_row.status == CiudadanosImportJobRow.Status.FAILED
     assert failed_row.error_type == "invalid_dni"
@@ -475,7 +483,7 @@ def test_process_ciudadanos_import_job_pauses_on_systemic_error_and_resumes(mock
 
 
 @pytest.mark.django_db
-def test_mark_stale_ciudadanos_import_jobs_as_failed():
+def test_mark_stale_ciudadanos_import_jobs_requeues():
     user = User.objects.create_user(username="ciudadanos_import_stale")
     job = CiudadanosImportJob.objects.create(
         requested_by=user,
@@ -486,11 +494,196 @@ def test_mark_stale_ciudadanos_import_jobs_as_failed():
     )
 
     updated_count = mark_stale_ciudadanos_import_jobs_as_failed()
+    with pytest.raises(LostImportLease):
+        _start_job_row_attempt(
+            job=job,
+            row_index=0,
+            row=SimpleNamespace(fila=2, dni="30111222", documento_raw="30111222"),
+        )
     job.refresh_from_db()
 
     assert updated_count == 1
-    assert job.status == CiudadanosImportJob.Status.FAILED
-    assert job.last_error_message == STALE_JOB_ERROR_MESSAGE
+    assert job.status == CiudadanosImportJob.Status.PENDING
+    assert job.resume_count == 1
+
+
+@pytest.mark.django_db
+def test_requeued_job_rejects_old_worker_checkpoint():
+    user = User.objects.create_user(username="ciudadanos_import_lease")
+    job = CiudadanosImportJob.objects.create(
+        requested_by=user,
+        original_filename="ciudadanos.xlsx",
+        archivo="ciudadanos/import_jobs/test/ciudadanos.xlsx",
+        status=CiudadanosImportJob.Status.PROCESSING,
+        lease_token=uuid.uuid4(),
+        last_activity_at=timezone.now() - timedelta(seconds=901),
+    )
+
+    mark_stale_ciudadanos_import_jobs_as_failed()
+
+    with pytest.raises(LostImportLease):
+        _start_job_row_attempt(
+            job=job,
+            row_index=0,
+            row=SimpleNamespace(fila=2, dni="30111222", documento_raw="30111222"),
+        )
+    job.refresh_from_db()
+    assert job.status == CiudadanosImportJob.Status.PENDING
+    assert job.next_row_index == 0
+
+
+@pytest.mark.django_db
+@override_settings(CIUDADANOS_IMPORT_RENAPER_SLEEP_SECONDS=0)
+def test_ciudadano_and_row_checkpoint_roll_back_together(mocker):
+    user = User.objects.create_user(username="ciudadanos_atomic_checkpoint")
+    job = create_ciudadanos_import_job(
+        uploaded_file=_build_excel_file([("30111222", "M")]), requested_by=user
+    )
+    mocker.patch(
+        "ciudadanos.services_importacion_masiva.consultar_datos_renaper",
+        return_value=_renaper_success(dni="30111222", cuil="20301112220"),
+    )
+    original_save = CiudadanosImportJobRow.save
+
+    def fail_processed_save(row, *args, **kwargs):
+        if row.status == CiudadanosImportJobRow.Status.CREATED:
+            raise RuntimeError("checkpoint falló")
+        return original_save(row, *args, **kwargs)
+
+    mocker.patch.object(CiudadanosImportJobRow, "save", fail_processed_save)
+
+    with pytest.raises(RuntimeError, match="checkpoint falló"):
+        process_ciudadanos_import_job(job)
+
+    assert not Ciudadano.objects.filter(documento=30111222).exists()
+    job.refresh_from_db()
+    assert job.next_row_index == 0
+    assert job.processed_rows == 0
+
+
+@pytest.mark.django_db
+@override_settings(CIUDADANOS_IMPORT_RENAPER_SLEEP_SECONDS=0)
+def test_concurrent_existing_dni_is_checkpointed_once(mocker):
+    user = User.objects.create_user(username="ciudadanos_concurrent_dni")
+    existing = Ciudadano.objects.create(
+        apellido="Existente",
+        nombre="Persona",
+        tipo_documento=Ciudadano.DOCUMENTO_DNI,
+        documento=30111222,
+        tipo_registro_identidad=Ciudadano.TIPO_REGISTRO_ESTANDAR,
+    )
+    job = create_ciudadanos_import_job(
+        uploaded_file=_build_excel_file([("30111222", "M")]), requested_by=user
+    )
+    # Otro lote creó el DNI después de la lectura previa a RENAPER.
+    mocker.patch(
+        "ciudadanos.services_importacion_masiva._get_existing_estandar_by_dni",
+        return_value=None,
+    )
+    mocker.patch(
+        "ciudadanos.services_importacion_masiva.consultar_datos_renaper",
+        return_value=_renaper_success(dni="30111222", cuil="20301112220"),
+    )
+
+    process_ciudadanos_import_job(job)
+
+    job.refresh_from_db()
+    assert job.existing_rows == 1
+    assert job.created_rows == 0
+    assert job.processed_rows == 1
+    assert job.rows.get(fila=2).ciudadano == existing
+    assert Ciudadano.objects.filter(documento=30111222).count() == 1
+
+
+@pytest.mark.django_db
+@override_settings(
+    CIUDADANOS_IMPORT_RENAPER_PARALLELISM=3,
+    CIUDADANOS_IMPORT_RENAPER_SLEEP_SECONDS=0,
+)
+def test_parallel_renaper_preparation_keeps_ordered_checkpoints(mocker):
+    user = User.objects.create_user(username="ciudadanos_parallel_owner")
+    job = create_ciudadanos_import_job(
+        uploaded_file=_build_excel_file(
+            [("30111222", "M"), ("30111223", "M"), ("30111224", "M")]
+        ),
+        requested_by=user,
+    )
+    barrier = Barrier(3)
+
+    def prepare(*, row, requested_by, client):
+        barrier.wait(timeout=5)
+        return {
+            "status": "failed",
+            "mensaje": "Sin coincidencia",
+            "error_type": "no_match",
+            "sexos_intentados": "M",
+            "ciudadano": None,
+            "systemic": False,
+            "contacted_renaper": True,
+        }
+
+    mocker.patch(
+        "ciudadanos.services_importacion_masiva_jobs.process_ciudadanos_import_row",
+        side_effect=prepare,
+    )
+
+    process_ciudadanos_import_job(job)
+
+    job.refresh_from_db()
+    assert job.processed_rows == 3
+    assert list(job.rows.order_by("fila").values_list("fila", flat=True)) == [
+        2,
+        3,
+        4,
+    ]
+
+
+@pytest.mark.django_db
+def test_large_job_yields_to_other_pending_job_and_resumes(mocker):
+    user = User.objects.create_user(username="ciudadanos_fair_queue")
+    large = create_ciudadanos_import_job(
+        uploaded_file=_build_excel_file([("30111222", "M"), ("30111223", "M")]),
+        requested_by=user,
+    )
+    small = create_ciudadanos_import_job(
+        uploaded_file=_build_excel_file([("30111224", "M")]), requested_by=user
+    )
+    mocker.patch(
+        "ciudadanos.services_importacion_masiva_jobs.get_ciudadanos_import_job_slice_seconds",
+        return_value=0,
+    )
+    mocker.patch(
+        "ciudadanos.services_importacion_masiva_jobs.process_ciudadanos_import_row",
+        return_value={
+            "status": "failed",
+            "mensaje": "Sin coincidencia",
+            "error_type": "no_match",
+            "sexos_intentados": "M",
+            "ciudadano": None,
+            "systemic": False,
+            "contacted_renaper": True,
+        },
+    )
+
+    process_ciudadanos_import_job(large)
+    large.refresh_from_db()
+    assert large.status == CiudadanosImportJob.Status.PENDING
+    assert large.next_row_index == 1
+    claimed_small = claim_next_ciudadanos_import_job()
+    assert claimed_small.pk == small.pk
+
+    process_ciudadanos_import_job(claimed_small)
+    resumed = claim_next_ciudadanos_import_job()
+    assert resumed.pk == large.pk
+    process_ciudadanos_import_job(resumed)
+
+    large.refresh_from_db()
+    assert large.status == CiudadanosImportJob.Status.COMPLETED_WITH_ERRORS
+    assert large.processed_rows == 2
+    assert list(large.rows.order_by("fila").values_list("attempts", flat=True)) == [
+        1,
+        1,
+    ]
 
 
 @pytest.mark.django_db
