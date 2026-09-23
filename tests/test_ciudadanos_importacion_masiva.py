@@ -18,6 +18,7 @@ from openpyxl import Workbook, load_workbook
 
 from ciudadanos.models import Ciudadano, CiudadanosImportJob, CiudadanosImportJobRow
 from ciudadanos.services_importacion_masiva import (
+    _load_rows_from_workbook,
     generate_ciudadanos_import_template,
     generate_ciudadanos_import_job_results_workbook,
     load_ciudadanos_import_rows,
@@ -154,6 +155,24 @@ def test_parse_cuil_o_dni_rejects_invalid_verifier():
         parse_cuil_o_dni("20-44535030-5")
 
 
+def test_workbook_loader_does_not_consume_rows_eagerly(mocker):
+    def worksheet_rows():
+        yield ("documento", "sexo")
+        raise AssertionError("Se leyeron filas antes de procesarlas.")
+
+    workbook = mocker.Mock()
+    workbook.sheetnames = []
+    workbook.active.iter_rows.return_value = worksheet_rows()
+    mocker.patch(
+        "ciudadanos.services_importacion_masiva.load_workbook", return_value=workbook
+    )
+
+    loaded_workbook, rows = _load_rows_from_workbook(mocker.Mock())
+
+    assert loaded_workbook is workbook
+    assert next(rows) == ("documento", "sexo")
+
+
 def test_load_ciudadanos_import_rows_accepts_header_aliases_and_optional_sexo():
     upload = _build_excel_file(
         [
@@ -172,6 +191,29 @@ def test_load_ciudadanos_import_rows_accepts_header_aliases_and_optional_sexo():
     assert rows[1].dni == "30111222"
     assert rows[1].cuil == ""
     assert rows[1].sexo == ""
+
+
+def test_load_ciudadanos_import_rows_accepts_row_iterator_and_preserves_fila(mocker):
+    workbook = mocker.Mock()
+    mocker.patch(
+        "ciudadanos.services_importacion_masiva._load_rows_from_workbook",
+        return_value=(
+            workbook,
+            iter(
+                [
+                    ("documento", "sexo"),
+                    ("30111222", "M"),
+                    (None, None),
+                    ("30111223", "F"),
+                ]
+            ),
+        ),
+    )
+
+    rows = load_ciudadanos_import_rows(None)
+
+    assert [row.fila for row in rows] == [2, 4]
+    workbook.close.assert_called_once_with()
 
 
 def test_load_ciudadanos_import_rows_keeps_invalid_row_for_history():

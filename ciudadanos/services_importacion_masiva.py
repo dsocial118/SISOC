@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 import unicodedata
+from collections.abc import Iterator
 from dataclasses import dataclass
 from io import BytesIO
 
@@ -163,7 +164,7 @@ def _build_header_map(headers: list[str]) -> dict[str, int]:
     return header_map
 
 
-def _load_rows_from_workbook(uploaded_file) -> tuple[object, list[tuple]]:
+def _load_rows_from_workbook(uploaded_file) -> tuple[object, Iterator[tuple]]:
     try:
         uploaded_file.seek(0)
         workbook = load_workbook(uploaded_file, read_only=True, data_only=True)
@@ -176,7 +177,7 @@ def _load_rows_from_workbook(uploaded_file) -> tuple[object, list[tuple]]:
             if SHEET_NAME in workbook.sheetnames
             else workbook.active
         )
-        rows = list(worksheet.iter_rows(values_only=True))
+        rows = worksheet.iter_rows(values_only=True)
     except Exception:
         workbook.close()
         raise
@@ -238,13 +239,14 @@ def _parse_import_row(
 def load_ciudadanos_import_rows(uploaded_file) -> list[ParsedCiudadanosImportRow]:
     workbook, rows = _load_rows_from_workbook(uploaded_file)
     try:
-        if not rows:
+        header_row = next(rows, None)
+        if header_row is None:
             raise ValidationError("El archivo Excel esta vacio.")
-        headers = [_clean_cell(value) for value in rows[0]]
+        headers = [_clean_cell(value) for value in header_row]
         header_map = _build_header_map(headers)
 
         parsed_rows: list[ParsedCiudadanosImportRow] = []
-        for row_number, row in enumerate(rows[1:], start=2):
+        for row_number, row in enumerate(rows, start=2):
             parsed_row = _parse_import_row(row_number, row, header_map)
             if parsed_row is not None:
                 parsed_rows.append(parsed_row)

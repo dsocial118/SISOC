@@ -227,7 +227,7 @@ SISOC/
 | Testing | `USE_SQLITE_FOR_TESTS`, `PYTEST_RUNNING` |
 | Integracion GESTIONAR | `GESTIONAR_INTEGRATION_ENABLED` (corte total de envíos, pulls y comandos), `GESTIONAR_API_KEY`, endpoints `GESTIONAR_API_*`, workers `GESTIONAR_*`, `DOMINIO` |
 | Ticketera | `TICKETERA_ENABLED` |
-| RENAPER/importaciones | `RENAPER_API_USERNAME`, `RENAPER_API_PASSWORD`, `RENAPER_REQUEST_TIMEOUT_SECONDS`, `RENAPER_MAX_CONSULTAS_POR_SEGUNDO` (30 por defecto, global mediante `core/integrations/renaper_rate_limit.py` y `core.0009`); ciudadanos usa `CIUDADANOS_IMPORT_RENAPER_PARALLELISM` y reutiliza token por hilo/lote; los tramos de cola usan `CIUDADANOS_IMPORT_JOB_SLICE_SECONDS` y `USER_IMPORT_JOB_SLICE_SECONDS` |
+| RENAPER/importaciones | `RENAPER_API_USERNAME`, `RENAPER_API_PASSWORD`, `RENAPER_REQUEST_TIMEOUT_SECONDS`, `RENAPER_MAX_CONSULTAS_POR_SEGUNDO` (30 por defecto, global mediante `core/integrations/renaper_rate_limit.py` y `core.0009`); ciudadanos usa `CIUDADANOS_IMPORT_RENAPER_PARALLELISM` (2 hilos por réplica por defecto) y reutiliza token por hilo/lote; los tramos de cola usan `CIUDADANOS_IMPORT_JOB_SLICE_SECONDS` y `USER_IMPORT_JOB_SLICE_SECONDS` |
 | Google Maps | `GOOGLE_MAPS_API_KEY` |
 | Sentry | `SENTRY_ENABLED`, `SENTRY_DSN`, `SENTRY_RELEASE` |
 | Email/password reset | `EMAIL_*`, `DEFAULT_FROM_EMAIL`, `PASSWORD_RESET_TIMEOUT`, `INITIAL_PASSWORD_MAX_AGE_HOURS` |
