@@ -13,6 +13,7 @@ from ver_para_ser_libre.models import (
     JornadaVPSL,
     RegistroNominalVPSL,
     SedeVPSL,
+    VehiculoVPSL,
 )
 
 
@@ -28,6 +29,20 @@ class JornadaVPSLAdmin(admin.ModelAdmin):
     list_display = ("itinerario", "fecha", "sede", "localidad", "estado")
     list_filter = ("estado", "fecha")
     search_fields = ("sede", "referente_nombre", "itinerario__codigo")
+
+
+@admin.register(VehiculoVPSL)
+class VehiculoVPSLAdmin(admin.ModelAdmin):
+    list_display = ("id", "nombre", "orden", "activo")
+    list_editable = ("orden", "activo")
+    list_filter = ("activo",)
+    search_fields = ("nombre",)
+    actions = None
+
+    def has_delete_permission(self, request, obj=None):
+        if obj is not None and obj.jornadas.exists():
+            return False
+        return super().has_delete_permission(request, obj)
 
 
 admin.site.register(ChecklistJornadaVPSL)

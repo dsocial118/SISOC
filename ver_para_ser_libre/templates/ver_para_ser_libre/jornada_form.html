@@ -55,12 +55,9 @@
                                             {% for error in form.fecha.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
                                         </div>
                                         <div class="col-12 col-md-6">
-                                            <label class="form-label" for="{{ form.sede_vpsl.id_for_label }}">{{ form.sede_vpsl.label }}</label>
-                                            {{ form.sede_vpsl }}
-                                            {% for error in form.sede_vpsl.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
-                                        </div>
-                                        <div class="col-12">
-                                            <div id="sede-info" class="vpsl-extra-info d-none mb-0"></div>
+                                            <label class="form-label" for="{{ form.vehiculos.id_for_label }}">{{ form.vehiculos.label }}</label>
+                                            {{ form.vehiculos }}
+                                            {% for error in form.vehiculos.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
                                         </div>
                                         <div class="col-12 col-md-6">
                                             <label class="form-label" for="{{ form.horario_inicio.id_for_label }}">{{ form.horario_inicio.label }}</label>
@@ -73,9 +70,46 @@
                                             {% for error in form.horario_fin.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
                                         </div>
                                         <div class="col-12 col-md-6">
-                                            <label class="form-label" for="{{ form.vehiculo.id_for_label }}">{{ form.vehiculo.label }}</label>
-                                            {{ form.vehiculo }}
-                                            {% for error in form.vehiculo.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                                            <label class="form-label" for="{{ form.sede.id_for_label }}">{{ form.sede.label }}</label>
+                                            {{ form.sede }}
+                                            {% for error in form.sede.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                                        </div>
+                                        <div class="col-12 col-md-6">
+                                            <label class="form-label" for="{{ form.ubicacion_url.id_for_label }}">{{ form.ubicacion_url.label }}</label>
+                                            <div class="input-group">
+                                                {{ form.ubicacion_url }}
+                                                <button type="button" id="buscar-ubicacion" class="btn btn-secondary">
+                                                    <i class="bi bi-search"></i> Buscar
+                                                </button>
+                                            </div>
+                                            {% for error in form.ubicacion_url.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                                            <div id="ubicacion-feedback" class="form-text">
+                                                Puede pegar un enlace corto, una URL oficial de Street View o coordenadas como -34.603689, -58.381596.
+                                            </div>
+                                        </div>
+                                        <div class="col-12 col-md-6">
+                                            <label class="form-label" for="{{ form.direccion.id_for_label }}">{{ form.direccion.label }}</label>
+                                            {{ form.direccion }}
+                                            {% if form.direccion.help_text %}<div class="form-text">{{ form.direccion.help_text }}</div>{% endif %}
+                                            {% for error in form.direccion.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                                        </div>
+                                        <div class="col-12 col-md-6">
+                                            <label class="form-label" for="{{ form.localidad.id_for_label }}">{{ form.localidad.label }}</label>
+                                            {{ form.localidad }}
+                                            {% for error in form.localidad.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                                        </div>
+                                        <div class="col-12">
+                                            <div id="ubicacion-preview"
+                                                 class="{% if not mapa_query %}d-none{% endif %}">
+                                                <h4 class="h6">Vista previa de la ubicación</h4>
+                                                <iframe id="ubicacion-mapa"
+                                                        class="vpsl-sede-map"
+                                                        title="Vista previa de la ubicación"
+                                                        loading="lazy"
+                                                        referrerpolicy="strict-origin-when-cross-origin"
+                                                        allowfullscreen
+                                                        {% if mapa_query %}src="https://www.google.com/maps?q={{ mapa_query }}&amp;output=embed"{% endif %}></iframe>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -100,7 +134,7 @@
                                            value="{{ object.referente_apellido|default:'' }}" />
                                     <div class="row g-3">
                                         {% for field in form %}
-                                            {% if field.name == "referente_dni" or field.name == "referente_sexo" or field.name == "referente_telefono" or field.name == "referente_email" %}
+                                            {% if field.name == "referente_dni" or field.name == "referente_sexo" or field.name == "referente_telefono" %}
                                                 <div class="col-12 col-md-6">
                                                     <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
                                                     {{ field }}
@@ -158,16 +192,29 @@
 {% endblock %}
 
 {% block customJS %}
-    {{ sede_data|json_script:"sede-data-json" }}
     <script nonce="{{ request.csp_nonce }}">
       document.addEventListener("DOMContentLoaded", function () {
-        const select = document.getElementById("id_sede_vpsl");
-        const info = document.getElementById("sede-info");
-        const sedes = JSON.parse(document.getElementById("sede-data-json").textContent);
         const form = document.querySelector(".vpsl-form-card form");
         const fecha = document.getElementById("id_fecha");
         const fechaWrapper = fecha ? fecha.closest(".vpsl-date-field") : null;
         const requiredMessage = "Falta completar este campo.";
+        const vehiculosSelect = $(".select2-vehiculos-vpsl");
+        const localidadSelect = $(".select2-localidad-jornada-vpsl");
+
+        if (vehiculosSelect.length) {
+          vehiculosSelect.select2({
+            width: "100%",
+            placeholder: vehiculosSelect.data("placeholder") || "Seleccione uno o más vehículos",
+            allowClear: true,
+          });
+        }
+
+        if (localidadSelect.length) {
+          localidadSelect.select2({
+            width: "100%",
+            placeholder: localidadSelect.data("placeholder") || "Seleccione una localidad",
+          });
+        }
 
         function refreshFechaPlaceholder() {
           if (!fechaWrapper || !fecha) return;
@@ -238,18 +285,53 @@
           setTimeout(() => firstInvalid.focus({ preventScroll: true }), 300);
         }
 
-        function render() {
-          const data = sedes[String(select.value)];
-          if (!data) {
-            info.classList.add("d-none");
-            info.innerHTML = "";
-            return;
-          }
-          info.classList.remove("d-none");
-          info.innerHTML = `<strong>${data.nombre}</strong><br />Provincia: ${data.jurisdiccion}<br />Localidad: ${data.localidad}<br />Calle y altura: ${data.domicilio}`;
+        const ubicacionUrl = document.getElementById("id_ubicacion_url");
+        const direccion = document.getElementById("id_direccion");
+        const buscarUbicacion = document.getElementById("buscar-ubicacion");
+        const ubicacionFeedback = document.getElementById("ubicacion-feedback");
+        const ubicacionPreview = document.getElementById("ubicacion-preview");
+        const ubicacionMapa = document.getElementById("ubicacion-mapa");
+
+        if (buscarUbicacion) {
+          buscarUbicacion.addEventListener("click", async function () {
+            ubicacionFeedback.className = "form-text text-muted";
+            ubicacionFeedback.textContent = "Buscando ubicación...";
+            buscarUbicacion.disabled = true;
+            try {
+              const body = new URLSearchParams({ ubicacion_url: ubicacionUrl.value || "" });
+              const response = await fetch("{% url 'vpsl_ubicacion_buscar' %}", {
+                method: "POST",
+                credentials: "same-origin",
+                headers: {
+                  "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+                  "X-CSRFToken": form.querySelector("[name=csrfmiddlewaretoken]").value,
+                },
+                body: body.toString(),
+              });
+              const data = await response.json();
+              if (!response.ok || !data.success) {
+                throw new Error(data.message || "No se pudo interpretar el enlace.");
+              }
+              if (!direccion.value.trim() && data.direccion) {
+                direccion.value = data.direccion;
+              }
+              ubicacionUrl.value = data.ubicacion_url;
+              ubicacionMapa.src = `https://www.google.com/maps?q=${encodeURIComponent(data.query)}&output=embed`;
+              ubicacionPreview.classList.remove("d-none");
+              ubicacionFeedback.className = "form-text text-success";
+              ubicacionFeedback.textContent = data.direccion
+                ? "Ubicación encontrada. Verifique la dirección antes de guardar."
+                : "Pin encontrado. Complete la dirección si Google no la incluyó en el enlace.";
+            } catch (error) {
+              ubicacionPreview.classList.add("d-none");
+              ubicacionMapa.removeAttribute("src");
+              ubicacionFeedback.className = "form-text text-danger";
+              ubicacionFeedback.textContent = error.message || "No se pudo buscar la ubicación.";
+            } finally {
+              buscarUbicacion.disabled = false;
+            }
+          });
         }
-        select.addEventListener("change", render);
-        render();
         if (fecha) {
           desactivarFechaNativaSiVacia();
           fecha.addEventListener("focus", activarFechaNativa);

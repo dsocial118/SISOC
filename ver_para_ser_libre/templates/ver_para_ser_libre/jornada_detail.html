@@ -30,19 +30,6 @@
                     <a href="{% url 'vpsl_cierre_create' jornada.pk %}"
                        class="btn btn-success">Cerrar jornada</a>
                 {% endif %}
-                {% if mostrar_habilitar_jornada %}
-                    {% if puede_habilitar_jornada %}
-                        <form method="post" action="{% url 'vpsl_jornada_habilitar' jornada.pk %}">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-outline-light">Habilitar</button>
-                        </form>
-                    {% else %}
-                        <span class="d-inline-block"
-                              title="Debe completar y aprobar el checklist de la sede antes de habilitar la jornada.">
-                            <button type="button" class="btn btn-outline-light disabled" disabled>Habilitar</button>
-                        </span>
-                    {% endif %}
-                {% endif %}
             </div>
         </div>
         <div class="card vpsl-title-card vpsl-header">
@@ -72,6 +59,7 @@
                                 <iframe class="vpsl-map-compact"
                                         title="Mapa sede"
                                         loading="lazy"
+                                        referrerpolicy="strict-origin-when-cross-origin"
                                         allowfullscreen
                                         src="https://www.google.com/maps?q={{ mapa_query }}&output=embed"></iframe>
                             {% else %}
@@ -99,6 +87,18 @@
                                 <dt>Calle y altura</dt>
                                 <dd>
                                     {{ sede_resumen.calle_altura|default:"-" }}
+                                </dd>
+                            </dl>
+                            <dl class="vpsl-location-item mb-0">
+                                <dt>Enlace de ubicación</dt>
+                                <dd>
+                                    {% if jornada.ubicacion_url %}
+                                        <a href="{{ jornada.ubicacion_url }}"
+                                           target="_blank"
+                                           rel="noopener noreferrer">Abrir en Google Maps</a>
+                                    {% else %}
+                                        -
+                                    {% endif %}
                                 </dd>
                             </dl>
                         </div>

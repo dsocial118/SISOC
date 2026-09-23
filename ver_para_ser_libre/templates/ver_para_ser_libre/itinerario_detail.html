@@ -4,7 +4,7 @@
 {% block title %}{{ itinerario.codigo }}{% endblock %}
 {% block head %}
     <link rel="stylesheet"
-          href="{% static 'custom/css/ver_para_ser_libre.css' %}?v=detail-ux-20260624" />
+          href="{% static 'custom/css/ver_para_ser_libre.css' %}?v=detail-ux-20260923" />
 {% endblock %}
 {% block breadcrumb %}
     {% include "components/breadcrumb.html" with items=breadcrumb_items %}
@@ -85,23 +85,6 @@
                                 </dd>
                             </div>
                             <div class="vpsl-summary-item">
-                                <dt>Matrícula</dt>
-                                <dd>
-                                    {{ itinerario.matricula_estimada|default:"-" }}
-                                </dd>
-                            </div>
-                            <div class="vpsl-summary-item">
-                                <dt>Sede tentativa</dt>
-                                <dd>
-                                    {% for item in sedes_evaluadas %}
-                                        {{ item.sede.nombre }}
-                                        {% if not forloop.last %},{% endif %}
-                                    {% empty %}
-                                        -
-                                    {% endfor %}
-                                </dd>
-                            </div>
-                            <div class="vpsl-summary-item">
                                 <dt>Carta</dt>
                                 <dd>
                                     {{ itinerario.carta_referencia|default:"Sin referencia" }}
@@ -153,6 +136,7 @@
                                         <th>Fecha</th>
                                         <th>Sede</th>
                                         <th>Localidad</th>
+                                        <th>Dirección</th>
                                         <th>Vehiculo</th>
                                         <th>Estado</th>
                                         <th>Registros</th>
@@ -164,7 +148,8 @@
                                         <tr data-jornada-row>
                                             <td>{{ jornada.fecha|date:"d/m/Y" }}</td>
                                             <td>{{ jornada.sede }}</td>
-                                            <td>{{ jornada.sede_vpsl.localidad|default:jornada.localidad|default:"-" }}</td>
+                                            <td>{{ jornada.localidad|default:"-" }}</td>
+                                            <td>{{ jornada.direccion|default:"-" }}</td>
                                             <td>{{ jornada.get_vehiculo_display|default:"-" }}</td>
                                             <td class="text-nowrap">
                                                 <span class="badge bg-secondary">{{ jornada.get_estado_display }}</span>
@@ -189,7 +174,7 @@
                                         </tr>
                                     {% empty %}
                                         <tr>
-                                            <td colspan="7" class="text-center text-muted">Sin jornadas cargadas.</td>
+                                            <td colspan="8" class="text-center text-muted">Sin jornadas cargadas.</td>
                                         </tr>
                                     {% endfor %}
                                 </tbody>
@@ -281,39 +266,6 @@
                                         </select>
                                     </div>
                                 {% endif %}
-
-                                <h6 class="mt-4">Sedes tentativas</h6>
-                                {% for item in sedes_evaluadas %}
-                                    <div class="border rounded p-3 mb-2">
-                                        <div class="row g-2">
-                                            <div class="col-12 col-lg-5">
-                                                <strong>{{ item.sede.nombre }}</strong>
-                                                <br />
-                                                {{ item.sede.localidad }} &middot; {{ item.sede.domicilio }}
-                                            </div>
-                                            <div class="col-12 col-lg-3">
-                                                <label class="form-label">Estado</label>
-                                                <select name="sede_{{ item.sede.pk }}_estado"
-                                                        class="form-control evaluacion-sede"
-                                                        required>
-                                                    {% for value,label in estado_evaluacion_choices %}
-                                                        <option value="{{ value }}"
-                                                                {% if item.evaluacion.estado == value %}selected{% endif %}>
-                                                            {{ label }}
-                                                        </option>
-                                                    {% endfor %}
-                                                </select>
-                                            </div>
-                                            <div class="col-12 col-lg-4">
-                                                <label class="form-label">Observacion</label>
-                                                <input type="text"
-                                                       name="sede_{{ item.sede.pk }}_observacion"
-                                                       value="{{ item.evaluacion.observacion }}"
-                                                       class="form-control" />
-                                            </div>
-                                        </div>
-                                    </div>
-                                {% endfor %}
 
                                 <div class="mt-3">
                                     <label class="form-label">Campos o motivos a subsanar</label>
@@ -417,7 +369,7 @@
             const subsanar = document.getElementById("btn-subsanar");
             const rechazar = document.getElementById("btn-rechazar");
             const observaciones = document.getElementById("subsanacion_observaciones");
-            const selects = [...document.querySelectorAll(".evaluacion-carta, .evaluacion-sede")];
+            const selects = [...document.querySelectorAll(".evaluacion-carta")];
 
             function values(selector) {
               return [...document.querySelectorAll(selector)].map((item) => item.value);
@@ -425,31 +377,28 @@
 
             function refresh() {
               const cartas = values(".evaluacion-carta");
-              const sedes = values(".evaluacion-sede");
-              const pendientes = [...cartas, ...sedes].some((value) => value === "pendiente");
+              const pendientes = cartas.some((value) => value === "pendiente");
               const cartaRechazada = cartas.some((value) => value === "rechazado");
               const cartaAprobada = cartas.some((value) => value === "aprobado");
-              const algunaSedeAprobada = sedes.some((value) => value === "aprobado");
-              const todasSedesRechazadas = sedes.length > 0 && sedes.every((value) => value === "rechazado");
-              const requiereSubsanacion = [...cartas, ...sedes].some((value) => value === "subsanar");
-              const rechazoObligatorio = cartaRechazada || todasSedesRechazadas;
+              const requiereSubsanacion = cartas.some((value) => value === "subsanar");
+              const rechazoObligatorio = cartaRechazada;
 
-              aprobar.disabled = pendientes || rechazoObligatorio || !cartaAprobada || !algunaSedeAprobada || requiereSubsanacion;
+              aprobar.disabled = pendientes || rechazoObligatorio || !cartaAprobada || requiereSubsanacion;
               subsanar.disabled = pendientes || rechazoObligatorio || !requiereSubsanacion;
               rechazar.disabled = pendientes;
 
               if (pendientes) {
                 feedback.className = "alert alert-info mt-3 mb-0";
-                feedback.textContent = "Debe evaluar todas las cartas y todas las sedes para continuar.";
+                feedback.textContent = "Debe evaluar todas las cartas para continuar.";
               } else if (rechazoObligatorio) {
                 feedback.className = "alert alert-danger mt-3 mb-0";
-                feedback.textContent = "Aprobar esta deshabilitado: hay carta rechazada o todas las sedes fueron rechazadas. La opcion permitida es Rechazar.";
+                feedback.textContent = "Aprobar está deshabilitado porque hay una carta rechazada. La opción permitida es Rechazar.";
               } else if (requiereSubsanacion) {
                 feedback.className = "alert alert-warning mt-3 mb-0";
-                feedback.textContent = "Debe indicar los campos o sedes a subsanar y enviar a Subsanacion.";
-              } else if (!cartaAprobada || !algunaSedeAprobada) {
+                feedback.textContent = "Debe indicar los campos a subsanar y enviar a Subsanación.";
+              } else if (!cartaAprobada) {
                 feedback.className = "alert alert-warning mt-3 mb-0";
-                feedback.textContent = "Aprobar esta deshabilitado: se requiere carta aprobada y al menos una sede aprobada.";
+                feedback.textContent = "Aprobar está deshabilitado: se requiere al menos una carta aprobada.";
               } else {
                 feedback.className = "alert alert-success mt-3 mb-0";
                 feedback.textContent = "La evaluacion esta completa y el itinerario puede aprobarse.";
@@ -467,7 +416,7 @@
               if (actionInput.value === "subsanar" && !observaciones.value.trim()) {
                 event.preventDefault();
                 feedback.className = "alert alert-danger mt-3 mb-0";
-                feedback.textContent = "Debe indicar que campos o sedes debe subsanar Provincia.";
+                feedback.textContent = "Debe indicar qué campos debe subsanar Provincia.";
               }
             });
             refresh();

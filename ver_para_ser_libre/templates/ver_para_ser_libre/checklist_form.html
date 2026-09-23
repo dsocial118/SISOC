@@ -13,7 +13,7 @@
                 <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-2">
                     <div>
                         <h2 class="vpsl-title">Checklist de sede</h2>
-                        <p class="vpsl-subtitle mb-0">{{ sede.nombre }} · {{ sede.domicilio }}</p>
+                        <p class="vpsl-subtitle mb-0">{{ jornada.sede }} · {{ jornada.direccion|default:"Sin dirección informada" }}</p>
                     </div>
                     <a href="{% url 'vpsl_jornada_detail' jornada.pk %}"
                        class="btn btn-secondary">

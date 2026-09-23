@@ -476,6 +476,11 @@ body:has(.vpsl-page) .app-content-header {
   align-items: flex-start !important;
 }
 
+.vpsl-itinerario-title-card .vpsl-subtitle {
+  font-size: 23px;
+  line-height: 1.2;
+}
+
 .vpsl-itinerario-title-card .vpsl-status-badge {
   margin-left: auto;
   transform: scale(1.3);
