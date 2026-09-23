@@ -14,6 +14,7 @@ from django.core.exceptions import ValidationError
 from ciudadanos.models import Ciudadano
 from celiaquia.comentarios_tecnicos import (
     CODIGO_OTROS,
+    MAX_LEN_CODIGO_OBSERVACION,
     TipoDocumentoComentario,
     catalogo_serializable,
     es_codigo_valido,
@@ -78,6 +79,32 @@ def test_catalogo_tiene_otros_en_los_tres_tipos():
         codigos = [codigo for codigo, _ in observaciones_de(tipo)]
         assert codigos[-1] == CODIGO_OTROS
         assert len(codigos) == len(set(codigos))
+
+
+def test_catalogo_anses_incluye_las_observaciones_de_codem():
+    """Observaciones de CODEM incorporadas por el issue #2523.
+
+    Se comparan los textos completos porque son normativos: los define el área y
+    es lo que efectivamente se le comunica a la Provincia.
+    """
+    textos = dict(observaciones_de(TipoDocumentoComentario.ANSES))
+
+    assert textos["ANSES_CODEM_VENCIDO"] == (
+        "Enviar constancia de CODEM/ANSES, ya que la misma se encuentra vencida. "
+        "Recordar que tiene una validez de 30 días."
+    )
+    assert textos["ANSES_CUIL_INEXISTENTE"] == (
+        "El CODEM vinculado contiene un CUIL inexistente. Se solicita subir el que "
+        "corresponde."
+    )
+
+
+def test_codigos_del_catalogo_entran_en_el_campo_que_los_persiste():
+    """`HistorialComentarios.observacion_codigo` tiene largo acotado: un código
+    nuevo más largo que el campo rompería recién al guardar."""
+    for tipo in TipoDocumentoComentario.values:
+        for codigo, _ in observaciones_de(tipo):
+            assert len(codigo) <= MAX_LEN_CODIGO_OBSERVACION
 
 
 def test_codigo_no_es_valido_para_otro_tipo_de_documento():
