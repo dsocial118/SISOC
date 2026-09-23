@@ -51,7 +51,7 @@
 - `docs/registro/decisiones/2026-09-23-renaper-importacion-token-y-tasa.md`
 - `docs/registro/prs/PR-2565.md`
 - `encuestas/services.py`
-- ... y 10 archivo(s) adicional(es) relacionados.
+- ... y 11 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
