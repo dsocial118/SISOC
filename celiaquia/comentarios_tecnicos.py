@@ -77,6 +77,16 @@ _OBSERVACIONES_ANSES = (
         "Se vinculó el CODEM y/o ANSES de otro beneficiario, se solicita adjuntar la "
         "documentación correcta.",
     ),
+    (
+        "ANSES_CODEM_VENCIDO",
+        "Enviar constancia de CODEM/ANSES, ya que la misma se encuentra vencida. "
+        "Recordar que tiene una validez de 30 días.",
+    ),
+    (
+        "ANSES_CUIL_INEXISTENTE",
+        "El CODEM vinculado contiene un CUIL inexistente. Se solicita subir el que "
+        "corresponde.",
+    ),
 )
 
 _OBSERVACIONES_CONDICION_DIAGNOSTICA = (
