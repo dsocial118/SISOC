@@ -45,13 +45,13 @@
 - `core/models.py`
 - `core/services/renaper.py`
 - `docker-compose.produccion.yml`
+- `docs/contexto/features/pr-2565-fix-importaciones-recuperar-workers-y-acelerar-lotes-masivos-2560-2561.md`
 - `docs/flujos/consulta_renaper.md`
 - `docs/registro/cambios/2026-09-23-workers-importacion-2560-2561.md`
 - `docs/registro/decisiones/2026-09-23-renaper-importacion-token-y-tasa.md`
+- `docs/registro/prs/PR-2565.md`
 - `encuestas/services.py`
-- `ocr/services_ocr_jobs.py`
-- `scripts/infra/healthcheck_prod.sh`
-- ... y 8 archivo(s) adicional(es) relacionados.
+- ... y 10 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
