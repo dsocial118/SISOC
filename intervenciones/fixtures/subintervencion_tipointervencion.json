@@ -566,5 +566,13 @@
             "nombre": "Asistencia a Capacitaci\u00f3n Formando Capital Humano",
             "programa": "comedores"
         }
+    },
+        {
+        "model": "intervenciones.tipointervencion",
+        "pk": 25,
+        "fields": {
+            "nombre": "Descargo de la Organizaci\u00f3n",
+            "programa": "comedores"
+        }
     }
 ]
