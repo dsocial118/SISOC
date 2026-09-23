@@ -319,6 +319,13 @@ class ResponsableTarjetaComedorForm(forms.ModelForm):
         provincia_id = valor_actual("responsable_tarjeta_provincia")
         municipio_id = valor_actual("responsable_tarjeta_municipio")
 
+        # Los registros previos al campo municipio solo tienen localidad: se
+        # precarga su municipio para que el select encadenado no quede vacío.
+        localidad = getattr(self.instance, "responsable_tarjeta_localidad", None)
+        if not self.is_bound and not municipio_id and localidad:
+            municipio_id = localidad.municipio_id
+            self.initial["responsable_tarjeta_municipio"] = municipio_id
+
         self.fields["responsable_tarjeta_provincia"].queryset = (
             Provincia.objects.all().order_by("nombre")
         )

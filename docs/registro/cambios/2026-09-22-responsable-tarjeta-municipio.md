@@ -18,12 +18,16 @@
   bloque `customJS` (en lugar del inexistente `extra_js`) e init de `setupUbicacionSelects`
   con `ajax_load_municipios` / `ajax_load_localidades`.
 - `comedores/templates/comedor/comedor_detail.html`: la tarjeta resumen muestra Municipio.
-- `comedores/tests/test_responsable_tarjeta_form.py`: cubre la cascada y el municipio ajeno.
+- `comedores/tests/test_responsable_tarjeta_form.py`: cubre la cascada, el municipio ajeno, la
+  precarga desde la localidad y que la página de edición cargue `ubicacionSelects.js` (regresión #2491).
 
 ## Impacto esperado
 - Al elegir provincia se cargan sus municipios y, al elegir municipio, sus localidades.
 - Los datos ya cargados siguen siendo válidos: `responsable_tarjeta_municipio` queda en `NULL` y
   la localidad existente se preserva (la validación cae al chequeo por provincia cuando no hay municipio).
+- Sin backfill: para esos registros el formulario precarga el municipio desde
+  `responsable_tarjeta_localidad.municipio` y el detalle lo muestra con el mismo fallback, así el
+  select encadenado no queda vacío ni obliga a re-elegir la localidad.
 
 ## Validación
 - `pytest comedores/tests/test_responsable_tarjeta_form.py` (2 passed).

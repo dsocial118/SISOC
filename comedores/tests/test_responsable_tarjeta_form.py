@@ -5,6 +5,7 @@ from django.urls import reverse
 from core.models import Localidad, Municipio, Provincia
 from comedores.forms.comedor_form import ResponsableTarjetaComedorForm
 from comedores.models import Comedor, Programas
+from duplas.models import Dupla
 
 
 @pytest.mark.django_db
@@ -65,6 +66,59 @@ def test_responsable_tarjeta_filtra_localidades_por_provincia_y_persiste_carga_p
 
     assert not form_municipio_ajeno.is_valid()
     assert "responsable_tarjeta_municipio" in form_municipio_ajeno.errors
+
+
+@pytest.mark.django_db
+def test_responsable_tarjeta_precarga_municipio_desde_localidad_existente():
+    """Registros previos al campo municipio: se deduce de la localidad guardada."""
+    provincia = Provincia.objects.create(nombre="Provincia previa")
+    municipio = Municipio.objects.create(nombre="Municipio previo", provincia=provincia)
+    Municipio.objects.create(nombre="Municipio vecino", provincia=provincia)
+    localidad = Localidad.objects.create(nombre="Localidad previa", municipio=municipio)
+    comedor = Comedor.objects.create(
+        nombre="Comedor sin municipio",
+        responsable_tarjeta_provincia=provincia,
+        responsable_tarjeta_localidad=localidad,
+    )
+
+    form = ResponsableTarjetaComedorForm(instance=comedor)
+
+    assert form["responsable_tarjeta_municipio"].value() == municipio.pk
+    assert list(form.fields["responsable_tarjeta_localidad"].queryset) == [localidad]
+
+
+@pytest.mark.django_db
+def test_editar_responsable_tarjeta_carga_selects_encadenados(
+    client, comedor_fixture, django_user_model
+):
+    """Regresión #2491: el JS de ubicación tiene que llegar a la página."""
+    tecnico = django_user_model.objects.create_user(
+        username="tecnico_edita_responsable",
+        email="tecnico-edita@example.com",
+        password="testpass",
+    )
+    tecnico.groups.add(Group.objects.get_or_create(name="Tecnico Comedor")[0])
+    abogado = django_user_model.objects.create_user(
+        username="abogado_edita_responsable", password="testpass"
+    )
+    dupla = Dupla.objects.create(
+        nombre="Dupla responsable", estado="Activo", abogado=abogado
+    )
+    dupla.tecnico.add(tecnico)
+    comedor_fixture.programa = Programas.objects.create(nombre="Alimentar comunidad")
+    comedor_fixture.dupla = dupla
+    comedor_fixture.save(update_fields=["programa", "dupla"])
+    client.force_login(tecnico)
+
+    response = client.get(
+        reverse("comedor_responsable_tarjeta_editar", kwargs={"pk": comedor_fixture.pk})
+    )
+
+    assert response.status_code == 200
+    content = response.content.decode()
+    assert "custom/js/ubicacionSelects.js" in content
+    assert reverse("ajax_load_municipios") in content
+    assert 'id="id_responsable_tarjeta_municipio"' in content
 
 
 @pytest.mark.django_db
