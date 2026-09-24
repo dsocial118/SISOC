@@ -9,7 +9,11 @@ from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.csrf import csrf_protect
 
-from celiaquia.models import ExpedienteCiudadano, RevisionTecnico
+from celiaquia.models import (
+    ExpedienteCiudadano,
+    OrigenArchivoSubsanacion,
+    RevisionTecnico,
+)
 from celiaquia.permissions import can_edit_legajo_files
 from celiaquia.services.subsanacion_service import SubsanacionService
 from celiaquia.utils import error_response, success_response
@@ -80,6 +84,10 @@ class SubsanacionRespuestaUploadView(View):
             "Archivos de subsanación cargados correctamente.",
             extra_data={
                 "subsanacion_id": subsanacion.pk,
-                "archivos": subsanacion.archivos.count(),
+                # Solo la evidencia de la Provincia: la relación incluye
+                # también la documentación complementaria de Nación.
+                "archivos": subsanacion.archivos.filter(
+                    origen=OrigenArchivoSubsanacion.PROVINCIA
+                ).count(),
             },
         )
