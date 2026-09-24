@@ -3,8 +3,9 @@
 Estado: runbook operativo para automatizar el deploy de SISOC en QA, homologacion y produccion usando GitHub Actions con runners self-hosted instalados en cada servidor de aplicacion.
 
 El workflow no usa runners cloud ni `actions/checkout`: opera sobre el checkout
-provisionado en el servidor. HML y PRD extraen el helper de backend y el
-coordinador PWA desde el SHA del evento aprobado; QA conserva el helper local.
+provisionado en el servidor. HML extrae el helper de backend desde el SHA del
+evento y no coordina PWA; PRD en esta rama conserva el coordinador anterior.
+QA conserva el helper local.
 
 ## Flujo operativo
 
@@ -21,12 +22,12 @@ correspondiente. El runner local:
 2. entra al checkout provisionado en el servidor;
 3. verifica que `origin/<branch>` siga siendo el SHA exacto que disparó el
    workflow, antes de bajar Docker;
-4. en HML/PRD prepara las imagenes de main de las PWA habilitadas antes de
-   interrumpir servicios; registra `git rev-parse HEAD` como referencia previa
-   de rollback y ejecuta `deploy_refresh.sh --expected-revision <SHA>`;
+4. registra `git rev-parse HEAD` como referencia previa de rollback y ejecuta
+   `deploy_refresh.sh --expected-revision <SHA> --without-mobile`; en PRD de
+   esta rama tambien prepara antes las imagenes PWA con el coordinador legacy;
 5. prueba `migrate --check`, el healthcheck específico del entorno y registra
-   el SHA realmente desplegado en el summary del job; en HML/PRD activa luego
-   las imagenes PWA preparadas y comprueba su salud.
+   el SHA realmente desplegado en el summary del job; solo el coordinador
+   legacy de PRD activa luego las imagenes PWA preparadas.
 
 En **QA**, el workflow primero hace un fetch limitado de `development`, verifica
 que sea el SHA del evento y aplica `merge --ff-only` antes del downtime. Luego
@@ -38,11 +39,11 @@ Como el entrypoint del contenedor aplica migraciones durante el arranque, QA,
 homologación y producción consultan ambos checks mediante sondeo acotado: continúan apenas
 las migraciones y el healthcheck responden, o publican el último error después
 del límite. HML y PRD usan el helper extraido del SHA verificado, con
-`SISOC_ROOT_DIR` apuntando al checkout real y `--without-mobile` para separar
-la preparacion/activacion de las PWA del reinicio del backend.
-El estado privado PWA se crea con umask 077. Solo el helper del backend usa
-umask 022 en un subshell para que el checkout actualizado sea legible por los
-workers con otros UID. Verificar su estabilidad ademas del healthcheck HTTP.
+`SISOC_ROOT_DIR` apuntando al checkout real y `--without-mobile`. HML no
+prepara ni activa PWA. El estado privado PWA del coordinador legacy de PRD se
+crea con umask 077. El helper del backend usa umask 022 en un subshell para
+que el checkout actualizado sea legible por workers con otros UID. Verificar
+su estabilidad ademas del healthcheck HTTP.
 
 El script existente conserva las validaciones operativas: lee `ENVIRONMENT`
 desde `.env`, valida branch esperada, ejecuta `docker compose config -q`, baja
