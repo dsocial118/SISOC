@@ -2,16 +2,17 @@ from __future__ import annotations
 
 import re
 import unicodedata
+from collections.abc import Iterator
 from dataclasses import dataclass
 from io import BytesIO
 
 from django.core.exceptions import ValidationError
-from django.db import transaction
 from openpyxl import Workbook, load_workbook
 
 from ciudadanos.models import Ciudadano, CiudadanosImportJobRow
 from ciudadanos.api import construir_datos_ciudadano_desde_renaper
 from ciudadanos.services_renaper_validacion import build_validacion_renaper_payload
+from core.integrations.renaper import APIClient
 from core.models import Sexo
 from core.services.renaper import consultar_datos_renaper
 
@@ -26,6 +27,8 @@ SYSTEMIC_RENAPER_ERROR_TYPES = {
     "auth_error",
     "remote_error",
     "invalid_response",
+    "rate_limit_unavailable",
+    "database_unavailable",
 }
 CUIL_WEIGHTS = (5, 4, 3, 2, 7, 6, 5, 4, 3, 2)
 SEXO_LABELS = {
@@ -161,7 +164,7 @@ def _build_header_map(headers: list[str]) -> dict[str, int]:
     return header_map
 
 
-def _load_rows_from_workbook(uploaded_file) -> tuple[object, list[tuple]]:
+def _load_rows_from_workbook(uploaded_file) -> tuple[object, Iterator[tuple]]:
     try:
         uploaded_file.seek(0)
         workbook = load_workbook(uploaded_file, read_only=True, data_only=True)
@@ -174,7 +177,7 @@ def _load_rows_from_workbook(uploaded_file) -> tuple[object, list[tuple]]:
             if SHEET_NAME in workbook.sheetnames
             else workbook.active
         )
-        rows = list(worksheet.iter_rows(values_only=True))
+        rows = worksheet.iter_rows(values_only=True)
     except Exception:
         workbook.close()
         raise
@@ -236,13 +239,14 @@ def _parse_import_row(
 def load_ciudadanos_import_rows(uploaded_file) -> list[ParsedCiudadanosImportRow]:
     workbook, rows = _load_rows_from_workbook(uploaded_file)
     try:
-        if not rows:
+        header_row = next(rows, None)
+        if header_row is None:
             raise ValidationError("El archivo Excel esta vacio.")
-        headers = [_clean_cell(value) for value in rows[0]]
+        headers = [_clean_cell(value) for value in header_row]
         header_map = _build_header_map(headers)
 
         parsed_rows: list[ParsedCiudadanosImportRow] = []
-        for row_number, row in enumerate(rows[1:], start=2):
+        for row_number, row in enumerate(rows, start=2):
             parsed_row = _parse_import_row(row_number, row, header_map)
             if parsed_row is not None:
                 parsed_rows.append(parsed_row)
@@ -436,6 +440,8 @@ def _normalize_ciudadano_payload_foreign_keys(
 
 def _lookup_renaper_for_row(
     row: ParsedCiudadanosImportRow,
+    *,
+    client: APIClient | None = None,
 ) -> dict[str, object]:
     sexos = (row.sexo,) if row.sexo else RENAPER_SEXOS
     attempted: list[str] = []
@@ -443,7 +449,7 @@ def _lookup_renaper_for_row(
 
     for sexo in sexos:
         attempted.append(sexo)
-        result = consultar_datos_renaper(row.dni, sexo)
+        result = consultar_datos_renaper(row.dni, sexo, client=client)
         result["sexo_consultado"] = sexo
         result["sexos_intentados"] = attempted.copy()
         if result.get("success"):
@@ -502,37 +508,23 @@ def _process_successful_renaper_import(
         ciudadano_data["creado_por"] = requested_by
         ciudadano_data["modificado_por"] = requested_by
 
-    with transaction.atomic():
-        existing = _get_existing_estandar_by_dni(row.dni)
-        if existing:
-            row_result = {
-                "status": "existing",
-                "mensaje": "Ya existe un ciudadano estandar para el DNI informado.",
-                "error_type": "",
-                "sexos_intentados": sexos_intentados,
-                "ciudadano": existing,
-                "systemic": False,
-                "contacted_renaper": True,
-            }
-        else:
-            ciudadano = Ciudadano.objects.create(**ciudadano_data)
-            row_result = {
-                "status": "created",
-                "mensaje": "Ciudadano creado desde RENAPER.",
-                "error_type": "",
-                "sexos_intentados": sexos_intentados,
-                "ciudadano": ciudadano,
-                "systemic": False,
-                "contacted_renaper": True,
-            }
-
-    return row_result
+    return {
+        "status": "ready_to_create",
+        "mensaje": "Ciudadano creado desde RENAPER.",
+        "error_type": "",
+        "sexos_intentados": sexos_intentados,
+        "ciudadano": None,
+        "ciudadano_data": ciudadano_data,
+        "systemic": False,
+        "contacted_renaper": True,
+    }
 
 
 def process_ciudadanos_import_row(
     *,
     row: ParsedCiudadanosImportRow,
     requested_by,
+    client: APIClient | None = None,
 ) -> dict[str, object]:
     if row.parse_error:
         return {
@@ -557,7 +549,7 @@ def process_ciudadanos_import_row(
             "contacted_renaper": False,
         }
 
-    result = _lookup_renaper_for_row(row)
+    result = _lookup_renaper_for_row(row, client=client)
     sexos_intentados = ",".join(result.get("sexos_intentados") or [])
     if not result.get("success"):
         error_type = str(result.get("error_type") or "renaper_error")

@@ -9,7 +9,10 @@ from typing import Any
 
 import requests
 from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
+from django.db import DatabaseError
 
+from core.integrations.renaper_rate_limit import reserve_consulta_delay
 from core.services.text_encoding import repair_utf8_mojibake_values
 
 
@@ -134,6 +137,9 @@ class APIClient:
             return _error_result(str(exc), exc.error_type)
 
         try:
+            max_rps = settings.RENAPER_MAX_CONSULTAS_POR_SEGUNDO
+            if max_rps:
+                time.sleep(reserve_consulta_delay(requests_per_second=max_rps))
             if self.before_request is not None:
                 self.before_request()
             elif self.request_interval:
@@ -145,6 +151,11 @@ class APIClient:
                 timeout=settings.RENAPER_REQUEST_TIMEOUT_SECONDS,
             )
             response.raise_for_status()
+        except (DatabaseError, ObjectDoesNotExist):
+            _log_failure("consult", "rate_limit_unavailable")
+            return _error_result(
+                "No se pudo reservar una consulta RENAPER.", "rate_limit_unavailable"
+            )
         except requests.Timeout:
             _log_failure("consult", "timeout")
             return _error_result(

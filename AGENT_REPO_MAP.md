@@ -203,6 +203,7 @@ SISOC/
 - `user_import_worker`
 - `ocr_worker`
 - `encuestas_worker`: abre/cierra rondas de encuestas por fecha (ver `encuestas/services.py:run_encuestas_scheduler`, sin Celery).
+- Los loops persistentes llaman `close_old_connections()` por ciclo. Ciudadanos y usuarios reclaman lotes con `lease_token`; los lotes inactivos vuelven a pendiente y un worker anterior no debe confirmar filas. Con otros pendientes, ambos importadores ceden el worker por tramos configurables de treinta minutos y el reclamo prioriza al lote que lleva más tiempo esperando.
 
 ## Configuracion y variables de entorno relevantes
 
@@ -226,7 +227,7 @@ SISOC/
 | Testing | `USE_SQLITE_FOR_TESTS`, `PYTEST_RUNNING` |
 | Integracion GESTIONAR | `GESTIONAR_INTEGRATION_ENABLED` (corte total de envíos, pulls y comandos), `GESTIONAR_API_KEY`, endpoints `GESTIONAR_API_*`, workers `GESTIONAR_*`, `DOMINIO` |
 | Ticketera | `TICKETERA_ENABLED` |
-| RENAPER | `RENAPER_API_USERNAME`, `RENAPER_API_PASSWORD`, `RENAPER_REQUEST_TIMEOUT_SECONDS`, reintentos/espera incremental; el cliente permite reutilización en memoria por worker, sin cache compartida ni TTL |
+| RENAPER/importaciones | `RENAPER_API_USERNAME`, `RENAPER_API_PASSWORD`, `RENAPER_REQUEST_TIMEOUT_SECONDS`, `RENAPER_MAX_CONSULTAS_POR_SEGUNDO` (30 por defecto, global mediante `core/integrations/renaper_rate_limit.py` y `core.0009`); ciudadanos usa `CIUDADANOS_IMPORT_RENAPER_PARALLELISM` (2 hilos por réplica por defecto) y reutiliza token por hilo/lote; los tramos de cola usan `CIUDADANOS_IMPORT_JOB_SLICE_SECONDS` y `USER_IMPORT_JOB_SLICE_SECONDS` |
 | Google Maps | `GOOGLE_MAPS_API_KEY` |
 | Sentry | `SENTRY_ENABLED`, `SENTRY_DSN`, `SENTRY_RELEASE` |
 | Email/password reset | `EMAIL_*`, `DEFAULT_FROM_EMAIL`, `PASSWORD_RESET_TIMEOUT`, `INITIAL_PASSWORD_MAX_AGE_HOURS` |
@@ -405,6 +406,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
   `/usuarios/crear/`; admite uno o más scopes provinciales completos. La URL
   histórica `/simepi/egp/generar-usuario/` sólo redirige por compatibilidad.
 - `users/services_user_import_jobs.py`: procesamiento y reanudacion del lote.
+- Los checkpoints de usuario y progreso se confirman en una transacción por fila. `users.0053` agrega el identificador de propiedad del lote.
 - `users/views_user_import.py`, `users/urls.py` y
   `users/templates/user/user_import_job_detail.html`: detalle y descargas.
 - Las credenciales se agrupan al finalizar el lote; los lotes PWA deben usar
@@ -652,7 +654,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
   management commands relacionados, `.env.example`. El flag
   `GESTIONAR_INTEGRATION_ENABLED` corta todo el tráfico AppSheet/GESTIONAR; no
   usarlo como interruptor parcial.
-- RENAPER: `core/integrations/renaper.py`, `core/services/renaper.py`, docs `docs/flujos/consulta_renaper.md`
+- RENAPER: `core/integrations/renaper.py`, `core/integrations/renaper_rate_limit.py`, `core/services/renaper.py`, docs `docs/flujos/consulta_renaper.md`. La migración `core.0009` debe existir antes de consultas.
 - Validación RENAPER de nómina CDI (#2508, Fase 1): payload en
   `ciudadanos/services_renaper_validacion.py`, indicador compartido del PDF en
   `centrodeinfancia/services_renaper_estado.py` y comando

@@ -7,7 +7,7 @@ from decimal import Decimal, InvalidOperation
 from typing import Iterable
 
 from django.core.exceptions import ValidationError
-from django.db import IntegrityError, transaction
+from django.db import IntegrityError, close_old_connections, transaction
 from django.db.models import Prefetch, Q
 from django.utils import timezone
 from django.utils.dateparse import parse_date
@@ -740,6 +740,7 @@ def run_encuestas_scheduler(*, once: bool = False) -> None:
 
     while True:
         try:
+            close_old_connections()
             resultado = procesar_rondas_pendientes()
             if resultado["rondas_cerradas"] or resultado["rondas_abiertas"]:
                 logger.info(
@@ -750,6 +751,8 @@ def run_encuestas_scheduler(*, once: bool = False) -> None:
                 )
         except Exception:  # noqa: BLE001 - el worker no debe morir por un ciclo fallido
             logger.exception("[encuestas] Error inesperado en el scheduler de rondas.")
+        finally:
+            close_old_connections()
 
         if once:
             break

@@ -760,6 +760,7 @@ class UserImportJob(models.Model):
     skipped_rows = models.PositiveIntegerField(default=0)
     failed_rows = models.PositiveIntegerField(default=0)
     next_row_index = models.PositiveIntegerField(default=0)
+    lease_token = models.UUIDField(null=True, blank=True, editable=False)
     last_successful_row = models.PositiveIntegerField(null=True, blank=True)
     last_successful_email = models.EmailField(max_length=254, blank=True)
     last_attempted_row = models.PositiveIntegerField(null=True, blank=True)
