@@ -29,7 +29,7 @@
 
 {% block content %}
     {% url 'importarexpedientes_ajax' as ajax_url %}
-    {% include 'components/search_bar.html' with titulo='Buscar Expedientes de Pago' placeholder='Buscar por Usuario' help_text='Ingresar Usuario.' reset_url='importarexpedientes_list' ajax_search_mode=True ajax_url=ajax_url target_tbody_id='importarexpedientes-tbody' query=query %}
+    {% include 'components/search_bar.html' with titulo='Buscar Expedientes de Pago' reset_url='importarexpedientes_list' filters_mode=True filters_config=filters_config filters_action=filters_action query=query %}
     <div class="row mt-4 max-width-100">
         <div class="col-12">
             <div class="card">

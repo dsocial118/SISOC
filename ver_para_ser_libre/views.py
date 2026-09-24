@@ -40,6 +40,12 @@ from ver_para_ser_libre.forms import (
     SedeCreateVPSLForm,
     SedeUpdateVPSLForm,
 )
+from ver_para_ser_libre.filter_config import (
+    ITINERARIO_ADVANCED_FILTER,
+    SEDE_ADVANCED_FILTER,
+    get_itinerario_filters_ui_config,
+    get_sede_filters_ui_config,
+)
 from ver_para_ser_libre.models import (
     CasoLaboratorioVPSL,
     CierreDiarioVPSL,
@@ -410,6 +416,7 @@ class ItinerarioListView(LoginRequiredMixin, ListView):
             .order_by("-fecha_inicio", "provincia__nombre")
         )
         queryset = _filtrar_itinerarios_por_usuario(queryset, self.request.user)
+        queryset = ITINERARIO_ADVANCED_FILTER.filter_queryset(queryset, self.request)
         if query:
             filtro_estado = _filtro_estado_itinerario_por_texto(query)
             filtros_busqueda = {
@@ -463,6 +470,9 @@ class ItinerarioListView(LoginRequiredMixin, ListView):
             else _provincia_usuario_provincial(self.request.user)
         )
         context["query"] = self.request.GET.get("busqueda", "")
+        context["filters_mode"] = True
+        context["filters_config"] = get_itinerario_filters_ui_config()
+        context["filters_action"] = reverse("vpsl_itinerario_list")
         context["filtros"] = {
             "busqueda": context["query"],
             "buscar_por": self.request.GET.get("buscar_por", "todos"),
@@ -862,6 +872,7 @@ class SedeListView(LoginRequiredMixin, ListView):
     def get_queryset(self):
         query = (self.request.GET.get("busqueda") or "").strip()
         queryset = SedeVPSL.objects.order_by("jurisdiccion", "localidad", "nombre")
+        queryset = SEDE_ADVANCED_FILTER.filter_queryset(queryset, self.request)
         if query:
             queryset = queryset.filter(
                 Q(nombre__icontains=query)
@@ -870,11 +881,14 @@ class SedeListView(LoginRequiredMixin, ListView):
                 | Q(localidad__icontains=query)
                 | Q(domicilio__icontains=query)
             )
-        return queryset
+        return queryset.distinct()
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["query"] = self.request.GET.get("busqueda", "")
+        context["filters_mode"] = True
+        context["filters_config"] = get_sede_filters_ui_config()
+        context["filters_action"] = reverse("vpsl_sede_list")
         context["breadcrumb_items"] = _breadcrumb({"text": "Sedes", "active": True})
         return context
 

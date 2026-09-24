@@ -13,23 +13,33 @@
 
 {% block content %}
     <div class="comedor-list-container vpsl-page vpsl-home">
-        {% include 'components/search_bar.html' with titulo='Buscar Itinerarios' placeholder='Buscar por filtro...' help_text='Buscar itinerarios.' reset_url='vpsl_itinerario_list' back_url='inicio' query=filtros.busqueda show_add_button=puede_crear_itinerario add_url='vpsl_itinerario_create' add_text='Crear itinerario' request=request only %}
+        {% include 'components/search_bar.html' with titulo='Buscar Itinerarios' reset_url='vpsl_itinerario_list' back_url='inicio' query=filtros.busqueda show_add_button=puede_crear_itinerario add_url='vpsl_itinerario_create' add_text='Crear itinerario' filters_mode=True filters_config=filters_config filters_action=filters_action request=request only %}
         <div class="vpsl-filtros-propios">
             <h1 id="vpsl-search-title" class="visually-hidden">Buscar Itinerarios</h1>
             {% comment %}
-            "Buscar por" y el panel avanzado quedan como controles propios del
-            modulo, enganchados al formulario del componente con form=.
+            "Buscar por" + el texto libre y el panel avanzado quedan como
+            controles propios del modulo, enganchados con form= al formulario de
+            filtros combinables del componente: viajan en el mismo submit.
             No se migraron a filters_mode porque la logica no es expresable con
             AdvancedFilterEngine: "todos" hace un OR entre siete campos, estado
             mapea texto a estado con una funcion, localidad cruza tres rutas y
             provincia depende de permisos. El motor arma un Q por fila y los
-            combina con AND.
+            combina con AND. Los filtros combinables se suman a estos, no los
+            reemplazan.
             {% endcomment %}
             <div class="poncho-filtros-modulo">
+                <label for="id_busqueda_vpsl" class="mb-0">Buscar</label>
+                <input type="search"
+                       id="id_busqueda_vpsl"
+                       name="busqueda"
+                       form="filters-form"
+                       class="form-control"
+                       value="{{ filtros.busqueda }}"
+                       placeholder="Código, provincia, estado, referente o sede" />
                 <label for="id_buscar_por" class="mb-0">Buscar por</label>
                 <select id="id_buscar_por"
                         name="buscar_por"
-                        form="simple-search-form"
+                        form="filters-form"
                         class="form-select">
                     <option value="todos"
                             {% if filtros.buscar_por == "todos" %}selected{% endif %}>Todos</option>
@@ -56,10 +66,7 @@
                 <div class="row g-3 pt-3">
                     <div class="col-12 col-md-6 col-xl">
                         <label for="id_estado" class="form-label">Estado</label>
-                        <select id="id_estado"
-                                name="estado"
-                                form="simple-search-form"
-                                class="form-control">
+                        <select id="id_estado" name="estado" form="filters-form" class="form-control">
                             <option value="">Todos</option>
                             {% for value,label in estado_choices %}
                                 <option value="{{ value }}"
@@ -78,7 +85,7 @@
                         {% else %}
                             <select id="id_provincia"
                                     name="provincia"
-                                    form="simple-search-form"
+                                    form="filters-form"
                                     class="form-control">
                                 <option value="">Todas</option>
                                 {% for provincia in provincias %}
@@ -95,7 +102,7 @@
                         <input type="text"
                                id="id_localidad"
                                name="localidad"
-                               form="simple-search-form"
+                               form="filters-form"
                                class="form-control"
                                value="{{ filtros.localidad }}"
                                placeholder="Localidad" />
@@ -105,7 +112,7 @@
                         <input type="date"
                                id="id_fecha_desde"
                                name="fecha_desde"
-                               form="simple-search-form"
+                               form="filters-form"
                                class="form-control"
                                value="{{ filtros.fecha_desde }}" />
                     </div>
@@ -114,13 +121,13 @@
                         <input type="date"
                                id="id_fecha_hasta"
                                name="fecha_hasta"
-                               form="simple-search-form"
+                               form="filters-form"
                                class="form-control"
                                value="{{ filtros.fecha_hasta }}" />
                     </div>
                 </div>
                 <div class="vpsl-filter-actions">
-                    <button type="submit" form="simple-search-form" class="btn btn-primary">Aplicar filtros</button>
+                    <button type="submit" form="filters-form" class="btn btn-primary">Aplicar filtros</button>
                     <a href="{% url 'vpsl_itinerario_list' %}" class="btn btn-outline-light">Limpiar</a>
                 </div>
             </div>

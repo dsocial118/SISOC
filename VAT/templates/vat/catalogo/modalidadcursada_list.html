@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
 
     {% url 'vat_modalidadcursada_list' as reset_url %}
-    {% include 'components/search_bar.html' with titulo="Buscar Modalidad de Cursado" placeholder="Buscar por nombre" help_text="Buscar por nombre" reset_url=reset_url add_url='vat_modalidadcursada_create' add_text='Agregar' query=request.GET.busqueda %}
+    {% include 'components/search_bar.html' with titulo="Buscar Modalidad de Cursado" reset_url=reset_url add_url='vat_modalidadcursada_create' add_text='Agregar' filters_mode=True filters_config=filters_config filters_action=filters_action query=request.GET.busqueda %}
 
     <div class="row mt-5 max-width-100">
         <div class="col-12">

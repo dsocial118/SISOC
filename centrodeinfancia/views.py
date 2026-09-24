@@ -71,6 +71,10 @@ from centrodeinfancia.forms import (
     TrabajadorCDIForm,
 )
 from centrodeinfancia.formulario_cdi_schema import CAMPOS_OPCIONES_MULTIPLES
+from centrodeinfancia.filter_config import (
+    CENTRODEINFANCIA_ADVANCED_FILTER,
+    get_filters_ui_config,
+)
 from centrodeinfancia.models import (
     AccesoCDI,
     AsistenciaNominaCentroInfancia,
@@ -329,11 +333,14 @@ class CentroDeInfanciaListView(LoginRequiredMixin, ListView):
             "localidad",
         ).annotate(tiene_nomina=Exists(nomina_subquery))
         queryset = _aplicar_scope_centros_cdi(queryset, self.request.user)
+        queryset = CENTRODEINFANCIA_ADVANCED_FILTER.filter_queryset(
+            queryset, self.request
+        )
         if query:
             queryset = queryset.filter(
                 Q(nombre__icontains=query) | Q(organizacion__icontains=query)
             )
-        return queryset.order_by("nombre")
+        return queryset.distinct().order_by("nombre")
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -352,6 +359,9 @@ class CentroDeInfanciaListView(LoginRequiredMixin, ListView):
             ],
             required_keys=["nombre"],
         )
+        context["filters_mode"] = True
+        context["filters_config"] = get_filters_ui_config()
+        context["filters_action"] = reverse("centrodeinfancia")
         context["breadcrumb_items"] = [
             {
                 "text": "Centro de Desarrollo Infantil",

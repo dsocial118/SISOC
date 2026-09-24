@@ -36,6 +36,12 @@ from VAT.services.access_scope import (
     is_vat_sse,
 )
 from users.territorial_scope import apply_full_province_scope
+from VAT.catalogo_filter_config import (
+    MODALIDAD_ADVANCED_FILTER,
+    PLAN_ADVANCED_FILTER,
+    get_modalidad_filters_ui_config,
+    get_plan_filters_ui_config,
+)
 
 # ============ MODALIDAD CURSADA ============
 
@@ -47,7 +53,21 @@ class ModalidadCursadaListView(LoginRequiredMixin, ListView):
     paginate_by = 50
 
     def get_queryset(self):
-        return super().get_queryset().order_by("nombre")
+        queryset = MODALIDAD_ADVANCED_FILTER.filter_queryset(
+            super().get_queryset(), self.request
+        )
+        # El buscador simple seguia sin aplicarse en la vista; ahora si busca.
+        busqueda = (self.request.GET.get("busqueda") or "").strip()
+        if busqueda:
+            queryset = queryset.filter(nombre__icontains=busqueda)
+        return queryset.distinct().order_by("nombre")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["filters_mode"] = True
+        context["filters_config"] = get_modalidad_filters_ui_config()
+        context["filters_action"] = reverse("vat_modalidadcursada_list")
+        return context
 
 
 class ModalidadCursadaCreateView(LoginRequiredMixin, CreateView):
@@ -442,6 +462,8 @@ class PlanVersionCurricularListView(
             .select_related("sector", "subsector", "modalidad_cursada")
             .prefetch_related("titulos")
         )
+        queryset = PLAN_ADVANCED_FILTER.filter_queryset(queryset, self.request)
+        # Se conservan los filtros propios del listado ademas de los combinables.
         titulo_id = self.request.GET.get("titulo")
         activo = self.request.GET.get("activo")
         if titulo_id:
@@ -450,13 +472,16 @@ class PlanVersionCurricularListView(
             queryset = queryset.filter(activo=True)
         elif activo == "false":
             queryset = queryset.filter(activo=False)
-        return queryset
+        return queryset.distinct()
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["titulos"] = TituloReferencia.objects.all().order_by("nombre")
         context["titulo_filter"] = self.request.GET.get("titulo")
         context["activo_filter"] = self.request.GET.get("activo")
+        context["filters_mode"] = True
+        context["filters_config"] = get_plan_filters_ui_config()
+        context["filters_action"] = reverse("vat_planversioncurricular_list")
         return context
 
 

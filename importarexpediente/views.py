@@ -10,7 +10,7 @@ from django.db.models import Q
 from django.http import FileResponse, HttpResponseNotAllowed, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.template.loader import render_to_string
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.views.generic import FormView, ListView
 
 from expedientespagos.models import ExpedientePago
@@ -20,6 +20,10 @@ from importarexpediente.models import (
     ErroresImportacion,
     ExitoImportacion,
     RegistroImportado,
+)
+from importarexpediente.filter_config import (
+    IMPORTAREXPEDIENTE_ADVANCED_FILTER,
+    get_filters_ui_config,
 )
 from importarexpediente.services import (
     EmptyImportFileError,
@@ -320,17 +324,23 @@ class ImportarExpedienteListView(LoginRequiredMixin, ListView):
         queryset = ArchivosImportados.objects.select_related("usuario").order_by(
             "-fecha_subida"
         )
+        queryset = IMPORTAREXPEDIENTE_ADVANCED_FILTER.filter_queryset(
+            queryset, self.request
+        )
         query = self.request.GET.get("busqueda", "").strip()
         if query:
             queryset = queryset.filter(
                 Q(archivo__icontains=query) | Q(usuario__username__icontains=query)
             )
-        return queryset
+        return queryset.distinct()
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         _completar_periodos_faltantes(context["archivos_importados"])
         context["query"] = self.request.GET.get("busqueda", "")
+        context["filters_mode"] = True
+        context["filters_config"] = get_filters_ui_config()
+        context["filters_action"] = reverse("importarexpedientes_list")
         return context
 
 
@@ -342,6 +352,7 @@ def importarexpedientes_ajax(request):
     queryset = ArchivosImportados.objects.select_related("usuario").order_by(
         "-fecha_subida"
     )
+    queryset = IMPORTAREXPEDIENTE_ADVANCED_FILTER.filter_queryset(queryset, request)
     if query:
         queryset = queryset.filter(
             Q(archivo__icontains=query) | Q(usuario__username__icontains=query)
