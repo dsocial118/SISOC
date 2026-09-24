@@ -63,6 +63,11 @@ El circuito de solicitud/aprobación de publicación (punto 5) queda fuera.
 
 ## Validaciones ejecutadas
 
+- CI detectó que el listado de centros VAT necesitaba declarar vacío el nuevo
+  parámetro opcional `leading_buttons` de la barra compartida. Se agregó siguiendo
+  el patrón de sus demás parámetros opcionales; lo cubre el test existente
+  `test_vat_centro_list_no_emite_errores_de_variables_faltantes_en_search_bar`.
+
 - Migración `encuestas.0003_encuesta_opcional` aplicada en Docker local.
 - `makemigrations encuestas --check --dry-run`: sin cambios pendientes.
 - Black: ocho archivos Python sin diferencias de formato.
