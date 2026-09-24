@@ -1,5 +1,10 @@
 # Despliegue de PWA privadas
 
+> En esta revisión, el workflow SISOC HML ya no prepara ni activa PWA.
+> Cada satélite usa su propio workflow, checkout y rollback. Las instrucciones
+> siguientes sobre coordinación en HML describen el flujo anterior; el job PRD
+> de esta rama todavía contiene el coordinador legacy.
+
 ## Alcance y estado
 
 SISOC coordina `main` de las PWA habilitadas al desplegar `homologacion` en HML

@@ -141,18 +141,13 @@ jobs:
                   [[ "$(git -C "$APP_ROOT" branch --show-current)" == "homologacion" ]]
                   git -C "$APP_ROOT" diff --quiet
                   git -C "$APP_ROOT" diff --cached --quiet
-                  umask 077
-                  mkdir -p "$APP_ROOT/.deploy/pwa"
-                  PWA_STATE="$(mktemp -d "$APP_ROOT/.deploy/pwa/hml.XXXXXXXX")"
-                  git -C "$APP_ROOT" show "$EXPECTED_SHA:scripts/operacion/deploy_pwas.py" > "$PWA_STATE/deploy_pwas.py"
-                  git -C "$APP_ROOT" show "$EXPECTED_SHA:scripts/operacion/pwas.json" > "$PWA_STATE/pwas.json"
-                  git -C "$APP_ROOT" show "$EXPECTED_SHA:scripts/operacion/deploy_refresh.sh" > "$PWA_STATE/backend.sh"
-                  echo "Estado PWA para recuperacion: $PWA_STATE" >> "$GITHUB_STEP_SUMMARY"
-                  python3 "$PWA_STATE/deploy_pwas.py" prepare --config "$PWA_STATE/pwas.json" --root "$APP_ROOT/.." --state "$PWA_STATE" --environment hml
+                  deploy_script="$(mktemp "${RUNNER_TEMP:-/tmp}/sisoc-deploy-refresh.XXXXXXXX")"
+                  trap 'rm -f "$deploy_script"' EXIT
+                  git -C "$APP_ROOT" show "$EXPECTED_SHA:scripts/operacion/deploy_refresh.sh" > "$deploy_script"
                   echo "Commit previo al deploy para rollback: $(git rev-parse HEAD)"
                   (
                       umask 022
-                      SISOC_ROOT_DIR="$APP_ROOT" bash "$PWA_STATE/backend.sh" --yes --expected-revision "$EXPECTED_SHA" --without-mobile
+                      SISOC_ROOT_DIR="$APP_ROOT" bash "$deploy_script" --yes --expected-revision "$EXPECTED_SHA" --without-mobile
                   )
                   wait_for() {
                       local description="$1"
@@ -194,7 +189,6 @@ jobs:
                   wait_for "healthcheck de HML" 30 bash "$APP_ROOT/scripts/infra/healthcheck_hml.sh"
                   deployed_sha="$(git -C "$APP_ROOT" rev-parse HEAD)"
                   [[ "$deployed_sha" == "$EXPECTED_SHA" ]]
-                  python3 "$PWA_STATE/deploy_pwas.py" activate --state "$PWA_STATE" --environment hml
                   {
                       echo "### Deploy HML verificado"
                       echo "- Revision desplegada: \`$deployed_sha\`"

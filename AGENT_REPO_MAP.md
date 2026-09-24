@@ -9,6 +9,10 @@ Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrollador
   users/0051 une las hojas de configuracion mobile y DataCalle sin operaciones.
   Evidencia/conflictos: docs/registro/cambios/2026-09-08-sincronizacion-datacalle-main.md.
 
+- Workflow HML de esta revisión: `.github/workflows/deploy.yml` extrae el helper
+  de backend del SHA aprobado y usa `--without-mobile`; no prepara ni activa
+  satélites. Cada PWA despliega y promueve desde su propio repositorio. El
+  coordinador descrito debajo queda como referencia histórica de esta rama.
 - PWA privadas: `scripts/operacion/pwas.json` declara Espacios Comunitarios,
   DataCalle y Gestionar. `deploy_pwas.py` prepara snapshots/imagenes antes del
   downtime y activa despues del health del backend. Las apps nuevas estan

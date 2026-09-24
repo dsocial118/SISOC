@@ -13,11 +13,10 @@ DEPLOY_WORKFLOW = REPO_ROOT / ".github" / "workflows" / "deploy.yml"
 
 
 @pytest.mark.skipif(os.name != "posix", reason="Verifica permisos POSIX del deploy")
-@pytest.mark.parametrize("job", ["deploy-homologacion", "deploy-produccion"])
-def test_backend_code_readable_without_exposing_private_pwa_state(tmp_path, job):
+def test_backend_code_readable_without_exposing_private_pwa_state(tmp_path):
     """La umask privada de las PWA no debe impedir leer codigo a los workers."""
     workflow = DEPLOY_WORKFLOW.read_text(encoding="utf-8")
-    job_source = workflow.split(f"    {job}:\n", 1)[1]
+    job_source = workflow.split("    deploy-produccion:\n", 1)[1]
     setup = (
         "umask 077" + job_source.split("umask 077", 1)[1].split("wait_for() {", 1)[0]
     )
@@ -72,6 +71,13 @@ def test_backend_code_readable_without_exposing_private_pwa_state(tmp_path, job)
 def _production_deploy_step() -> str:
     workflow = DEPLOY_WORKFLOW.read_text(encoding="utf-8")
     return workflow.split("    deploy-produccion:\n", maxsplit=1)[1]
+
+
+def _hml_deploy_step() -> str:
+    workflow = DEPLOY_WORKFLOW.read_text(encoding="utf-8")
+    return workflow.split("    deploy-homologacion:\n", maxsplit=1)[1].split(
+        "    deploy-produccion:\n", maxsplit=1
+    )[0]
 
 
 def _qa_deploy_step() -> str:
@@ -150,30 +156,41 @@ def test_deploy_produccion_inspeccion_legacy_no_contiene_escrituras():
         assert mutation not in recovery_source
 
 
-def test_deploy_pwa_herramientas_del_sha_y_preparacion_antes_del_backend():
-    """La primera ejecucion no depende de actualizar el helper instalado."""
-    workflow = DEPLOY_WORKFLOW.read_text(encoding="utf-8")
+def test_deploy_hml_no_coordina_pwa():
+    """La revisión HML del backend no depende de ningún checkout satélite."""
     assert "deploy_pwas.py" not in _qa_deploy_step()
-    for job, environment in (
-        ("deploy-homologacion", "hml"),
-        ("deploy-produccion", "prd"),
-    ):
-        # Read the full job (next job begins at four spaces, not nested steps).
-        step = re.split(
-            r"\n    [a-z][a-z-]+:\n", workflow.split(f"    {job}:\n", 1)[1]
-        )[0]
-        extract = 'show "$EXPECTED_SHA:scripts/operacion/deploy_pwas.py"'
-        prepare = '"$PWA_STATE/deploy_pwas.py" prepare'
-        backend = 'bash "$PWA_STATE/backend.sh"'
-        activate = '"$PWA_STATE/deploy_pwas.py" activate'
-        assert step.index('if [[ "$remote_sha" != "$EXPECTED_SHA" ]]') < step.index(
-            extract
-        )
-        assert step.index(extract) < step.index(prepare) < step.index(backend)
-        assert step.index("healthcheck_") < step.index(activate)
-        assert f"--environment {environment}" in step
-        assert "--without-mobile" in step
-        assert "chown" not in step
+    hml = _hml_deploy_step()
+    assert "deploy_pwas.py" not in hml
+    assert "PWA_STATE" not in hml
+    assert 'show "$EXPECTED_SHA:scripts/operacion/deploy_refresh.sh"' in hml
+    assert "--without-mobile" in hml
+    expected_revision_check = hml.index('if [[ "$remote_sha" != "$EXPECTED_SHA" ]]')
+    helper_extraction = hml.index(
+        'show "$EXPECTED_SHA:scripts/operacion/deploy_refresh.sh"'
+    )
+    healthcheck = hml.index("healthcheck_hml.sh")
+    assert expected_revision_check < helper_extraction < healthcheck
+
+
+def test_deploy_pwa_herramientas_del_sha_y_preparacion_antes_del_backend():
+    """El job PRD de esta rama conserva el contrato de preparación existente."""
+    workflow = DEPLOY_WORKFLOW.read_text(encoding="utf-8")
+    # Read the full job (next job begins at four spaces, not nested steps).
+    production = re.split(
+        r"\n    [a-z][a-z-]+:\n", workflow.split("    deploy-produccion:\n", 1)[1]
+    )[0]
+    extract = 'show "$EXPECTED_SHA:scripts/operacion/deploy_pwas.py"'
+    prepare = '"$PWA_STATE/deploy_pwas.py" prepare'
+    backend = 'bash "$PWA_STATE/backend.sh"'
+    activate = '"$PWA_STATE/deploy_pwas.py" activate'
+    remote_check = production.index('if [[ "$remote_sha" != "$EXPECTED_SHA" ]]')
+    assert remote_check < production.index(extract)
+    assert production.index(extract) < production.index(prepare)
+    assert production.index(prepare) < production.index(backend)
+    assert production.index("healthcheck_") < production.index(activate)
+    assert "--environment prd" in production
+    assert "--without-mobile" in production
+    assert "chown" not in production
     production = _production_deploy_step()
     assert "environment: production" in production
     assert "cancel-in-progress: false" in workflow
