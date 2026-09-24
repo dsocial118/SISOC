@@ -1,4 +1,6 @@
 # pylint: disable=too-many-lines
+import os
+
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
@@ -887,6 +889,20 @@ class SubsanacionEstado(models.TextChoices):
     RESPONDIDA = "RESPONDIDA", "Respondida por la provincia"
 
 
+class OrigenArchivoSubsanacion(models.TextChoices):
+    """Quién cargó un archivo de subsanación.
+
+    La relación `Subsanacion.archivos` guarda dos cosas distintas: la evidencia
+    con la que la Provincia responde el pedido, y la documentación
+    complementaria que adjunta Nación al solicitarlo (issue #2523). Separarlas
+    importa porque `SubsanacionService.tiene_evidencia()` habilita el confirmar
+    de la Provincia, y un archivo de Nación no es una respuesta.
+    """
+
+    PROVINCIA = "PROVINCIA", "Provincia (respuesta)"
+    NACION = "NACION", "Nación (documentación complementaria)"
+
+
 class Subsanacion(models.Model):
     """Solicitud de subsanación sobre un legajo. Agrupa una o varias
     observaciones (cada una con su tipo/motivo) y, en la respuesta de la
@@ -945,6 +961,25 @@ class Subsanacion(models.Model):
         labels = dict(TipoSubsanacion.choices)
         return [labels.get(t, t) for t in self.tipos]
 
+    def _archivos_por_origen(self, origen):
+        """Archivos de un origen, filtrando en Python sobre `archivos.all()`.
+
+        A propósito no usa `.filter()`: el detalle del expediente prefetchea
+        `subsanaciones__archivos`, y filtrar en la base rompería ese caché
+        agregando una consulta por subsanación y por bloque del template.
+        """
+        return [a for a in self.archivos.all() if a.origen == origen]
+
+    @property
+    def archivos_de_provincia(self):
+        """Evidencia con la que la Provincia respondió el pedido."""
+        return self._archivos_por_origen(OrigenArchivoSubsanacion.PROVINCIA)
+
+    @property
+    def archivos_de_nacion(self):
+        """Documentación complementaria adjuntada por Nación al solicitarla."""
+        return self._archivos_por_origen(OrigenArchivoSubsanacion.NACION)
+
 
 class SubsanacionObservacion(models.Model):
     """Cada requerimiento individual dentro de una subsanación: un tipo de
@@ -970,12 +1005,21 @@ class SubsanacionObservacion(models.Model):
 
 
 class SubsanacionArchivo(models.Model):
-    """Archivo de respuesta de la provincia a una subsanación. La documentación
-    corregida se incorpora como evidencia nueva, sin reemplazar los archivos
-    originales del legajo (se usa a partir de la Fase 2)."""
+    """Archivo adjunto a una subsanación.
+
+    Según `origen`, es la evidencia con la que la provincia responde —
+    documentación corregida que se incorpora como archivo nuevo, sin reemplazar
+    los originales del legajo (Fase 2)— o la documentación complementaria que
+    Nación adjunta al solicitar la subsanación (issue #2523)."""
 
     subsanacion = models.ForeignKey(
         Subsanacion, on_delete=models.CASCADE, related_name="archivos"
+    )
+    origen = models.CharField(
+        max_length=12,
+        choices=OrigenArchivoSubsanacion.choices,
+        default=OrigenArchivoSubsanacion.PROVINCIA,
+        db_index=True,
     )
     observacion = models.ForeignKey(
         SubsanacionObservacion,
@@ -1004,6 +1048,11 @@ class SubsanacionArchivo(models.Model):
                 fields=["subsanacion", "-creado_en"], name="subs_arch_subs_fecha_idx"
             ),
         ]
+
+    @property
+    def nombre_archivo(self):
+        """Nombre del archivo sin la carpeta de `upload_to`, para mostrar en la UI."""
+        return os.path.basename(self.archivo.name or "")
 
     def __str__(self):
         return f"Archivo subsanación {self.subsanacion_id} - {self.archivo.name}"
