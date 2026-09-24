@@ -9,6 +9,8 @@
 {% endblock %}
 {% block content %}
     <link rel="stylesheet" href="{% static 'custom/css/encuestaForm.css' %}" />
+    <link rel="stylesheet"
+          href="{% static 'custom/css/comedoresSearchBar.css' %}" />
     <div class="encuesta-editor"
          data-tipos-con-opciones="{{ tipos_pregunta_con_opciones }}"
          data-tipos-ponderables="{{ tipos_pregunta_ponderables }}">
@@ -20,9 +22,46 @@
                     Generar encuesta
                 {% endif %}
             </h2>
-            <a href="{% url 'encuestas_listar' %}" class="btn-cancel">
-                <i class="fas fa-arrow-left me-1"></i> Volver
-            </a>
+            <div class="d-flex flex-wrap align-items-center gap-2">
+                {% if form.instance.pk %}
+                    <div class="dropdown">
+                        <button type="button"
+                                id="exportar-encuesta-menu"
+                                class="poncho-btn poncho-btn--descarga dropdown-toggle"
+                                data-bs-toggle="dropdown"
+                                aria-expanded="false">
+                            <i class="fas fa-download me-1" aria-hidden="true"></i> Exportar JSON
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow"
+                            aria-labelledby="exportar-encuesta-menu">
+                            <li>
+                                <a href="{% url 'encuestas_exportar' form.instance.pk %}"
+                                   class="dropdown-item py-2">
+                                    <span class="d-block fw-semibold">
+                                        <i class="fas fa-file-alt me-2" aria-hidden="true"></i>Solo encuesta
+                                    </span>
+                                    <small class="d-block text-body-secondary">Elegir destinatarios al importar</small>
+                                </a>
+                            </li>
+                            <li>
+                                <hr class="dropdown-divider" />
+                            </li>
+                            <li>
+                                <a href="{% url 'encuestas_exportar' form.instance.pk %}?incluir_segmentacion=1"
+                                   class="dropdown-item py-2">
+                                    <span class="d-block fw-semibold">
+                                        <i class="fas fa-users me-2" aria-hidden="true"></i>Con segmentación
+                                    </span>
+                                    <small class="d-block text-body-secondary">Incluye los documentos cargados</small>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                {% endif %}
+                <a href="{% url 'encuestas_listar' %}" class="poncho-volver">
+                    <i class="fas fa-arrow-left me-1"></i> Volver
+                </a>
+            </div>
         </div>
 
         <form method="post" id="encuesta-form" novalidate>
@@ -57,11 +96,10 @@
                             <small class="switch-help">No se vincula el contenido a la identidad de quien responde.</small>
                         </div>
                         <div class="option-item">
-                            <div class="form-check form-switch">
-                                {{ form.es_obligatoria }}
-                                <label class="form-check-label" for="{{ form.es_obligatoria.id_for_label }}">Obligatoria</label>
-                            </div>
-                            <small class="switch-help">Bloquea el sistema hasta que el destinatario responda.</small>
+                            <label for="{{ form.modalidad.id_for_label }}">Modalidad de respuesta</label>
+                            {{ form.modalidad }}
+                            <small class="switch-help">Obligatoria: bloquea el sistema. Opcional: permite no responder. Postergable: vuelve a recordarse.</small>
+                            {% if form.modalidad.errors %}<div class="invalid-feedback d-block">{{ form.modalidad.errors.0 }}</div>{% endif %}
                         </div>
                         <div class="option-item">
                             <div class="form-check form-switch">
@@ -75,10 +113,10 @@
                     <div class="subfields">
                         <div class="field-col"
                              id="recordatorio-field"
-                             {% if form.es_obligatoria.value %}style="display:none"{% endif %}>
+                             {% if form.modalidad.value != "postergable" %}style="display:none"{% endif %}>
                             <label for="{{ form.intervalo_recordatorio_dias.id_for_label }}">Intervalo de recordatorio (días)</label>
                             {{ form.intervalo_recordatorio_dias }}
-                            <small class="form-text d-block">Solo aplica si la encuesta no es obligatoria.</small>
+                            <small class="form-text d-block">Solo aplica si la encuesta es postergable.</small>
                             {% if form.intervalo_recordatorio_dias.errors %}
                                 <div class="invalid-feedback d-block">{{ form.intervalo_recordatorio_dias.errors.0 }}</div>
                             {% endif %}
@@ -111,20 +149,25 @@
                 <div class="panel-body">
                     <div class="preguntas-toolbar">
                         <span class="pregunta-count"><b id="preguntas-cantidad">0</b> preguntas agregadas</span>
-                        <button type="button" id="agregar-pregunta" class="btn-dashed">
-                            <i class="fas fa-plus"></i> Agregar pregunta
-                        </button>
                     </div>
                     <div id="preguntas-container"></div>
                     <p id="preguntas-vacio-msg" class="switch-help mb-0">Todavía no agregaste preguntas.</p>
+                    <div class="mt-3 d-flex justify-content-end">
+                        <button type="button"
+                                id="agregar-pregunta"
+                                class="poncho-btn poncho-btn--cta">
+                            <i class="fas fa-plus"></i> Agregar pregunta
+                        </button>
+                    </div>
                 </div>
             </div>
 
             <input type="hidden" name="preguntas_json" id="preguntas_json" />
 
             <div class="editor-actions">
-                <a href="{% url 'encuestas_listar' %}" class="btn-cancel">Cancelar</a>
-                <button type="submit" class="btn-save">
+                <a href="{% url 'encuestas_listar' %}"
+                   class="poncho-btn poncho-btn--neutro">Cancelar</a>
+                <button type="submit" class="poncho-btn poncho-btn--cta">
                     <i class="fas fa-save me-1"></i> Guardar encuesta
                 </button>
             </div>
@@ -134,7 +177,8 @@
             <div class="pregunta-row">
                 <div class="pregunta-head">
                     <span class="pregunta-numero">Pregunta</span>
-                    <button type="button" class="btn-quitar-pregunta btn btn-sm">
+                    <button type="button"
+                            class="btn-quitar-pregunta poncho-btn poncho-btn--neutro">
                         <i class="fas fa-trash-alt"></i> Quitar
                     </button>
                 </div>
@@ -220,14 +264,21 @@
     <script src="{% static 'custom/js/encuestaPreguntasBuilder.js' %}"></script>
     <script nonce="{{ request.csp_nonce }}">
 document.addEventListener("DOMContentLoaded", function () {
-    var obligatoria = document.getElementById("{{ form.es_obligatoria.id_for_label }}");
+    var modalidad = document.getElementById("{{ form.modalidad.id_for_label }}");
     var recurrente = document.getElementById("{{ form.es_recurrente.id_for_label }}");
     var recordatorioField = document.getElementById("recordatorio-field");
     var recurrenciaField = document.getElementById("recurrencia-field");
-    if (obligatoria && recordatorioField) {
-        obligatoria.addEventListener("change", function () {
-            recordatorioField.style.display = obligatoria.checked ? "none" : "";
-        });
+    if (modalidad && recordatorioField) {
+        var intervalo = document.getElementById("{{ form.intervalo_recordatorio_dias.id_for_label }}");
+        function actualizarRecordatorio() {
+            var postergable = modalidad.value === "postergable";
+            recordatorioField.style.display = postergable ? "" : "none";
+            intervalo.disabled = !postergable;
+            intervalo.required = postergable;
+            intervalo.min = "1";
+        }
+        modalidad.addEventListener("change", actualizarRecordatorio);
+        actualizarRecordatorio();
     }
     if (recurrente && recurrenciaField) {
         recurrente.addEventListener("change", function () {

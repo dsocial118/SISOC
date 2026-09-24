@@ -3,7 +3,10 @@ from django.urls import path
 from core.decorators import permissions_any_required
 
 from .views import (
+    DescartarRondaView,
     EncuestaCreateView,
+    EncuestaExportarView,
+    EncuestaImportarView,
     EncuestaListView,
     EncuestaPublicarView,
     EncuestaResultadosExportarView,
@@ -20,6 +23,25 @@ from .views import (
 )
 
 urlpatterns = [
+    path(
+        "encuestas/responder/<int:pk>/descartar/",
+        DescartarRondaView.as_view(),
+        name="encuestas_responder_descartar",
+    ),
+    path(
+        "encuestas/importar/",
+        permissions_any_required(["encuestas.add_encuesta"])(
+            EncuestaImportarView.as_view()
+        ),
+        name="encuestas_importar",
+    ),
+    path(
+        "encuestas/<int:pk>/exportar/",
+        permissions_any_required(["encuestas.change_encuesta"])(
+            EncuestaExportarView.as_view()
+        ),
+        name="encuestas_exportar",
+    ),
     path(
         "encuestas/",
         permissions_any_required(

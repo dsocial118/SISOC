@@ -1,3 +1,8 @@
+{% load static %}
+<link rel="stylesheet"
+      href="{% static 'custom/css/comedoresSearchBar.css' %}" />
+<link rel="stylesheet"
+      href="{% static 'custom/css/encuestaResponder.css' %}" />
 {% comment %}
 Modal de encuesta pendiente, incluido globalmente desde
 templates/includes/base.html cuando el context processor
@@ -16,49 +21,87 @@ y clases de Bootstrap 5 que el componente para que se vea y comporte igual.
      aria-labelledby="modal-encuesta-pendiente-label"
      aria-hidden="true"
      {% if ronda_pendiente.encuesta.es_obligatoria %}data-bs-backdrop="static" data-bs-keyboard="false"{% endif %}>
-    <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="modal-encuesta-pendiente-label">{{ ronda_pendiente.encuesta.titulo }}</h5>
+                <div>
+                    <div class="encuesta-responder-etiqueta">
+                        <i class="fas fa-clipboard-list" aria-hidden="true"></i> Encuesta
+                    </div>
+                    <h2 class="modal-title" id="modal-encuesta-pendiente-label">{{ ronda_pendiente.encuesta.titulo }}</h2>
+                    <div class="encuesta-responder-datos">
+                        <span>{{ ronda_pendiente.encuesta.modalidad|capfirst }}</span>
+                        {% if ronda_pendiente.encuesta.es_anonima %}
+                            <span><i class="fas fa-user-shield" aria-hidden="true"></i> Respuestas anónimas</span>
+                        {% endif %}
+                    </div>
+                </div>
                 {% if not ronda_pendiente.encuesta.es_obligatoria %}
                     <button type="button"
-                            class="btn-close"
+                            class="btn-close btn-close-white"
                             data-bs-dismiss="modal"
                             aria-label="Cerrar"></button>
                 {% endif %}
             </div>
             <div class="modal-body">
                 {% if ronda_pendiente.encuesta.descripcion %}
-                    <p class="text-muted">{{ ronda_pendiente.encuesta.descripcion }}</p>
+                    <p class="encuesta-responder-descripcion">{{ ronda_pendiente.encuesta.descripcion }}</p>
                 {% endif %}
+                <p class="encuesta-responder-ayuda">
+                    Las preguntas marcadas con * requieren una respuesta.
+                    {% if ronda_pendiente.encuesta.es_opcional %}
+                        Podés elegir no responder. No volverá a aparecer en esta ronda.
+                    {% elif ronda_pendiente.encuesta.es_obligatoria %}
+                        Completá la encuesta para continuar usando el sistema.
+                    {% endif %}
+                </p>
                 <form method="post"
                       action="{% url 'encuestas_responder' ronda_pendiente.pk %}"
                       id="form-responder-encuesta">
                     {% csrf_token %}
                     <input type="hidden" name="next" value="{{ request.path }}" />
                     {% for pregunta in ronda_pendiente.encuesta.preguntas.all %}
-                        <div class="mb-3 pregunta-respuesta"
-                             data-orden="{{ pregunta.orden }}"
-                             {% if pregunta.pregunta_condicion_id %} data-condicion-orden="{{ pregunta.pregunta_condicion.orden }}" data-condicion-operador="{{ pregunta.operador_condicion }}" data-condicion-valor="{{ pregunta.valor_condicion }}" {% endif %}>
-                            <label class="form-label">
+                        <fieldset class="pregunta-respuesta"
+                                  data-orden="{{ pregunta.orden }}"
+                                  {% if pregunta.pregunta_condicion_id %} data-condicion-orden="{{ pregunta.pregunta_condicion.orden }}" data-condicion-operador="{{ pregunta.operador_condicion }}" data-condicion-valor="{{ pregunta.valor_condicion }}" {% endif %}>
+                            <legend id="pregunta-titulo-{{ pregunta.pk }}">
+                                <span class="encuesta-responder-numero" aria-hidden="true">{{ forloop.counter }}</span>
                                 {{ pregunta.texto }}
-                                {% if pregunta.obligatoria %}<span class="text-danger">*</span>{% endif %}
-                            </label>
+                                {% if pregunta.obligatoria %}<span class="encuesta-responder-requerida">*</span>{% endif %}
+                            </legend>
+                            {% if pregunta.tipo == "opcion_multiple" %}
+                                <p class="encuesta-responder-ayuda">Podés seleccionar más de una opción.</p>
+                            {% elif pregunta.tipo == "escala" %}
+                                <p class="encuesta-responder-ayuda">Ingresá un valor del 1 al 10.</p>
+                            {% endif %}
                             {% include "encuestas/partials/campo_pregunta.html" with pregunta=pregunta %}
-                        </div>
+                        </fieldset>
                     {% endfor %}
                 </form>
             </div>
             <div class="modal-footer">
-                {% if not ronda_pendiente.encuesta.es_obligatoria %}
+                {% if ronda_pendiente.encuesta.es_opcional %}
+                    <form method="post"
+                          action="{% url 'encuestas_responder_descartar' ronda_pendiente.pk %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="next" value="{{ request.path }}" />
+                        <button type="submit" class="poncho-btn poncho-btn--neutro">Prefiero no responder</button>
+                    </form>
+                {% elif not ronda_pendiente.encuesta.es_obligatoria %}
                     <form method="post"
                           action="{% url 'encuestas_responder_mas_tarde' ronda_pendiente.pk %}">
                         {% csrf_token %}
                         <input type="hidden" name="next" value="{{ request.path }}" />
-                        <button type="submit" class="btn btn-outline-secondary">Responder más tarde</button>
+                        <button type="submit" class="poncho-btn poncho-btn--neutro">
+                            <i class="far fa-clock" aria-hidden="true"></i> Responder más tarde
+                        </button>
                     </form>
                 {% endif %}
-                <button type="submit" form="form-responder-encuesta" class="btn btn-primary">Responder</button>
+                <button type="submit"
+                        form="form-responder-encuesta"
+                        class="poncho-btn poncho-btn--cta">
+                    <i class="fas fa-paper-plane" aria-hidden="true"></i> Enviar respuestas
+                </button>
             </div>
         </div>
     </div>

@@ -1,0 +1,186 @@
+#modal-encuesta-pendiente {
+  font-family: var(--poncho-font-base);
+  color: var(--poncho-blanco);
+}
+
+#modal-encuesta-pendiente .modal-content {
+  background: var(--poncho-azul-principal);
+  border: 1px solid rgba(255, 255, 255, .2);
+  border-radius: var(--poncho-radio-base);
+  overflow: hidden;
+}
+
+#modal-encuesta-pendiente .modal-header {
+  padding: 24px;
+  align-items: flex-start;
+  background: var(--poncho-azul-secundario);
+  border-bottom: 1px solid rgba(255, 255, 255, .15);
+}
+
+#modal-encuesta-pendiente .modal-title {
+  margin: 8px 0 12px;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+#modal-encuesta-pendiente .encuesta-responder-etiqueta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+#modal-encuesta-pendiente .encuesta-responder-datos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+#modal-encuesta-pendiente .encuesta-responder-datos span {
+  padding: 4px 10px;
+  border: 1px solid rgba(255, 255, 255, .3);
+  border-radius: var(--poncho-radio-cta);
+  font-size: 12px;
+}
+
+#modal-encuesta-pendiente .modal-body {
+  padding: 24px;
+}
+
+#modal-encuesta-pendiente .encuesta-responder-descripcion {
+  font-size: 15px;
+  line-height: 1.6;
+  white-space: pre-line;
+}
+
+#modal-encuesta-pendiente .encuesta-responder-ayuda {
+  color: var(--poncho-texto-placeholder);
+  font-size: 13px;
+  line-height: 1.6;
+  margin-bottom: 16px;
+}
+
+#modal-encuesta-pendiente .pregunta-respuesta {
+  min-width: 0;
+  padding: 20px;
+  margin: 0 0 16px;
+  border: 1px solid rgba(255, 255, 255, .2);
+  border-radius: var(--poncho-radio-base);
+  background: rgba(255, 255, 255, .035);
+}
+
+#modal-encuesta-pendiente .pregunta-respuesta legend {
+  float: none;
+  width: auto;
+  padding: 0 6px;
+  margin-bottom: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.6;
+}
+
+#modal-encuesta-pendiente .encuesta-responder-numero {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: var(--poncho-azul-secundario);
+  font-size: 13px;
+}
+
+#modal-encuesta-pendiente .encuesta-responder-requerida {
+  color: #ffb4ab;
+}
+
+#modal-encuesta-pendiente .form-control,
+#modal-encuesta-pendiente .form-select {
+  background-color: var(--poncho-azul-principal);
+  color: var(--poncho-blanco);
+  border: 1px solid rgba(255, 255, 255, .45);
+  border-radius: var(--poncho-radio-base);
+  padding: 10px 12px;
+  font-family: inherit;
+}
+
+#modal-encuesta-pendiente .form-control:focus,
+#modal-encuesta-pendiente .form-select:focus {
+  border-color: var(--poncho-blanco);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, .15);
+}
+
+#modal-encuesta-pendiente .form-check {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 14px;
+  margin-bottom: 8px;
+  border: 1px solid rgba(255, 255, 255, .25);
+  border-radius: var(--poncho-radio-base);
+}
+
+#modal-encuesta-pendiente .form-check:has(input:checked) {
+  background: var(--poncho-azul-secundario);
+  border-color: var(--poncho-blanco);
+}
+
+#modal-encuesta-pendiente .form-check:focus-within {
+  outline: 2px solid var(--poncho-blanco);
+  outline-offset: 2px;
+}
+
+#modal-encuesta-pendiente .form-check-input {
+  float: none;
+  flex-shrink: 0;
+  margin: 0;
+  width: 18px;
+  height: 18px;
+}
+
+#modal-encuesta-pendiente .form-check-input:checked {
+  background-color: var(--poncho-verde);
+  border-color: var(--poncho-blanco);
+}
+
+#modal-encuesta-pendiente .form-check-label {
+  flex: 1;
+  padding: 12px 0;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+#modal-encuesta-pendiente .modal-footer {
+  gap: 12px;
+  padding: 16px 24px;
+  border-top: 1px solid rgba(255, 255, 255, .2);
+}
+
+#modal-encuesta-pendiente .modal-footer > * {
+  margin: 0;
+}
+
+#modal-encuesta-pendiente .modal-footer .poncho-btn {
+  font-size: 14px;
+}
+
+@media (max-width: 575.98px) {
+  #modal-encuesta-pendiente .modal-header,
+  #modal-encuesta-pendiente .modal-body,
+  #modal-encuesta-pendiente .modal-footer {
+    padding: 16px;
+  }
+
+  #modal-encuesta-pendiente .pregunta-respuesta {
+    padding: 12px;
+  }
+
+  #modal-encuesta-pendiente .modal-footer > *,
+  #modal-encuesta-pendiente .modal-footer .poncho-btn {
+    width: 100%;
+  }
+}
