@@ -27,13 +27,14 @@
 ## Design system y UI
 
 - El PR toca piezas de UI y conviene revisar consistencia visual con el patrón existente.
-- Archivos visuales relevantes: encuestas/templates/encuestas/encuesta_form.html, encuestas/templates/encuestas/encuesta_list.html, encuestas/templates/encuestas/encuesta_segmentacion.html, encuestas/templates/encuestas/partials/responder_modal.html, static/custom/css/encuestaForm.css, static/custom/css/encuestaResponder.css, templates/components/search_bar.html
+- Archivos visuales relevantes: VAT/templates/vat/centros/centro_list.html, encuestas/templates/encuestas/encuesta_form.html, encuestas/templates/encuestas/encuesta_list.html, encuestas/templates/encuestas/encuesta_segmentacion.html, encuestas/templates/encuestas/partials/responder_modal.html, static/custom/css/encuestaForm.css, static/custom/css/encuestaResponder.css, templates/components/search_bar.html
 
 ## Memoria operativa para agentes
 
 - Empezar por `docs/registro/prs/PR-2578.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
 - `AGENT_REPO_MAP.md`
+- `VAT/templates/vat/centros/centro_list.html`
 - `docs/contexto/features/pr-2578-feat-encuestas-mejoras-1-a-4-del-issue-2563.md`
 - `docs/implementaciones/encuestas.md`
 - `docs/registro/cambios/2026-09-24-encuestas-mejoras-2563.md`
@@ -52,8 +53,7 @@
 - `encuestas/tests/test_encuestas_opcionales.py`
 - `encuestas/tests/test_encuestas_portabilidad.py`
 - `encuestas/urls.py`
-- `encuestas/views.py`
-- ... y 3 archivo(s) adicional(es) relacionados.
+- ... y 4 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
