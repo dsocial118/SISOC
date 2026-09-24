@@ -46,6 +46,7 @@
 - `docs/implementaciones/filtros_avanzados.md`: comportamiento y consideraciones de filtros avanzados.
 - `docs/implementaciones/preferencias_columnas.md`: preferencias de columnas en listados.
 - `docs/implementaciones/pwa_backend.md`: implementación backend de funcionalidades PWA.
+- `docs/implementaciones/frontend_v2.md`: reglas del front v2 en React (`/v2/<modulo>/`): estructura `frontends/`, versiones exactas, diseño, ruteo por Django, API, sesión, compose y CI.
 - `docs/implementaciones/admisiones_informes_tecnicos.md`: contrato de campos, templates dinámicos y publicación de Informes Técnicos.
 - `docs/implementaciones/comedores_certificaciones_prestaciones.md`: generación, fallback y descarga de certificaciones de prestaciones.
 - `docs/implementaciones/usuarios_perfil_iam.md`: implementación de Usuarios/Perfil + IAM por permisos Django y guía para extender nuevas features.
