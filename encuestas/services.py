@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import logging
 import os
 import time
@@ -33,6 +34,140 @@ from .models import (
 from .validators import parse_listado_destinatarios, parse_preguntas_payload
 
 logger = logging.getLogger("django")
+
+ENCUESTA_JSON_MAX_BYTES = 5 * 1024 * 1024
+ENCUESTA_JSON_CAMPOS = {
+    "titulo": (str,),
+    "descripcion": (str,),
+    "es_anonima": (bool,),
+    "es_obligatoria": (bool,),
+    "es_opcional": (bool,),
+    "intervalo_recordatorio_dias": (int, type(None)),
+    "es_recurrente": (bool,),
+    "intervalo_recurrencia_dias": (int, type(None)),
+    "duracion_ronda_dias": (int,),
+}
+
+
+def exportar_encuesta(encuesta: Encuesta, *, incluir_segmentacion=False) -> dict:
+    datos = {
+        "formato": "sisoc.encuesta",
+        "version_formato": 3,
+        "encuesta": {campo: getattr(encuesta, campo) for campo in ENCUESTA_JSON_CAMPOS},
+        "preguntas": serializar_preguntas(encuesta),
+    }
+    segmentacion = getattr(encuesta, "segmentacion", None)
+    if incluir_segmentacion and segmentacion is not None:
+        datos["segmentacion"] = {
+            "tipo": segmentacion.tipo,
+            "destinatarios": (
+                list(
+                    segmentacion.destinatarios.order_by("pk").values(
+                        "tipo_documento", "numero_documento"
+                    )
+                )
+                if segmentacion.tipo == TipoSegmentacion.LISTADO_DOCUMENTOS
+                else []
+            ),
+        }
+    return datos
+
+
+def _importar_segmentacion(encuesta: Encuesta, datos: dict) -> None:
+    if not isinstance(datos, dict) or datos.get("tipo") not in TipoSegmentacion.values:
+        raise ValidationError("El tipo de segmentación del archivo es inválido.")
+    destinatarios = datos.get("destinatarios")
+    if not isinstance(destinatarios, list):
+        raise ValidationError("Los destinatarios deben ser una lista.")
+    if datos["tipo"] == TipoSegmentacion.TODOS_LOS_USUARIOS and destinatarios:
+        raise ValidationError("La segmentación para todos no admite un listado.")
+    for destinatario in destinatarios:
+        if not isinstance(destinatario, dict):
+            raise ValidationError("El formato de un destinatario es inválido.")
+        numero = destinatario.get("numero_documento")
+        if (
+            destinatario.get("tipo_documento") not in TipoDocumento.values
+            or not isinstance(numero, str)
+            or not numero.isascii()
+            or not numero.isdigit()
+            or len(numero) > 20
+        ):
+            raise ValidationError("Un destinatario contiene un documento inválido.")
+    actualizar_segmentacion(encuesta, tipo=datos["tipo"], destinatarios=destinatarios)
+
+
+def _leer_archivo_encuesta(archivo) -> dict:
+    if archivo is None:
+        raise ValidationError("Seleccioná un archivo JSON de encuesta.")
+    if not archivo.name.lower().endswith(".json"):
+        raise ValidationError("Solo se permiten archivos JSON (.json).")
+    contenido = archivo.read(ENCUESTA_JSON_MAX_BYTES + 1)
+    if len(contenido) > ENCUESTA_JSON_MAX_BYTES:
+        raise ValidationError("El archivo supera el tamaño máximo de 5 MB.")
+    try:
+        datos = json.loads(contenido.decode("utf-8-sig"))
+    except (UnicodeDecodeError, ValueError, RecursionError) as exc:
+        raise ValidationError("El archivo no contiene un JSON válido.") from exc
+    if not isinstance(datos, dict) or datos.get("formato") != "sisoc.encuesta":
+        raise ValidationError("El archivo no es una exportación de encuesta SISOC.")
+    version = datos.get("version_formato")
+    if (
+        not isinstance(version, int)
+        or isinstance(version, bool)
+        or version not in (1, 2, 3)
+    ):
+        raise ValidationError("La versión del archivo de encuesta no es compatible.")
+    return datos
+
+
+def _validar_preguntas_importadas(preguntas) -> str:
+    if not isinstance(preguntas, list):
+        raise ValidationError("El archivo debe incluir una lista de preguntas.")
+    for pregunta in preguntas:
+        if not isinstance(pregunta, dict):
+            raise ValidationError("El formato de una pregunta es inválido.")
+        if not isinstance(pregunta.get("opciones", []), list):
+            raise ValidationError("Las opciones de una pregunta deben ser una lista.")
+        for campo in ("obligatoria", "pondera"):
+            if campo in pregunta and not isinstance(pregunta[campo], bool):
+                raise ValidationError(f"El campo '{campo}' de la pregunta es inválido.")
+    try:
+        preguntas_json = json.dumps(preguntas, allow_nan=False)
+        for pregunta in parse_preguntas_payload(preguntas_json):
+            for orden, opcion in enumerate(pregunta.opciones, start=1):
+                OpcionPregunta(
+                    texto=opcion.texto,
+                    valor=opcion.texto,
+                    orden=orden,
+                    puntaje=opcion.puntaje,
+                ).full_clean(exclude=["pregunta"])
+    except (TypeError, ValueError, OverflowError, RecursionError) as exc:
+        raise ValidationError(
+            "El archivo contiene datos de preguntas inválidos."
+        ) from exc
+    return preguntas_json
+
+
+@transaction.atomic
+def importar_encuesta(archivo, *, usuario) -> Encuesta:
+    datos = _leer_archivo_encuesta(archivo)
+    campos = datos.get("encuesta")
+    if not isinstance(campos, dict):
+        raise ValidationError("Falta la configuración de la encuesta.")
+    if datos["version_formato"] < 3:
+        campos.setdefault("es_opcional", False)
+    for campo, tipos in ENCUESTA_JSON_CAMPOS.items():
+        if campo not in campos or type(campos[campo]) not in tipos:
+            raise ValidationError(f"El campo '{campo}' falta o tiene un tipo inválido.")
+    preguntas_json = _validar_preguntas_importadas(datos.get("preguntas"))
+    encuesta = crear_encuesta(
+        usuario=usuario,
+        **{campo: campos[campo] for campo in ENCUESTA_JSON_CAMPOS},
+    )
+    reemplazar_preguntas(encuesta, preguntas_json)
+    if "segmentacion" in datos:
+        _importar_segmentacion(encuesta, datos["segmentacion"])
+    return encuesta
 
 
 class RondaAbiertaError(ValidationError):
@@ -127,6 +262,7 @@ def nueva_version(encuesta: Encuesta, *, usuario, **campos) -> Encuesta:
         "descripcion": encuesta.descripcion,
         "es_anonima": encuesta.es_anonima,
         "es_obligatoria": encuesta.es_obligatoria,
+        "es_opcional": encuesta.es_opcional,
         "intervalo_recordatorio_dias": encuesta.intervalo_recordatorio_dias,
         "es_recurrente": encuesta.es_recurrente,
         "intervalo_recurrencia_dias": encuesta.intervalo_recurrencia_dias,
@@ -484,7 +620,9 @@ def get_rondas_pendientes(usuario) -> list[RondaEncuesta]:
         if not usuario_esta_segmentado(ronda.encuesta, usuario):
             continue
         recordatorio = next(iter(ronda.recordatorios_usuario), None)
-        if recordatorio and recordatorio.fecha_proximo_aviso > ahora:
+        if recordatorio and (
+            recordatorio.descartada or recordatorio.fecha_proximo_aviso > ahora
+        ):
             continue
         pendientes.append(ronda)
     return pendientes
@@ -513,13 +651,38 @@ def get_rondas_pendientes_para_request(request) -> list[RondaEncuesta]:
 
 
 def posponer_ronda(ronda: RondaEncuesta, usuario) -> RecordatorioUsuario:
-    if ronda.encuesta.es_obligatoria:
-        raise ValidationError("Esta encuesta es obligatoria y no se puede posponer.")
+    _validar_accion_ronda(ronda, usuario)
+    if ronda.encuesta.es_obligatoria or ronda.encuesta.es_opcional:
+        raise ValidationError("Solo se pueden posponer encuestas postergables.")
 
     intervalo_dias = ronda.encuesta.intervalo_recordatorio_dias or 1
     proximo_aviso = timezone.now() + timezone.timedelta(days=intervalo_dias)
     recordatorio, _ = RecordatorioUsuario.objects.update_or_create(
         ronda=ronda, usuario=usuario, defaults={"fecha_proximo_aviso": proximo_aviso}
+    )
+    return recordatorio
+
+
+def _validar_accion_ronda(ronda: RondaEncuesta, usuario) -> None:
+    if (
+        ronda.estado != EstadoRonda.ABIERTA
+        or ronda.fecha_cierre_programada <= timezone.now()
+    ):
+        raise ValidationError("La ronda ya no está disponible.")
+    if not usuario_esta_segmentado(ronda.encuesta, usuario):
+        raise ValidationError("No sos destinatario de esta encuesta.")
+    if CumplimientoRonda.objects.filter(ronda=ronda, usuario=usuario).exists():
+        raise ValidationError("Ya respondiste esta ronda.")
+
+
+def descartar_ronda(ronda: RondaEncuesta, usuario) -> RecordatorioUsuario:
+    _validar_accion_ronda(ronda, usuario)
+    if not ronda.encuesta.es_opcional or ronda.encuesta.es_obligatoria:
+        raise ValidationError("Solo se pueden descartar encuestas opcionales.")
+    recordatorio, _ = RecordatorioUsuario.objects.update_or_create(
+        ronda=ronda,
+        usuario=usuario,
+        defaults={"descartada": True, "fecha_proximo_aviso": timezone.now()},
     )
     return recordatorio
 

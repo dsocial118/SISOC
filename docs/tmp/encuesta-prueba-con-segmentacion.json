@@ -1,0 +1,120 @@
+﻿{
+    "formato":  "sisoc.encuesta",
+    "version_formato":  2,
+    "encuesta":  {
+                     "titulo":  "Prueba de importación con segmentación",
+                     "descripcion":  "Encuesta de prueba con destinatarios ficticios. Reemplazar los documentos por los de usuarios de prueba antes de publicar.",
+                     "es_anonima":  true,
+                     "es_obligatoria":  false,
+                     "intervalo_recordatorio_dias":  3,
+                     "es_recurrente":  false,
+                     "intervalo_recurrencia_dias":  null,
+                     "duracion_ronda_dias":  7
+                 },
+    "preguntas":  [
+                      {
+                          "orden":  1,
+                          "texto":  "¿Cómo fue tu experiencia usando SISOC?",
+                          "tipo":  "opcion_unica",
+                          "obligatoria":  true,
+                          "opciones":  [
+                                           {
+                                               "texto":  "Buena",
+                                               "puntaje":  10
+                                           },
+                                           {
+                                               "texto":  "Regular",
+                                               "puntaje":  5
+                                           },
+                                           {
+                                               "texto":  "Mala",
+                                               "puntaje":  0
+                                           }
+                                       ],
+                          "pondera":  true,
+                          "puntaje_si":  null,
+                          "puntaje_no":  null,
+                          "condicion":  null
+                      },
+                      {
+                          "orden":  2,
+                          "texto":  "¿Qué problema encontraste?",
+                          "tipo":  "texto_largo",
+                          "obligatoria":  true,
+                          "opciones":  [
+
+                                       ],
+                          "pondera":  false,
+                          "puntaje_si":  null,
+                          "puntaje_no":  null,
+                          "condicion":  {
+                                            "orden":  1,
+                                            "operador":  "igual",
+                                            "valor":  "Mala"
+                                        }
+                      },
+                      {
+                          "orden":  3,
+                          "texto":  "¿Qué aspectos te gustaría mejorar?",
+                          "tipo":  "opcion_multiple",
+                          "obligatoria":  false,
+                          "opciones":  [
+                                           {
+                                               "texto":  "Velocidad",
+                                               "puntaje":  0
+                                           },
+                                           {
+                                               "texto":  "Diseño",
+                                               "puntaje":  0
+                                           },
+                                           {
+                                               "texto":  "Facilidad de uso",
+                                               "puntaje":  0
+                                           }
+                                       ],
+                          "pondera":  false,
+                          "puntaje_si":  null,
+                          "puntaje_no":  null,
+                          "condicion":  null
+                      },
+                      {
+                          "orden":  4,
+                          "texto":  "Del 1 al 10, ¿qué tan fácil te resultó usar el sistema?",
+                          "tipo":  "escala",
+                          "obligatoria":  true,
+                          "opciones":  [
+
+                                       ],
+                          "pondera":  true,
+                          "puntaje_si":  null,
+                          "puntaje_no":  null,
+                          "condicion":  null
+                      },
+                      {
+                          "orden":  5,
+                          "texto":  "¿Querés dejar algún comentario adicional?",
+                          "tipo":  "texto_largo",
+                          "obligatoria":  false,
+                          "opciones":  [
+
+                                       ],
+                          "pondera":  false,
+                          "puntaje_si":  null,
+                          "puntaje_no":  null,
+                          "condicion":  null
+                      }
+                  ],
+    "segmentacion":  {
+                         "tipo":  "listado_documentos",
+                         "destinatarios":  [
+                                               {
+                                                   "tipo_documento":  "dni",
+                                                   "numero_documento":  "00000001"
+                                               },
+                                               {
+                                                   "tipo_documento":  "dni",
+                                                   "numero_documento":  "00000002"
+                                               }
+                                           ]
+                     }
+}

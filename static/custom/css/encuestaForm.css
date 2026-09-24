@@ -1,34 +1,38 @@
 /* ============================================
    ENCUESTA FORM - ESTILO EDITOR/COMPOSITOR
-   Mismo lenguaje visual que comunicadoForm.css
-   (paneles oscuros + acento dorado), como hoja
-   propia de encuestas para no acoplar los estáticos
-   de un módulo a otro.
-   Paleta: #1a2332, #2c3e50, #f39c12
+   Paleta, tipografía y controles Poncho compartidos
+   con el modal de respuesta de encuestas.
    ============================================ */
 
 .encuesta-editor {
   max-width: 900px;
   margin: 0 auto;
+  font-family: var(--poncho-font-base);
+  color: var(--poncho-blanco);
+}
+
+.encuesta-editor .poncho-btn {
+  font-size: 14px;
 }
 
 /* Paneles */
 .encuesta-editor .editor-panel {
-  background: #2c3e50;
-  border: 1px solid #374151;
-  border-radius: 10px;
+  background: var(--poncho-azul-principal);
+  border: 1px solid rgba(255, 255, 255, .2);
+  border-radius: var(--poncho-radio-base);
   margin-bottom: 20px;
   overflow: hidden;
 }
 
 .encuesta-editor .panel-label {
+  background: var(--poncho-azul-secundario);
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
   padding: 14px 20px;
-  border-bottom: 1px solid #374151;
-  color: #9ca3af;
+  border-bottom: 1px solid rgba(255, 255, 255, .2);
+  color: var(--poncho-texto-placeholder);
   font-size: 13px;
   font-weight: 600;
   text-transform: uppercase;
@@ -42,7 +46,7 @@
 }
 
 .encuesta-editor .panel-label i {
-  color: #f39c12;
+  color: var(--poncho-blanco);
   font-size: 14px;
 }
 
@@ -53,22 +57,24 @@
 /* Campos del formulario */
 .encuesta-editor .form-control,
 .encuesta-editor .form-select {
-  background-color: #1a2332;
-  color: #e5e7eb;
-  border: 1px solid #3d4f63;
-  border-radius: 6px;
+  background-color: var(--poncho-azul-principal);
+  color: var(--poncho-blanco);
+  border: 1px solid rgba(255, 255, 255, .45);
+  border-radius: var(--poncho-radio-base);
+  padding: 10px 12px;
+  font-family: inherit;
 }
 
 .encuesta-editor .form-control:focus,
 .encuesta-editor .form-select:focus {
-  background-color: #1e2a3a;
-  border-color: #f39c12;
-  box-shadow: 0 0 0 0.2rem rgba(243, 156, 18, 0.15);
-  color: #e5e7eb;
+  background-color: var(--poncho-azul-secundario);
+  border-color: var(--poncho-blanco);
+  box-shadow: 0 0 0 0.2rem rgba(255, 255, 255, .15);
+  color: var(--poncho-blanco);
 }
 
 .encuesta-editor .form-control::placeholder {
-  color: #6b7280;
+  color: var(--poncho-texto-placeholder);
 }
 
 /* Título - más grande, protagónico */
@@ -80,7 +86,7 @@
 
 /* Labels */
 .encuesta-editor label {
-  color: #d1d5db;
+  color: var(--poncho-blanco);
   font-weight: 500;
   font-size: 13px;
   margin-bottom: 6px;
@@ -88,7 +94,7 @@
 
 .encuesta-editor .form-text,
 .encuesta-editor .help-text {
-  color: #6b7280;
+  color: var(--poncho-texto-placeholder);
   font-size: 12px;
 }
 
@@ -99,26 +105,26 @@
 
 /* Switches (Bootstrap 5 nativo, solo recoloreado) */
 .encuesta-editor .form-check-input {
-  background-color: #3d4f63;
-  border-color: #4b5563;
+  background-color: rgba(255, 255, 255, .45);
+  border-color: rgba(255, 255, 255, .45);
 }
 
 .encuesta-editor .form-check-input:checked {
-  background-color: #f39c12;
-  border-color: #f39c12;
+  background-color: var(--poncho-verde);
+  border-color: var(--poncho-blanco);
 }
 
 .encuesta-editor .form-check-input:focus {
-  box-shadow: 0 0 0 0.2rem rgba(243, 156, 18, 0.15);
+  box-shadow: 0 0 0 0.2rem rgba(255, 255, 255, .15);
 }
 
 .encuesta-editor .form-check-label {
-  color: #d1d5db;
+  color: var(--poncho-blanco);
   font-weight: 600;
 }
 
 .encuesta-editor .switch-help {
-  color: #6b7280;
+  color: var(--poncho-texto-placeholder);
   font-size: 11.5px;
   display: block;
   margin-top: 2px;
@@ -131,7 +137,7 @@
   flex-wrap: wrap;
   padding-top: 16px;
   margin-top: 4px;
-  border-top: 1px solid #374151;
+  border-top: 1px solid rgba(255, 255, 255, .2);
 }
 
 .encuesta-editor .options-row > .option-item {
@@ -146,7 +152,7 @@
   flex-wrap: wrap;
   margin-top: 14px;
   padding-top: 14px;
-  border-top: 1px dashed #374151;
+  border-top: 1px dashed rgba(255, 255, 255, .2);
 }
 
 .encuesta-editor .subfields > .field-col {
@@ -165,33 +171,33 @@
 }
 
 .encuesta-editor .pregunta-count {
-  color: #9ca3af;
+  color: var(--poncho-texto-placeholder);
   font-size: 12.5px;
 }
 
 /* Botón "Agregar pregunta" - mismo estilo que btn-add-files de comunicados */
 .encuesta-editor .btn-dashed {
-  background: rgba(243, 156, 18, 0.08);
-  border: 1.5px dashed rgba(243, 156, 18, 0.4);
-  color: #f39c12;
+  background: var(--poncho-azul-secundario);
+  border: 1.5px dashed rgba(255, 255, 255, .4);
+  color: var(--poncho-blanco);
   padding: 9px 16px;
-  border-radius: 8px;
+  border-radius: var(--poncho-radio-base);
   font-size: 13px;
   font-weight: 600;
   transition: all 0.2s;
 }
 
 .encuesta-editor .btn-dashed:hover {
-  background: rgba(243, 156, 18, 0.15);
-  border-color: #f39c12;
-  color: #f39c12;
+  background: rgba(255, 255, 255, .15);
+  border-color: var(--poncho-blanco);
+  color: var(--poncho-blanco);
 }
 
 /* Cada pregunta como mini-panel propio */
 .encuesta-editor .pregunta-row {
-  background: #1a2332;
-  border: 1px solid #374151;
-  border-radius: 8px;
+  background: rgba(255, 255, 255, .035);
+  border: 1px solid rgba(255, 255, 255, .2);
+  border-radius: var(--poncho-radio-base);
   padding: 16px;
   margin-bottom: 14px;
 }
@@ -211,22 +217,22 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: rgba(96, 165, 250, 0.12) !important;
-  color: #60a5fa !important;
-  border: 1px solid rgba(96, 165, 250, 0.25);
+  background: var(--poncho-azul-secundario) !important;
+  color: var(--poncho-blanco) !important;
+  border: 1px solid rgba(255, 255, 255, .3);
   padding: 4px 10px;
   border-radius: 20px;
   font-size: 11.5px;
   font-weight: 700;
 }
 
-.encuesta-editor .btn-quitar-pregunta {
+.encuesta-editor .btn-quitar-pregunta:not(.poncho-btn) {
   background: transparent;
-  border: 1px solid #4b5563;
-  color: #6b7280;
+  border: 1px solid rgba(255, 255, 255, .45);
+  color: var(--poncho-texto-placeholder);
 }
 
-.encuesta-editor .btn-quitar-pregunta:hover {
+.encuesta-editor .btn-quitar-pregunta:not(.poncho-btn):hover {
   border-color: #e05656;
   color: #e05656;
   background: rgba(224, 86, 86, 0.12);
@@ -257,7 +263,7 @@
 .encuesta-editor .pregunta-condicion-wrap {
   margin-top: 14px;
   padding-top: 14px;
-  border-top: 1px dashed #374151;
+  border-top: 1px dashed rgba(255, 255, 255, .2);
 }
 
 .encuesta-editor .pregunta-puntaje-detalle {
@@ -279,7 +285,7 @@
 
 .encuesta-editor .puntaje-opcion-row .puntaje-opcion-texto {
   flex: 1;
-  color: #d1d5db;
+  color: var(--poncho-blanco);
   font-size: 13px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -295,14 +301,14 @@
   display: flex;
   align-items: center;
   gap: 7px;
-  color: #9ca3af;
+  color: var(--poncho-texto-placeholder);
   font-size: 12px;
   font-weight: 600;
   margin-bottom: 10px;
 }
 
 .encuesta-editor .cond-label i {
-  color: #f39c12;
+  color: var(--poncho-blanco);
 }
 
 .encuesta-editor .cond-grid {
@@ -321,39 +327,39 @@
 }
 
 .encuesta-editor .btn-save {
-  background: #e7ba61;
+  background: var(--poncho-verde);
   border: none;
-  color: #1a2332;
+  color: var(--poncho-blanco);
   font-weight: 600;
   padding: 10px 28px;
-  border-radius: 6px;
+  border-radius: var(--poncho-radio-base);
   transition: all 0.2s;
 }
 
 .encuesta-editor .btn-save:hover {
-  background: #e7ba61;
-  color: #1a2332;
+  background: var(--poncho-verde-hover);
+  color: var(--poncho-blanco);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(243, 156, 18, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, .2);
 }
 
 .encuesta-editor .btn-cancel {
   background: transparent;
-  border: 1px solid #4b5563;
-  color: #9ca3af;
+  border: 1px solid rgba(255, 255, 255, .45);
+  color: var(--poncho-texto-placeholder);
   padding: 10px 20px;
-  border-radius: 6px;
+  border-radius: var(--poncho-radio-base);
   transition: all 0.2s;
 }
 
 .encuesta-editor .btn-cancel:hover {
-  background: #374151;
-  color: #e5e7eb;
+  background: rgba(255, 255, 255, .2);
+  color: var(--poncho-blanco);
 }
 
 /* Badge de cantidad genérico (mismo estilo que .pregunta-count) */
 .encuesta-editor .count-badge {
-  color: #9ca3af;
+  color: var(--poncho-texto-placeholder);
   font-size: 12.5px;
 }
 
@@ -388,16 +394,16 @@
   display: flex;
   align-items: flex-start;
   gap: 12px;
-  background: #1a2332;
-  border: 1px solid #3d4f63;
-  border-radius: 8px;
+  background: var(--poncho-azul-principal);
+  border: 1px solid rgba(255, 255, 255, .45);
+  border-radius: var(--poncho-radio-base);
   padding: 14px 16px;
   cursor: pointer;
   transition: border-color 0.15s, background 0.15s;
 }
 
 .encuesta-editor .radio-card:hover {
-  border-color: #4b5563;
+  border-color: rgba(255, 255, 255, .45);
 }
 
 .encuesta-editor .radio-card input[type="radio"] {
@@ -406,8 +412,8 @@
 }
 
 .encuesta-editor .radio-card:has(input:checked) {
-  border-color: #f39c12;
-  background: rgba(243, 156, 18, 0.08);
+  border-color: var(--poncho-blanco);
+  background: var(--poncho-azul-secundario);
 }
 
 .encuesta-editor .radio-card-body {
@@ -417,25 +423,25 @@
 }
 
 .encuesta-editor .radio-card-title {
-  color: #e5e7eb;
+  color: var(--poncho-blanco);
   font-weight: 600;
   font-size: 13.5px;
 }
 
 .encuesta-editor .radio-card-title i {
-  color: #f39c12;
+  color: var(--poncho-blanco);
   margin-right: 6px;
 }
 
 .encuesta-editor .radio-card-help {
-  color: #6b7280;
+  color: var(--poncho-texto-placeholder);
   font-size: 11.5px;
 }
 
 /* Lista de destinatarios */
 .encuesta-editor .destinatarios-list {
-  border: 1px solid #374151;
-  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, .2);
+  border-radius: var(--poncho-radio-base);
   overflow: hidden;
 }
 
@@ -444,8 +450,8 @@
   align-items: center;
   gap: 14px;
   padding: 10px 16px;
-  background: #1a2332;
-  border-bottom: 1px solid rgba(55, 65, 81, 0.6);
+  background: var(--poncho-azul-principal);
+  border-bottom: 1px solid rgba(255, 255, 255, .2);
 }
 
 .encuesta-editor .destinatario-row:last-child {
@@ -453,13 +459,13 @@
 }
 
 .encuesta-editor .destinatario-row:hover {
-  background: #1e2a3a;
+  background: var(--poncho-azul-secundario);
 }
 
 .encuesta-editor .destinatario-tipo {
-  background: rgba(96, 165, 250, 0.12);
-  color: #60a5fa;
-  border: 1px solid rgba(96, 165, 250, 0.25);
+  background: var(--poncho-azul-secundario);
+  color: var(--poncho-blanco);
+  border: 1px solid rgba(255, 255, 255, .3);
   padding: 3px 10px;
   border-radius: 20px;
   font-size: 11px;
@@ -468,7 +474,7 @@
 }
 
 .encuesta-editor .destinatario-numero {
-  color: #e5e7eb;
+  color: var(--poncho-blanco);
   font-size: 13.5px;
   flex: 1;
   font-variant-numeric: tabular-nums;
@@ -490,7 +496,8 @@
   }
 
   .encuesta-editor .editor-actions .btn-save,
-  .encuesta-editor .editor-actions .btn-cancel {
+  .encuesta-editor .editor-actions .btn-cancel,
+  .encuesta-editor .editor-actions .poncho-btn {
     width: 100%;
     text-align: center;
   }

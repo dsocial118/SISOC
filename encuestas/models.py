@@ -60,11 +60,14 @@ class Encuesta(models.Model):
     )
     es_anonima = models.BooleanField(default=False, verbose_name="¿Es anónima?")
     es_obligatoria = models.BooleanField(default=False, verbose_name="¿Es obligatoria?")
+    es_opcional = models.BooleanField(
+        default=False, verbose_name="¿Se puede descartar?"
+    )
     intervalo_recordatorio_dias = models.PositiveIntegerField(
         null=True,
         blank=True,
         verbose_name="Intervalo de recordatorio (días)",
-        help_text="Solo aplica si la encuesta no es obligatoria.",
+        help_text="Solo aplica si la encuesta es postergable.",
     )
     es_recurrente = models.BooleanField(default=False, verbose_name="¿Es recurrente?")
     intervalo_recurrencia_dias = models.PositiveIntegerField(
@@ -122,15 +125,23 @@ class Encuesta(models.Model):
 
     def clean(self):
         super().clean()
-        if not self.es_obligatoria and self.intervalo_recordatorio_dias is None:
+        if self.es_obligatoria and self.es_opcional:
+            raise ValidationError("Una encuesta no puede ser obligatoria y opcional.")
+        if (
+            not self.es_obligatoria
+            and not self.es_opcional
+            and not self.intervalo_recordatorio_dias
+        ):
             raise ValidationError(
                 {
                     "intervalo_recordatorio_dias": (
-                        "Las encuestas no obligatorias requieren un intervalo de "
-                        "recordatorio."
+                        "Las encuestas postergables requieren un intervalo de "
+                        "recordatorio mayor a cero."
                     )
                 }
             )
+        if self.es_obligatoria or self.es_opcional:
+            self.intervalo_recordatorio_dias = None
         if self.es_recurrente and self.intervalo_recurrencia_dias is None:
             raise ValidationError(
                 {
@@ -140,6 +151,12 @@ class Encuesta(models.Model):
                     )
                 }
             )
+
+    @property
+    def modalidad(self):
+        if self.es_obligatoria:
+            return "obligatoria"
+        return "opcional" if self.es_opcional else "postergable"
 
 
 class Pregunta(models.Model):
@@ -484,6 +501,7 @@ class RecordatorioUsuario(models.Model):
         verbose_name="Usuario",
     )
     fecha_proximo_aviso = models.DateTimeField(verbose_name="Fecha del próximo aviso")
+    descartada = models.BooleanField(default=False, verbose_name="Ronda descartada")
 
     class Meta:
         verbose_name = "Recordatorio de usuario"

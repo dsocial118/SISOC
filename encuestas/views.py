@@ -6,7 +6,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Q
-from django.http import Http404, HttpResponse, HttpResponseRedirect
+from django.http import Http404, HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
@@ -23,7 +23,10 @@ from .services import (
     agregar_destinatario,
     cerrar_ronda,
     crear_encuesta,
+    descartar_ronda,
+    exportar_encuesta,
     get_encuestas_queryset,
+    importar_encuesta,
     posponer_ronda,
     publicar,
     quitar_destinatario,
@@ -105,6 +108,16 @@ class EncuestaListView(LoginRequiredMixin, ListView):
         context["puede_gestionar"] = self.request.user.has_perm(
             "encuestas.add_encuesta"
         )
+        if context["puede_gestionar"]:
+            context["leading_buttons"] = [
+                {
+                    "type": "button",
+                    "id": "importar-encuesta-btn",
+                    "label": "Importar",
+                    "icon": "fas fa-file-import",
+                    "class": "poncho-btn poncho-btn--cta",
+                }
+            ]
         context["puede_ver_resultados"] = self.request.user.has_perm(
             "encuestas.ver_resultados"
         )
@@ -190,6 +203,45 @@ class EncuestaUpdateView(LoginRequiredMixin, EncuestaFormMixin, UpdateView):
         return HttpResponseRedirect(self.get_success_url())
 
 
+class EncuestaExportarView(LoginRequiredMixin, View):
+    def get(self, request, pk):
+        encuesta = get_object_or_404(get_encuestas_queryset(), pk=pk)
+        response = JsonResponse(
+            exportar_encuesta(
+                encuesta,
+                incluir_segmentacion=request.GET.get("incluir_segmentacion") == "1",
+            ),
+            json_dumps_params={"ensure_ascii": False, "indent": 2},
+        )
+        response["Content-Disposition"] = (
+            f'attachment; filename="encuesta-{encuesta.pk}.json"'
+        )
+        return response
+
+
+class EncuestaImportarView(LoginRequiredMixin, View):
+    def post(self, request):
+        try:
+            encuesta = importar_encuesta(
+                request.FILES.get("archivo"), usuario=request.user
+            )
+        except ValidationError as exc:
+            messages.error(request, _mensaje_error(exc))
+            return HttpResponseRedirect(reverse("encuestas_listar"))
+        if hasattr(encuesta, "segmentacion"):
+            mensaje = (
+                "Encuesta importada en borrador con su segmentación. "
+                "Revisá los destinatarios antes de publicarla."
+            )
+        else:
+            mensaje = (
+                "Encuesta importada en borrador sin segmentación. "
+                "Configurá los destinatarios antes de publicarla."
+            )
+        messages.success(request, mensaje)
+        return HttpResponseRedirect(reverse("encuestas_listar"))
+
+
 class EncuestaPublicarView(LoginRequiredMixin, View):
     def post(self, request, pk):
         encuesta = get_object_or_404(get_encuestas_queryset(), pk=pk)
@@ -228,6 +280,18 @@ class ResponderRondaView(LoginRequiredMixin, View):
             messages.error(request, _mensaje_error(exc))
         else:
             messages.success(request, "¡Gracias por responder la encuesta!")
+        return _redirect_next(request)
+
+
+class DescartarRondaView(LoginRequiredMixin, View):
+    def post(self, request, pk):
+        ronda = get_object_or_404(RondaEncuesta, pk=pk)
+        try:
+            descartar_ronda(ronda, request.user)
+        except ValidationError as exc:
+            messages.error(request, _mensaje_error(exc))
+        else:
+            messages.success(request, "No volveremos a mostrarte esta ronda.")
         return _redirect_next(request)
 
 
