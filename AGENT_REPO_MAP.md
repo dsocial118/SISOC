@@ -73,6 +73,7 @@ Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrollador
 | Bootstrap/AdminLTE/Select2 | Hecho observado | `static/dist/`, `requirements`, templates |
 | PWA backend + endpoints | Hecho observado | `pwa/`, `config/urls.py`, docs PWA |
 | Toolchain Node formal en raiz | No confirmado como toolchain real; mas bien ausente | hay `package-lock.json` en raiz, pero no `package.json` |
+| Front v2 React (`/v2/<modulo>/`, `frontends/`) | Regla vigente, implementacion pendiente | `docs/implementaciones/frontend_v2.md`, `docs/registro/decisiones/2026-09-24-frontend-v2-react.md` |
 
 ### Operacion y CI
 
