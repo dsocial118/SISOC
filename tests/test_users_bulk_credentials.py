@@ -1173,6 +1173,9 @@ def test_process_bulk_credentials_jobs_command_invokes_worker_once(mocker):
 
 
 def test_run_bulk_credentials_jobs_worker_once_processes_single_cycle(mocker):
+    close_connections = mocker.patch(
+        "users.services_bulk_credentials_jobs.close_old_connections"
+    )
     process_next = mocker.patch(
         "users.services_bulk_credentials_jobs.process_next_bulk_credentials_job",
         return_value=True,
@@ -1181,9 +1184,13 @@ def test_run_bulk_credentials_jobs_worker_once_processes_single_cycle(mocker):
     run_bulk_credentials_jobs_worker(once=True)
 
     process_next.assert_called_once_with()
+    assert close_connections.call_count == 2
 
 
 def test_run_bulk_credentials_jobs_worker_once_reraises_unexpected_error(mocker):
+    close_connections = mocker.patch(
+        "users.services_bulk_credentials_jobs.close_old_connections"
+    )
     mocker.patch(
         "users.services_bulk_credentials_jobs.process_next_bulk_credentials_job",
         side_effect=RuntimeError("boom"),
@@ -1191,6 +1198,7 @@ def test_run_bulk_credentials_jobs_worker_once_reraises_unexpected_error(mocker)
 
     with pytest.raises(RuntimeError, match="boom"):
         run_bulk_credentials_jobs_worker(once=True)
+    assert close_connections.call_count == 2
 
 
 @pytest.mark.django_db

@@ -5,7 +5,7 @@ import os
 import time
 from datetime import timedelta
 
-from django.db import models
+from django.db import close_old_connections, models
 from django.utils import timezone
 
 from ocr.models import OCRJob, OCRJobDocument
@@ -269,10 +269,13 @@ def run_ocr_jobs_worker(once: bool = False) -> None:
 
     while True:
         try:
+            close_old_connections()
             did_work = process_next_ocr_job()
         except Exception as exc:
             logger.exception("[ocr] Error inesperado en el worker OCR: %s", exc)
             did_work = False
+        finally:
+            close_old_connections()
 
         if once:
             break

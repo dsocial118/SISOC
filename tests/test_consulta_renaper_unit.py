@@ -5,9 +5,12 @@ from types import SimpleNamespace
 
 import pytest
 import requests
+from django.db import DatabaseError
 
 import core.integrations.renaper as client_module
+import core.integrations.renaper_rate_limit as rate_module
 import core.services.renaper as module
+from core.models import RenaperConsultaRateLimit
 
 
 class _ResponseMock:
@@ -45,6 +48,79 @@ def test_api_client_does_not_persist_tokens_between_queries(mocker):
     assert client.get_token() == "token"
     assert client.get_token() == "token"
     assert client.session.post.call_count == 2
+
+
+def test_api_client_reuses_token_within_one_job_and_refreshes_after_401(mocker):
+    client = client_module.APIClient(reuse_token=True)
+    client.session = mocker.Mock()
+    client.session.post.side_effect = [
+        _ResponseMock({"token": "first"}),
+        _ResponseMock({"token": "second"}),
+    ]
+    client.session.get.side_effect = [
+        _ResponseMock({"isSuccess": False}),
+        _HTTPErrorResponse({}, 401),
+        _ResponseMock({"isSuccess": False}),
+    ]
+
+    client.consultar_ciudadano("00000001", "M")
+    client.consultar_ciudadano("00000002", "F")
+
+    assert client.session.post.call_count == 2
+    assert client.session.get.call_count == 3
+
+
+def test_rate_limit_reserves_every_consultation_including_401_retry(mocker, settings):
+    settings.RENAPER_MAX_CONSULTAS_POR_SEGUNDO = 30
+    reserve = mocker.patch.object(
+        client_module, "reserve_consulta_delay", return_value=0
+    )
+    client = client_module.APIClient(reuse_token=True)
+    client.session = mocker.Mock()
+    client.session.post.side_effect = [
+        _ResponseMock({"token": "first"}),
+        _ResponseMock({"token": "second"}),
+    ]
+    client.session.get.side_effect = [
+        _HTTPErrorResponse({}, 401),
+        _ResponseMock({"isSuccess": False}),
+    ]
+
+    client.consultar_ciudadano("00000001", "M")
+
+    assert reserve.call_count == 2
+
+
+def test_rate_limit_database_failure_prevents_remote_consultation(mocker, settings):
+    settings.RENAPER_MAX_CONSULTAS_POR_SEGUNDO = 30
+    mocker.patch.object(
+        client_module,
+        "reserve_consulta_delay",
+        side_effect=DatabaseError("database unavailable"),
+    )
+    client = client_module.APIClient()
+    client.session = mocker.Mock()
+    client.session.post.return_value = _ResponseMock({"token": "token"})
+
+    result = client.consultar_ciudadano("00000001", "M")
+
+    assert result["error_type"] == "rate_limit_unavailable"
+    client.session.get.assert_not_called()
+
+
+@pytest.mark.django_db
+def test_rate_limit_reservations_use_one_shared_database_slot(mocker):
+    now = rate_module.timezone.now()
+    RenaperConsultaRateLimit.objects.update_or_create(
+        pk=1, defaults={"next_available_at": now}
+    )
+    mocker.patch.object(rate_module.timezone, "now", return_value=now)
+
+    first = rate_module.reserve_consulta_delay(requests_per_second=30)
+    second = rate_module.reserve_consulta_delay(requests_per_second=30)
+
+    assert first == 0
+    assert second >= 1 / 30
 
 
 def test_api_client_logs_in_with_configured_timeout(mocker, settings):
@@ -334,6 +410,19 @@ def test_consultar_datos_renaper_clasifica_payload_invalido(mocker):
 
     assert out["success"] is False
     assert out["error_type"] == "invalid_response"
+
+
+def test_consultar_datos_renaper_clasifica_falla_de_base_de_datos(mocker):
+    client = mocker.Mock()
+    client.consultar_ciudadano.return_value = {
+        "success": True,
+        "data": {"nombres": "Persona"},
+    }
+    mocker.patch.object(module.Sexo.objects, "filter", side_effect=DatabaseError("DB"))
+
+    out = module.consultar_datos_renaper("00000001", "M", client=client)
+
+    assert out["error_type"] == "database_unavailable"
 
 
 def test_consultar_datos_renaper_ignora_placeholders_no_numericos(mocker):

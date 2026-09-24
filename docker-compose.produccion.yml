@@ -14,6 +14,7 @@ services:
     restart: unless-stopped
 
   ciudadanos_import_worker:
+    scale: 2
     build:
       context: .
       dockerfile: ./docker/django/Dockerfile
