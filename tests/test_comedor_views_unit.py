@@ -241,8 +241,8 @@ def test_comedor_detail_get_object_presupuestos_and_post_paths(mocker):
 
 def test_comedor_detail_helpers_nomina_chart_and_safe_cell():
     metrics = module._build_nomina_metrics(
-        10,
         {
+            "cantidad_activos": 10,
             "ninos": 2,
             "adolescentes": 3,
             "adultos": 4,
@@ -987,6 +987,7 @@ def test_build_admisiones_y_nomina_context(mocker):
                 "adultos": 12,
                 "adultos_mayores": 6,
                 "adulto_mayor_avanzado": 1,
+                "cantidad_activos": 30,
                 "total_activos": 28,
             },
         ),
