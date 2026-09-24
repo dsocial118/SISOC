@@ -153,14 +153,32 @@ Componente para mostrar los archivos requeridos segun el tipo de legajo (hijo o 
                     </li>
                 {% endfor %}
             </ul>
-            <div class="small font-weight-bold mb-1">Archivos corregidos (evidencia nueva)</div>
+            {% if legajo.subsanacion_activa.archivos_de_nacion %}
+                <div class="small font-weight-bold mb-1">Documentación complementaria</div>
+                <div class="small text-muted mb-2">
+                    Adjuntada por Nación junto con la solicitud, como complemento de las observaciones.
+                </div>
+                {% for arch in legajo.subsanacion_activa.archivos_de_nacion %}
+                    <div class="small mb-1">
+                        <a href="{{ arch.archivo.url }}" target="_blank">
+                            <i class="fas fa-paperclip"></i> {{ arch.nombre_archivo }}
+                        </a>
+                        <span class="text-muted">
+                            ({{ arch.creado_en|date:"d/m/Y H:i" }}
+                            {% if arch.usuario %}· {{ arch.usuario.get_full_name|default:arch.usuario.username }}{% endif %}
+                            )
+                        </span>
+                    </div>
+                {% endfor %}
+            {% endif %}
+            <div class="small font-weight-bold mb-1 mt-2">Archivos corregidos (evidencia nueva)</div>
             <div class="small text-muted mb-2">
                 Los documentos originales se conservan; los corregidos se agregan sin reemplazarlos.
             </div>
-            {% for arch in legajo.subsanacion_activa.archivos.all %}
+            {% for arch in legajo.subsanacion_activa.archivos_de_provincia %}
                 <div class="small mb-1">
                     <a href="{{ arch.archivo.url }}" target="_blank">
-                        <i class="fas fa-file"></i> {{ arch.archivo.name }}
+                        <i class="fas fa-file"></i> {{ arch.nombre_archivo }}
                     </a>
                     {% if arch.observacion %}<span class="badge badge-info">{{ arch.observacion.get_tipo_display }}</span>{% endif %}
                     {% if arch.descripcion %}— {{ arch.descripcion }}{% endif %}
@@ -218,8 +236,14 @@ Componente para mostrar los archivos requeridos segun el tipo de legajo (hijo o 
                     {% for arch in sub.archivos.all %}
                         <div>
                             <a href="{{ arch.archivo.url }}" target="_blank">
-                                <i class="fas fa-file"></i> {{ arch.archivo.name }}
+                                {% if arch.origen == 'NACION' %}
+                                    <i class="fas fa-paperclip"></i>
+                                {% else %}
+                                    <i class="fas fa-file"></i>
+                                {% endif %}
+                                {{ arch.nombre_archivo }}
                             </a>
+                            <span class="badge badge-light">{{ arch.get_origen_display }}</span>
                             {% if arch.observacion %}<span class="badge badge-info">{{ arch.observacion.get_tipo_display }}</span>{% endif %}
                             <span class="text-muted">
                                 ({{ arch.creado_en|date:"d/m/Y H:i" }}
