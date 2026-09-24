@@ -28,8 +28,7 @@
 {% endblock %}
 
 {% block content %}
-    {% url 'importarexpedientes_ajax' as ajax_url %}
-    {% include 'components/search_bar.html' with titulo='Buscar Expedientes de Pago' placeholder='Buscar por Usuario' help_text='Ingresar Usuario.' reset_url='importarexpedientes_list' ajax_search_mode=True ajax_url=ajax_url target_tbody_id='importarexpedientes-tbody' query=query %}
+    {% include 'components/search_bar.html' with titulo='Buscar Expedientes de Pago' reset_url='importarexpedientes_list' filters_mode=True filters_config=filters_config filters_action=filters_action %}
     <div class="row mt-4 max-width-100">
         <div class="col-12">
             <div class="card">
@@ -81,7 +80,7 @@
         </div>
     </div>
     <div id="pagination-container">
-        {% include 'components/pagination.html' with is_paginated=is_paginated page_obj=page_obj query=query prev_text='Volver' next_text='Continuar' %}
+        {% include 'components/pagination.html' with is_paginated=is_paginated page_obj=page_obj prev_text='Volver' next_text='Continuar' %}
     </div>
 {% endblock %}
 

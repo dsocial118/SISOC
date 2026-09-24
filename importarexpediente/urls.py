@@ -5,7 +5,6 @@ from .views import (
     ImportarExpedienteListView,
     ImportarExpedienteDetalleListView,
     ImportarFechasAcreditacionView,
-    importarexpedientes_ajax,
     importarexpediente_detail_ajax,
     ImportDatosView,
     BorrarDatosImportadosView,
@@ -20,13 +19,6 @@ urlpatterns = [
             ImportarExpedienteListView.as_view()
         ),
         name="importarexpedientes_list",
-    ),
-    path(
-        "importarexpedientes/ajax/",
-        permission_code_required("importarexpediente.view_archivosimportados")(
-            importarexpedientes_ajax
-        ),
-        name="importarexpedientes_ajax",
     ),
     path(
         "importarexpedientes/<int:id_archivo>/",

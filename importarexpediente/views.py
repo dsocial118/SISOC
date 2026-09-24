@@ -6,11 +6,10 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.db import transaction
-from django.db.models import Q
 from django.http import FileResponse, HttpResponseNotAllowed, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.template.loader import render_to_string
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.views.generic import FormView, ListView
 
 from expedientespagos.models import ExpedientePago
@@ -20,6 +19,10 @@ from importarexpediente.models import (
     ErroresImportacion,
     ExitoImportacion,
     RegistroImportado,
+)
+from importarexpediente.filter_config import (
+    IMPORTAREXPEDIENTE_ADVANCED_FILTER,
+    get_filters_ui_config,
 )
 from importarexpediente.services import (
     EmptyImportFileError,
@@ -320,70 +323,18 @@ class ImportarExpedienteListView(LoginRequiredMixin, ListView):
         queryset = ArchivosImportados.objects.select_related("usuario").order_by(
             "-fecha_subida"
         )
-        query = self.request.GET.get("busqueda", "").strip()
-        if query:
-            queryset = queryset.filter(
-                Q(archivo__icontains=query) | Q(usuario__username__icontains=query)
-            )
-        return queryset
+        queryset = IMPORTAREXPEDIENTE_ADVANCED_FILTER.filter_queryset(
+            queryset, self.request
+        )
+        return queryset.distinct()
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         _completar_periodos_faltantes(context["archivos_importados"])
-        context["query"] = self.request.GET.get("busqueda", "")
+        context["filters_mode"] = True
+        context["filters_config"] = get_filters_ui_config()
+        context["filters_action"] = reverse("importarexpedientes_list")
         return context
-
-
-@login_required
-def importarexpedientes_ajax(request):
-    query = request.GET.get("busqueda", "").strip()
-    page = request.GET.get("page", 1)
-
-    queryset = ArchivosImportados.objects.select_related("usuario").order_by(
-        "-fecha_subida"
-    )
-    if query:
-        queryset = queryset.filter(
-            Q(archivo__icontains=query) | Q(usuario__username__icontains=query)
-        )
-
-    paginator = Paginator(queryset, 10)
-    try:
-        page_obj = paginator.get_page(page)
-    except (ValueError, TypeError):
-        page_obj = paginator.get_page(1)
-
-    _completar_periodos_faltantes(page_obj.object_list)
-
-    table_html = render_to_string(
-        "partials/importarexpediente_list_rows.html",
-        {"importarexpedientes": page_obj.object_list},
-        request=request,
-    )
-
-    pagination_html = render_to_string(
-        "components/pagination.html",
-        {
-            "is_paginated": page_obj.has_other_pages(),
-            "page_obj": page_obj,
-            "query": query,
-            "prev_text": "Volver",
-            "next_text": "Continuar",
-        },
-        request=request,
-    )
-
-    return JsonResponse(
-        {
-            "html": table_html,
-            "pagination_html": pagination_html,
-            "count": paginator.count,
-            "current_page": page_obj.number,
-            "total_pages": paginator.num_pages,
-            "has_previous": page_obj.has_previous(),
-            "has_next": page_obj.has_next(),
-        }
-    )
 
 
 @login_required
