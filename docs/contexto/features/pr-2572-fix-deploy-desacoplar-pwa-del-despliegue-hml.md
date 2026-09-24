@@ -32,9 +32,11 @@
 - Revisar primero estos archivos del diff:
 - `.github/workflows/deploy.yml`
 - `AGENT_REPO_MAP.md`
+- `docs/contexto/features/pr-2572-fix-deploy-desacoplar-pwa-del-despliegue-hml.md`
 - `docs/operacion/deploy_automatizado.md`
 - `docs/operacion/deploy_pwas.md`
 - `docs/registro/cambios/2026-09-24-desacople-deploy-hml-pwas.md`
+- `docs/registro/prs/PR-2572.md`
 - `tests/test_deploy_workflow.py`
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
