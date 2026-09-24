@@ -34,8 +34,10 @@
 - Empezar por `docs/registro/prs/PR-2578.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
 - `AGENT_REPO_MAP.md`
+- `docs/contexto/features/pr-2578-feat-encuestas-mejoras-1-a-4-del-issue-2563.md`
 - `docs/implementaciones/encuestas.md`
 - `docs/registro/cambios/2026-09-24-encuestas-mejoras-2563.md`
+- `docs/registro/prs/PR-2578.md`
 - `docs/tmp/encuesta-prueba-con-segmentacion.json`
 - `docs/tmp/encuesta-prueba-error.json`
 - `docs/tmp/encuesta-prueba.json`
@@ -51,9 +53,7 @@
 - `encuestas/tests/test_encuestas_portabilidad.py`
 - `encuestas/urls.py`
 - `encuestas/views.py`
-- `static/custom/css/encuestaForm.css`
-- `static/custom/css/encuestaResponder.css`
-- ... y 1 archivo(s) adicional(es) relacionados.
+- ... y 3 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
