@@ -1,8 +1,14 @@
+from decimal import Decimal
+
 from django.conf import settings
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
-from django.core.validators import FileExtensionValidator, MinValueValidator
+from django.core.validators import (
+    FileExtensionValidator,
+    MaxValueValidator,
+    MinValueValidator,
+)
 from django.db import models
 from django.utils import timezone
 
@@ -279,14 +285,21 @@ class EvaluacionSedeItinerarioVPSL(models.Model):
         return f"{self.itinerario} - {self.sede} - {self.get_estado_display()}"
 
 
-class JornadaVPSL(SoftDeleteModelMixin, models.Model):
-    VEHICULO_CHOICES = (
-        ("vehiculo_1", "Vehiculo 1"),
-        ("vehiculo_2", "Vehiculo 2"),
-        ("vehiculo_3", "Vehiculo 3"),
-        ("vehiculo_4", "Vehiculo 4"),
-    )
+class VehiculoVPSL(models.Model):
+    nombre = models.CharField(max_length=100, unique=True)
+    orden = models.PositiveSmallIntegerField(default=0)
+    activo = models.BooleanField(default=True)
 
+    class Meta:
+        ordering = ["orden", "nombre", "pk"]
+        verbose_name = "Vehiculo VPSL"
+        verbose_name_plural = "Vehiculos VPSL"
+
+    def __str__(self):
+        return self.nombre
+
+
+class JornadaVPSL(SoftDeleteModelMixin, models.Model):
     itinerario = models.ForeignKey(
         ItinerarioVPSL,
         on_delete=models.CASCADE,
@@ -308,10 +321,15 @@ class JornadaVPSL(SoftDeleteModelMixin, models.Model):
     )
     sede = models.CharField(max_length=255)
     direccion = models.CharField(max_length=255, blank=True)
-    vehiculo = models.CharField(
-        max_length=32,
-        choices=VEHICULO_CHOICES,
+    ubicacion_url = models.URLField(max_length=500, blank=True)
+    latitud = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True)
+    longitud = models.DecimalField(
+        max_digits=9, decimal_places=6, blank=True, null=True
+    )
+    vehiculos = models.ManyToManyField(
+        VehiculoVPSL,
         blank=True,
+        related_name="jornadas",
     )
     horario_inicio = models.TimeField(blank=True, null=True)
     horario_fin = models.TimeField(blank=True, null=True)
@@ -367,11 +385,39 @@ class JornadaVPSL(SoftDeleteModelMixin, models.Model):
         if errors:
             raise ValidationError(errors)
 
+    def get_vehiculo_display(self):
+        if not self.pk:
+            return ""
+        return ", ".join(vehiculo.nombre for vehiculo in self.vehiculos.all())
+
+    @property
+    def ubicacion_coordenadas(self):
+        if self.latitud is None or self.longitud is None:
+            return ""
+        return f"{self.latitud},{self.longitud}"
+
     def save(self, *args, **kwargs):
         if self.sede_vpsl_id:
-            self.sede = self.sede_vpsl.nombre
-            self.direccion = self.sede_vpsl.domicilio
+            if not self.sede:
+                self.sede = self.sede_vpsl.nombre
+            if not self.direccion:
+                self.direccion = self.sede_vpsl.domicilio
         super().save(*args, **kwargs)
+
+    @property
+    def mapa_query(self):
+        if self.latitud is not None and self.longitud is not None:
+            return f"{self.latitud},{self.longitud}"
+        if self.direccion:
+            return ", ".join(
+                filter(
+                    None,
+                    (self.direccion, str(self.itinerario.provincia), "Argentina"),
+                )
+            )
+        if self.sede_vpsl_id:
+            return self.sede_vpsl.mapa_query
+        return ""
 
     @property
     def tiene_casos_laboratorio_pendientes(self):
@@ -484,6 +530,26 @@ class RegistroNominalVPSL(SoftDeleteModelMixin, models.Model):
     numero_sobre = models.CharField(max_length=64, blank=True)
     fecha_atencion = models.DateField(default=timezone.localdate)
     prescripcion = models.TextField(blank=True)
+    graduacion_izquierda = models.DecimalField(
+        max_digits=3,
+        decimal_places=2,
+        blank=True,
+        null=True,
+        validators=[
+            MinValueValidator(Decimal("-6")),
+            MaxValueValidator(Decimal("6")),
+        ],
+    )
+    graduacion_derecha = models.DecimalField(
+        max_digits=3,
+        decimal_places=2,
+        blank=True,
+        null=True,
+        validators=[
+            MinValueValidator(Decimal("-6")),
+            MaxValueValidator(Decimal("6")),
+        ],
+    )
     resultado = models.CharField(max_length=32, choices=ResultadoAtencion.choices)
     cantidad_lentes = models.PositiveSmallIntegerField(default=0)
     estado = models.CharField(
@@ -536,6 +602,24 @@ class RegistroNominalVPSL(SoftDeleteModelMixin, models.Model):
             raise ValidationError(
                 {"cantidad_lentes": "La cantidad maxima de lentes es 2."}
             )
+        resultados_con_graduacion = {
+            ResultadoAtencion.ENTREGADO_DIA,
+            ResultadoAtencion.DERIVADO,
+            ResultadoAtencion.ENVIADO_LABORATORIO,
+        }
+        errores_graduacion = {}
+        for field_name in ("graduacion_izquierda", "graduacion_derecha"):
+            value = getattr(self, field_name)
+            if self.resultado in resultados_con_graduacion and value is None:
+                errores_graduacion[field_name] = (
+                    "Debe informar la graduacion para este resultado."
+                )
+            elif value is not None and value % Decimal("0.25") != 0:
+                errores_graduacion[field_name] = (
+                    "La graduacion debe avanzar en intervalos de 0.25."
+                )
+        if errores_graduacion:
+            raise ValidationError(errores_graduacion)
 
 
 class CasoLaboratorioVPSL(SoftDeleteModelMixin, models.Model):

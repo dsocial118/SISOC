@@ -2,6 +2,8 @@ from datetime import time
 from pathlib import Path
 
 from django import forms
+from django.core.exceptions import ValidationError
+from django.db.models import Q
 
 from core.models import Localidad, Provincia
 from ver_para_ser_libre.models import (
@@ -11,18 +13,15 @@ from ver_para_ser_libre.models import (
     EstadoEvaluacionVPSL,
     EstadoItinerario,
     EstadoLaboratorio,
-    EvaluacionSedeItinerarioVPSL,
     ItinerarioVPSL,
     JornadaVPSL,
     RegistroNominalVPSL,
     ResultadoAtencion,
     SedeVPSL,
+    VehiculoVPSL,
 )
-from ver_para_ser_libre.services.sedes import (
-    CABA_JURISDICCIONES,
-    filtrar_sedes_por_provincia,
-)
-from ver_para_ser_libre.services import workflow
+from ver_para_ser_libre.services.map_location import resolve_google_maps_location
+from ver_para_ser_libre.services.sedes import CABA_JURISDICCIONES
 
 
 class BootstrapModelForm(forms.ModelForm):
@@ -50,31 +49,12 @@ class VPSLClearableFileInput(forms.ClearableFileInput):
 
 
 class ItinerarioVPSLForm(BootstrapModelForm):
-    localidad_filtro = forms.ChoiceField(
-        required=False,
-        label="Localidad",
-        choices=(("", "Todas"),),
-    )
-    sedes = forms.ModelMultipleChoiceField(
-        queryset=SedeVPSL.objects.none(),
-        required=True,
-        label="Sedes tentativas *",
-        widget=forms.SelectMultiple(
-            attrs={
-                "class": "form-control select2-sedes-vpsl",
-                "data-placeholder": "Buscar por nombre, cueanexo o domicilio",
-            }
-        ),
-    )
-
     class Meta:
         model = ItinerarioVPSL
         fields = [
             "provincia",
             "fecha_inicio",
             "fecha_fin",
-            "localidad_filtro",
-            "sedes",
             "referente_nombre",
             "referente_apellido",
             "referente_telefono",
@@ -99,24 +79,8 @@ class ItinerarioVPSLForm(BootstrapModelForm):
         self.freeze_completed_fields = kwargs.pop("freeze_completed_fields", False)
         self.provincia_bloqueada = kwargs.pop("provincia_bloqueada", None)
         self.subsanacion_only = kwargs.pop("subsanacion_only", False)
-        self.subsanacion_sede_fields = []
         self.subsanacion_carta_archivo = False
         super().__init__(*args, **kwargs)
-        selected_ids = []
-        if self.instance and self.instance.pk:
-            selected_ids = list(self.instance.sedes.values_list("pk", flat=True))
-        raw_ids = self.data.getlist("sedes") if self.is_bound else selected_ids
-        self.fields["sedes"].queryset = SedeVPSL.objects.filter(pk__in=raw_ids)
-        if self.is_bound and not self.instance.pk:
-            provincia = self.provincia_bloqueada
-            if not provincia:
-                provincia_id = self.data.get("provincia")
-                if provincia_id and str(provincia_id).isdigit():
-                    provincia = Provincia.objects.filter(pk=provincia_id).first()
-            if provincia:
-                self.fields["sedes"].queryset = filtrar_sedes_por_provincia(
-                    self.fields["sedes"].queryset, provincia
-                )
         self.fields["carta_archivo"].required = not bool(
             self.instance and self.instance.carta_archivo
         )
@@ -126,7 +90,6 @@ class ItinerarioVPSLForm(BootstrapModelForm):
         self.fields["referente_telefono"].label = "Teléfono"
         self.fields["referente_email"].label = "Correo electrónico"
         if self.provincia_bloqueada:
-            self._set_localidad_choices()
             self.fields["provincia"].initial = self.provincia_bloqueada.pk
             self.fields["provincia"].disabled = True
             css_class = self.fields["provincia"].widget.attrs.get("class", "")
@@ -137,51 +100,20 @@ class ItinerarioVPSLForm(BootstrapModelForm):
                 "Provincia asignada al usuario provincial."
             )
         elif not self.instance.pk:
-            self._set_localidad_choices()
             self.fields["provincia"].queryset = Provincia.objects.order_by("nombre")
             self.fields["provincia"].empty_label = "Seleccione una provincia"
             self.fields["provincia"].widget.attrs[
                 "class"
             ] = "form-control select2-provincia-vpsl"
-        else:
-            self._set_localidad_choices()
         if self.freeze_completed_fields:
             self._freeze_completed_fields()
         if self.subsanacion_only:
             self._configure_subsanacion_fields()
 
-    def _set_localidad_choices(self):
-        provincia = self.provincia_bloqueada
-        if not provincia and self.instance and self.instance.provincia_id:
-            provincia = self.instance.provincia
-        if not provincia and self.is_bound:
-            provincia_id = self.data.get("provincia")
-            try:
-                provincia = Provincia.objects.filter(pk=provincia_id).first()
-            except (TypeError, ValueError):
-                provincia = None
-        sedes = SedeVPSL.objects.all()
-        if provincia:
-            sedes = filtrar_sedes_por_provincia(sedes, provincia)
-        elif not self.instance.pk:
-            sedes = sedes.none()
-        localidades = (
-            sedes.exclude(localidad="")
-            .order_by("localidad")
-            .values_list("localidad", flat=True)
-            .distinct()
-        )
-        self.fields["localidad_filtro"].choices = [
-            ("", "Todas"),
-            *[(localidad, localidad) for localidad in localidades],
-        ]
-
     def _freeze_completed_fields(self):
         for field_name in self.fields:
             current_value = getattr(self.instance, field_name, None)
             has_value = bool(current_value)
-            if field_name == "sedes":
-                has_value = self.instance.sedes.exists()
             if field_name == "carta_archivo":
                 has_value = bool(self.instance.carta_archivo)
             if has_value:
@@ -209,62 +141,12 @@ class ItinerarioVPSLForm(BootstrapModelForm):
             if field_name not in allowed_fields:
                 self.fields.pop(field_name)
 
-        evaluaciones = self.instance.evaluaciones_sedes.select_related("sede").filter(
-            estado=EstadoEvaluacionVPSL.SUBSANAR
-        )
-        for evaluacion in evaluaciones:
-            field_name = f"subsanar_sede_{evaluacion.pk}"
-            queryset = SedeVPSL.objects.all()
-            if self.instance.provincia_id:
-                queryset = queryset.filter(
-                    jurisdiccion__icontains=self.instance.provincia.nombre
-                )
-            sedes_actuales = self.instance.sedes.exclude(
-                pk=evaluacion.sede_id
-            ).values_list("pk", flat=True)
-            queryset = queryset.exclude(pk__in=sedes_actuales)
-            self.fields[field_name] = forms.ModelChoiceField(
-                queryset=queryset.order_by("localidad", "nombre"),
-                required=True,
-                label=f"Reemplazar sede: {evaluacion.sede.nombre}",
-                initial=evaluacion.sede_id,
-                help_text=(
-                    evaluacion.observacion
-                    or "Seleccione la sede corregida para reevaluacion de Nacion."
-                ),
-                widget=forms.Select(
-                    attrs={
-                        "class": "form-control select2-sede-subsanacion-vpsl",
-                        "data-placeholder": "Buscar sede por nombre, CUE o domicilio",
-                        "data-provincia": self.instance.provincia_id or "",
-                        "data-current-sede": evaluacion.sede_id,
-                    }
-                ),
-            )
-            self.subsanacion_sede_fields.append((field_name, evaluacion))
-
     def save(self, commit=True):
         instance = super().save(commit=commit)
         if commit and self.subsanacion_only:
             if self.subsanacion_carta_archivo:
                 instance.carta_archivo_estado = EstadoEvaluacionVPSL.PENDIENTE
                 instance.save(update_fields=["carta_archivo_estado"])
-            for field_name, evaluacion in self.subsanacion_sede_fields:
-                nueva_sede = self.cleaned_data.get(field_name)
-                if not nueva_sede:
-                    continue
-                sede_anterior = evaluacion.sede
-                if nueva_sede.pk != sede_anterior.pk:
-                    instance.sedes.remove(sede_anterior)
-                    instance.sedes.add(nueva_sede)
-                    evaluacion.delete()
-                    evaluacion, _ = EvaluacionSedeItinerarioVPSL.objects.get_or_create(
-                        itinerario=instance,
-                        sede=nueva_sede,
-                    )
-                evaluacion.estado = EstadoEvaluacionVPSL.PENDIENTE
-                evaluacion.observacion = ""
-                evaluacion.save(update_fields=["estado", "observacion", "updated_at"])
         return instance
 
     def clean(self):
@@ -291,19 +173,36 @@ class JornadaVPSLForm(BootstrapModelForm):
         ("F", "Femenino"),
         ("X", "X"),
     )
+    ubicacion_url = forms.CharField(
+        required=True,
+        label="Enlace de Google Maps o coordenadas",
+    )
+    vehiculos = forms.ModelMultipleChoiceField(
+        queryset=VehiculoVPSL.objects.none(),
+        required=False,
+        label="Vehículos",
+        widget=forms.SelectMultiple(
+            attrs={
+                "class": "form-control select2-vehiculos-vpsl",
+                "data-placeholder": "Seleccione uno o más vehículos",
+            }
+        ),
+    )
 
     class Meta:
         model = JornadaVPSL
         fields = [
             "fecha",
-            "sede_vpsl",
-            "vehiculo",
+            "sede",
+            "localidad",
+            "ubicacion_url",
+            "direccion",
+            "vehiculos",
             "horario_inicio",
             "horario_fin",
             "referente_dni",
             "referente_sexo",
             "referente_telefono",
-            "referente_email",
             "observaciones",
         ]
         widgets = {
@@ -316,24 +215,61 @@ class JornadaVPSLForm(BootstrapModelForm):
     def __init__(self, *args, **kwargs):
         self.itinerario = kwargs.pop("itinerario", None)
         super().__init__(*args, **kwargs)
-        if self.itinerario:
-            self.fields["sede_vpsl"].queryset = workflow.sedes_aprobadas_itinerario(
-                self.itinerario
+        vehiculos_disponibles = VehiculoVPSL.objects.filter(activo=True)
+        if self.instance.pk:
+            vehiculos_disponibles = VehiculoVPSL.objects.filter(
+                Q(activo=True) | Q(jornadas=self.instance)
             )
+        self.fields["vehiculos"].queryset = vehiculos_disponibles.distinct().order_by(
+            "orden", "nombre", "pk"
+        )
+        if self.itinerario:
             self.fields["fecha"].widget.attrs.update(
                 {
                     "min": self.itinerario.fecha_inicio.isoformat(),
                     "max": self.itinerario.fecha_fin.isoformat(),
                 }
             )
-        self.fields["sede_vpsl"].label = "Sede *"
-        self.fields["sede_vpsl"].required = True
-        self.fields["vehiculo"].label = "Vehículo"
-        self.fields["vehiculo"].widget.attrs.update({"class": "form-control"})
+            localidades = Localidad.objects.filter(
+                municipio__provincia=self.itinerario.provincia
+            )
+            if self.instance.localidad_id:
+                localidades = Localidad.objects.filter(
+                    Q(municipio__provincia=self.itinerario.provincia)
+                    | Q(pk=self.instance.localidad_id)
+                )
+            self.fields["localidad"].queryset = localidades.order_by("nombre")
+        else:
+            self.fields["localidad"].queryset = Localidad.objects.none()
+        self.fields["sede"].label = "Nombre de la sede"
+        self.fields["sede"].required = True
+        self.fields["sede"].widget.attrs["placeholder"] = "Ej.: Escuela N.° 123"
+        self.fields["localidad"].label = "Localidad"
+        self.fields["localidad"].required = True
+        self.fields["localidad"].empty_label = "Seleccione una localidad"
+        self.fields["localidad"].widget.attrs.update(
+            {
+                "class": "form-control select2-localidad-jornada-vpsl",
+                "data-placeholder": "Seleccione una localidad",
+            }
+        )
+        self.fields["ubicacion_url"].label = "Enlace de Google Maps o coordenadas"
+        self.fields["ubicacion_url"].required = True
+        self.fields["ubicacion_url"].widget.attrs[
+            "placeholder"
+        ] = "https://maps.app.goo.gl/..."
+        self.fields["ubicacion_url"].help_text = (
+            "Use maps.app.goo.gl/identificador, una URL oficial de Street View "
+            "o coordenadas como -34.603689, -58.381596."
+        )
+        self.fields["direccion"].label = "Dirección"
+        self.fields["direccion"].required = False
+        self.fields["direccion"].help_text = (
+            "Se completa desde el enlace cuando está disponible; puede corregirla."
+        )
         self.fields["referente_dni"].label = "DNI"
         self.fields["referente_sexo"].label = "Género referente"
         self.fields["referente_telefono"].label = "Teléfono"
-        self.fields["referente_email"].label = "Correo electrónico"
         self.fields["referente_sexo"].widget = forms.Select(
             choices=self.SEXO_CHOICES,
             attrs={"class": "form-control"},
@@ -341,6 +277,41 @@ class JornadaVPSLForm(BootstrapModelForm):
         if not self.is_bound and not self.instance.pk:
             self.fields["horario_inicio"].initial = time(9, 0)
             self.fields["horario_fin"].initial = time(18, 0)
+
+    def clean(self):
+        cleaned_data = super().clean()
+        location_url = cleaned_data.get("ubicacion_url")
+        if not location_url:
+            return cleaned_data
+        if (
+            self.instance.pk
+            and location_url == self.initial.get("ubicacion_url")
+            and (
+                self.instance.latitud is not None
+                or self.instance.longitud is not None
+                or self.instance.direccion
+            )
+        ):
+            return cleaned_data
+        try:
+            location = resolve_google_maps_location(location_url)
+        except ValidationError as exc:
+            self.add_error("ubicacion_url", exc)
+            return cleaned_data
+        self.instance.ubicacion_url = location.original_url
+        cleaned_data["ubicacion_url"] = location.original_url
+        self.instance.latitud = location.latitude
+        self.instance.longitud = location.longitude
+        if not cleaned_data.get("direccion") and location.address:
+            cleaned_data["direccion"] = location.address
+        return cleaned_data
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        if commit:
+            instance.save()
+            self.save_m2m()
+        return instance
 
 
 class ChecklistSedeVPSLForm(forms.Form):
@@ -356,15 +327,16 @@ class ChecklistSedeVPSLForm(forms.Form):
         ),
     )
 
-    def __init__(self, *args, sede=None, required=True, **kwargs):
+    def __init__(self, *args, sede=None, jornada=None, required=True, **kwargs):
         super().__init__(*args, **kwargs)
         self.sede = sede
-        existing = {
-            item.item: item
-            for item in (
-                sede.checklist.all() if sede else ChecklistJornadaVPSL.objects.none()
-            )
-        }
+        self.jornada = jornada
+        owner_checklist = (
+            jornada.checklist.all()
+            if jornada
+            else (sede.checklist.all() if sede else ChecklistJornadaVPSL.objects.none())
+        )
+        existing = {item.item: item for item in owner_checklist}
         for item_code, label in self.ITEMS:
             checklist = existing.get(item_code)
             prefix = item_code
@@ -410,17 +382,6 @@ class RegistroNominalVPSLForm(BootstrapModelForm):
         ("F", "Femenino"),
         ("X", "X"),
     )
-    DIAGNOSTICO_CHOICES = (
-        ("", "Seleccionar"),
-        ("diagnostico 1", "diagnostico 1"),
-        ("diagnostico 2", "diagnostico 2"),
-        ("diagnostico 3", "Diagnostico 3"),
-    )
-    prescripcion = forms.ChoiceField(
-        choices=DIAGNOSTICO_CHOICES,
-        required=False,
-        label="Prescripcion",
-    )
 
     @staticmethod
     def siguiente_numero_acta(jornada):
@@ -449,7 +410,8 @@ class RegistroNominalVPSLForm(BootstrapModelForm):
             "numero_acta",
             "numero_sobre",
             "fecha_atencion",
-            "prescripcion",
+            "graduacion_izquierda",
+            "graduacion_derecha",
             "resultado",
             "cantidad_lentes",
             "adjunto",
@@ -460,6 +422,12 @@ class RegistroNominalVPSLForm(BootstrapModelForm):
             "fecha_atencion": forms.DateInput(
                 format="%Y-%m-%d",
                 attrs={"type": "date"},
+            ),
+            "graduacion_izquierda": forms.NumberInput(
+                attrs={"min": "-6", "max": "6", "step": "0.25"}
+            ),
+            "graduacion_derecha": forms.NumberInput(
+                attrs={"min": "-6", "max": "6", "step": "0.25"}
             ),
             "observaciones": forms.Textarea(attrs={"rows": 3}),
         }
@@ -474,6 +442,8 @@ class RegistroNominalVPSLForm(BootstrapModelForm):
         self.fields["sexo"].label = "Sexo"
         self.fields["genero"].label = "Sexo"
         self.fields["primera_vez_anteojos"].label = "Primera vez que utiliza anteojos"
+        self.fields["graduacion_izquierda"].label = "Izquierda"
+        self.fields["graduacion_derecha"].label = "Derecha"
         self.fields["cantidad_lentes"].widget.attrs.update({"min": "0", "max": "2"})
         for field_name in ("nombre", "apellido", "edad", "genero"):
             attrs = self.fields[field_name].widget.attrs
@@ -496,6 +466,8 @@ class RegistroNominalVPSLForm(BootstrapModelForm):
         cantidad_lentes = cleaned_data.get("cantidad_lentes") or 0
         if resultado == ResultadoAtencion.NO_REQUIERE:
             cleaned_data["cantidad_lentes"] = 0
+            cleaned_data["graduacion_izquierda"] = None
+            cleaned_data["graduacion_derecha"] = None
         elif cantidad_lentes > 2:
             self.add_error("cantidad_lentes", "La cantidad maxima de lentes es 2.")
         return cleaned_data

@@ -52,6 +52,16 @@ urlpatterns = [
         name="vpsl_renaper_consultar",
     ),
     path(
+        "ver-para-ser-libre/ubicacion/buscar/",
+        permissions_any_required(
+            [
+                "ver_para_ser_libre.add_jornadavpsl",
+                "ver_para_ser_libre.change_jornadavpsl",
+            ]
+        )(require_POST(views.buscar_ubicacion_google_maps)),
+        name="vpsl_ubicacion_buscar",
+    ),
+    path(
         "ver-para-ser-libre/sedes/",
         permissions_any_required(["ver_para_ser_libre.view_sedevpsl"])(
             views.SedeListView.as_view()

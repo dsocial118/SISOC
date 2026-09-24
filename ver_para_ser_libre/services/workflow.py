@@ -5,6 +5,7 @@ from django.db.models import Count, Sum
 
 from ver_para_ser_libre.models import (
     CasoLaboratorioVPSL,
+    ChecklistJornadaVPSL,
     CierreDiarioVPSL,
     EstadoItinerario,
     EstadoEvaluacionVPSL,
@@ -14,7 +15,6 @@ from ver_para_ser_libre.models import (
     HistorialEstadoVPSL,
     HistorialLaboratorioVPSL,
     ItinerarioVPSL,
-    EvaluacionSedeItinerarioVPSL,
     JornadaVPSL,
     RegistroNominalVPSL,
     ResultadoAtencion,
@@ -37,7 +37,9 @@ JORNADA_CHECKLIST_REQUERIDO = {
     "seguridad",
 }
 
-JORNADA_ESTADOS_HABILITABLES = {
+JORNADA_ESTADOS_SINCRONIZABLES = {
+    EstadoJornada.PLANIFICADA,
+    EstadoJornada.CHECKLIST_PENDIENTE,
     EstadoJornada.PENDIENTE_HABILITACION,
 }
 
@@ -54,24 +56,6 @@ JORNADA_ESTADOS_CIERRE_PERMITIDO = {
     EstadoJornada.PENDIENTE_CIERRE,
     EstadoJornada.PENDIENTE_CIERRE_OBSERVADA,
 }
-
-
-def asegurar_evaluaciones_sedes(itinerario):
-    evaluaciones = []
-    for sede in itinerario.sedes.all():
-        evaluacion, _ = EvaluacionSedeItinerarioVPSL.objects.get_or_create(
-            itinerario=itinerario,
-            sede=sede,
-        )
-        evaluaciones.append(evaluacion)
-    return evaluaciones
-
-
-def sedes_aprobadas_itinerario(itinerario):
-    return itinerario.sedes.filter(
-        evaluaciones_itinerario__itinerario=itinerario,
-        evaluaciones_itinerario__estado=EstadoEvaluacionVPSL.APROBADO,
-    )
 
 
 def _carta_estados_requeridos(itinerario):
@@ -94,56 +78,45 @@ def _carta_rechazada(itinerario):
 
 
 def validar_evaluacion_completa_itinerario(itinerario):
-    asegurar_evaluaciones_sedes(itinerario)
     estados_carta = _carta_estados_requeridos(itinerario)
     if not estados_carta:
         raise ValidationError("Debe existir carta referencia o carta archivo.")
     if any(estado == EstadoEvaluacionVPSL.PENDIENTE for estado in estados_carta):
         raise ValidationError("Debe evaluar todos los componentes de carta cargados.")
-    evaluaciones = list(itinerario.evaluaciones_sedes.select_related("sede"))
-    if not evaluaciones:
-        raise ValidationError("Debe existir al menos una sede tentativa.")
-    if any(
-        evaluacion.estado == EstadoEvaluacionVPSL.PENDIENTE
-        for evaluacion in evaluaciones
-    ):
-        raise ValidationError("Debe evaluar todas las sedes tentativas.")
-    return evaluaciones
+    return estados_carta
 
 
 def evaluacion_obliga_rechazo(itinerario):
-    evaluaciones = list(itinerario.evaluaciones_sedes.all())
-    todas_sedes_rechazadas = bool(evaluaciones) and all(
-        evaluacion.estado == EstadoEvaluacionVPSL.RECHAZADO
-        for evaluacion in evaluaciones
-    )
-    return _carta_rechazada(itinerario) or todas_sedes_rechazadas
+    return _carta_rechazada(itinerario)
 
 
-def checklist_sede_completo(sede):
-    if not sede:
-        return False
-    estados = {item.item: item.cumple for item in sede.checklist.all()}
+def checklist_jornada_completo(jornada):
+    # La vista obtiene la jornada con el checklist prefetched. Consultar el
+    # modelo evita evaluar la cache anterior luego de guardar los ítems.
+    estados = {
+        item.item: item.cumple
+        for item in ChecklistJornadaVPSL.objects.filter(jornada=jornada)
+    }
     return all(estados.get(item) is True for item in JORNADA_CHECKLIST_REQUERIDO)
 
 
 def sincronizar_estado_checklist_jornada(jornada, *, usuario=None):
-    if jornada.estado not in {
-        EstadoJornada.PLANIFICADA,
-        EstadoJornada.CHECKLIST_PENDIENTE,
-        EstadoJornada.PENDIENTE_HABILITACION,
-    }:
+    if jornada.estado not in JORNADA_ESTADOS_SINCRONIZABLES:
         return jornada
     estado_nuevo = (
-        EstadoJornada.PENDIENTE_HABILITACION
-        if checklist_sede_completo(jornada.sede_vpsl)
+        EstadoJornada.HABILITADA
+        if checklist_jornada_completo(jornada)
         else EstadoJornada.CHECKLIST_PENDIENTE
     )
     return cambiar_estado(
         jornada,
         estado_nuevo,
         usuario=usuario,
-        observacion="Estado sincronizado con checklist de sede.",
+        observacion=(
+            "Jornada habilitada automaticamente al completar el checklist."
+            if estado_nuevo == EstadoJornada.HABILITADA
+            else "Estado sincronizado con checklist de sede."
+        ),
     )
 
 
@@ -192,9 +165,6 @@ def presentar_itinerario(itinerario: ItinerarioVPSL, *, usuario=None):
         )
     if not itinerario.carta_archivo:
         raise ValidationError("Debe adjuntar carta archivo.")
-    if not itinerario.sedes.exists():
-        raise ValidationError("Debe seleccionar al menos una sede tentativa.")
-    asegurar_evaluaciones_sedes(itinerario)
     return cambiar_estado(
         itinerario,
         EstadoItinerario.PRESENTADO,
@@ -212,13 +182,9 @@ def aprobar_itinerario(itinerario: ItinerarioVPSL, *, usuario=None, observacion=
         raise ValidationError("El itinerario debe estar presentado o subsanado.")
     validar_evaluacion_completa_itinerario(itinerario)
     if evaluacion_obliga_rechazo(itinerario):
-        raise ValidationError(
-            "El itinerario debe rechazarse por carta rechazada o por no tener sedes viables."
-        )
+        raise ValidationError("El itinerario debe rechazarse por carta rechazada.")
     if not _carta_aprobada(itinerario):
         raise ValidationError("Debe existir al menos una carta aprobada.")
-    if not sedes_aprobadas_itinerario(itinerario).exists():
-        raise ValidationError("Debe existir al menos una sede aprobada.")
     return cambiar_estado(
         itinerario,
         EstadoItinerario.APROBADO,
@@ -254,9 +220,7 @@ def enviar_itinerario_a_subsanacion(
         raise ValidationError("El itinerario debe estar presentado o subsanado.")
     validar_evaluacion_completa_itinerario(itinerario)
     if evaluacion_obliga_rechazo(itinerario):
-        raise ValidationError(
-            "El itinerario debe rechazarse por carta rechazada o por no tener sedes viables."
-        )
+        raise ValidationError("El itinerario debe rechazarse por carta rechazada.")
     if not observacion:
         raise ValidationError("Debe indicar que debe subsanar Provincia.")
     itinerario.subsanacion_observaciones = observacion
@@ -283,20 +247,14 @@ def observar_itinerario(itinerario: ItinerarioVPSL, *, usuario=None, observacion
 
 
 def habilitar_jornada(jornada: JornadaVPSL, *, usuario=None):
-    sincronizar_estado_checklist_jornada(jornada, usuario=usuario)
-    if jornada.estado not in JORNADA_ESTADOS_HABILITABLES:
+    if jornada.estado == EstadoJornada.HABILITADA:
+        return jornada
+    if jornada.estado not in JORNADA_ESTADOS_SINCRONIZABLES:
         raise ValidationError("La jornada no esta en un estado habilitable.")
-    if not jornada.sede_vpsl_id:
-        raise ValidationError("La jornada debe tener una sede seleccionada.")
-    faltantes = jornada.sede_vpsl.checklist.exclude(cumple=True)
-    if faltantes.exists():
-        raise ValidationError("Se debe completar el checklist para habilitar la sede.")
-    return cambiar_estado(
-        jornada,
-        EstadoJornada.HABILITADA,
-        usuario=usuario,
-        observacion="Checklist critico completo.",
-    )
+    sincronizar_estado_checklist_jornada(jornada, usuario=usuario)
+    if jornada.estado == EstadoJornada.HABILITADA:
+        return jornada
+    raise ValidationError("Se debe completar el checklist para habilitar la jornada.")
 
 
 @transaction.atomic
@@ -393,6 +351,7 @@ def actualizar_consistencia_cierre(jornada: JornadaVPSL, *, usuario=None):
 
 
 @transaction.atomic
+# pylint: disable=too-many-arguments
 def generar_cierre_diario(
     jornada: JornadaVPSL,
     *,

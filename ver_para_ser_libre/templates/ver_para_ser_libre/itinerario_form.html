@@ -22,7 +22,7 @@
                 <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-2">
                     <div>
                         <h2 class="vpsl-title">Itinerario VPSL</h2>
-                        <p class="vpsl-subtitle mb-0">Datos de planificacion, documentacion y sedes tentativas</p>
+                        <p class="vpsl-subtitle mb-0">Datos de planificación y documentación</p>
                     </div>
                 </div>
             </div>
@@ -69,32 +69,6 @@
                                                 {% for field in form %}
                                                     {% if field.name == "carta_archivo" %}
                                                         <div class="col-12 col-md-6 vpsl-file-field">
-                                                            <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
-                                                            {{ field }}
-                                                            {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
-                                                            {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
-                                                        </div>
-                                                    {% endif %}
-                                                {% endfor %}
-                                            </div>
-                                        </div>
-                                    </section>
-                                {% endif %}
-                                {% if form.subsanacion_sede_fields %}
-                                    <section class="vpsl-section">
-                                        <div class="vpsl-section-header">
-                                            <div class="vpsl-section-icon">
-                                                <i class="bi bi-geo-alt"></i>
-                                            </div>
-                                            <div>
-                                                <h3 class="vpsl-section-title">Sedes a subsanar</h3>
-                                            </div>
-                                        </div>
-                                        <div class="vpsl-section-body">
-                                            <div class="row g-3">
-                                                {% for field in form %}
-                                                    {% if field.name != "carta_archivo" %}
-                                                        <div class="col-12 col-md-6">
                                                             <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
                                                             {{ field }}
                                                             {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
@@ -160,37 +134,6 @@
                                 <section class="vpsl-section">
                                     <div class="vpsl-section-header">
                                         <div class="vpsl-section-icon">
-                                            <i class="bi bi-geo-alt"></i>
-                                        </div>
-                                        <div>
-                                            <h3 class="vpsl-section-title">Sedes tentativas</h3>
-                                        </div>
-                                    </div>
-                                    <div class="vpsl-section-body">
-                                        <div class="row g-3">
-                                            {% for field in form %}
-                                                {% if field.name == "localidad_filtro" %}
-                                                    <div class="col-12 col-md-6">
-                                                        <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
-                                                        {{ field }}
-                                                        {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
-                                                    </div>
-                                                {% elif field.name == "sedes" %}
-                                                    <div class="col-12 col-md-6">
-                                                        <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
-                                                        {{ field }}
-                                                        <div class="form-text">Las localidades se heredan de las sedes seleccionadas.</div>
-                                                        <div id="sedes-localidades" class="mt-2 d-flex flex-wrap gap-2"></div>
-                                                        {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
-                                                    </div>
-                                                {% endif %}
-                                            {% endfor %}
-                                        </div>
-                                    </div>
-                                </section>
-                                <section class="vpsl-section">
-                                    <div class="vpsl-section-header">
-                                        <div class="vpsl-section-icon">
                                             <i class="bi bi-person-lines-fill"></i>
                                         </div>
                                         <div>
@@ -243,15 +186,10 @@
 {% block customJS %}
     <script nonce="{{ request.csp_nonce }}">
       document.addEventListener("DOMContentLoaded", function () {
-        const sedesSelectEl = document.getElementById("id_sedes");
-        const select = $("#id_sedes");
         const provincia = document.getElementById("id_provincia");
         const provinciaSelect = $(".select2-provincia-vpsl");
-        const localidad = document.getElementById("id_localidad_filtro");
         const fechaInicio = document.getElementById("id_fecha_inicio");
         const fechaFin = document.getElementById("id_fecha_fin");
-        const localidadesBox = document.getElementById("sedes-localidades");
-        const subsanacionSedeSelects = $(".select2-sede-subsanacion-vpsl");
 
         if (provinciaSelect.length) {
           provinciaSelect.select2({
@@ -268,121 +206,6 @@
           fechaFin.classList.toggle("is-invalid", invalida);
         }
 
-        function renderLocalidades() {
-          if (!localidadesBox || !sedesSelectEl) return;
-          const data = select.select2("data") || [];
-          const localidades = [];
-          data.forEach((item) => {
-            if (item.localidad && !localidades.includes(item.localidad)) {
-              localidades.push(item.localidad);
-            }
-          });
-          localidadesBox.innerHTML = localidades
-            .map((item) => `<span class="badge bg-secondary">${item}</span>`)
-            .join("");
-        }
-
-        if (sedesSelectEl) {
-          select.select2({
-            ajax: {
-              url: "{% url 'vpsl_sedes_autocomplete' %}",
-              dataType: "json",
-              delay: 250,
-              data: function (params) {
-                return {
-                  q: params.term || "",
-                  page: params.page || 1,
-                  provincia: provincia ? provincia.value : "",
-                  localidad: localidad ? localidad.value : "",
-                };
-              },
-              processResults: function (data, params) {
-                params.page = params.page || 1;
-                return {
-                  results: provincia && provincia.value ? data.results : [],
-                  pagination: {
-                    more: data.pagination && data.pagination.more,
-                  },
-                };
-              },
-              cache: true,
-            },
-            minimumInputLength: 0,
-            width: "100%",
-            placeholder: "Buscar por nombre, cueanexo o domicilio",
-          });
-          if (provincia) {
-            $(provincia).on("change", async function () {
-              select.val(null).trigger("change");
-              if (!provinciaSelect.length || !localidad) return;
-              const provinciaId = provincia.value;
-              localidad.replaceChildren(new Option("Todas", ""));
-              localidad.value = "";
-              if (!provinciaId) return;
-              try {
-                const url = new URL("{% url 'vpsl_sedes_localidades' %}", window.location.origin);
-                url.searchParams.set("provincia", provinciaId);
-                const response = await fetch(url);
-                if (!response.ok || provincia.value !== provinciaId) return;
-                const data = await response.json();
-                (data.localidades || []).forEach((item) => localidad.add(new Option(item, item)));
-              } catch (error) {
-                if (provincia.value === provinciaId) {
-                  localidad.replaceChildren(new Option("Todas", ""));
-                }
-              }
-            });
-          }
-          if (localidad) {
-            localidad.addEventListener("change", function () {
-              select.val(null).trigger("change");
-            });
-          }
-          select.on("select2:select select2:unselect change", renderLocalidades);
-          renderLocalidades();
-        }
-        if (subsanacionSedeSelects.length) {
-          subsanacionSedeSelects.each(function () {
-            const sedeSelectEl = this;
-            const sedeSelect = $(this);
-            sedeSelect.select2({
-              ajax: {
-                url: "{% url 'vpsl_sedes_autocomplete' %}",
-                dataType: "json",
-                delay: 250,
-                data: function (params) {
-                  const exclude = [];
-                  subsanacionSedeSelects.each(function () {
-                    const value = this.value;
-                    const current = this.dataset.currentSede || "";
-                    if (value && value !== current) {
-                      exclude.push(value);
-                    }
-                  });
-                  return {
-                    q: params.term || "",
-                    page: params.page || 1,
-                    provincia: sedeSelectEl.dataset.provincia || "",
-                    exclude: exclude,
-                  };
-                },
-                processResults: function (data, params) {
-                  params.page = params.page || 1;
-                  return {
-                    results: data.results,
-                    pagination: {
-                      more: data.pagination && data.pagination.more,
-                    },
-                  };
-                },
-                cache: true,
-              },
-              minimumInputLength: 0,
-              width: "100%",
-              placeholder: sedeSelect.data("placeholder") || "Buscar sede",
-            });
-          });
-        }
         if (fechaInicio && fechaFin) {
           fechaInicio.addEventListener("change", validarRangoFechas);
           fechaFin.addEventListener("change", validarRangoFechas);

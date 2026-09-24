@@ -1,7 +1,9 @@
 from datetime import date
+from decimal import Decimal
 from urllib.parse import quote_plus
 
 import pytest
+from django import forms
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.contrib.auth import get_user_model
@@ -24,6 +26,7 @@ from ver_para_ser_libre.models import (
     RegistroNominalVPSL,
     ResultadoAtencion,
     SedeVPSL,
+    VehiculoVPSL,
 )
 from ver_para_ser_libre.services import workflow
 
@@ -76,13 +79,30 @@ def crear_itinerario(**overrides):
 
 
 def crear_jornada(itinerario=None, **overrides):
+    itinerario = itinerario or crear_itinerario()
+    sede_historica = overrides.get("sede_vpsl")
+    localidad_nombre = sede_historica.localidad if sede_historica else "LA PLATA"
+    municipio, _ = Municipio.objects.get_or_create(
+        nombre=f"Municipio {itinerario.provincia_id}",
+        provincia=itinerario.provincia,
+    )
+    localidad, _ = Localidad.objects.get_or_create(
+        nombre=localidad_nombre,
+        municipio=municipio,
+    )
     defaults = {
-        "itinerario": itinerario or crear_itinerario(),
+        "itinerario": itinerario,
         "fecha": date(2026, 5, 2),
-        "sede": "Escuela 1",
+        "sede": sede_historica.nombre if sede_historica else "Escuela 1",
+        "localidad": localidad,
+        "direccion": (sede_historica.domicilio if sede_historica else "Calle 1 123"),
+        "ubicacion_url": (
+            "https://www.google.com/maps/search/" "?api=1&query=-34.603722%2C-58.381592"
+        ),
+        "latitud": Decimal("-34.603722"),
+        "longitud": Decimal("-58.381592"),
     }
     defaults.update(overrides)
-    defaults.setdefault("sede_vpsl", defaults["itinerario"].sedes.first())
     return JornadaVPSL.objects.create(**defaults)
 
 
@@ -101,12 +121,10 @@ def completar_checklist_sede(jornada):
         )
 
 
-def aprobar_sedes_y_carta(itinerario):
+def aprobar_carta(itinerario):
     itinerario.carta_referencia_estado = EstadoEvaluacionVPSL.APROBADO
     itinerario.carta_archivo_estado = EstadoEvaluacionVPSL.APROBADO
     itinerario.save(update_fields=["carta_referencia_estado", "carta_archivo_estado"])
-    workflow.asegurar_evaluaciones_sedes(itinerario)
-    itinerario.evaluaciones_sedes.update(estado=EstadoEvaluacionVPSL.APROBADO)
 
 
 def hacer_usuario_provincial(user, provincia):
@@ -166,24 +184,31 @@ def test_jornada_permite_repetir_fecha_en_mismo_itinerario_con_distinta_sede():
     jornada.full_clean()
 
 
-def test_jornada_form_permite_fecha_ocupada_en_itinerario_con_distinta_sede():
+def test_jornada_form_permite_fecha_ocupada_con_distinto_nombre_de_sede():
     sede_1 = crear_sede(cueanexo="FORMFECHA001", nombre="Escuela form fecha 1")
     sede_2 = crear_sede(cueanexo="FORMFECHA002", nombre="Escuela form fecha 2")
     itinerario = crear_itinerario(sedes=[sede_1, sede_2])
-    aprobar_sedes_y_carta(itinerario)
+    aprobar_carta(itinerario)
     crear_jornada(itinerario=itinerario, sede_vpsl=sede_1, fecha=date(2026, 5, 2))
+    municipio = Municipio.objects.create(
+        nombre="La Plata", provincia=itinerario.provincia
+    )
+    localidad = Localidad.objects.create(nombre="LA PLATA", municipio=municipio)
 
     form = JornadaVPSLForm(
         data={
             "fecha": "2026-05-02",
-            "sede_vpsl": str(sede_2.pk),
+            "sede": sede_2.nombre,
+            "localidad": str(localidad.pk),
+            "ubicacion_url": (
+                "https://www.google.com/maps/search/" "?api=1&query=-34.9214%2C-57.9544"
+            ),
+            "direccion": sede_2.domicilio,
             "horario_inicio": "",
             "horario_fin": "",
             "referente_dni": "",
             "referente_sexo": "",
             "referente_telefono": "",
-            "referente_email": "",
-            "equipo_asignado": "",
             "observaciones": "",
         },
         itinerario=itinerario,
@@ -192,16 +217,25 @@ def test_jornada_form_permite_fecha_ocupada_en_itinerario_con_distinta_sede():
     assert form.is_valid(), form.errors
 
 
-def test_jornada_form_incluye_vehiculo_en_planificacion():
+def test_jornada_form_incluye_selector_multiple_de_vehiculos():
     itinerario = crear_itinerario()
+    vehiculo_1 = VehiculoVPSL.objects.create(nombre="Vehiculo 1", orden=1)
+    vehiculo_4 = VehiculoVPSL.objects.create(nombre="Vehiculo 4", orden=4)
     form = JornadaVPSLForm(itinerario=itinerario)
 
-    assert "vehiculo" in form.fields
-    assert ("vehiculo_1", "Vehiculo 1") in form.fields["vehiculo"].choices
-    assert ("vehiculo_4", "Vehiculo 4") in form.fields["vehiculo"].choices
+    assert "vehiculos" in form.fields
+    assert isinstance(form.fields["vehiculos"].widget, forms.SelectMultiple)
+    assert list(form.fields["vehiculos"].queryset) == [vehiculo_1, vehiculo_4]
 
 
-def test_jornada_create_permite_misma_fecha_con_distinta_sede(client):
+def test_vehiculo_usa_id_automatico_sin_codigo_paralelo():
+    vehiculo = VehiculoVPSL.objects.create(nombre="Movil sanitario")
+
+    assert vehiculo.pk is not None
+    assert not hasattr(vehiculo, "codigo")
+
+
+def test_jornada_create_permite_misma_fecha_con_distinto_nombre_de_sede(client):
     user = get_user_model().objects.create_superuser(
         username="vpsl-jornada-duplicada",
         email="vpsl-jornada-duplicada@example.com",
@@ -211,9 +245,13 @@ def test_jornada_create_permite_misma_fecha_con_distinta_sede(client):
     sede_2 = crear_sede(cueanexo="VIEWFECHA002", nombre="Escuela view fecha 2")
     itinerario = crear_itinerario(sedes=[sede_1, sede_2])
     workflow.presentar_itinerario(itinerario)
-    aprobar_sedes_y_carta(itinerario)
+    aprobar_carta(itinerario)
     workflow.aprobar_itinerario(itinerario)
     crear_jornada(itinerario=itinerario, sede_vpsl=sede_1, fecha=date(2026, 5, 2))
+    municipio = Municipio.objects.create(
+        nombre="La Plata", provincia=itinerario.provincia
+    )
+    localidad = Localidad.objects.create(nombre="LA PLATA", municipio=municipio)
     client.force_login(user)
 
     url = reverse("vpsl_jornada_create", kwargs={"itinerario_pk": itinerario.pk})
@@ -228,14 +266,17 @@ def test_jornada_create_permite_misma_fecha_con_distinta_sede(client):
         url,
         {
             "fecha": "2026-05-02",
-            "sede_vpsl": str(sede_2.pk),
+            "sede": sede_2.nombre,
+            "localidad": str(localidad.pk),
+            "ubicacion_url": (
+                "https://www.google.com/maps/search/" "?api=1&query=-34.9214%2C-57.9544"
+            ),
+            "direccion": sede_2.domicilio,
             "horario_inicio": "",
             "horario_fin": "",
             "referente_dni": "",
             "referente_sexo": "",
             "referente_telefono": "",
-            "referente_email": "",
-            "equipo_asignado": "",
             "observaciones": "",
         },
     )
@@ -257,7 +298,7 @@ def test_jornada_create_oculta_equipo_y_precarga_horarios(client):
     )
     itinerario = crear_itinerario()
     workflow.presentar_itinerario(itinerario)
-    aprobar_sedes_y_carta(itinerario)
+    aprobar_carta(itinerario)
     workflow.aprobar_itinerario(itinerario)
     client.force_login(user)
 
@@ -288,13 +329,13 @@ def test_presentar_itinerario_cambia_estado_y_registra_historial():
     itinerario.refresh_from_db()
     assert itinerario.estado == EstadoItinerario.PRESENTADO
     assert HistorialEstadoVPSL.objects.filter(object_id=itinerario.pk).count() == 1
-    assert itinerario.evaluaciones_sedes.count() == itinerario.sedes.count()
+    assert not itinerario.evaluaciones_sedes.exists()
 
 
-def test_aprobar_itinerario_requiere_carta_y_sede_aprobadas():
+def test_aprobar_itinerario_requiere_carta_aprobada():
     itinerario = crear_itinerario()
     workflow.presentar_itinerario(itinerario)
-    aprobar_sedes_y_carta(itinerario)
+    aprobar_carta(itinerario)
 
     workflow.aprobar_itinerario(itinerario)
 
@@ -312,7 +353,7 @@ def test_editar_itinerario_aprobado_no_cambia_estado_y_bloquea_campos_completos(
     )
     itinerario = crear_itinerario(matricula_estimada=None, observaciones="")
     workflow.presentar_itinerario(itinerario)
-    aprobar_sedes_y_carta(itinerario)
+    aprobar_carta(itinerario)
     workflow.aprobar_itinerario(itinerario)
     client.force_login(user)
 
@@ -370,7 +411,7 @@ def test_itinerario_edit_aprobado_muestra_campos_bloqueados_oscuros(client):
     )
     itinerario = crear_itinerario()
     workflow.presentar_itinerario(itinerario)
-    aprobar_sedes_y_carta(itinerario)
+    aprobar_carta(itinerario)
     workflow.aprobar_itinerario(itinerario)
     client.force_login(user)
 
@@ -403,29 +444,18 @@ def test_itinerario_subsanado_no_muestra_presentar_en_detail(client):
     assert "Evaluar" in html
 
 
-def test_itinerario_subsanar_muestra_solo_componentes_solicitados(client):
+def test_itinerario_subsanar_muestra_solo_carta_solicitada(client):
     user = get_user_model().objects.create_superuser(
         username="vpsl-subsanar-form",
         email="vpsl-subsanar-form@example.com",
         password="testpass123",
     )
-    sede_a_subsanar = crear_sede(cueanexo="20000101", nombre="Sede observada")
-    sede_aprobada = crear_sede(cueanexo="20000102", nombre="Sede aprobada")
     itinerario = crear_itinerario(
         estado=EstadoItinerario.EN_SUBSANACION,
-        sedes=[sede_a_subsanar, sede_aprobada],
     )
     itinerario.carta_archivo_estado = EstadoEvaluacionVPSL.SUBSANAR
-    itinerario.subsanacion_observaciones = "Corregir carta y sede observada."
+    itinerario.subsanacion_observaciones = "Corregir carta."
     itinerario.save(update_fields=["carta_archivo_estado", "subsanacion_observaciones"])
-    workflow.asegurar_evaluaciones_sedes(itinerario)
-    evaluacion_observada = itinerario.evaluaciones_sedes.get(sede=sede_a_subsanar)
-    evaluacion_observada.estado = EstadoEvaluacionVPSL.SUBSANAR
-    evaluacion_observada.observacion = "Cambiar sede."
-    evaluacion_observada.save(update_fields=["estado", "observacion"])
-    itinerario.evaluaciones_sedes.filter(sede=sede_aprobada).update(
-        estado=EstadoEvaluacionVPSL.APROBADO
-    )
     client.force_login(user)
 
     response = client.get(
@@ -435,48 +465,39 @@ def test_itinerario_subsanar_muestra_solo_componentes_solicitados(client):
     assert response.status_code == 200
     html = response.content.decode()
     assert 'name="carta_archivo"' in html
-    assert f'name="subsanar_sede_{evaluacion_observada.pk}"' in html
-    assert "select2-sede-subsanacion-vpsl" in html
-    assert f'data-provincia="{itinerario.provincia_id}"' in html
-    assert "Sede observada" in html
-    assert "Sede aprobada" not in html
     assert 'name="sedes"' not in html
     assert 'name="fecha_inicio"' not in html
     assert 'name="referente_nombre"' not in html
 
 
-def test_itinerario_subsanar_reemplaza_sede_y_deja_pendiente_evaluacion(client):
+def test_itinerario_subsanar_carta_deja_itinerario_subsanado(client):
     user = get_user_model().objects.create_superuser(
         username="vpsl-subsanar-save",
         email="vpsl-subsanar-save@example.com",
         password="testpass123",
     )
-    sede_observada = crear_sede(cueanexo="20000103", nombre="Sede a reemplazar")
-    sede_nueva = crear_sede(cueanexo="20000104", nombre="Sede nueva")
     itinerario = crear_itinerario(
         estado=EstadoItinerario.EN_SUBSANACION,
-        sedes=[sede_observada],
     )
-    workflow.asegurar_evaluaciones_sedes(itinerario)
-    evaluacion = itinerario.evaluaciones_sedes.get(sede=sede_observada)
-    evaluacion.estado = EstadoEvaluacionVPSL.SUBSANAR
-    evaluacion.save(update_fields=["estado"])
+    itinerario.carta_archivo_estado = EstadoEvaluacionVPSL.SUBSANAR
+    itinerario.save(update_fields=["carta_archivo_estado"])
     client.force_login(user)
 
     response = client.post(
         reverse("vpsl_itinerario_subsanar", kwargs={"pk": itinerario.pk}),
-        {f"subsanar_sede_{evaluacion.pk}": str(sede_nueva.pk)},
+        {
+            "carta_archivo": SimpleUploadedFile(
+                "carta-corregida.pdf",
+                b"contenido corregido",
+                content_type="application/pdf",
+            )
+        },
     )
 
     assert response.status_code == 302
     itinerario.refresh_from_db()
     assert itinerario.estado == EstadoItinerario.SUBSANADO
-    assert sede_observada not in itinerario.sedes.all()
-    assert sede_nueva in itinerario.sedes.all()
-    assert (
-        itinerario.evaluaciones_sedes.get(sede=sede_nueva).estado
-        == EstadoEvaluacionVPSL.PENDIENTE
-    )
+    assert itinerario.carta_archivo_estado == EstadoEvaluacionVPSL.PENDIENTE
 
 
 def test_itinerario_create_bloquea_provincia_de_usuario_provincial(client):
@@ -506,7 +527,8 @@ def test_itinerario_create_bloquea_provincia_de_usuario_provincial(client):
     )
     assert 'name="carta_referencia"' not in html
     assert 'name="carta_archivo"' in html
-    assert 'name="localidad_filtro"' in html
+    assert 'name="sedes"' not in html
+    assert 'name="localidad_filtro"' not in html
 
 
 def test_itinerario_create_usa_provincia_del_usuario_aunque_posteen_otra(client):
@@ -549,7 +571,7 @@ def test_itinerario_create_usa_provincia_del_usuario_aunque_posteen_otra(client)
     assert itinerario.referente_apellido == "Provincial"
 
 
-def test_itinerario_create_permiso_global_muestra_provincias_y_sedes_filtradas(client):
+def test_itinerario_create_permiso_global_muestra_provincias_sin_sedes(client):
     provincia_usuario = Provincia.objects.create(nombre="Cordoba")
     provincia_destino = Provincia.objects.create(nombre="Santa Fe")
     sede_destino = crear_sede(
@@ -571,9 +593,8 @@ def test_itinerario_create_permiso_global_muestra_provincias_y_sedes_filtradas(c
     assert f'value="{provincia_usuario.pk}"' in html
     assert f'value="{provincia_destino.pk}"' in html
     assert not response.context["form"].fields["provincia"].disabled
-    assert response.context["form"].fields["localidad_filtro"].choices == [
-        ("", "Todas")
-    ]
+    assert "localidad_filtro" not in response.context["form"].fields
+    assert "sedes" not in response.context["form"].fields
 
     listado = client.get(reverse("vpsl_itinerario_list"))
     assert listado.status_code == 200
@@ -635,7 +656,7 @@ def test_itinerario_create_permiso_global_guarda_provincia_elegida_y_ve_solo_pro
     )
 
 
-def test_itinerario_create_permiso_global_rechaza_sede_de_otra_provincia(client):
+def test_itinerario_create_ignora_sedes_enviadas_fuera_del_formulario(client):
     provincia_usuario = Provincia.objects.create(nombre="Cordoba")
     provincia_destino = Provincia.objects.create(nombre="Santa Fe")
     sede_otra = crear_sede(jurisdiccion="Cordoba")
@@ -653,15 +674,15 @@ def test_itinerario_create_permiso_global_rechaza_sede_de_otra_provincia(client)
             "fecha_fin": "2026-05-10",
             "sedes": [str(sede_otra.pk)],
             "referente_nombre": "Referente global",
+            "referente_telefono": "351111111",
+            "referente_email": "referente@example.com",
             "carta_archivo": SimpleUploadedFile("carta.pdf", b"contenido"),
         },
     )
 
-    assert response.status_code == 200
-    assert "sedes" in response.context["form"].errors
-    assert not ItinerarioVPSL.objects.filter(
-        referente_nombre="Referente global"
-    ).exists()
+    assert response.status_code == 302
+    itinerario = ItinerarioVPSL.objects.get(referente_nombre="Referente global")
+    assert not itinerario.sedes.exists()
 
 
 def test_itinerario_create_permiso_global_exige_provincia_asignada(client):
@@ -752,17 +773,19 @@ def test_itinerario_create_caba_acepta_ambos_nombres_de_jurisdiccion(client):
     assert response.status_code == 302, response.context["form"].errors
     itinerario = ItinerarioVPSL.objects.get(referente_nombre="Referente CABA")
     assert itinerario.provincia == caba
-    assert list(itinerario.sedes.all()) == [sede_historica]
+    assert not itinerario.sedes.exists()
 
 
-def test_aprobar_itinerario_bloquea_si_sede_pendiente():
+def test_aprobar_itinerario_no_depende_de_aprobacion_de_sede():
     itinerario = crear_itinerario()
     workflow.presentar_itinerario(itinerario)
     itinerario.carta_archivo_estado = EstadoEvaluacionVPSL.APROBADO
     itinerario.save(update_fields=["carta_archivo_estado"])
 
-    with pytest.raises(ValidationError):
-        workflow.aprobar_itinerario(itinerario)
+    workflow.aprobar_itinerario(itinerario)
+
+    itinerario.refresh_from_db()
+    assert itinerario.estado == EstadoItinerario.APROBADO
 
 
 def test_rechazar_itinerario_deja_estado_final_sin_edicion():
@@ -770,8 +793,6 @@ def test_rechazar_itinerario_deja_estado_final_sin_edicion():
     workflow.presentar_itinerario(itinerario)
     itinerario.carta_archivo_estado = EstadoEvaluacionVPSL.RECHAZADO
     itinerario.save(update_fields=["carta_archivo_estado"])
-    workflow.asegurar_evaluaciones_sedes(itinerario)
-    itinerario.evaluaciones_sedes.update(estado=EstadoEvaluacionVPSL.APROBADO)
 
     workflow.rechazar_itinerario(itinerario)
 
@@ -784,8 +805,6 @@ def test_enviar_a_subsanacion_requiere_observacion_y_deja_estado():
     workflow.presentar_itinerario(itinerario)
     itinerario.carta_archivo_estado = EstadoEvaluacionVPSL.SUBSANAR
     itinerario.save(update_fields=["carta_archivo_estado"])
-    workflow.asegurar_evaluaciones_sedes(itinerario)
-    itinerario.evaluaciones_sedes.update(estado=EstadoEvaluacionVPSL.APROBADO)
 
     workflow.enviar_itinerario_a_subsanacion(
         itinerario,
@@ -811,11 +830,11 @@ def test_habilitar_jornada_bloquea_si_hay_checklist_critico_pendiente():
         workflow.habilitar_jornada(jornada)
 
 
-def test_habilitar_jornada_con_checklist_critico_completo():
+def test_checklist_critico_completo_habilita_jornada_automaticamente():
     jornada = crear_jornada()
     completar_checklist_sede(jornada)
 
-    workflow.habilitar_jornada(jornada)
+    workflow.sincronizar_estado_checklist_jornada(jornada)
 
     jornada.refresh_from_db()
     assert jornada.estado == EstadoJornada.HABILITADA
@@ -831,6 +850,8 @@ def test_registro_enviado_a_laboratorio_crea_caso_post_operativo():
         numero_acta="A-1",
         resultado=ResultadoAtencion.ENVIADO_LABORATORIO,
         cantidad_lentes=1,
+        graduacion_izquierda=Decimal("-1.25"),
+        graduacion_derecha=Decimal("-1.00"),
     )
 
     workflow.guardar_registro_nominal(registro)
@@ -848,6 +869,8 @@ def test_flujo_laboratorio_incluye_envio_a_nacion_antes_de_provincia():
         numero_acta="A-1",
         resultado=ResultadoAtencion.ENVIADO_LABORATORIO,
         cantidad_lentes=1,
+        graduacion_izquierda=Decimal("-1.25"),
+        graduacion_derecha=Decimal("-1.00"),
     )
     workflow.guardar_registro_nominal(registro)
     caso = CasoLaboratorioVPSL.objects.get(registro=registro)
@@ -946,6 +969,8 @@ def test_cierre_diario_no_finaliza_hasta_cierre_definitivo():
             numero_acta="A-1",
             resultado=ResultadoAtencion.ENVIADO_LABORATORIO,
             cantidad_lentes=1,
+            graduacion_izquierda=Decimal("-1.25"),
+            graduacion_derecha=Decimal("-1.00"),
         )
     )
 
@@ -1109,6 +1134,8 @@ def test_cierre_diario_resume_no_requiere_y_derivados_actualizados():
             numero_acta="A-3",
             resultado=ResultadoAtencion.DERIVADO,
             cantidad_lentes=0,
+            graduacion_izquierda=Decimal("-0.75"),
+            graduacion_derecha=Decimal("-0.50"),
         )
     )
     cierre.refresh_from_db()
@@ -1152,7 +1179,7 @@ def test_paginas_principales_renderizan(client):
     itinerario = crear_itinerario()
     hacer_usuario_provincial(user, itinerario.provincia)
     workflow.presentar_itinerario(itinerario)
-    aprobar_sedes_y_carta(itinerario)
+    aprobar_carta(itinerario)
     workflow.aprobar_itinerario(itinerario)
     jornada = crear_jornada(itinerario=itinerario, estado=EstadoJornada.HABILITADA)
 
@@ -1165,7 +1192,7 @@ def test_paginas_principales_renderizan(client):
         reverse("vpsl_registro_create", kwargs={"jornada_pk": jornada.pk}),
         reverse("vpsl_sede_list"),
         reverse("vpsl_sede_create"),
-        reverse("vpsl_sede_update", kwargs={"pk": jornada.sede_vpsl.pk}),
+        reverse("vpsl_sede_update", kwargs={"pk": itinerario.sedes.first().pk}),
     ]
 
     for url in urls:
@@ -1373,7 +1400,7 @@ def test_sede_update_conserva_coordenadas_historicas_sin_mostrarlas(client):
     assert sede.checklist_aprobado
 
 
-def test_sede_edit_y_jornada_usan_misma_ubicacion_guardada(client):
+def test_editar_sede_historica_no_modifica_ubicacion_de_jornada(client):
     user = get_user_model().objects.create_superuser(username="vpsl-sede-mapa")
     provincia = Provincia.objects.create(
         nombre="Tierra del Fuego, Antártida e Islas del Atlántico Sur"
@@ -1394,7 +1421,12 @@ def test_sede_edit_y_jornada_usan_misma_ubicacion_guardada(client):
         longitud=None,
     )
     itinerario = crear_itinerario(provincia=provincia, sedes=[sede])
-    jornada = crear_jornada(itinerario=itinerario, sede_vpsl=sede)
+    jornada = crear_jornada(
+        itinerario=itinerario,
+        sede="Sede jornada",
+        direccion="Direccion propia 123",
+        sede_vpsl=None,
+    )
     client.force_login(user)
     editar_url = reverse("vpsl_sede_update", kwargs={"pk": sede.pk})
     jornada_url = reverse("vpsl_jornada_detail", kwargs={"pk": jornada.pk})
@@ -1407,9 +1439,9 @@ def test_sede_edit_y_jornada_usan_misma_ubicacion_guardada(client):
     assert html.index('id="vpsl-sede-map"') < html.index("Información adicional")
     assert edicion.context["form"]["provincia"].value() == provincia.pk
     assert edicion.context["form"]["localidad"].value() == "Ushuaia"
-    assert edicion.context["mapa_query"] == detalle.context["mapa_query"]
-    assert "qqweq" not in detalle.context["mapa_query"]
-    assert quote_plus("del michay 511") in detalle.context["mapa_query"]
+    mapa_jornada = detalle.context["mapa_query"]
+    assert mapa_jornada == quote_plus(jornada.mapa_query)
+    assert quote_plus("del michay 511") not in mapa_jornada
 
     guardado = client.post(
         editar_url,
@@ -1427,8 +1459,8 @@ def test_sede_edit_y_jornada_usan_misma_ubicacion_guardada(client):
     assert not sede.checklist_aprobado
 
     detalle_actualizado = client.get(jornada_url)
-    assert detalle_actualizado.context["mapa_query"] == quote_plus(sede.mapa_query)
-    assert quote_plus("del michay 513") in detalle_actualizado.context["mapa_query"]
+    assert detalle_actualizado.context["mapa_query"] == mapa_jornada
+    assert quote_plus("del michay 513") not in detalle_actualizado.context["mapa_query"]
 
 
 def test_itinerario_list_restringe_usuario_provincial_y_filtra(client):
@@ -1578,7 +1610,7 @@ def test_itinerario_detail_muestra_localidad_de_sede_en_jornadas(client):
     sede = crear_sede(localidad="ABEL AYERZA", nombre="ESCUELA 1")
     itinerario = crear_itinerario(sedes=[sede])
     workflow.presentar_itinerario(itinerario)
-    aprobar_sedes_y_carta(itinerario)
+    aprobar_carta(itinerario)
     workflow.aprobar_itinerario(itinerario)
     crear_jornada(itinerario=itinerario, sede_vpsl=sede, sede=sede.nombre)
     client.force_login(user)
@@ -1598,10 +1630,15 @@ def test_itinerario_detail_muestra_vehiculo_de_jornada(client):
         password="testpass123",
     )
     itinerario = crear_itinerario()
-    crear_jornada(
+    jornada = crear_jornada(
         itinerario=itinerario,
         fecha=date(2026, 5, 2),
-        vehiculo="vehiculo_3",
+    )
+    jornada.vehiculos.set(
+        [
+            VehiculoVPSL.objects.create(nombre="Vehiculo 2", orden=2),
+            VehiculoVPSL.objects.create(nombre="Vehiculo 3", orden=3),
+        ]
     )
     client.force_login(user)
 
@@ -1612,7 +1649,7 @@ def test_itinerario_detail_muestra_vehiculo_de_jornada(client):
     html = response.content.decode()
     assert response.status_code == 200
     assert "Vehiculo" in html
-    assert "Vehiculo 3" in html
+    assert "Vehiculo 2, Vehiculo 3" in html
 
 
 def test_jornada_detail_muestra_escuela_en_resumen_de_ubicacion(client):
@@ -1715,11 +1752,7 @@ def test_jornada_detail_muestra_acciones_segun_estado(client):
     html = response.content.decode()
     assert response.status_code == 200
     assert "Cerrar jornada" not in html
-    assert "Habilitar" in html
-    assert (
-        "Debe completar y aprobar el checklist de la sede antes de habilitar la jornada."
-        in html
-    )
+    assert "Habilitar" not in html
     assert (
         "La jornada debe estar habilitada o en progreso para cargar registros nominales."
         in html
@@ -2478,9 +2511,12 @@ def test_registro_create_muestra_genero_como_sexo_y_calcula_edad_renaper(client)
     assert 'registro_nominal: "1"' in html
     assert "calcularEdadRenaper(data.fecha_nacimiento)" in html
     assert "No verificar RENAPER" not in html
-    assert 'name="prescripcion"' in html
-    assert 'id="id_prescripcion"' in html
-    assert "diagnostico 1" in html
+    assert 'name="prescripcion"' not in html
+    assert 'name="graduacion_izquierda"' in html
+    assert 'name="graduacion_derecha"' in html
+    assert 'min="-6"' in html
+    assert 'max="6"' in html
+    assert 'step="0.25"' in html
     assert 'max="2"' in html
     assert "syncCantidadLentes" in html
     assert 'name="primera_vez_anteojos"' in html
@@ -2488,6 +2524,52 @@ def test_registro_create_muestra_genero_como_sexo_y_calcula_edad_renaper(client)
     assert html.index('name="primera_vez_anteojos"') < html.index(
         'name="observaciones"'
     )
+
+
+@pytest.mark.parametrize(
+    "resultado",
+    [
+        ResultadoAtencion.ENTREGADO_DIA,
+        ResultadoAtencion.DERIVADO,
+        ResultadoAtencion.ENVIADO_LABORATORIO,
+    ],
+)
+def test_registro_exige_graduacion_para_resultados_con_indicacion(resultado):
+    registro = RegistroNominalVPSL(
+        jornada=crear_jornada(estado=EstadoJornada.HABILITADA),
+        dni="12345678",
+        nombre="Ana",
+        apellido="Perez",
+        numero_acta="A-1",
+        resultado=resultado,
+        cantidad_lentes=0,
+    )
+
+    with pytest.raises(ValidationError) as exc_info:
+        registro.full_clean()
+
+    assert "graduacion_izquierda" in exc_info.value.message_dict
+    assert "graduacion_derecha" in exc_info.value.message_dict
+
+
+def test_registro_rechaza_graduacion_fuera_de_intervalos_de_cuarto():
+    registro = RegistroNominalVPSL(
+        jornada=crear_jornada(estado=EstadoJornada.HABILITADA),
+        dni="12345678",
+        nombre="Ana",
+        apellido="Perez",
+        numero_acta="A-1",
+        resultado=ResultadoAtencion.DERIVADO,
+        cantidad_lentes=0,
+        graduacion_izquierda=Decimal("-1.10"),
+        graduacion_derecha=Decimal("6.00"),
+    )
+
+    with pytest.raises(ValidationError) as exc_info:
+        registro.full_clean()
+
+    assert "graduacion_izquierda" in exc_info.value.message_dict
+    assert "graduacion_derecha" not in exc_info.value.message_dict
 
 
 def test_sede_delete_es_logico(client):

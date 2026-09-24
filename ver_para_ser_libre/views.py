@@ -30,6 +30,7 @@ from core.mixins import CSVExportMixin
 from core.models import Provincia
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
 from iam.services import user_has_permission_code
+from users.rate_limits import hit_rate_limit
 from ver_para_ser_libre.forms import (
     CasoLaboratorioVPSLForm,
     ChecklistSedeVPSLForm,
@@ -45,6 +46,7 @@ from ver_para_ser_libre.models import (
     CierreDiarioVPSL,
     EstadoEvaluacionVPSL,
     EstadoItinerario,
+    EstadoJornada,
     EstadoLaboratorio,
     HistorialChecklistSedeVPSL,
     ItinerarioVPSL,
@@ -53,6 +55,7 @@ from ver_para_ser_libre.models import (
     SedeVPSL,
 )
 from ver_para_ser_libre.services import workflow
+from ver_para_ser_libre.services.map_location import resolve_google_maps_location
 from ver_para_ser_libre.services.sedes import filtrar_sedes_por_provincia
 
 
@@ -427,8 +430,9 @@ class ItinerarioListView(LoginRequiredMixin, ListView):
                     | filtro_estado
                     | Q(referente_nombre__icontains=query)
                     | Q(referente_apellido__icontains=query)
-                    | Q(sedes__nombre__icontains=query)
-                    | Q(sedes__cueanexo__icontains=query)
+                    | Q(jornadas__sede__icontains=query)
+                    | Q(jornadas__direccion__icontains=query)
+                    | Q(jornadas__localidad__nombre__icontains=query)
                 )
             queryset = queryset.filter(filtro)
         if estado:
@@ -443,8 +447,7 @@ class ItinerarioListView(LoginRequiredMixin, ListView):
         if localidad:
             queryset = queryset.filter(
                 Q(localidades_tentativas__icontains=localidad)
-                | Q(sedes__localidad__icontains=localidad)
-                | Q(jornadas__sede_vpsl__localidad__icontains=localidad)
+                | Q(jornadas__localidad__nombre__icontains=localidad)
             )
         if fecha_desde:
             queryset = queryset.filter(fecha_fin__gte=fecha_desde)
@@ -654,7 +657,6 @@ class ItinerarioSubsanarView(LoginRequiredMixin, UpdateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        workflow.asegurar_evaluaciones_sedes(self.object)
         context["componentes_subsanar"] = self._componentes_subsanar()
         context["breadcrumb_items"] = _breadcrumb(
             {"text": self.object.codigo, "url": self.get_success_url()},
@@ -679,16 +681,6 @@ class ItinerarioSubsanarView(LoginRequiredMixin, UpdateView):
                     "detalle": self.object.carta_archivo.name,
                 }
             )
-        for evaluacion in self.object.evaluaciones_sedes.select_related("sede").filter(
-            estado=EstadoEvaluacionVPSL.SUBSANAR
-        ):
-            componentes.append(
-                {
-                    "tipo": "Sede",
-                    "detalle": f"{evaluacion.sede.nombre} - {evaluacion.sede.localidad}",
-                    "observacion": evaluacion.observacion,
-                }
-            )
         return componentes
 
 
@@ -698,19 +690,16 @@ class ItinerarioDetailView(LoginRequiredMixin, DetailView):
     context_object_name = "itinerario"
 
     def get_queryset(self):
-        queryset = ItinerarioVPSL.objects.select_related("provincia").prefetch_related(
-            "sedes",
-            "evaluaciones_sedes__sede",
-            "jornadas",
-            "jornadas__registros",
-        )
+        queryset = ItinerarioVPSL.objects.select_related("provincia")
         return _filtrar_itinerarios_por_usuario(queryset, self.request.user)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        jornadas = self.object.jornadas.select_related(
-            "localidad", "municipio", "sede_vpsl"
-        ).annotate(registros_total=Count("registros", distinct=True))
+        jornadas = (
+            self.object.jornadas.select_related("localidad", "municipio")
+            .prefetch_related("vehiculos")
+            .annotate(registros_total=Count("registros", distinct=True))
+        )
         context["jornadas"] = jornadas
         context["mostrar_presentar"] = self.object.estado in {
             EstadoItinerario.BORRADOR,
@@ -729,18 +718,6 @@ class ItinerarioDetailView(LoginRequiredMixin, DetailView):
             EstadoItinerario.EN_SUBSANACION,
         }
         context["puede_crear_jornada"] = self.object.estado == EstadoItinerario.APROBADO
-        workflow.asegurar_evaluaciones_sedes(self.object)
-        evaluaciones = {
-            evaluacion.sede_id: evaluacion
-            for evaluacion in self.object.evaluaciones_sedes.select_related("sede")
-        }
-        context["sedes_evaluadas"] = [
-            {
-                "sede": sede,
-                "evaluacion": evaluaciones.get(sede.pk),
-            }
-            for sede in self.object.sedes.all()
-        ]
         context["estado_evaluacion_choices"] = EstadoEvaluacionVPSL.choices
         context["evaluacion_obliga_rechazo"] = workflow.evaluacion_obliga_rechazo(
             self.object
@@ -755,8 +732,6 @@ class ItinerarioDetailView(LoginRequiredMixin, DetailView):
     def _motivo_aprobar_deshabilitado(self):
         if not workflow._carta_aprobada(self.object):
             return "Debe aprobar al menos una carta cargada."
-        if not workflow.sedes_aprobadas_itinerario(self.object).exists():
-            return "Debe aprobar al menos una sede tentativa."
         return ""
 
 
@@ -776,6 +751,8 @@ class ItinerarioExportView(LoginRequiredMixin, CSVExportMixin, View):
             ("Jornada fecha", "jornada_fecha"),
             ("Jornada sede", "jornada_sede"),
             ("Jornada localidad", "jornada_localidad"),
+            ("Jornada direccion", "jornada_direccion"),
+            ("Ubicacion sede", "ubicacion_sede"),
             ("Jornada vehiculo", "jornada_vehiculo"),
             ("Jornada estado", "jornada_estado"),
             ("Jornada horario", "jornada_horario"),
@@ -788,8 +765,7 @@ class ItinerarioExportView(LoginRequiredMixin, CSVExportMixin, View):
         return get_object_or_404(
             _filtrar_itinerarios_por_usuario(
                 ItinerarioVPSL.objects.select_related("provincia").prefetch_related(
-                    "sedes",
-                    "jornadas__sede_vpsl",
+                    "jornadas__vehiculos",
                     "jornadas__registros",
                     "jornadas__registros__caso_laboratorio",
                 ),
@@ -819,10 +795,10 @@ class ItinerarioExportView(LoginRequiredMixin, CSVExportMixin, View):
                     "referente_email": itinerario.referente_email,
                     "jornada_fecha": jornada.fecha if jornada else "",
                     "jornada_sede": jornada.sede if jornada else "",
-                    "jornada_localidad": (
-                        jornada.sede_vpsl.localidad
-                        if jornada and jornada.sede_vpsl
-                        else ""
+                    "jornada_localidad": jornada.localidad if jornada else "",
+                    "jornada_direccion": jornada.direccion if jornada else "",
+                    "ubicacion_sede": (
+                        jornada.ubicacion_coordenadas if jornada else ""
                     ),
                     "jornada_vehiculo": (
                         jornada.get_vehiculo_display() if jornada else ""
@@ -1062,14 +1038,47 @@ def _actualizar_evaluacion_itinerario_desde_request(itinerario, request):
             "carta_archivo_estado",
         ]
     )
-    workflow.asegurar_evaluaciones_sedes(itinerario)
-    for evaluacion in itinerario.evaluaciones_sedes.all():
-        estado = request.POST.get(f"sede_{evaluacion.sede_id}_estado")
-        observacion = request.POST.get(f"sede_{evaluacion.sede_id}_observacion", "")
-        if estado:
-            evaluacion.estado = estado
-            evaluacion.observacion = observacion
-            evaluacion.save(update_fields=["estado", "observacion", "updated_at"])
+
+
+def buscar_ubicacion_google_maps(request):
+    ip = request.META.get("REMOTE_ADDR", "anon")
+    user_id = getattr(request.user, "pk", None) or "anon"
+    if hit_rate_limit(
+        scope="vpsl_buscar_ubicacion",
+        identity=f"{ip}:{user_id}",
+        limit=10,
+        window_seconds=60,
+    ):
+        response = JsonResponse(
+            {
+                "success": False,
+                "message": (
+                    "Se alcanzó el límite de búsquedas. "
+                    "Intente nuevamente en un minuto."
+                ),
+            },
+            status=429,
+        )
+        response["Retry-After"] = "60"
+        return response
+    try:
+        location = resolve_google_maps_location(request.POST.get("ubicacion_url", ""))
+    except ValidationError as exc:
+        return JsonResponse(
+            {"success": False, "message": "; ".join(exc.messages)}, status=400
+        )
+    return JsonResponse(
+        {
+            "success": True,
+            "ubicacion_url": location.original_url,
+            "query": location.query,
+            "direccion": location.address,
+            "latitud": str(location.latitude) if location.latitude is not None else "",
+            "longitud": (
+                str(location.longitude) if location.longitude is not None else ""
+            ),
+        }
+    )
 
 
 class JornadaCreateView(LoginRequiredMixin, CreateView):
@@ -1088,12 +1097,6 @@ class JornadaCreateView(LoginRequiredMixin, CreateView):
             messages.error(
                 request,
                 "Solo se pueden crear jornadas en itinerarios aprobados.",
-            )
-            return redirect("vpsl_itinerario_detail", pk=itinerario.pk)
-        if not workflow.sedes_aprobadas_itinerario(itinerario).exists():
-            messages.error(
-                request,
-                "El itinerario no tiene sedes aprobadas para crear jornadas.",
             )
             return redirect("vpsl_itinerario_detail", pk=itinerario.pk)
         return super().dispatch(request, *args, **kwargs)
@@ -1155,15 +1158,9 @@ class JornadaCreateView(LoginRequiredMixin, CreateView):
             pk=self.kwargs["itinerario_pk"],
         )
         context["itinerario"] = itinerario
-        context["sede_data"] = {
-            str(sede.pk): {
-                "nombre": sede.nombre,
-                "localidad": sede.localidad,
-                "domicilio": sede.domicilio,
-                "jurisdiccion": sede.jurisdiccion,
-            }
-            for sede in itinerario.sedes.all()
-        }
+        context["mapa_query"] = quote_plus(
+            getattr(getattr(self, "object", None), "mapa_query", "") or ""
+        )
         context["breadcrumb_items"] = _breadcrumb(
             {
                 "text": itinerario.codigo,
@@ -1181,7 +1178,7 @@ class JornadaUpdateView(LoginRequiredMixin, UpdateView):
 
     def get_queryset(self):
         return _filtrar_jornadas_por_usuario(
-            JornadaVPSL.objects.select_related("itinerario", "sede_vpsl"),
+            JornadaVPSL.objects.select_related("itinerario", "itinerario__provincia"),
             self.request.user,
         )
 
@@ -1213,15 +1210,7 @@ class JornadaUpdateView(LoginRequiredMixin, UpdateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["itinerario"] = self.object.itinerario
-        context["sede_data"] = {
-            str(sede.pk): {
-                "nombre": sede.nombre,
-                "localidad": sede.localidad,
-                "domicilio": sede.domicilio,
-                "jurisdiccion": sede.jurisdiccion,
-            }
-            for sede in self.object.itinerario.sedes.all()
-        }
+        context["mapa_query"] = quote_plus(self.object.mapa_query or "")
         context["breadcrumb_items"] = _breadcrumb(
             {
                 "text": self.object.itinerario.codigo,
@@ -1267,13 +1256,12 @@ class JornadaDetailView(LoginRequiredMixin, DetailView):
     def get_queryset(self):
         queryset = JornadaVPSL.objects.select_related(
             "itinerario", "localidad", "municipio", "sede_vpsl"
-        )
+        ).prefetch_related("checklist", "vehiculos")
         return _filtrar_jornadas_por_usuario(queryset, self.request.user)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        sede = self.object.sede_vpsl
-        context["checklist"] = sede.checklist.all() if sede else []
+        context["checklist"] = list(self.object.checklist.all())
         context["registros"] = self.object.registros.all()[:25]
         casos_laboratorio = CasoLaboratorioVPSL.objects.filter(
             registro__jornada=self.object
@@ -1295,18 +1283,6 @@ class JornadaDetailView(LoginRequiredMixin, DetailView):
         context["cierre"] = cierre
         context["cierre_inconsistente"] = bool(cierre and not cierre.consistente)
         context["puede_cierre_definitivo"] = bool(cierre and cierre.consistente)
-        context["habilitar_bloqueado"] = not (
-            sede
-            and sede.checklist.exists()
-            and not sede.checklist.exclude(cumple=True).exists()
-        )
-        context["mostrar_habilitar_jornada"] = (
-            self.object.estado in workflow.JORNADA_ESTADOS_HABILITABLES
-        )
-        context["puede_habilitar_jornada"] = (
-            self.object.estado in workflow.JORNADA_ESTADOS_HABILITABLES
-            and not context["habilitar_bloqueado"]
-        )
         context["puede_cerrar_jornada"] = (
             self.object.estado in workflow.JORNADA_ESTADOS_CIERRE_PERMITIDO
         )
@@ -1327,13 +1303,13 @@ class JornadaDetailView(LoginRequiredMixin, DetailView):
             }
             for item_code, label in ChecklistSedeVPSLForm.ITEMS
         ]
-        context["checklist_completo"] = workflow.checklist_sede_completo(sede)
-        context["mapa_query"] = quote_plus(sede.mapa_query) if sede else ""
+        context["checklist_completo"] = workflow.checklist_jornada_completo(self.object)
+        context["mapa_query"] = quote_plus(self.object.mapa_query)
         context["sede_resumen"] = {
-            "escuela": sede.nombre if sede else self.object.sede,
-            "provincia": sede.jurisdiccion if sede else "",
-            "localidad": sede.localidad if sede else "",
-            "calle_altura": sede.domicilio if sede else self.object.direccion,
+            "escuela": self.object.sede,
+            "provincia": self.object.itinerario.provincia,
+            "localidad": self.object.localidad or "",
+            "calle_altura": self.object.direccion,
         }
         context["puede_exportar"] = _puede_exportar(self.request.user)
         context["breadcrumb_items"] = _breadcrumb(
@@ -1360,12 +1336,12 @@ class JornadaExportView(LoginRequiredMixin, CSVExportMixin, View):
             ("Sede", "sede"),
             ("Localidad", "localidad"),
             ("Direccion", "direccion"),
+            ("Ubicacion sede", "ubicacion_sede"),
             ("Vehiculo", "vehiculo"),
             ("Horario inicio", "horario_inicio"),
             ("Horario fin", "horario_fin"),
             ("Referente", "referente"),
             ("Telefono referente", "referente_telefono"),
-            ("Email referente", "referente_email"),
             ("Acta", "numero_acta"),
             ("DNI", "dni"),
             ("Apellido", "apellido"),
@@ -1374,7 +1350,8 @@ class JornadaExportView(LoginRequiredMixin, CSVExportMixin, View):
             ("Edad", "edad"),
             ("Telefono", "telefono"),
             ("Fecha atencion", "fecha_atencion"),
-            ("Prescripcion", "prescripcion"),
+            ("Graduacion izquierda", "graduacion_izquierda"),
+            ("Graduacion derecha", "graduacion_derecha"),
             ("Resultado", "resultado"),
             ("Cantidad lentes", "cantidad_lentes"),
             ("Primera vez anteojos", "primera_vez_anteojos"),
@@ -1388,7 +1365,9 @@ class JornadaExportView(LoginRequiredMixin, CSVExportMixin, View):
                     "itinerario",
                     "itinerario__provincia",
                     "sede_vpsl",
-                ).prefetch_related("registros", "registros__caso_laboratorio"),
+                ).prefetch_related(
+                    "vehiculos", "registros", "registros__caso_laboratorio"
+                ),
                 self.request.user,
             ),
             pk=self.kwargs["pk"],
@@ -1407,10 +1386,9 @@ class JornadaExportView(LoginRequiredMixin, CSVExportMixin, View):
                     "fecha": jornada.fecha,
                     "estado": jornada.get_estado_display(),
                     "sede": jornada.sede,
-                    "localidad": (
-                        jornada.sede_vpsl.localidad if jornada.sede_vpsl else ""
-                    ),
+                    "localidad": jornada.localidad or "",
                     "direccion": jornada.direccion,
+                    "ubicacion_sede": jornada.ubicacion_coordenadas,
                     "vehiculo": jornada.get_vehiculo_display(),
                     "horario_inicio": jornada.horario_inicio,
                     "horario_fin": jornada.horario_fin,
@@ -1418,7 +1396,6 @@ class JornadaExportView(LoginRequiredMixin, CSVExportMixin, View):
                         f"{jornada.referente_nombre} {jornada.referente_apellido}"
                     ).strip(),
                     "referente_telefono": jornada.referente_telefono,
-                    "referente_email": jornada.referente_email,
                     "numero_acta": registro.numero_acta if registro else "",
                     "dni": registro.dni if registro else "",
                     "apellido": registro.apellido if registro else "",
@@ -1427,7 +1404,12 @@ class JornadaExportView(LoginRequiredMixin, CSVExportMixin, View):
                     "edad": registro.edad if registro else "",
                     "telefono": registro.telefono if registro else "",
                     "fecha_atencion": registro.fecha_atencion if registro else "",
-                    "prescripcion": registro.prescripcion if registro else "",
+                    "graduacion_izquierda": (
+                        registro.graduacion_izquierda if registro else ""
+                    ),
+                    "graduacion_derecha": (
+                        registro.graduacion_derecha if registro else ""
+                    ),
                     "resultado": registro.get_resultado_display() if registro else "",
                     "cantidad_lentes": registro.cantidad_lentes if registro else "",
                     "primera_vez_anteojos": (
@@ -1471,7 +1453,7 @@ class ChecklistCreateView(LoginRequiredMixin, View):
     def _get_jornada(self):
         return get_object_or_404(
             _filtrar_jornadas_por_usuario(
-                JornadaVPSL.objects.select_related("sede_vpsl"),
+                JornadaVPSL.objects.prefetch_related("checklist"),
                 self.request.user,
             ),
             pk=self.kwargs["jornada_pk"],
@@ -1479,23 +1461,23 @@ class ChecklistCreateView(LoginRequiredMixin, View):
 
     def get(self, request, *args, **kwargs):
         jornada = self._get_jornada()
-        form = ChecklistSedeVPSLForm(sede=jornada.sede_vpsl)
+        form = ChecklistSedeVPSLForm(jornada=jornada)
         return self._render(request, jornada, form)
 
+    @transaction.atomic
     def post(self, request, *args, **kwargs):
         jornada = self._get_jornada()
         form = ChecklistSedeVPSLForm(
             request.POST,
             request.FILES,
-            sede=jornada.sede_vpsl,
+            jornada=jornada,
         )
         if not form.is_valid():
             return self._render(request, jornada, form)
         for item_code, label in ChecklistSedeVPSLForm.ITEMS:
-            checklist, _ = jornada.sede_vpsl.checklist.get_or_create(
+            checklist, _ = jornada.checklist.get_or_create(
                 item=item_code,
                 defaults={
-                    "jornada": jornada,
                     "descripcion": label,
                     "critico": True,
                 },
@@ -1525,12 +1507,15 @@ class ChecklistCreateView(LoginRequiredMixin, View):
                     observacion_nueva=checklist.observacion,
                     usuario=request.user,
                 )
-        jornada.sede_vpsl.checklist_aprobado = not jornada.sede_vpsl.checklist.exclude(
-            cumple=True
-        ).exists()
-        jornada.sede_vpsl.save(update_fields=["checklist_aprobado"])
         workflow.sincronizar_estado_checklist_jornada(jornada, usuario=request.user)
-        messages.success(request, "Checklist de sede guardado correctamente.")
+        jornada.refresh_from_db(fields=["estado"])
+        if jornada.estado == EstadoJornada.HABILITADA:
+            messages.success(
+                request,
+                "Checklist guardado. La jornada quedo habilitada automaticamente.",
+            )
+        else:
+            messages.success(request, "Checklist de sede guardado correctamente.")
         return redirect(self.get_success_url())
 
     def _render(self, request, jornada, form):
@@ -1541,7 +1526,7 @@ class ChecklistCreateView(LoginRequiredMixin, View):
                 "form": form,
                 "field_groups": form.field_groups,
                 "jornada": jornada,
-                "sede": jornada.sede_vpsl,
+                "sede": jornada.sede,
             },
         )
 

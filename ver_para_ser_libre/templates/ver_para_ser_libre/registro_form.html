@@ -88,7 +88,7 @@
                                 <div class="vpsl-section-body">
                                     <div class="row g-3">
                                         {% for field in form %}
-                                            {% if field.name != "dni" and field.name != "sexo" and field.name != "prescripcion" and field.name != "resultado" and field.name != "cantidad_lentes" and field.name != "adjunto" and field.name != "primera_vez_anteojos" and field.name != "observaciones" %}
+                                            {% if field.name != "dni" and field.name != "sexo" and field.name != "graduacion_izquierda" and field.name != "graduacion_derecha" and field.name != "resultado" and field.name != "cantidad_lentes" and field.name != "adjunto" and field.name != "primera_vez_anteojos" and field.name != "observaciones" %}
                                                 <div class="col-12 col-md-6" data-field-name="{{ field.name }}">
                                                     <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
                                                     {{ field }}
@@ -110,11 +110,24 @@
                                 </div>
                                 <div class="vpsl-section-body">
                                     <div class="row g-3">
-                                        <div class="col-12 col-md-6"
-                                             data-field-name="{{ form.prescripcion.name }}">
-                                            <label class="form-label" for="{{ form.prescripcion.id_for_label }}">{{ form.prescripcion.label }}</label>
-                                            {{ form.prescripcion }}
-                                            {% for error in form.prescripcion.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                                        <div class="col-12">
+                                            <h4 class="h6 mb-2">Graduación</h4>
+                                            <div class="row g-3">
+                                                <div class="col-12 col-md-6"
+                                                     data-field-name="{{ form.graduacion_izquierda.name }}">
+                                                    <label class="form-label" for="{{ form.graduacion_izquierda.id_for_label }}">
+                                                        {{ form.graduacion_izquierda.label }}
+                                                    </label>
+                                                    {{ form.graduacion_izquierda }}
+                                                    {% for error in form.graduacion_izquierda.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                                                </div>
+                                                <div class="col-12 col-md-6"
+                                                     data-field-name="{{ form.graduacion_derecha.name }}">
+                                                    <label class="form-label" for="{{ form.graduacion_derecha.id_for_label }}">{{ form.graduacion_derecha.label }}</label>
+                                                    {{ form.graduacion_derecha }}
+                                                    {% for error in form.graduacion_derecha.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                                                </div>
+                                            </div>
                                         </div>
                                         <div class="col-12">
                                             <div class="row g-3">
@@ -184,6 +197,8 @@
         const resultado = document.getElementById("id_resultado");
         const cantidadLentes = document.getElementById("id_cantidad_lentes");
         const cantidadLentesWrapper = document.querySelector('[data-field-name="cantidad_lentes"]');
+        const graduacionIzquierda = document.getElementById("id_graduacion_izquierda");
+        const graduacionDerecha = document.getElementById("id_graduacion_derecha");
         const fieldsFromRenaper = ["nombre", "apellido", "edad", "genero"];
 
         function setField(name, value) {
@@ -205,14 +220,27 @@
         function syncCantidadLentes() {
           if (!resultado || !cantidadLentes || !cantidadLentesWrapper) return;
           const noRequiere = resultado.value === "no_requiere";
+          const requiereGraduacion = [
+            "entregado_dia",
+            "derivado",
+            "enviado_laboratorio",
+          ].includes(resultado.value);
           cantidadLentesWrapper.classList.toggle("d-none", noRequiere);
           if (noRequiere) {
             cantidadLentes.value = "0";
           }
+          [graduacionIzquierda, graduacionDerecha].forEach((field) => {
+            if (!field) return;
+            field.required = requiereGraduacion;
+            if (noRequiere) field.value = "";
+          });
         }
 
         function renderStatus(className, text) {
-          status.innerHTML = `<span class="${className}">${text}</span>`;
+          const badge = document.createElement("span");
+          badge.className = className;
+          badge.textContent = text;
+          status.replaceChildren(badge);
         }
 
         function parseRenaperBirthDate(value) {
