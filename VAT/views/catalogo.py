@@ -56,10 +56,6 @@ class ModalidadCursadaListView(LoginRequiredMixin, ListView):
         queryset = MODALIDAD_ADVANCED_FILTER.filter_queryset(
             super().get_queryset(), self.request
         )
-        # El buscador simple seguia sin aplicarse en la vista; ahora si busca.
-        busqueda = (self.request.GET.get("busqueda") or "").strip()
-        if busqueda:
-            queryset = queryset.filter(nombre__icontains=busqueda)
         return queryset.distinct().order_by("nombre")
 
     def get_context_data(self, **kwargs):
@@ -476,9 +472,6 @@ class PlanVersionCurricularListView(
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["titulos"] = TituloReferencia.objects.all().order_by("nombre")
-        context["titulo_filter"] = self.request.GET.get("titulo")
-        context["activo_filter"] = self.request.GET.get("activo")
         context["filters_mode"] = True
         context["filters_config"] = get_plan_filters_ui_config()
         context["filters_action"] = reverse("vat_planversioncurricular_list")

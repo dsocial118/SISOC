@@ -870,22 +870,12 @@ class SedeListView(LoginRequiredMixin, ListView):
     paginate_by = 15
 
     def get_queryset(self):
-        query = (self.request.GET.get("busqueda") or "").strip()
         queryset = SedeVPSL.objects.order_by("jurisdiccion", "localidad", "nombre")
         queryset = SEDE_ADVANCED_FILTER.filter_queryset(queryset, self.request)
-        if query:
-            queryset = queryset.filter(
-                Q(nombre__icontains=query)
-                | Q(cueanexo__icontains=query)
-                | Q(jurisdiccion__icontains=query)
-                | Q(localidad__icontains=query)
-                | Q(domicilio__icontains=query)
-            )
         return queryset.distinct()
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["query"] = self.request.GET.get("busqueda", "")
         context["filters_mode"] = True
         context["filters_config"] = get_sede_filters_ui_config()
         context["filters_action"] = reverse("vpsl_sede_list")

@@ -9,7 +9,7 @@
 
     <div class="vat-ui">
         {% url 'vat_planversioncurricular_list' as reset_url %}
-        {% include 'components/search_bar.html' with titulo="Buscar Plan de Estudio" reset_url=reset_url add_url='vat_planversioncurricular_create' add_text='Agregar' filters_mode=True filters_config=filters_config filters_action=filters_action query=request.GET.busqueda %}
+        {% include 'components/search_bar.html' with titulo="Buscar Plan de Estudio" reset_url=reset_url add_url='vat_planversioncurricular_create' add_text='Agregar' filters_mode=True filters_config=filters_config filters_action=filters_action %}
 
         <div class="row mt-5 max-width-100">
             <div class="col-12">

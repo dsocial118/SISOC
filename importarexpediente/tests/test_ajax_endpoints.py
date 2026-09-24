@@ -1,3 +1,5 @@
+import json
+
 """Tests for test ajax endpoints."""
 
 import pytest
@@ -57,32 +59,42 @@ def seed_imports(client_logged, tmp_media):
     assert ArchivosImportados.objects.count() >= 3
 
 
-def test_list_view_and_ajax_filters(client_logged, seed_imports):
-    # List view loads (accept redirect or 200 depending on middleware)
+def test_list_view_filtra_con_filtros_combinables(client_logged, seed_imports):
+    """El listado ya no usa el endpoint AJAX: filtra con el motor combinable."""
+
     list_url = reverse("importarexpedientes_list")
     resp = client_logged.get(list_url)
     assert resp.status_code in (200, 302)
 
-    # AJAX endpoint returns JSON shape
-    ajax_url = reverse("importarexpedientes_ajax")
-    resp = client_logged.get(ajax_url, {"busqueda": "expedientes_1.csv"})
-    assert resp.status_code == 200
-    data = resp.json()
-    assert {"html", "pagination_html", "count", "current_page", "total_pages"} <= set(
-        data.keys()
+    resp = client_logged.get(
+        list_url,
+        {
+            "filters": json.dumps(
+                {
+                    "logic": "AND",
+                    "items": [
+                        {
+                            "field": "archivo",
+                            "op": "contains",
+                            "value": "expedientes_1.csv",
+                        }
+                    ],
+                }
+            )
+        },
     )
-    assert "expedientes_1.csv" in data["html"]
-    assert "Descargar" in data["html"]
+    assert resp.status_code == 200
+    html = resp.content.decode()
+    assert "expedientes_1.csv" in html
+    assert "Descargar" in html
 
 
-def test_list_and_ajax_require_view_permission(client, user):
+def test_list_requiere_permiso_de_lectura(client, user):
     client.force_login(user)
 
     list_response = client.get(reverse("importarexpedientes_list"))
-    ajax_response = client.get(reverse("importarexpedientes_ajax"))
 
     assert list_response.status_code == 403
-    assert ajax_response.status_code == 403
 
 
 def test_list_view_backfills_periodo_from_stored_file(client_logged, tmp_media):
@@ -192,13 +204,6 @@ def test_user_can_list_and_interact_with_another_users_import(client_logged, tmp
     assert list_response.status_code == 200
     assert "importacion_ajena.csv" in list_response.content.decode()
     assert "owner" in list_response.content.decode()
-
-    ajax_response = client_logged.get(
-        reverse("importarexpedientes_ajax"), {"busqueda": "owner"}
-    )
-    assert ajax_response.status_code == 200
-    assert ajax_response.json()["count"] == 1
-    assert "importacion_ajena.csv" in ajax_response.json()["html"]
 
     detail_response = client_logged.get(
         reverse("importarexpediente_detail", kwargs={"id_archivo": batch.id})

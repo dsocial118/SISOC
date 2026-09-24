@@ -324,7 +324,6 @@ class CentroDeInfanciaListView(LoginRequiredMixin, ListView):
     paginate_by = 10
 
     def get_queryset(self):
-        query = self.request.GET.get("busqueda")
         nomina_subquery = NominaCentroInfancia.objects.filter(centro_id=OuterRef("pk"))
         queryset = CentroDeInfancia.objects.select_related(
             "provincia",
@@ -336,10 +335,6 @@ class CentroDeInfanciaListView(LoginRequiredMixin, ListView):
         queryset = CENTRODEINFANCIA_ADVANCED_FILTER.filter_queryset(
             queryset, self.request
         )
-        if query:
-            queryset = queryset.filter(
-                Q(nombre__icontains=query) | Q(organizacion__icontains=query)
-            )
         return queryset.distinct().order_by("nombre")
 
     def get_context_data(self, **kwargs):

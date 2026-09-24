@@ -77,17 +77,21 @@ def test_modalidad_cursada_filtra_por_nombre(client, admin):
     assert [m.pk for m in response.context["modalidades"]] == [buscada.pk]
 
 
-def test_modalidad_cursada_ahora_aplica_la_busqueda_simple(client, admin):
-    """Antes la vista ignoraba `busqueda`: el buscador era decorativo."""
+def test_modalidad_cursada_ya_no_arrastra_la_busqueda_vieja(client, admin):
+    """El buscador simple era decorativo: la vista nunca aplicaba `busqueda`.
+
+    Al migrar a filtros combinables se removio, porque ya no hay input que lo
+    dispare: el parametro no tiene que alterar el listado.
+    """
 
     from VAT.models import ModalidadCursada
 
-    buscada = ModalidadCursada.objects.create(nombre="Semipresencial")
+    ModalidadCursada.objects.create(nombre="Semipresencial")
     ModalidadCursada.objects.create(nombre="Virtual")
 
     response = client.get(reverse("vat_modalidadcursada_list"), {"busqueda": "Semi"})
 
-    assert [m.pk for m in response.context["modalidades"]] == [buscada.pk]
+    assert response.context["modalidades"].count() == 2
 
 
 def test_sede_vpsl_combina_dos_filtros(client, admin):
@@ -118,13 +122,22 @@ def test_sede_vpsl_combina_dos_filtros(client, admin):
     assert [s.pk for s in response.context["sedes"]] == [objetivo.pk]
 
 
-def test_sede_vpsl_conserva_su_busqueda_libre(client, admin):
+def test_sede_vpsl_busca_por_domicilio_con_el_filtro_combinable(client, admin):
+    """El texto libre se reemplazo por el filtro combinable sobre el mismo campo."""
+
     from ver_para_ser_libre.models import SedeVPSL
 
     objetivo = SedeVPSL.objects.create(nombre="Sede Uno", domicilio="Calle Falsa 123")
     SedeVPSL.objects.create(nombre="Sede Dos", domicilio="Otra")
 
-    response = client.get(reverse("vpsl_sede_list"), {"busqueda": "Falsa"})
+    response = client.get(
+        reverse("vpsl_sede_list"),
+        {
+            "filters": _filtros(
+                [{"field": "domicilio", "op": "contains", "value": "Falsa"}]
+            )
+        },
+    )
 
     assert [s.pk for s in response.context["sedes"]] == [objetivo.pk]
 
@@ -212,3 +225,18 @@ def test_plan_curricular_filtra_por_campo_combinable(client, admin):
     )
 
     assert [p.pk for p in response.context["planes"]] == [objetivo.pk]
+
+
+def test_itinerarios_conserva_su_busqueda_libre_y_su_panel(client, admin):
+    """Unica pantalla donde el buscador propio del modulo sigue vivo.
+
+    Su logica no es expresable con el engine (OR entre siete campos, mapeo de
+    estado por texto, provincia segun permisos), asi que se mantiene y viaja en
+    el mismo submit que los filtros combinables.
+    """
+
+    contenido = client.get(reverse("vpsl_itinerario_list")).content.decode()
+
+    assert 'name="busqueda"' in contenido
+    assert 'form="filters-form"' in contenido
+    assert "poncho-filter-row-template" in contenido

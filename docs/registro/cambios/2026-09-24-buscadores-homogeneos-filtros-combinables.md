@@ -27,15 +27,14 @@ cada uno lo que ya buscaba:
 
 Cada `filter_config` define `FIELD_MAP` / `FIELD_TYPES` / operadores /
 `FILTER_FIELDS` y su `AdvancedFilterEngine`, igual que comedores y dispositivos.
-Las vistas aplican el engine al queryset **antes** de su busqueda propia, que se
-mantiene intacta, y exponen `filters_mode`, `filters_config` y `filters_action`.
+Las vistas aplican el engine al queryset y exponen `filters_mode`,
+`filters_config` y `filters_action`. Los campos filtrables cubren lo que cada
+listado ya buscaba, de modo que ninguna busqueda se pierde: cambia el como, no
+el que.
 
 Detalles por pantalla:
-- **VAT modalidades**: ademas de los filtros combinables, ahora la vista aplica
-  `busqueda` por nombre; antes se ignoraba.
-- **VAT planes**: conserva sus filtros propios de `titulo` y `activo`.
-- **Importar expedientes**: la vista AJAX (`importarexpedientes_ajax`) tambien
-  honra `filters`, para que el endpoint siga sirviendo igual que el listado.
+- **VAT planes**: conserva sus filtros propios por los parametros `titulo` y
+  `activo`.
 - **VPSL itinerarios**: el modulo tenia un panel de filtros propio y un
   comentario en el template explicando por que no se habia migrado (la busqueda
   "todos" hace un OR entre siete campos, `estado` mapea texto con una funcion,
@@ -44,6 +43,25 @@ Detalles por pantalla:
   decision: el panel y su texto libre **siguen existiendo**, re-apuntados con
   `form="filters-form"` para viajar en el mismo submit que los filtros
   combinables. Los combinables se suman, no reemplazan.
+
+## Limpieza del buscador viejo
+En las pantallas migradas, el mecanismo de busqueda anterior quedaba inalcanzable
+(en `filters_mode` el componente no renderiza input de texto), asi que se removio:
+
+- **Importar expedientes**: se elimino la vista `importarexpedientes_ajax`, su
+  ruta y el `{% url ... as ajax_url %}` del template, que era el buscador AJAX en
+  vivo del listado. Tambien el filtrado por `busqueda` de la ListView y el
+  `query` que viajaba al componente y al paginador. El endpoint AJAX del
+  **detalle** (`importarexpediente_detail_ajax`) no se toco: sigue en uso.
+- **Centro de Desarrollo Infancia** y **VPSL sedes**: se removio el filtrado por
+  `busqueda` y el `query` del contexto.
+- **VAT modalidades de cursado**: se removio el filtrado por `busqueda`. Como el
+  buscador viejo era inerte, no habia comportamiento que preservar.
+- **VAT planes curriculares**: se removieron `titulos`, `titulo_filter` y
+  `activo_filter` del contexto, que ningun template usaba. El filtrado por los
+  parametros `titulo` y `activo` se conserva (no depende de la UI).
+- **VPSL itinerarios**: es la excepcion, su buscador propio sigue vivo (ver
+  arriba); se le repuso el input de texto libre, que antes ponia el componente.
 
 ## Decisiones y limites
 - **Organizaciones quedo fuera a proposito**: ya se migro a filtros combinables
@@ -57,17 +75,24 @@ Detalles por pantalla:
 ## Impacto esperado
 - 17 de los 18 listados usan el mismo buscador de filtros combinables, con la
   misma UI y el mismo motor.
-- Ninguna busqueda existente cambia de semantica: el parametro `busqueda` sigue
-  funcionando en todos los listados que lo tenian, y los filtros propios de
+- Ningun campo deja de ser buscable: lo que antes resolvia el texto libre ahora
+  se filtra campo por campo desde la barra combinable, y los filtros propios de
   planes curriculares e itinerarios se conservan.
-- Los dos catalogos de VAT pasan a buscar de verdad.
+- Los dos catalogos de VAT pasan a buscar de verdad (antes el buscador no
+  filtraba nada).
+- **Cambio de contrato**: en las cinco pantallas limpiadas, una URL con
+  `?busqueda=` deja de filtrar. El equivalente es `?filters=` con el campo
+  correspondiente. Afecta a links guardados o compartidos.
 
 ## Validación
-- `pytest -n auto`: 5505 passed, 14 skipped. Test nuevo
-  `tests/test_buscadores_homogeneos.py` (20 casos): verifica que cada listado
+- `pytest -n auto`: 5506 passed, 14 skipped. Test nuevo
+  `tests/test_buscadores_homogeneos.py` (21 casos): verifica que cada listado
   migrado exponga la UI y la config, que los campos declaren tipo y operadores
   validos, que los filtros efectivamente filtren (incluida una combinacion de
-  dos campos) y que la busqueda previa de cada pantalla siga andando.
+  dos campos), que el buscador viejo ya no altere el listado y que itinerarios
+  conserve el suyo.
+- Se actualizaron los tests de `importarexpediente/tests/test_ajax_endpoints.py`
+  que cubrian el endpoint AJAX eliminado.
 - `tests/test_csv_export_architecture.py` sigue fallando, pero ya fallaba antes
   (rompe al decodificar un archivo `cp1252` de `xlwt`).
 - `black` y `djlint` sobre lo tocado.
