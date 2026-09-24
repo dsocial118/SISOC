@@ -283,20 +283,25 @@ def _build_organizacion_responsables_context(comedor_obj):
     }
 
 
-def _build_nomina_metrics(nomina_total, nomina_rangos):
-    nomina_total_safe = nomina_total or 0
-    nomina_activos = nomina_rangos.get("total_activos") or 0
-    nomina_sin_dato = max(nomina_total_safe - nomina_activos, 0)
+def _build_nomina_metrics(nomina_rangos):
+    # Todo el resumen del legajo se calcula sobre asistentes activos (issue
+    # #2507): "Sin dato" son los activos sin fecha de nacimiento, no los
+    # registros en espera o de baja.
+    nomina_asistentes = nomina_rangos.get("cantidad_activos") or 0
+    nomina_activos_con_edad = nomina_rangos.get("total_activos") or 0
+    nomina_sin_dato = max(nomina_asistentes - nomina_activos_con_edad, 0)
     nomina_menores = (nomina_rangos.get("ninos") or 0) + (
         nomina_rangos.get("adolescentes") or 0
     )
 
     def _pct(value):
-        if not nomina_total_safe:
+        if not nomina_asistentes:
             return 0
-        return int(round((value or 0) * 100 / nomina_total_safe))
+        return int(round((value or 0) * 100 / nomina_asistentes))
 
     return {
+        "nomina_asistentes": nomina_asistentes,
+        "nomina_bajas": nomina_rangos.get("baja") or 0,
         "nomina_menores": nomina_menores,
         "nomina_pct_sin_dato": _pct(nomina_sin_dato),
         "nomina_pct_ninos": _pct(nomina_rangos.get("ninos")),
@@ -868,7 +873,7 @@ def _build_admisiones_y_nomina_context(comedor_obj):
         ) = ComedorService.get_nomina_detail_by_comedor(
             comedor_obj.id, page=1, per_page=1
         )
-    nomina_metrics = _build_nomina_metrics(nomina_total, nomina_rangos)
+    nomina_metrics = _build_nomina_metrics(nomina_rangos)
     return {
         "admisiones_qs": admisiones_qs,
         "timeline_context": timeline_context,
@@ -1526,7 +1531,7 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             nomina_total = relaciones_data.get("nomina_total", 0)
             nomina_rangos = relaciones_data.get("nomina_rangos", {})
 
-        nomina_metrics = _build_nomina_metrics(nomina_total, nomina_rangos)
+        nomina_metrics = _build_nomina_metrics(nomina_rangos)
 
         # Agregar opciones de validación
 
