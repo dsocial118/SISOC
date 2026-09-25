@@ -329,7 +329,8 @@ def detalle_filtro_favorito(request, pk):
 @login_required
 def inicio_view(request):
     """Vista para la página de inicio del sistema"""
-    return render(request, "inicio.html")
+    # Es la pantalla raiz: no tiene "pantalla anterior" a la que volver (#2460).
+    return render(request, "inicio.html", {"ocultar_volver": True})
 
 
 def _extract_first_changelog_version(content):

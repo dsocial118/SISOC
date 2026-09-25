@@ -9,8 +9,6 @@
                     <small>{{ organizacion.nombre }}</small>
                 </div>
                 <div class="d-flex gap-2">
-                    <a class="btn btn-outline-secondary"
-                       href="{% url 'organizacion_detalle' organizacion.id %}?proyecto={{ codigo_proyecto|urlencode }}#rendiciones-presentadas">Volver</a>
                     {% if perms.rendicioncuentasmensual.view_rendicioncuentamensual %}
                         <a class="btn btn-primary"
                            href="{% url 'rendicioncuentasmensual_detail' rendicion.id %}">Ir a Rendición</a>

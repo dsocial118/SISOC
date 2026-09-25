@@ -6,6 +6,12 @@
         <div class="app-content-header">
             <!--begin::Container-->
             <div class="container-fluid">
+                {% comment %}
+                "Volver" unificado (issue #2460): se renderiza una sola vez aca
+                para que este en todas las pantallas, arriba a la izquierda.
+                Las vistas que no lo necesitan pasan ocultar_volver=True.
+                {% endcomment %}
+                {% include "components/back_button.html" %}
                 <!--begin::Row-->
                 <div class="row">
                     <div class="col-sm-9">

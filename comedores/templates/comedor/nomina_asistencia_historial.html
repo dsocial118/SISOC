@@ -19,13 +19,6 @@
 {% block content %}
     <link rel="stylesheet" href="{% static 'custom/css/nominaDetail.css' %}" />
 
-    <div class="mb-4 d-print-none">
-        <a href="{% url 'nomina_ver' object.id admision_pk %}"
-           class="btn btn-outline-secondary btn-back">
-            <i class="fas fa-arrow-left"></i> Volver a nómina
-        </a>
-    </div>
-
     <div class="nomina-section bg-base-darkblue">
         {% if asistencia_periodo_seleccionado %}
             <div class="nomina-attendance-detail-header">

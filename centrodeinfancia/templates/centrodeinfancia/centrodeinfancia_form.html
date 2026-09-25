@@ -11,10 +11,7 @@
         <div class="d-flex justify-content-between mb-3">
             <div>
                 {% if form.instance.pk %}
-                    <a href="{% url 'centrodeinfancia_detalle' form.instance.pk %}"
-                       class="btn btn-secondary">Volver</a>
                 {% else %}
-                    <a href="{% url 'centrodeinfancia' %}" class="btn btn-secondary">Volver</a>
                 {% endif %}
             </div>
             <div>

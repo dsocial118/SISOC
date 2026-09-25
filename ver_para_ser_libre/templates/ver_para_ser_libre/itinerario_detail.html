@@ -13,9 +13,6 @@
 {% block content %}
     <div class="vpsl-page">
         <div class="vpsl-page-toolbar">
-            <a href="{% url 'vpsl_itinerario_list' %}" class="btn btn-light">
-                <i class="bi bi-arrow-left"></i> Volver
-            </a>
             <div class="vpsl-actions">
                 {% if puede_exportar %}
                     <a href="{% url 'vpsl_itinerario_export' itinerario.pk %}"

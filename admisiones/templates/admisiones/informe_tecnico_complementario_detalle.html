@@ -25,13 +25,6 @@
         {% url 'admisiones_tecnicos_editar' admision.id as volver_url %}
     {% endif %}
     <div class="container mt-4">
-        <div class="row justify-content-between d-print-none mx-1 mb-3">
-            <div class="col-auto">
-                <a href="{{ volver_url }}{% if origen_acompanamiento %}?admision_id={{ admision.id }}{% endif %}"
-                   class="btn btn-secondary mr-1 backbutton-handler">Volver</a>
-            </div>
-        </div>
-
         {% if observaciones_legales %}
             <div class="alert alert-warning mb-3">
                 <h6>

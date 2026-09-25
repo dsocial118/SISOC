@@ -8,9 +8,6 @@
         <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
             <h2 class="mb-2">Categorías de insumos</h2>
             <div class="d-flex gap-2">
-                <a href="{% url 'insumos_listar' %}" class="btn btn-outline-secondary">
-                    <i class="fas fa-arrow-left"></i> Volver a insumos
-                </a>
                 {% if perms.insumos.add_insumocategoria %}
                     <a href="{% url 'insumos_categorias_crear' %}" class="btn btn-success">
                         <i class="fas fa-plus"></i> Agregar categoría

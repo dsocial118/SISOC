@@ -15,10 +15,6 @@
 
 {% block app-header %}
     <div class="row g-2 align-items-center">
-        <div class="col-12 col-lg-auto d-flex justify-content-start">
-            <a href="{% url 'centrodeinfancia' %}"
-               class="btn btn-sm btn-primary w-100 w-sm-auto">Volver</a>
-        </div>
         <div class="col-12 col-lg d-flex flex-wrap justify-content-start justify-content-lg-end gap-2 align-items-center header-actions">
             <a href="{% url 'centrodeinfancia_nomina_ver' centro.id %}"
                class="btn btn-md btn-outline-light">
@@ -411,7 +407,9 @@
                                     {% empty %}
                                         <tr>
                                             <td colspan="{{ usuarios_cdi_columnas }}"
-                                                class="text-center cdf-td-muted py-3">Sin usuarios generados para este centro.</td>
+                                                class="text-center cdf-td-muted py-3">
+                                                Sin usuarios generados para este centro.
+                                            </td>
                                         </tr>
                                     {% endfor %}
                                 </tbody>

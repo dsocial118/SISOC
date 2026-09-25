@@ -4,11 +4,6 @@
 {% block title %}Relevamiento - Comedor: {{ comedor.nombre }}{% endblock %}
 ;
 {% block titulo-pagina %}
-    <div class="mb-4">
-        <a href="{% url 'comedor_detalle' relevamiento.comedor.id %}"
-           class="btn btn-outline-secondary btn-back mr-1">Volver</a>
-    </div>
-
     {{ relevamiento.comedor.nombre }}
     <span class="ml-2 h5">| Relevamiento</span>
     <span class="ml-2 h5">| {{ relevamiento.fecha_visita | default_if_none:"Sin información" }} |</span>
@@ -1533,7 +1528,9 @@
                                             <button type="button"
                                                     class="btn btn-sm btn-danger"
                                                     data-bs-toggle="modal"
-                                                    data-bs-target="#modalEliminarSeguimiento{{ seguimiento.id }}">Eliminar</button>
+                                                    data-bs-target="#modalEliminarSeguimiento{{ seguimiento.id }}">
+                                                Eliminar
+                                            </button>
                                         {% endif %}
                                     </td>
                                 </tr>
@@ -1557,7 +1554,9 @@
                                 {% csrf_token %}
                                 <div class="modal-header">
                                     <h5 class="modal-title"
-                                        id="modalEliminarSeguimientoLabel{{ seguimiento.id }}">Eliminar {{ seguimiento.get_tipo_display|lower }} #{{ seguimiento.numero_orden }}</h5>
+                                        id="modalEliminarSeguimientoLabel{{ seguimiento.id }}">
+                                        Eliminar {{ seguimiento.get_tipo_display|lower }} #{{ seguimiento.numero_orden }}
+                                    </h5>
                                     <button type="button"
                                             class="btn-close"
                                             data-bs-dismiss="modal"

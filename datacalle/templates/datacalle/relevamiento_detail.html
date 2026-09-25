@@ -1,6 +1,7 @@
 {% extends "includes/main.html" %}
 {% load static %}
-{% block title %}{{ relevamiento.denominacion }}
+{% block title %}
+    {{ relevamiento.denominacion }}
     <div class="dc-seccion mb-4">
         <div class="dc-seccion__header">
             <i class="fas fa-clipboard-list"></i> Casos relevados
@@ -74,9 +75,7 @@
                 <span class="dc-chip dc-chip--{{ relevamiento.estado }}">{{ relevamiento.get_estado_display }}</span>
                 <span>&middot;</span>
                 <span><i class="fas fa-map-marker-alt"></i>{{ relevamiento.provincia }}</span>
-                {% if relevamiento.zonas %}
-                    <span>&middot;</span><span>{{ relevamiento.zonas }}</span>
-                {% endif %}
+                {% if relevamiento.zonas %}<span>&middot;</span><span>{{ relevamiento.zonas }}</span>{% endif %}
                 <span>&middot;</span>
                 <span><i class="fas fa-calendar-alt"></i>{{ relevamiento.dias }} día{{ relevamiento.dias|pluralize }}</span>
             </div>
@@ -94,10 +93,6 @@
                     <i class="fas fa-trash-alt mr-1"></i> Eliminar
                 </a>
             {% endif %}
-            <a href="{% url 'datacalle_relevamientos_listar' %}"
-               class="btn btn-secondary btn-sm">
-                <i class="fas fa-arrow-left mr-1"></i> Volver
-            </a>
         </div>
     </div>
 

@@ -36,8 +36,6 @@
                     </li>
                 </ol>
             </nav>
-            <a href="{% url 'centrodeinfancia_detalle' centro.id %}"
-               class="btn btn-secondary btn-sm">Volver al CDI</a>
         </div>
 
         {% if not is_edit %}
@@ -560,10 +558,6 @@
 
             </form>
         {% else %}
-            <div class="mt-3">
-                <a href="{% url 'centrodeinfancia_detalle' centro.id %}"
-                   class="btn btn-secondary">Volver</a>
-            </div>
         {% endif %}
     </div>
 {% endblock %}

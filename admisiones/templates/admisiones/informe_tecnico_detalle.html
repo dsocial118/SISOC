@@ -15,10 +15,6 @@
     <div class="container mt-4">
         <div class="row justify-content-between d-print-none mx-1 mb-3">
             <div class="col-auto">
-                <a href="{% url 'admisiones_tecnicos_editar' admision.id %}"
-                   class="btn btn-secondary mr-1 backbutton-handler">Volver</a>
-            </div>
-            <div class="col-auto">
                 {% if request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" or request.user.is_superuser %}
                     {% if object.estado == "Docx generado" and pdf_borrador and pdf_borrador.archivo_docx %}
                         <a href="{{ pdf_borrador.archivo_docx.url }}"
@@ -101,8 +97,6 @@
                 {% endfor %}
             </div>
         </div>
-        <a href="{% url 'admisiones_tecnicos_editar' admision.id %}"
-           class="btn btn-secondary mt-3">Volver</a>
     </div>
     <!-- Modal para subir DOCX editado -->
     <div class="modal fade"

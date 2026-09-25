@@ -199,3 +199,31 @@ border-left-color: #fb4733 !important;
 }
 
 
+
+/* ==========================================================================
+   "Volver" unificado (issue #2460)
+   Se renderiza desde includes/main.html, arriba a la izquierda de cada pantalla.
+   ========================================================================== */
+.sisoc-volver-barra {
+  display: flex;
+  justify-content: flex-start;
+  margin-bottom: 0.75rem;
+}
+
+.sisoc-volver {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  text-decoration: none;
+}
+
+.sisoc-volver:hover,
+.sisoc-volver:focus {
+  text-decoration: none;
+}
+
+@media print {
+  .sisoc-volver-barra {
+    display: none !important;
+  }
+}

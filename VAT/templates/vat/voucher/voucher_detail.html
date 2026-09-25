@@ -15,10 +15,6 @@
             <span class="badge fs-6 {% if voucher.estado == 'activo' %}bg-success{% elif voucher.estado == 'vencido' %}bg-danger{% elif voucher.estado == 'agotado' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
                 {{ voucher.get_estado_display }}
             </span>
-            <a href="{% url 'vat_voucher_list' %}"
-               class="btn btn-sm btn-outline-secondary">
-                <i class="bi bi-arrow-left me-1"></i>Volver
-            </a>
         </div>
     </div>
 

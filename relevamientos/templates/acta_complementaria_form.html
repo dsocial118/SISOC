@@ -9,10 +9,6 @@
     acta complementaria - Comedor: {{ comedor.nombre }}
 {% endblock title %}
 {% block titulo-pagina %}
-    <div class="mb-4">
-        <a href="{% url 'relevamientos' comedor.id %}"
-           class="btn btn-outline-secondary btn-back mr-1">Volver</a>
-    </div>
     {{ comedor.nombre }}
     <span class="ml-2 h5">|
         {% if acta %}

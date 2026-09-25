@@ -16,7 +16,7 @@
         variable. Lo detecta test_listado_publico_no_hace_consultas_n_mas_1.
         Se pasa `request` explicito porque el componente lo usa para permisos.
         {% endcomment %}
-        {% include 'components/search_bar.html' with titulo='Buscar comunicado' placeholder='Buscar por título...' help_text='Buscar por título.' reset_url='comunicados' back_url='' search_name='titulo' query=filtro_titulo show_add_button=False additional_buttons=additional_buttons request=request only %}
+        {% include 'components/search_bar.html' with titulo='Buscar comunicado' placeholder='Buscar por título...' help_text='Buscar por título.' reset_url='comunicados' search_name='titulo' query=filtro_titulo show_add_button=False additional_buttons=additional_buttons request=request only %}
 
         <!-- Lista de comunicados -->
         {% for comunicado in comunicados %}
