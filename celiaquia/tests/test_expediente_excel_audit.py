@@ -146,11 +146,40 @@ def test_provincia_no_ve_auditoria_excel_y_no_descarga(client, settings, tmp_pat
 
 
 @pytest.mark.django_db
-def test_tecnico_no_descarga_excel_masivo(client, settings, tmp_path):
+def test_tecnico_asignado_ve_auditoria_y_descarga_excel(client, settings, tmp_path):
     provincia = _user("provincia-tec", provincial=True)
     tecnico = _user("tecnico", tecnico=True)
     expediente = _expediente_con_excel(settings, tmp_path, provincia)
     AsignacionTecnico.objects.create(expediente=expediente, tecnico=tecnico)
+
+    client.force_login(tecnico)
+    detail = client.get(reverse("expediente_detail", args=[expediente.pk]))
+    assert detail.status_code == 200
+    content = detail.content.decode()
+    assert "Descargar Excel Provincia" in content
+    assert "Excel original" in content
+    assert "carga_original.xlsx" in content
+
+    listing = client.get(reverse("expediente_list"))
+    assert listing.status_code == 200
+    assert "Excel original" in listing.content.decode()
+
+    download = client.get(
+        reverse("expediente_excel_masivo_descargar", args=[expediente.pk])
+    )
+    assert download.status_code == 200
+    assert "carga_original.xlsx" in download.headers["Content-Disposition"]
+    assert b"".join(download.streaming_content) == b"excel-original"
+
+
+@pytest.mark.django_db
+def test_tecnico_no_asignado_no_descarga_excel_masivo(client, settings, tmp_path):
+    """La vista de descarga no pasa por el queryset del detalle: sin la
+    validacion explicita, un tecnico podria bajar el Excel de cualquier
+    expediente tanteando el pk."""
+    provincia = _user("provincia-sin-tec", provincial=True)
+    tecnico = _user("tecnico-ajeno", tecnico=True)
+    expediente = _expediente_con_excel(settings, tmp_path, provincia)
 
     client.force_login(tecnico)
     download = client.get(
