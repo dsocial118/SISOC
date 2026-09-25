@@ -1484,9 +1484,30 @@
                                       rows="3"
                                       placeholder="Agregá algo puntual que no esté en las observaciones…"></textarea>
                         </div>
+                        <div class="mb-3">
+                            <label for="subsanar-documentacion" class="form-label">Documentación complementaria (opcional)</label>
+                            <input type="file"
+                                   id="subsanar-documentacion"
+                                   name="documentacion_complementaria"
+                                   class="form-control"
+                                   accept="{{ complementaria_accept }}"
+                                   data-max-archivos="{{ complementaria_max_archivos }}"
+                                   data-max-mb="{{ complementaria_max_mb }}"
+                                   data-extensiones="{{ complementaria_accept }}"
+                                   multiple />
+                            <div id="subsanar-documentacion-error" class="invalid-feedback d-block"></div>
+                            <small class="text-muted d-block mt-1">
+                                Hasta {{ complementaria_max_archivos }} archivos PDF, JPG o PNG de {{ complementaria_max_mb }} MB cada uno.
+                                Se adjunta a la solicitud completa, no a una observación en particular,
+                                y la provincia va a poder consultarla.
+                            </small>
+                        </div>
                         <small class="text-muted d-block">
                             El legajo quedará en estado <strong>SUBSANAR</strong> y la provincia podrá actualizar los archivos.
                         </small>
+                        <!-- Los errores del submit se muestran acá y no sólo en la zona
+                             de alertas de la página, que el backdrop del modal tapa. -->
+                        <div id="subsanar-error" class="alert alert-danger mt-3 mb-0 py-2 small" role="alert" hidden></div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>

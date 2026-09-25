@@ -534,6 +534,64 @@ document.addEventListener('DOMContentLoaded', () => {
       .replace(/'/g, '&#39;');
   }
 
+  /* Validación en el cliente de la documentación complementaria (issue #2523).
+
+     El `accept` del input hace que el explorador filtre los formatos no
+     permitidos, pero eso es mudo: el usuario no entiende por qué su archivo no
+     aparece. Esto avisa en el momento por los tres motivos posibles. El backend
+     revalida igual: esto es comodidad, no control. */
+  function validarDocumentacionComplementaria(input) {
+    const cont = document.getElementById('subsanar-documentacion-error');
+    if (!input || !cont) return true;
+
+    const maxArchivos = parseInt(input.dataset.maxArchivos, 10) || 5;
+    const maxMb = parseInt(input.dataset.maxMb, 10) || 10;
+    const extensiones = (input.dataset.extensiones || '')
+      .split(',')
+      .map((e) => e.trim().toLowerCase())
+      .filter(Boolean);
+
+    const archivos = Array.from(input.files || []);
+    const errores = [];
+
+    if (archivos.length > maxArchivos) {
+      errores.push(`Podés adjuntar hasta ${maxArchivos} archivos (elegiste ${archivos.length}).`);
+    }
+
+    const invalidos = archivos.filter((a) => {
+      const punto = a.name.lastIndexOf('.');
+      const ext = punto === -1 ? '' : a.name.slice(punto).toLowerCase();
+      return !extensiones.includes(ext);
+    });
+    if (invalidos.length) {
+      errores.push(
+        `Solo se permiten archivos ${extensiones.join(', ')}. ` +
+        `No se puede adjuntar: ${invalidos.map((a) => a.name).join(', ')}.`
+      );
+    }
+
+    const pesados = archivos.filter((a) => a.size > maxMb * 1024 * 1024);
+    if (pesados.length) {
+      errores.push(
+        `Cada archivo puede pesar hasta ${maxMb} MB. ` +
+        `Supera el límite: ${pesados.map((a) => a.name).join(', ')}.`
+      );
+    }
+
+    cont.textContent = errores.join(' ');
+    input.classList.toggle('is-invalid', errores.length > 0);
+    return errores.length === 0;
+  }
+
+  /* El modal tapa la zona de alertas de la página, así que los errores del
+     submit se muestran también adentro. */
+  function mostrarErrorSubsanar(mensaje) {
+    const cont = document.getElementById('subsanar-error');
+    if (!cont) return;
+    cont.textContent = mensaje || '';
+    cont.hidden = !mensaje;
+  }
+
   /* ===== MODAL SUBSANAR (técnico) ===== */
   const modalSubsanar = document.getElementById('modalSubsanar');
   if (modalSubsanar) {
@@ -546,8 +604,18 @@ document.addEventListener('DOMContentLoaded', () => {
       modalSubsanar.querySelector('#subsanar-legajo-id').value = legajoId;
       const ta = modalSubsanar.querySelector('#subsanar-motivo');
       if (ta) ta.value = '';
+      const docs = modalSubsanar.querySelector('#subsanar-documentacion');
+      if (docs) {
+        docs.value = '';
+        validarDocumentacionComplementaria(docs);
+      }
+      mostrarErrorSubsanar('');
       cargarPreviewMotivo(legajoId, previewSubsanar);
     });
+
+    modalSubsanar
+      .querySelector('#subsanar-documentacion')
+      ?.addEventListener('change', (e) => validarDocumentacionComplementaria(e.target));
 
     const formSubsanar = document.getElementById('form-subsanar');
     formSubsanar.addEventListener('submit', async (e) => {
@@ -567,6 +635,15 @@ document.addEventListener('DOMContentLoaded', () => {
         showAlert('danger', 'No se configuró la URL de subsanación.');
         return;
       }
+
+      mostrarErrorSubsanar('');
+
+      const inputDocs = modalSubsanar.querySelector('#subsanar-documentacion');
+      if (!validarDocumentacionComplementaria(inputDocs)) {
+        mostrarErrorSubsanar('Revisá la documentación complementaria antes de continuar.');
+        return;
+      }
+
       const url = window.REVISAR_URL_TEMPLATE.replace('{id}', legajoId);
 
       btn.disabled = true;
@@ -578,6 +655,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const fd = new FormData();
         fd.append('accion', 'SUBSANAR');
         fd.append('texto_libre', textoLibre);
+
+        // Documentación complementaria (opcional): acompaña a la solicitud
+        // entera, no a una observación puntual. El backend valida formato,
+        // tamaño y cantidad.
+        for (const archivo of inputDocs?.files || []) {
+          fd.append('documentacion_complementaria', archivo);
+        }
 
         const resp = await fetch(url, {
           method: 'POST',
@@ -618,6 +702,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       } catch (err) {
         console.error('Subsanar legajo:', err);
+        mostrarErrorSubsanar(`No se pudo solicitar la subsanación. ${err.message}`);
         showAlert('danger', 'No se pudo solicitar la subsanación. ', err.message);
       } finally {
         btn.disabled = false;

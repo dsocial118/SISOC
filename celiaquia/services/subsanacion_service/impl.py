@@ -4,6 +4,11 @@ La provincia responde una subsanación adjuntando uno o varios archivos. La
 documentación corregida se incorpora como evidencia nueva (`SubsanacionArchivo`)
 SIN reemplazar los archivos originales del legajo (archivo1/2/3), preservando la
 trazabilidad histórica.
+
+Ese mismo modelo guarda la documentación complementaria que Nación adjunta al
+solicitar la subsanación (issue #2523); las distingue `SubsanacionArchivo.origen`.
+Toda lectura que pregunte "¿ya respondió la Provincia?" tiene que filtrar por
+origen: ver `tiene_evidencia`.
 """
 
 import logging
@@ -14,12 +19,14 @@ from django.utils import timezone
 
 from celiaquia.models import (
     ExpedienteCiudadano,
+    OrigenArchivoSubsanacion,
     RevisionTecnico,
     SubsanacionArchivo,
     SubsanacionEstado,
     SubsanacionObservacion,
 )
 from celiaquia.services.comentarios_service import ComentariosService
+from celiaquia.validators import validar_archivos_complementarios
 
 logger = logging.getLogger("django")
 
@@ -39,11 +46,19 @@ class SubsanacionService:
         Cuenta como evidencia un archivo nuevo (SubsanacionArchivo) del flujo
         actual o, por compatibilidad con subsanaciones en curso al momento del
         despliegue, una respuesta del flujo anterior (SubsanacionRespuesta)
-        registrada durante el ciclo actual."""
+        registrada durante el ciclo actual.
+
+        **Solo cuentan los archivos cargados por la Provincia.** La misma
+        relación guarda la documentación complementaria que adjunta Nación al
+        pedir la subsanación (issue #2523), y esa no es una respuesta: sin el
+        filtro, pedir subsanación con documentación adjunta habilitaría el
+        confirmar de la Provincia sin que haya subido nada."""
         subsanacion = SubsanacionService.subsanacion_activa(legajo)
         if subsanacion is None:
             return False
-        if subsanacion.archivos.exists():
+        if subsanacion.archivos.filter(
+            origen=OrigenArchivoSubsanacion.PROVINCIA
+        ).exists():
             return True
         # Compatibilidad hacia atrás: respuesta cargada por el flujo previo
         # (reemplazo de archivos) dentro del ciclo de subsanación vigente.
@@ -68,6 +83,41 @@ class SubsanacionService:
             for legajo in legajos
             if not SubsanacionService.tiene_evidencia(legajo)
         ]
+
+    @staticmethod
+    def adjuntar_documentacion_complementaria(subsanacion, archivos, usuario=None):
+        """Documentación complementaria que Nación adjunta al pedir la subsanación.
+
+        A diferencia de las observaciones, no cuelga de una observación puntual:
+        acompaña a la solicitud entera (issue #2523). Es opcional — sin archivos
+        no hace nada y devuelve lista vacía, para no bloquear la acción.
+
+        Valida el lote antes de escribir. Se espera que el llamador la invoque
+        dentro de la transacción que cambia el estado del legajo, para que la
+        subsanación y su documentación entren o no entren juntas.
+        """
+        archivos = validar_archivos_complementarios(archivos)
+        if not archivos:
+            return []
+
+        creados = [
+            SubsanacionArchivo.objects.create(
+                subsanacion=subsanacion,
+                archivo=archivo,
+                usuario=usuario,
+                origen=OrigenArchivoSubsanacion.NACION,
+            )
+            for archivo in archivos
+        ]
+
+        logger.info(
+            "Documentación complementaria adjuntada a subsanación %s por user=%s: "
+            "%s archivo(s).",
+            subsanacion.pk,
+            getattr(usuario, "id", None),
+            len(creados),
+        )
+        return creados
 
     @staticmethod
     @transaction.atomic
@@ -110,6 +160,7 @@ class SubsanacionService:
                 archivo=archivo,
                 descripcion=descripcion,
                 usuario=usuario,
+                origen=OrigenArchivoSubsanacion.PROVINCIA,
             )
             for archivo in archivos
         ]

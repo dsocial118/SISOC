@@ -78,7 +78,14 @@ from celiaquia.services.expediente_filter_config import (  # pylint: disable=no-
 from celiaquia.services.padron_final_service import (  # pylint: disable=no-name-in-module
     PadronFinalService,
 )
+from celiaquia.services.subsanacion_service import SubsanacionService
 from celiaquia.services.validacion_edad_service import ValidacionEdadService
+from celiaquia.validators import (
+    COMPLEMENTARIA_ACCEPT_ATTR,
+    COMPLEMENTARIA_MAX_ARCHIVOS,
+    COMPLEMENTARIA_MAX_SIZE_MB,
+    validar_archivos_complementarios,
+)
 from django.utils import timezone
 from django.db import transaction
 from core.models import Nacionalidad, Provincia, Localidad
@@ -1190,7 +1197,6 @@ class ExpedienteDetailView(DetailView):
         # Enriquecer legajos con informacion de tipo (hijo/responsable)
         from celiaquia.services.legajo_service import LegajoService
         from celiaquia.services.familia_service import FamiliaService
-        from celiaquia.services.subsanacion_service import SubsanacionService
 
         legajos_enriquecidos = []
         # Prefetch de subsanaciones solo para la lista que se enriquece y muestra
@@ -1636,6 +1642,12 @@ class ExpedienteDetailView(DetailView):
                 # el cliente, sin ida y vuelta al servidor.
                 "catalogo_comentarios_tecnicos": catalogo_comentarios_tecnicos(),
                 "tipos_documento_comentario": TipoDocumentoComentario.choices,
+                # Límites de la documentación complementaria del modal de
+                # subsanar: se declaran en un solo lugar y el template los usa
+                # para el `accept` y para el texto de ayuda.
+                "complementaria_accept": COMPLEMENTARIA_ACCEPT_ATTR,
+                "complementaria_max_archivos": COMPLEMENTARIA_MAX_ARCHIVOS,
+                "complementaria_max_mb": COMPLEMENTARIA_MAX_SIZE_MB,
             }
         )
         return ctx
@@ -2124,8 +2136,21 @@ class RevisarLegajoView(View):
         )
 
     def _subsanar(self, request, user, leg, motivo):
-        """Solicita la subsanación: estado, observaciones y publicación."""
+        """Solicita la subsanación: estado, observaciones, documentación y
+        publicación."""
         tipo_subsanacion = (request.POST.get("tipo_subsanacion") or "").strip()
+
+        # Documentación complementaria de Nación (issue #2523): opcional, y se
+        # valida antes de tocar el estado del legajo para no dejar la
+        # subsanación hecha a medias por un archivo inválido.
+        try:
+            complementaria = validar_archivos_complementarios(
+                request.FILES.getlist("documentacion_complementaria")
+            )
+        except ValidationError as exc:
+            return JsonResponse(
+                {"success": False, "error": "; ".join(exc.messages)}, status=400
+            )
 
         # Las observaciones salen de los comentarios técnicos del legajo. Si
         # todavía no tiene ninguno (legajos previos al issue #2318), se cae al
@@ -2186,6 +2211,10 @@ class RevisarLegajoView(View):
                 ]
             )
 
+            adjuntos = SubsanacionService.adjuntar_documentacion_complementaria(
+                subsanacion, complementaria, usuario=user
+            )
+
             publicados = ComentariosTecnicosService.publicar(leg, usuario=user)
 
         return JsonResponse(
@@ -2195,6 +2224,7 @@ class RevisarLegajoView(View):
                 "cupo_liberado": True,
                 "subsanacion_id": subsanacion.pk,
                 "observaciones": len(observaciones),
+                "documentacion_complementaria": len(adjuntos),
                 "comentarios_publicados": publicados,
             }
         )
