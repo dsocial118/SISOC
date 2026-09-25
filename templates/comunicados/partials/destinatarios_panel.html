@@ -1,0 +1,80 @@
+{% comment %}
+Panel de seleccion personalizada de destinatarios (issue #2505).
+
+Parametros:
+- universo: "comedores" u "organizaciones". Decide que config de filtros y que
+  endpoints usa el JS, y el name de los inputs ocultos del form.
+- campo: el BoundField del form que guarda los ids elegidos.
+- etiqueta_agregar: texto para el vacio y los contadores ("comedores" / "organizaciones").
+
+El JS (comunicadosDestinatarios.js) toma todo por data-attributes: este partial
+no depende del universo mas alla de los textos.
+{% endcomment %}
+<div class="destinatarios-panel" data-universo="{{ universo }}">
+    <div class="destinatarios-filtros">
+        <div class="destinatarios-filtros__rows" data-rol="filas"></div>
+        <template data-rol="fila-template">
+            <div class="destinatarios-filtro-row">
+                <select class="form-select destinatarios-filtro__campo"
+                        data-rol="campo"
+                        aria-label="Filtrar por"></select>
+                <select class="form-select destinatarios-filtro__op"
+                        data-rol="operador"
+                        aria-label="Tipo de coincidencia"></select>
+                <input type="text"
+                       class="form-control destinatarios-filtro__valor"
+                       data-rol="valor"
+                       autocomplete="off"
+                       aria-label="Valor a buscar" />
+                <select class="form-select destinatarios-filtro__valor"
+                        data-rol="valor-select"
+                        aria-label="Valor a buscar"
+                        hidden></select>
+                <button type="button"
+                        class="btn btn-sm btn-outline-secondary"
+                        data-rol="quitar"
+                        aria-label="Quitar filtro">
+                    <i class="fas fa-minus"></i>
+                </button>
+            </div>
+        </template>
+        <div class="destinatarios-filtros__acciones">
+            <button type="button"
+                    class="btn btn-sm btn-outline-light"
+                    data-rol="agregar-filtro">
+                <i class="fas fa-plus me-1"></i>Filtro
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-light" data-rol="limpiar">
+                <i class="fas fa-eraser me-1"></i>Limpiar
+            </button>
+            <button type="button" class="btn btn-sm btn-warning" data-rol="buscar">
+                <i class="fas fa-search me-1"></i>Buscar
+            </button>
+        </div>
+        <small class="form-text d-block">Los filtros se combinan entre sí (AND). Buscá, elegí, y volvé a filtrar para seguir sumando destinatarios.</small>
+    </div>
+    <div class="destinatarios-resultados">
+        <div class="destinatarios-resultados__head">
+            <span data-rol="resumen" class="destinatarios-resumen">Usá los filtros y presioná Buscar.</span>
+            <button type="button"
+                    class="btn btn-sm btn-outline-warning"
+                    data-rol="agregar-todos"
+                    hidden>
+                <i class="fas fa-layer-group me-1"></i>Agregar todos los resultados
+            </button>
+        </div>
+        <div data-rol="lista" class="comedores-lista-container"></div>
+        <div data-rol="paginacion" class="destinatarios-paginacion"></div>
+    </div>
+    <div class="destinatarios-seleccion">
+        <label>
+            Seleccionados (<span data-rol="contador">0</span>)
+            <button type="button"
+                    class="btn btn-sm btn-link text-danger p-0 ms-2"
+                    data-rol="limpiar-seleccion">Quitar todos</button>
+        </label>
+        <div data-rol="seleccionados" class="comedores-badges mb-2"></div>
+        <div data-rol="inputs" class="d-none">{{ campo }}</div>
+        {% if campo.errors %}<div class="invalid-feedback d-block">{{ campo.errors.0 }}</div>{% endif %}
+    </div>
+</div>

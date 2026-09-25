@@ -72,9 +72,11 @@ def test_organizacion_list_view_uses_shared_builder(mocker):
 
     view = module.OrganizacionListView()
     user = SimpleNamespace(is_superuser=False, is_authenticated=True)
-    view.request = SimpleNamespace(GET={"busqueda": "abc"}, user=user)
+    request = SimpleNamespace(GET={"busqueda": "abc"}, user=user)
+    view.request = request
     assert view.get_queryset() == "qs"
-    builder.assert_called_once_with("abc", user)
+    # El request tambien viaja: habilita los filtros combinables (issue #2505).
+    builder.assert_called_once_with("abc", user, request_or_get=request)
 
 
 def test_organizacion_list_view_paginates_without_count(mocker):

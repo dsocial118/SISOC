@@ -72,12 +72,11 @@ class ComunicadoForm(forms.ModelForm):
             "para_todos_comedores": forms.CheckboxInput(
                 attrs={"class": "form-check-input", "role": "switch"}
             ),
-            "comedores": forms.SelectMultiple(
-                attrs={"class": "form-select", "size": "6"}
-            ),
-            "organizaciones": forms.SelectMultiple(
-                attrs={"class": "form-select", "size": "6"}
-            ),
+            # El selector de destinatarios (issue #2505) es un panel propio con
+            # filtros combinables: el front administra inputs ocultos con los ids
+            # elegidos en lugar de renderizar el universo completo en un <select>.
+            "comedores": forms.MultipleHiddenInput(),
+            "organizaciones": forms.MultipleHiddenInput(),
         }
 
     def __init__(self, *args, user=None, **kwargs):
