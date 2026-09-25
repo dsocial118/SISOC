@@ -74,6 +74,7 @@ urlpatterns = [
     path("api/pwa/", include("pwa.api_urls")),
     path("api/datacalle/", include("datacalle.api_urls")),
     path("api/ticketera/", include("ticketera.api_urls")),
+    path("api/celiaquia/", include("celiaquia.api_urls")),
     path("", include("importarexpediente.urls")),
     path("", include("comunicados.urls")),
     path("ocr/", include("ocr.urls")),

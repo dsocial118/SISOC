@@ -85,6 +85,7 @@ from core.models import Nacionalidad, Provincia, Localidad
 from core.services.advanced_filters import AdvancedFilterEngine
 from core.soft_delete.preview import build_delete_preview
 from core.soft_delete.view_helpers import is_soft_deletable_instance
+from celiaquia.scope import apply_provincial_expediente_scope
 from users.territorial_scope import (
     apply_territorial_scope,
     build_territorial_scope_q,
@@ -598,33 +599,8 @@ def _user_scope_provincias(user):
 
 
 def _apply_provincial_expediente_scope(queryset, user):
-    if getattr(user, "is_superuser", False):
-        return queryset
-    if not is_territorial_user(user):
-        # Tiene role_provinciaceliaquia pero no scope territorial configurado;
-        # restringir a expedientes propios.
-        return queryset.filter(usuario_provincia=user).distinct()
-
-    # Un expediente es visible si tiene al menos un ciudadano dentro del alcance
-    # territorial del usuario. NO se incluyen los expedientes propios fuera de
-    # alcance (sin include_own): un expediente cargado por el usuario con
-    # ciudadanos de otra provincia no debe listarse (seguimiento del issue #1793).
-    scope_q = build_territorial_scope_q(
-        get_effective_scopes(user),
-        provincia_lookup="expediente_ciudadanos__ciudadano__provincia_id",
-        municipio_lookup="expediente_ciudadanos__ciudadano__municipio_id",
-        localidad_lookup="expediente_ciudadanos__ciudadano__localidad_id",
-    )
-    # Excepcion: sus propios expedientes recien creados, aun sin legajos
-    # importados (sin provincia derivable todavia), deben seguir siendo accesibles
-    # para poder cargar/procesar el Excel.
-    propios_sin_legajos_q = Q(
-        usuario_provincia=user, expediente_ciudadanos__isnull=True
-    )
-    combined_q = (
-        propios_sin_legajos_q if scope_q is None else scope_q | propios_sin_legajos_q
-    )
-    return queryset.filter(combined_q).distinct()
+    # Las reglas viven en celiaquia/scope.py: las comparte con la API REST.
+    return apply_provincial_expediente_scope(queryset, user)
 
 
 def _get_provincial_expediente_or_404(user, pk):
